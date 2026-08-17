@@ -78,8 +78,7 @@ object Moveable {
      Entity using rigid body physics.
 
      ===============================================================================
-     */
-    /*
+     *//*
      ===============================================================================
 
      idMoveable
@@ -119,8 +118,7 @@ object Moveable {
                     eventCallback_t0<idMoveable> { obj: idMoveable -> obj.Event_BecomeNonSolid() }
                 eventCallbacks[EV_SetOwnerFromSpawnArgs] =
                     eventCallback_t0<idMoveable> { obj: idMoveable -> obj.Event_SetOwnerFromSpawnArgs() }
-                eventCallbacks[EV_IsAtRest] =
-                    eventCallback_t0<idMoveable> { obj: idMoveable -> obj.Event_IsAtRest() }
+                eventCallbacks[EV_IsAtRest] = eventCallback_t0<idMoveable> { obj: idMoveable -> obj.Event_IsAtRest() }
                 eventCallbacks[EV_EnableDamage] =
                     eventCallback_t1<idMoveable> { obj: idMoveable, enable: idEventArg<*>? ->
                         obj.Event_EnableDamage(enable as idEventArg<Float>)
@@ -227,8 +225,9 @@ object Moveable {
 
             // setup the physics
             physicsObj.SetSelf(this)
-            physicsObj.SetClipModel(idClipModel(trm), density._val)
-            // FIX: C++ SetMaterial accepts null; Kotlin requires non-null. Guard with null check.
+            physicsObj.SetClipModel(
+                idClipModel(trm), density._val
+            ) // FIX: C++ SetMaterial accepts null; Kotlin requires non-null. Guard with null check.
             val clipMaterial = GetRenderModelMaterial()
             if (clipMaterial != null) {
                 physicsObj.GetClipModel()!!.SetMaterial(clipMaterial)
@@ -358,8 +357,10 @@ object Moveable {
                     if (v > BOUNCE_SOUND_MAX_VELOCITY) 1.0f else idMath.Sqrt(v - BOUNCE_SOUND_MIN_VELOCITY) * (1.0f / idMath.Sqrt(
                         BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY
                     ))
-                if (StartSound("snd_bounce", gameSoundChannel_t.SND_CHANNEL_ANY, 0, false)) {
-                    // don't set the volume unless there is a bounce sound as it overrides the entire channel
+                if (StartSound(
+                        "snd_bounce", gameSoundChannel_t.SND_CHANNEL_ANY, 0, false
+                    )
+                ) { // don't set the volume unless there is a bounce sound as it overrides the entire channel
                     // which causes footsteps on ai's to not honor their shader parms
                     SetSoundVolume(f)
                 }
@@ -369,7 +370,7 @@ object Moveable {
             // D3XP :: changes relating to the addition of monsterDamage
             if (!Game_local.gameLocal.isClient && canDamage && Game_local.gameLocal.time > nextDamageTime) {
                 val hasDamage = damage.Length() > 0
-                val hasMonsterDamage = if (isD3XP) monsterDamage.Length() > 0 else false
+                val hasMonsterDamage = isD3XP && monsterDamage.Length() > 0
 
                 if (hasDamage || hasMonsterDamage) {
                     ent = Game_local.gameLocal.entities[collision.c.entityNum]
@@ -394,8 +395,7 @@ object Moveable {
                                 )
                             }
                         } else if (hasDamage) {
-                            if (isD3XP) {
-                                // in multiplayer, scale damage wrt mass of object
+                            if (isD3XP) { // in multiplayer, scale damage wrt mass of object
                                 if (Game_local.gameLocal.isMultiplayer) {
                                     f *= GetPhysics().GetMass() * SysCvar.g_moveableDamageScale.GetFloat()
                                 }
@@ -481,8 +481,7 @@ object Moveable {
             } else null
         }
 
-        protected fun BecomeNonSolid() {
-            // set CONTENTS_RENDERMODEL so bullets still collide with the moveable
+        protected fun BecomeNonSolid() { // set CONTENTS_RENDERMODEL so bullets still collide with the moveable
             physicsObj.SetContents(Material.CONTENTS_CORPSE or Material.CONTENTS_RENDERMODEL)
             physicsObj.SetClipMask(Game_local.MASK_SOLID or Material.CONTENTS_CORPSE or Material.CONTENTS_MOVEABLECLIP)
         }
@@ -517,8 +516,7 @@ object Moveable {
                         angularVelocity.timesAssign(idMath.ACos16(dir.times(splineDir) / splineDir.Length()) * UsercmdGen.USERCMD_HZ)
                         physicsObj.SetAngularVelocity(angularVelocity)
                         return true
-                    } else {
-                        // C++: delete initialSpline; initialSpline = NULL;
+                    } else { // C++: delete initialSpline; initialSpline = NULL;
                         null
                     }
             }
@@ -567,8 +565,7 @@ object Moveable {
         }
 
         protected fun Event_EnableDamage(enable: idEventArg<Float>) {
-            if (isD3XP) {
-                // clear out attacker
+            if (isD3XP) { // clear out attacker
                 attacker = null
             }
             canDamage = enable.value != 0.0f
@@ -625,8 +622,7 @@ object Moveable {
      the view model orientation to make it look like it rolls instead of slides.
 
      ===============================================================================
-     */
-    /*
+     *//*
      ===============================================================================
 
      idBarrel
@@ -733,8 +729,7 @@ object Moveable {
 
                         // get rotation about barrel axis since last think frame
                         angle = lastAxis[(barrelAxis + 1) % 3].times(curAxis[(barrelAxis + 1) % 3])
-                        angle = idMath.ACos(angle)
-                        // distance along cylinder hull
+                        angle = idMath.ACos(angle) // distance along cylinder hull
                         rotatedDistance = angle * radius
 
                         // if the barrel moved further than it rotated about it's axis
@@ -909,8 +904,7 @@ object Moveable {
             // DG: enforce getting fresh handle, else this may be tied to an unrelated light!
             if (lightDefHandle != -1) {
                 lightDefHandle = Game_local.gameRenderWorld!!.AddLightDef(light)
-            }
-            // DG: same for render entity
+            } // DG: same for render entity
             if (particleModelDefHandle != -1) {
                 particleModelDefHandle = Game_local.gameRenderWorld!!.AddEntityDef(particleRenderEntity)
             }
@@ -919,8 +913,7 @@ object Moveable {
         override fun Think() {
             super.BarrelThink()
             if (lightDefHandle >= 0) {
-                if (state == explode_state_t.BURNING) {
-                    // ramp the color up over 250 ms
+                if (state == explode_state_t.BURNING) { // ramp the color up over 250 ms
                     var pct = (Game_local.gameLocal.time - lightTime) / 250.0f
                     if (pct > 1.0f) {
                         pct = 1.0f
@@ -952,8 +945,12 @@ object Moveable {
         }
 
         override fun Damage(
-            inflictor: idEntity?, attacker: idEntity?, dir: idVec3,
-            damageDefName: String, damageScale: Float, location: Int
+            inflictor: idEntity?,
+            attacker: idEntity?,
+            dir: idVec3,
+            damageDefName: String,
+            damageScale: Float,
+            location: Int
         ) {
             val damageDef = Game_local.gameLocal.FindEntityDefDict(damageDefName)
             if (null == damageDef) {
@@ -999,25 +996,22 @@ object Moveable {
             ExplodingEffects()
 
             //FIXME: need to precache all the debris stuff here and in the projectiles
-            var kv = spawnArgs.MatchPrefix("def_debris")
-            // bool first = true;
+            var kv = spawnArgs.MatchPrefix("def_debris") // bool first = true;
             while (kv != null) {
                 val debris_args = Game_local.gameLocal.FindEntityDefDict(kv.GetValue().toString(), false)
                 if (debris_args != null) {
                     val ent = arrayOfNulls<idEntity>(1)
                     val dir2 = idVec3()
-                    var debris: idDebris?
-                    //if ( first ) {
-                    dir2.set(physicsObj.GetAxis()[1])
-                    //	first = false;
+                    var debris: idDebris? //if ( first ) {
+                    dir2.set(physicsObj.GetAxis()[1]) //	first = false;
                     //} else {
                     dir2.x += Game_local.gameLocal.random.CRandomFloat() * 4.0f
-                    dir2.y += Game_local.gameLocal.random.CRandomFloat() * 4.0f
-                    //dir.z = gameLocal.random.RandomFloat() * 8.0f;
+                    dir2.y += Game_local.gameLocal.random.CRandomFloat() * 4.0f //dir.z = gameLocal.random.RandomFloat() * 8.0f;
                     //}
                     dir2.Normalize()
-                    Game_local.gameLocal.SpawnEntityDef(debris_args, ent, false)
-                    // FIX: Was ent.isEmpty() which is always false since arrayOfNulls(1) has size 1
+                    Game_local.gameLocal.SpawnEntityDef(
+                        debris_args, ent, false
+                    ) // FIX: Was ent.isEmpty() which is always false since arrayOfNulls(1) has size 1
                     if (ent[0] == null || ent[0] !is idDebris) {
                         idGameLocal.Error("'projectile_debris' is not an idDebris")
                     }
@@ -1065,8 +1059,7 @@ object Moveable {
             return when (event) {
                 EVENT_EXPLODE -> {
                     if (Game_local.gameLocal.realClientTime - msg.ReadLong() < spawnArgs.GetInt(
-                            "explode_lapse",
-                            "1000"
+                            "explode_lapse", "1000"
                         )
                     ) {
                         ExplodingEffects()
@@ -1085,8 +1078,7 @@ object Moveable {
                 val ts = if (isD3XP) SetTimeState(timeGroup) else null
                 if (particleModelDefHandle >= 0) {
                     Game_local.gameRenderWorld!!.FreeEntityDef(particleModelDefHandle)
-                }
-                //  memset( &particleRenderEntity, 0, sizeof( particleRenderEntity ) )
+                } //  memset( &particleRenderEntity, 0, sizeof( particleRenderEntity ) )
                 particleRenderEntity = renderEntity_s()
                 val modelDef = DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, name) as idDeclModelDef
                 if (modelDef != null) {
@@ -1121,8 +1113,7 @@ object Moveable {
         private fun AddLight(name: String, burn: Boolean) {
             if (lightDefHandle >= 0) {
                 Game_local.gameRenderWorld!!.FreeLightDef(lightDefHandle)
-            }
-            //	memset( &light, 0, sizeof ( light ) );
+            } //	memset( &light, 0, sizeof ( light ) );
             light = renderLight_s()
             light.axis.set(idMat3.getMat3_identity())
             light.lightRadius.x = spawnArgs.GetFloat("light_radius")
@@ -1160,12 +1151,7 @@ object Moveable {
             temp = spawnArgs.GetString("mtr_burnmark")
             if (!temp.isEmpty()) { // != '\0' ) {
                 Game_local.gameLocal.ProjectDecal(
-                    GetPhysics().GetOrigin(),
-                    GetPhysics().GetGravity(),
-                    128.0f,
-                    true,
-                    96.0f,
-                    temp
+                    GetPhysics().GetOrigin(), GetPhysics().GetGravity(), 128.0f, true, 96.0f, temp
                 )
             }
         }
@@ -1270,10 +1256,8 @@ object Moveable {
             spawnOrigin = idVec3()
             state = explode_state_t.NORMAL
             particleModelDefHandle = -1
-            lightDefHandle = -1
-            //	memset( &particleRenderEntity, 0, sizeof( particleRenderEntity ) );
-            particleRenderEntity = renderEntity_s()
-            //	memset( &light, 0, sizeof( light ) );
+            lightDefHandle = -1 //	memset( &particleRenderEntity, 0, sizeof( particleRenderEntity ) );
+            particleRenderEntity = renderEntity_s() //	memset( &light, 0, sizeof( light ) );
             light = renderLight_s()
             particleTime = 0
             lightTime = 0

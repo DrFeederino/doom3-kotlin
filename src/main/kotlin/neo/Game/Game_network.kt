@@ -53,8 +53,7 @@ class Game_network {
         idEventQueue::Alloc
         ===============
         */
-        fun Alloc(): entityNetEvent_s {
-            // NOTE: Differs from C++ — C++ uses idBlockAlloc<entityNetEvent_s>(32) for pooled allocation.
+        fun Alloc(): entityNetEvent_s { // NOTE: Differs from C++ — C++ uses idBlockAlloc<entityNetEvent_s>(32) for pooled allocation.
             // Kotlin uses standard heap allocation since JVM handles memory management via GC.
             val event = entityNetEvent_s()
             event.prev = null
@@ -67,10 +66,8 @@ class Game_network {
         idEventQueue::Free
         ===============
         */
-        fun Free(event: entityNetEvent_s) {
-            // should only be called on an unlinked event!
-            assert(null == event.next && null == event.prev)
-            // NOTE: Differs from C++ — C++ calls eventAllocator.Free(event) to return to pool.
+        fun Free(event: entityNetEvent_s) { // should only be called on an unlinked event!
+            assert(null == event.next && null == event.prev) // NOTE: Differs from C++ — C++ calls eventAllocator.Free(event) to return to pool.
             // Kotlin relies on GC to reclaim the object.
         }
 
@@ -79,8 +76,7 @@ class Game_network {
         idEventQueue::Shutdown
         ===============
         */
-        fun Shutdown() {
-            // NOTE: Differs from C++ — C++ calls eventAllocator.Shutdown() to release pool memory.
+        fun Shutdown() { // NOTE: Differs from C++ — C++ calls eventAllocator.Shutdown() to release pool memory.
             Init()
         }
 
@@ -100,8 +96,7 @@ class Game_network {
         ===============
         */
         fun Enqueue(event: entityNetEvent_s, oooBehaviour: outOfOrderBehaviour_t) {
-            if (oooBehaviour == outOfOrderBehaviour_t.OUTOFORDER_DROP) {
-                // go backwards through the queue and determine if there are
+            if (oooBehaviour == outOfOrderBehaviour_t.OUTOFORDER_DROP) { // go backwards through the queue and determine if there are
                 // any out-of-order events
                 while (end != null && end!!.time > event.time) {
                     val outOfOrder = RemoveLast()!!
@@ -115,22 +110,18 @@ class Game_network {
                     )
                     Free(outOfOrder)
                 }
-            } else if (oooBehaviour == outOfOrderBehaviour_t.OUTOFORDER_SORT && end != null) {
-                // NOT TESTED -- sorting out of order packets hasn't been
+            } else if (oooBehaviour == outOfOrderBehaviour_t.OUTOFORDER_SORT && end != null) { // NOT TESTED -- sorting out of order packets hasn't been
                 //               tested yet... wasn't strictly necessary for
                 //               the patch fix.
-                var cur = end
-                // iterate until we find a time < the new event's
+                var cur = end // iterate until we find a time < the new event's
                 while (cur != null && cur.time > event.time) {
                     cur = cur.prev
                 }
-                if (null == cur) {
-                    // add to start
+                if (null == cur) { // add to start
                     event.next = start
                     event.prev = null
                     start = event
-                } else {
-                    // insert
+                } else { // insert
                     event.prev = cur
                     event.next = cur.next
                     cur.next = event

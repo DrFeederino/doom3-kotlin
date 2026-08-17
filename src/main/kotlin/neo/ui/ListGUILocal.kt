@@ -71,19 +71,15 @@ class ListGUILocal {
         override fun Clear() {
             m_ids.Clear()
             super.Clear()
-            if (m_pGUI != null) {
-                // will clear all the GUI variables and will set m_water back to 0
+            if (m_pGUI != null) { // will clear all the GUI variables and will set m_water back to 0
                 StateChanged()
             }
         }
 
         override fun GetSelection(
-            s: Array<String?>?,
-            size: Int,
-            _sel: Int /*= 0*/
+            s: Array<String?>?, size: Int, _sel: Int /*= 0*/
         ): Int { // returns the id, not the list index (or -1)
-            if (s != null) {
-//                s[0] = '\0';
+            if (s != null) { //                s[0] = '\0';
                 s[0] = ""
             }
             var sel = m_pGUI!!.State().GetInt(va("%s_sel_%d", m_name, _sel), "-1")
@@ -92,13 +88,9 @@ class ListGUILocal {
             }
             if (s != null) {
                 snPrintf(
-                    s as Array<String>,
-                    size,
-                    "%s",
-                    m_pGUI!!.State().GetString(va("%s_item_%d", m_name, sel), "")!!
+                    s as Array<String>, size, "%s", m_pGUI!!.State().GetString(va("%s_item_%d", m_name, sel), "")!!
                 )
-            }
-            // don't let overflow
+            } // don't let overflow
             if (sel >= m_ids.Num()) {
                 sel = 0
             }

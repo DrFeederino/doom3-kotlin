@@ -73,8 +73,7 @@ class ChoiceWindow {
             var runAction2 = false
             if (event.evType === sysEventType_t.SE_KEY) {
                 key = event.evValue
-                if (key == K_RIGHTARROW || key == K_KP_RIGHTARROW || key == K_MOUSE1) {
-                    // never affects the state, but we want to execute script handlers anyway
+                if (key == K_RIGHTARROW || key == K_KP_RIGHTARROW || key == K_MOUSE1) { // never affects the state, but we want to execute script handlers anyway
                     if (0 == event.evValue2) {
                         RunScript((ON.ON_ACTIONRELEASE).ordinal)
                         return cmd.toString()
@@ -85,8 +84,7 @@ class ChoiceWindow {
                     }
                     runAction = true
                 }
-                if (key == K_LEFTARROW || key == K_KP_LEFTARROW || key == K_MOUSE2) {
-                    // never affects the state, but we want to execute script handlers anyway
+                if (key == K_LEFTARROW || key == K_KP_LEFTARROW || key == K_MOUSE2) { // never affects the state, but we want to execute script handlers anyway
                     if (0 == event.evValue2) {
                         RunScript((ON.ON_ACTIONRELEASE).ordinal)
                         return cmd.toString()
@@ -97,8 +95,7 @@ class ChoiceWindow {
                     }
                     runAction = true
                 }
-                if (0 == event.evValue2) {
-                    // is a key release with no action catch
+                if (0 == event.evValue2) { // is a key release with no action catch
                     return ""
                 }
             } else if (event.evType == sysEventType_t.SE_CHAR) {
@@ -179,16 +176,13 @@ class ChoiceWindow {
 
         override fun Activate(activate: Boolean, act: idStr) {
             super.Activate(activate, act)
-            if (activate) {
-                // sets the gui state based on the current choice the window contains
+            if (activate) { // sets the gui state based on the current choice the window contains
                 UpdateChoice()
             }
         }
 
         override fun GetWinVarByName(
-            _name: String?,
-            winLookup: Boolean /*= false*/,
-            owner: Array<drawWin_t?>? /*= NULL*/
+            _name: String?, winLookup: Boolean /*= false*/, owner: Array<drawWin_t?>? /*= NULL*/
         ): Winvar.idWinVar? {
             if (Icmp(_name!!, "choices") == 0) {
                 return choicesStr
@@ -216,13 +210,13 @@ class ChoiceWindow {
             if (0 == Cmpn(eventName!!, "cvar read ", 10)) {
                 event = idStr(eventName)
                 group = event.Mid(10, event.Length() - 10)
-                if (0 == group.Cmp(updateGroup.data!!)) {
+                if (0 == group.Cmp(updateGroup.data)) {
                     UpdateVars(true, true)
                 }
             } else if (0 == Cmpn(eventName, "cvar write ", 11)) {
                 event = idStr(eventName)
                 group = event.Mid(11, event.Length() - 11)
-                if (0 == group.Cmp(updateGroup.data!!)) {
+                if (0 == group.Cmp(updateGroup.data)) {
                     UpdateVars(false, true)
                 }
             }
@@ -254,8 +248,7 @@ class ChoiceWindow {
             }
             UpdateVars(true)
             updateStr.Update()
-            if (choiceType == 0) {
-                // ChoiceType 0 stores current as an integer in either cvar or gui
+            if (choiceType == 0) { // ChoiceType 0 stores current as an integer in either cvar or gui
                 // If both cvar and gui are defined then cvar wins, but they are both updated
                 if (updateStr[0]!!.NeedsUpdate()) {
                     currentChoice = try {
@@ -265,8 +258,7 @@ class ChoiceWindow {
                     }
                 }
                 ValidateChoice()
-            } else {
-                // ChoiceType 1 stores current as a cvar string
+            } else { // ChoiceType 1 stores current as a cvar string
                 val c = if (values.size() != 0) values.size() else choices.size()
                 var i: Int
                 i = 0
@@ -339,11 +331,11 @@ class ChoiceWindow {
             val str2 = idStr()
             idStr()
             val src = idLexer()
-            if (latchedChoices.Icmp(choicesStr.data!!) != 0) {
+            if (latchedChoices.Icmp(choicesStr.data) != 0) {
                 choices.clear()
                 src.FreeSource()
                 src.SetFlags(LEXFL_NOFATALERRORS or LEXFL_ALLOWPATHNAMES or LEXFL_ALLOWMULTICHARLITERALS or LEXFL_ALLOWBACKSLASHSTRINGCONCAT)
-                src.LoadMemory(choicesStr.data!!, choicesStr.Length(), "<ChoiceList>")
+                src.LoadMemory(choicesStr.data, choicesStr.Length(), "<ChoiceList>")
                 if (src.IsLoaded()) {
                     while (src.ReadToken(token)) {
                         if (token.equals(";")) {
@@ -365,11 +357,11 @@ class ChoiceWindow {
                 }
                 latchedChoices.set(choicesStr.c_str())
             }
-            if (choiceVals.Length() != 0 && latchedVals.Icmp(choiceVals.data!!) != 0) {
+            if (choiceVals.Length() != 0 && latchedVals.Icmp(choiceVals.data) != 0) {
                 values.clear()
                 src.FreeSource()
                 src.SetFlags(LEXFL_ALLOWPATHNAMES or LEXFL_ALLOWMULTICHARLITERALS or LEXFL_ALLOWBACKSLASHSTRINGCONCAT)
-                src.LoadMemory(choiceVals.data!!, choiceVals.Length(), "<ChoiceVals>")
+                src.LoadMemory(choiceVals.data, choiceVals.Length(), "<ChoiceVals>")
                 str2.set("")
                 var negNum = false
                 if (src.IsLoaded()) {

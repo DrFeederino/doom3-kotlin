@@ -238,8 +238,9 @@ object KeyInput {
         keyname_t("DOWNARROW", K_DOWNARROW, "#str_07024"),
         keyname_t("LEFTARROW", K_LEFTARROW, "#str_07025"),
         keyname_t("RIGHTARROW", K_RIGHTARROW, "#str_07026"),  //
-        keyname_t("ALT", K_ALT, "#str_07027"),
-        //keyname_t("RIGHTALT", K_RIGHT_ALT, "#str_07027"), // DG: renamed, see R_ALT below
+        keyname_t(
+            "ALT", K_ALT, "#str_07027"
+        ), //keyname_t("RIGHTALT", K_RIGHT_ALT, "#str_07027"), // DG: renamed, see R_ALT below
         keyname_t("CTRL", K_CTRL, "#str_07028"),
         keyname_t("SHIFT", K_SHIFT, "#str_07029"),  //
         keyname_t("LWIN", K_LWIN, "#str_07030"),
@@ -416,15 +417,11 @@ object KeyInput {
                 "unbinds any commands from all keys"
             )
             CmdSystem.cmdSystem.AddCommand(
-                "listBinds",
-                Key_ListBinds_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "lists key bindings"
+                "listBinds", Key_ListBinds_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "lists key bindings"
             )
         }
 
-        fun Shutdown() {
-//	delete [] keys;
+        fun Shutdown() { //	delete [] keys;
         }
 
         /*
@@ -444,8 +441,7 @@ object KeyInput {
                 KeyReveal(keyNum)
             }
 
-            if (ID_DOOM_LEGACY) {
-                // FIX: added keyNum < 127 check — only ASCII keys are of interest for cheat codes
+            if (ID_DOOM_LEGACY) { // FIX: added keyNum < 127 check — only ASCII keys are of interest for cheat codes
                 if (down && keyNum < 127) {
                     lastKeys[0 + (lastKeyIndex and 15)] = keyNum.toChar()
                     lastKeys[16 + (lastKeyIndex and 15)] = keyNum.toChar()
@@ -455,9 +451,7 @@ object KeyInput {
                         val l = cheatCodes[i]!!.length
                         assert(l <= 16)
                         if (idStr.Icmpn(
-                                ctos(lastKeys).substring(16 + (lastKeyIndex and 15) - l),
-                                cheatCodes[i]!!,
-                                l
+                                ctos(lastKeys).substring(16 + (lastKeyIndex and 15) - l), cheatCodes[i]!!, l
                             ) == 0
                         ) {
                             Common.common.Printf("your memory serves you well!\n")
@@ -572,8 +566,7 @@ object KeyInput {
         }
 
         @Throws(idException::class)
-        fun KeyNumToString(keyNum: Int, localized: Boolean): String? {
-//	keyname_t	kn;
+        fun KeyNumToString(keyNum: Int, localized: Boolean): String? { //	keyname_t	kn;
             val i: Int
             val j: Int
             if (keyNum == -1) {
@@ -596,8 +589,8 @@ object KeyInput {
                     return if (!localized || kn.strId!![0] != '#') {
                         kn.name
                     } else {
-                        val locStr = Common.common.GetLanguageDict().GetString(kn.strId)
-                        // fall back to key name if the localized string wasn't found
+                        val locStr = Common.common.GetLanguageDict()
+                            .GetString(kn.strId) // fall back to key name if the localized string wasn't found
                         if (locStr.startsWith("#str_")) kn.name else locStr
                     }
                 }
@@ -648,8 +641,7 @@ object KeyInput {
 
         fun UnbindBinding(binding: String?): Boolean {
             var unbound = false
-            var i: Int
-            // FIX: C++ checks binding && *binding (non-null AND non-empty)
+            var i: Int // FIX: C++ checks binding && *binding (non-null AND non-empty)
             if (binding != null && binding.isNotEmpty()) {
                 i = 0
                 while (i < MAX_KEYS) {
@@ -665,8 +657,7 @@ object KeyInput {
 
         fun NumBinds(binding: String?): Int {
             var i: Int
-            var count = 0
-            // FIX: C++ checks binding && *binding (non-null AND non-empty)
+            var count = 0 // FIX: C++ checks binding && *binding (non-null AND non-empty)
             if (binding != null && binding.isNotEmpty()) {
                 i = 0
                 while (i < MAX_KEYS) {
@@ -686,8 +677,7 @@ object KeyInput {
         }
 
         @Throws(idException::class)
-        fun ExecKeyBinding(keyNum: Int): Boolean {
-            // commands that are used by the async thread
+        fun ExecKeyBinding(keyNum: Int): Boolean { // commands that are used by the async thread
             // don't add text
             if (keys[keyNum].usercmdAction != 0) {
                 return false
@@ -696,8 +686,7 @@ object KeyInput {
             // send the bound action
             if (keys[keyNum].binding.Length() != 0) {
                 CmdSystem.cmdSystem.BufferCommandText(
-                    cmdExecution_t.CMD_EXEC_APPEND,
-                    keys[keyNum].binding.toString()
+                    cmdExecution_t.CMD_EXEC_APPEND, keys[keyNum].binding.toString()
                 )
                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "\n")
             }
@@ -715,9 +704,7 @@ object KeyInput {
                         if (keyName[0] != '\u0000') {
                             val sep = Common.common.GetLanguageDict().GetString("#str_07183")
                             idStr.Append(
-                                keyName,
-                                MAX_STRING_CHARS,
-                                if (sep.startsWith("#str_")) " or " else sep
+                                keyName, MAX_STRING_CHARS, if (sep.startsWith("#str_")) " or " else sep
                             )
                         }
                         idStr.Append(keyName, keyName.size, KeyNumToString(i, true)!!)
@@ -747,9 +734,7 @@ object KeyInput {
         }
 
         fun KeyIsBoundTo(keyNum: Int, binding: String): Boolean {
-            return if (keyNum >= 0 && keyNum < MAX_KEYS) {
-                keys[keyNum].binding.Icmp(binding) == 0
-            } else false
+            return keyNum >= 0 && keyNum < MAX_KEYS && keys[keyNum].binding.Icmp(binding) == 0
         }
 
         /*
@@ -834,8 +819,7 @@ object KeyInput {
                 return
             }
             b = idKeyInput.StringToKeyNum(args.Argv(1))
-            if (b == -1) {
-                // If it wasn't a key, it could be a command
+            if (b == -1) { // If it wasn't a key, it could be a command
                 if (!idKeyInput.UnbindBinding(args.Argv(1))) {
                     Common.common.Printf("\"%s\" isn't a valid key\n", args.Argv(1))
                 }
@@ -972,9 +956,7 @@ object KeyInput {
             while (i < MAX_KEYS) {
                 if (keys[i].binding.Length() != 0) {
                     Common.common.Printf(
-                        "%s \"%s\"\n",
-                        idKeyInput.KeyNumToString(i, false)!!,
-                        keys[i].binding.toString()
+                        "%s \"%s\"\n", idKeyInput.KeyNumToString(i, false)!!, keys[i].binding.toString()
                     )
                 }
                 i++

@@ -244,30 +244,54 @@ abstract class idCollisionModelManager {
 
     // Translates a trace model and reports the first collision if any.
     abstract fun Translation(
-        results: trace_s, start: idVec3, end: idVec3,
-        trm: idTraceModel?, trmAxis: idMat3, contentMask: Int,
-        model: Int, modelOrigin: idVec3, modelAxis: idMat3
+        results: trace_s,
+        start: idVec3,
+        end: idVec3,
+        trm: idTraceModel?,
+        trmAxis: idMat3,
+        contentMask: Int,
+        model: Int,
+        modelOrigin: idVec3,
+        modelAxis: idMat3
     )
 
     // Rotates a trace model and reports the first collision if any.
     abstract fun Rotation(
-        results: trace_s, start: idVec3, rotation: idRotation,
-        trm: idTraceModel, trmAxis: idMat3, contentMask: Int,
-        model: Int, modelOrigin: idVec3, modelAxis: idMat3
+        results: trace_s,
+        start: idVec3,
+        rotation: idRotation,
+        trm: idTraceModel,
+        trmAxis: idMat3,
+        contentMask: Int,
+        model: Int,
+        modelOrigin: idVec3,
+        modelAxis: idMat3
     )
 
     // Returns the contents touched by the trace model or 0 if the trace model is in free space.
     abstract fun Contents(
         start: idVec3,
-        trm: idTraceModel?, trmAxis: idMat3, contentMask: Int,
-        model: Int, modelOrigin: idVec3, modelAxis: idMat3
+        trm: idTraceModel?,
+        trmAxis: idMat3,
+        contentMask: Int,
+        model: Int,
+        modelOrigin: idVec3,
+        modelAxis: idMat3
     ): Int
 
     // Stores all contact points of the trace model with the model, returns the number of contacts.
     abstract fun Contacts(
-        contacts: Array<contactInfo_t>, maxContacts: Int, start: idVec3, dir: idVec6, depth: Float,
-        trm: idTraceModel, trmAxis: idMat3, contentMask: Int,
-        model: Int, origin: idVec3, modelAxis: idMat3
+        contacts: Array<contactInfo_t>,
+        maxContacts: Int,
+        start: idVec3,
+        dir: idVec6,
+        depth: Float,
+        trm: idTraceModel,
+        trmAxis: idMat3,
+        contentMask: Int,
+        model: Int,
+        origin: idVec3,
+        modelAxis: idMat3
     ): Int
 
     // Tests collision detection.
@@ -284,8 +308,6 @@ abstract class idCollisionModelManager {
 
     // Writes a collision model file for the given map entity.
     abstract fun WriteCollisionModelForMapEntity(
-        mapEnt: idMapEntity,
-        filename: String,
-        testTraceModel: Boolean /* = true*/
+        mapEnt: idMapEntity, filename: String, testTraceModel: Boolean /* = true*/
     ): Boolean
 }

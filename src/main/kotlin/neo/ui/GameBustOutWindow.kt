@@ -58,7 +58,7 @@ object GameBustOutWindow {
         POWERUP_MULTIBALL
     }
 
-    class BOEntity(//
+    class BOEntity( //
         var game: idGameBustOutWindow
     ) {
         val color: idVec4 = idVec4()
@@ -158,15 +158,7 @@ object GameBustOutWindow {
         fun Draw(dc: idDeviceContext) {
             if (visible) {
                 dc.DrawMaterialRotated(
-                    position.x,
-                    position.y,
-                    width,
-                    height,
-                    material,
-                    color,
-                    1.0f,
-                    1.0f,
-                    DEG2RAD(0.0f)
+                    position.x, position.y, width, height, material, color, 1.0f, 1.0f, DEG2RAD(0.0f)
                 )
             }
         }
@@ -279,8 +271,7 @@ object GameBustOutWindow {
                     }
                 }
             }
-            if (result == collideDir_t.COLLIDE_NONE) {
-                // Top
+            if (result == collideDir_t.COLLIDE_NONE) { // Top
                 ptA.y = y
                 ptB.y = y
                 if (vel.y > 0 && pos.y < ptA.y) {
@@ -302,8 +293,7 @@ object GameBustOutWindow {
                         }
                     }
                 }
-                if (result == collideDir_t.COLLIDE_NONE) {
-                    // Left side
+                if (result == collideDir_t.COLLIDE_NONE) { // Left side
                     ptA.x = x
                     ptA.y = y
                     ptB.x = x
@@ -327,8 +317,7 @@ object GameBustOutWindow {
                             }
                         }
                     }
-                    if (result == collideDir_t.COLLIDE_NONE) {
-                        // Right side
+                    if (result == collideDir_t.COLLIDE_NONE) { // Right side
                         ptA.x = x + width
                         ptB.x = x + width
                         if (vel.x < 0 && pos.x > ptA.x) {
@@ -498,7 +487,7 @@ object GameBustOutWindow {
             super.ReadFromSaveGame(savefile)
 
             // Clear out existing paddle and entities from GUI load
-//	delete paddle;
+            //	delete paddle;
             entities.DeleteContents(true)
             gamerunning.ReadFromSaveGame(savefile)
             onFire.ReadFromSaveGame(savefile)
@@ -584,8 +573,7 @@ object GameBustOutWindow {
                 if (0 == event.evValue2) {
                     return ret
                 }
-                if (key == K_MOUSE1) {
-                    // Mouse was clicked
+                if (key == K_MOUSE1) { // Mouse was clicked
                     if (ballsInPlay == 0) {
                         val ball = CreateNewBall()
                         ball.SetVisible(true)
@@ -617,9 +605,7 @@ object GameBustOutWindow {
 
         //
         override fun GetWinVarByName(
-            _name: String?,
-            winLookup: Boolean /*= false*/,
-            owner: Array<drawWin_t?>? /*= NULL*/
+            _name: String?, winLookup: Boolean /*= false*/, owner: Array<drawWin_t?>? /*= NULL*/
         ): idWinVar? {
             var retVar: idWinVar? = null
             if (Icmp(_name!!, "gamerunning") == 0) {
@@ -744,7 +730,7 @@ object GameBustOutWindow {
                         Common.common.DWarning("Hell Bust-Out level image not correct dimensions! (%d x %d)", w, h)
                     }
 
-//			memcpy( currentBoard, pic, boardSize );
+                    //			memcpy( currentBoard, pic, boardSize );
                     val picBytes = ByteArray(boardSize)
                     pic.position(0)
                     pic.get(picBytes, 0, boardSize)
@@ -843,8 +829,7 @@ object GameBustOutWindow {
                 i = entities.Num() - 1
                 while (i >= 0) {
                     if (entities[i]!!.removed) {
-                        entities[i]
-                        //				delete ent;
+                        entities[i] //				delete ent;
                         entities.RemoveIndex(i)
                     }
                     i--
@@ -1005,8 +990,7 @@ object GameBustOutWindow {
                     while (j < num) {
                         val brick = board[i]!![j]
                         collision = brick.checkCollision(ballCenter, ball.velocity)
-                        if (collision != collideDir_t.COLLIDE_NONE) {
-                            // Now break the brick if there was a collision
+                        if (collision != collideDir_t.COLLIDE_NONE) { // Now break the brick if there was a collision
                             brick.isBroken = true
                             brick.ent!!.fadeOut = true
                             if (brick.powerup.ordinal > powerupType_t.POWERUP_NONE.ordinal) {

@@ -36,8 +36,7 @@ object win_cpu {
      Sys_FPU_SetDAZ
      ================
      */
-    fun Sys_FPU_SetDAZ(enable: Boolean) {
-        // No-op on JVM — JVM manages its own FP denormal handling
+    fun Sys_FPU_SetDAZ(enable: Boolean) { // No-op on JVM — JVM manages its own FP denormal handling
         if (enable) {
             common.Printf("Denormals-Are-Zero mode requested (JVM manages FP internally)\n")
         }
@@ -48,8 +47,7 @@ object win_cpu {
      Sys_FPU_SetFTZ
      ================
      */
-    fun Sys_FPU_SetFTZ(enable: Boolean) {
-        // No-op on JVM — JVM manages its own FP flush-to-zero behavior
+    fun Sys_FPU_SetFTZ(enable: Boolean) { // No-op on JVM — JVM manages its own FP flush-to-zero behavior
         if (enable) {
             common.Printf("Flush-To-Zero mode requested (JVM manages FP internally)\n")
         }
@@ -60,8 +58,7 @@ object win_cpu {
      Sys_GetProcessorId
      ================
      */
-    fun Sys_GetProcessorId(): Int {
-        // On JVM, assume modern x86 capabilities
+    fun Sys_GetProcessorId(): Int { // On JVM, assume modern x86 capabilities
         var flags = CPUID_GENERIC
 
         flags = flags or CPUID_MMX
@@ -77,7 +74,6 @@ object win_cpu {
      Sys_FPU_SetPrecision
      ================
      */
-    fun Sys_FPU_SetPrecision() {
-        // No-op on JVM — always uses IEEE 754 double precision
+    fun Sys_FPU_SetPrecision() { // No-op on JVM — always uses IEEE 754 double precision
     }
 }

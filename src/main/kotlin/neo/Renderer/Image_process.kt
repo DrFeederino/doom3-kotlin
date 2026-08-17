@@ -48,11 +48,7 @@ object Image_process {
      ================
      */
     fun R_ResampleTexture(
-        `in`: ByteBuffer,
-        inwidth: Int,
-        inheight: Int,
-        _outwidth: CInt,
-        _outheight: CInt
+        `in`: ByteBuffer, inwidth: Int, inheight: Int, _outwidth: CInt, _outheight: CInt
     ): ByteBuffer {
         var outwidth: Int = _outwidth._val
         var outheight: Int = _outheight._val
@@ -68,11 +64,10 @@ object Image_process {
         }
         if (outheight > MAX_DIMENSION) {
             outheight = MAX_DIMENSION
-        }
-        // write clamped values back
+        } // write clamped values back
         _outwidth._val = outwidth
-        _outheight._val = outheight
-        // FIX: was ByteBuffer.allocate() (heap) — must be direct for potential OpenGL upload
+        _outheight._val =
+            outheight // FIX: was ByteBuffer.allocate() (heap) — must be direct for potential OpenGL upload
         out = BufferUtils.createByteBuffer(outwidth * outheight * 4)
         fracstep = inwidth * 0x10000 / outwidth
         frac = fracstep shr 2
@@ -90,8 +85,7 @@ object Image_process {
             i++
         }
         i = 0
-        while (i < outheight) {
-            // Use absolute byte offsets for row/column addressing
+        while (i < outheight) { // Use absolute byte offsets for row/column addressing
             val inrowOff = 4 * inwidth * (((i + 0.25f) * inheight / outheight).toInt())
             val inrow2Off = 4 * inwidth * (((i + 0.75f) * inheight / outheight).toInt())
             j = 0
@@ -102,34 +96,22 @@ object Image_process {
                 val pix4Off = inrow2Off + p2[j]
                 out.put(
                     (addUnsignedBytes(
-                        `in`.get(pix1Off),
-                        `in`.get(pix2Off),
-                        `in`.get(pix3Off),
-                        `in`.get(pix4Off)
+                        `in`.get(pix1Off), `in`.get(pix2Off), `in`.get(pix3Off), `in`.get(pix4Off)
                     ) shr 2).toByte()
                 )
                 out.put(
                     (addUnsignedBytes(
-                        `in`.get(pix1Off + 1),
-                        `in`.get(pix2Off + 1),
-                        `in`.get(pix3Off + 1),
-                        `in`.get(pix4Off + 1)
+                        `in`.get(pix1Off + 1), `in`.get(pix2Off + 1), `in`.get(pix3Off + 1), `in`.get(pix4Off + 1)
                     ) shr 2).toByte()
                 )
                 out.put(
                     (addUnsignedBytes(
-                        `in`.get(pix1Off + 2),
-                        `in`.get(pix2Off + 2),
-                        `in`.get(pix3Off + 2),
-                        `in`.get(pix4Off + 2)
+                        `in`.get(pix1Off + 2), `in`.get(pix2Off + 2), `in`.get(pix3Off + 2), `in`.get(pix4Off + 2)
                     ) shr 2).toByte()
                 )
                 out.put(
                     (addUnsignedBytes(
-                        `in`.get(pix1Off + 3),
-                        `in`.get(pix2Off + 3),
-                        `in`.get(pix3Off + 3),
-                        `in`.get(pix4Off + 3)
+                        `in`.get(pix1Off + 3), `in`.get(pix2Off + 3), `in`.get(pix3Off + 3), `in`.get(pix4Off + 3)
                     ) shr 2).toByte()
                 )
                 j++
@@ -397,39 +379,23 @@ object Image_process {
             j = 0
             while (j < width) {
                 out.put(
-                    out_p + 0,
-                    (addUnsignedBytes(
-                        `in`.get(in_p + 0),
-                        `in`.get(in_p + 4),
-                        `in`.get(in_p + row + 0),
-                        `in`.get(in_p + row + 4)
+                    out_p + 0, (addUnsignedBytes(
+                        `in`.get(in_p + 0), `in`.get(in_p + 4), `in`.get(in_p + row + 0), `in`.get(in_p + row + 4)
                     ) shr 2).toByte()
                 )
                 out.put(
-                    out_p + 1,
-                    (addUnsignedBytes(
-                        `in`.get(in_p + 1),
-                        `in`.get(in_p + 5),
-                        `in`.get(in_p + row + 1),
-                        `in`.get(in_p + row + 5)
+                    out_p + 1, (addUnsignedBytes(
+                        `in`.get(in_p + 1), `in`.get(in_p + 5), `in`.get(in_p + row + 1), `in`.get(in_p + row + 5)
                     ) shr 2).toByte()
                 )
                 out.put(
-                    out_p + 2,
-                    (addUnsignedBytes(
-                        `in`.get(in_p + 2),
-                        `in`.get(in_p + 6),
-                        `in`.get(in_p + row + 2),
-                        `in`.get(in_p + row + 6)
+                    out_p + 2, (addUnsignedBytes(
+                        `in`.get(in_p + 2), `in`.get(in_p + 6), `in`.get(in_p + row + 2), `in`.get(in_p + row + 6)
                     ) shr 2).toByte()
                 )
                 out.put(
-                    out_p + 3,
-                    (addUnsignedBytes(
-                        `in`.get(in_p + 3),
-                        `in`.get(in_p + 7),
-                        `in`.get(in_p + row + 3),
-                        `in`.get(in_p + row + 7)
+                    out_p + 3, (addUnsignedBytes(
+                        `in`.get(in_p + 3), `in`.get(in_p + 7), `in`.get(in_p + row + 3), `in`.get(in_p + row + 7)
                     ) shr 2).toByte()
                 )
                 j++
@@ -452,24 +418,13 @@ object Image_process {
     }
 
     fun addUnsignedBytes(b0: Byte, b1: Byte, b2: Byte, b3: Byte): Int {
-        return (b0.toInt() and 0xFF) +
-                (b1.toInt() and 0xFF) +
-                (b2.toInt() and 0xFF) +
-                (b3.toInt() and 0xFF)
+        return (b0.toInt() and 0xFF) + (b1.toInt() and 0xFF) + (b2.toInt() and 0xFF) + (b3.toInt() and 0xFF)
     }
 
     fun addUnsignedBytes(
-        b0: Byte, b1: Byte, b2: Byte, b3: Byte,
-        b4: Byte, b5: Byte, b6: Byte, b7: Byte
+        b0: Byte, b1: Byte, b2: Byte, b3: Byte, b4: Byte, b5: Byte, b6: Byte, b7: Byte
     ): Int {
-        return (b0.toInt() and 0xFF) +
-                (b1.toInt() and 0xFF) +
-                (b2.toInt() and 0xFF) +
-                (b3.toInt() and 0xFF) +
-                (b4.toInt() and 0xFF) +
-                (b5.toInt() and 0xFF) +
-                (b6.toInt() and 0xFF) +
-                (b7.toInt() and 0xFF)
+        return (b0.toInt() and 0xFF) + (b1.toInt() and 0xFF) + (b2.toInt() and 0xFF) + (b3.toInt() and 0xFF) + (b4.toInt() and 0xFF) + (b5.toInt() and 0xFF) + (b6.toInt() and 0xFF) + (b7.toInt() and 0xFF)
     }
 
     /*
@@ -518,8 +473,7 @@ object Image_process {
         newWidth = width shr 1
         newHeight = height shr 1
         newDepth = depth shr 1
-        out =
-            ByteBuffer.allocate(newWidth * newHeight * newDepth * 4)
+        out = ByteBuffer.allocate(newWidth * newHeight * newDepth * 4)
         out_p = 0
         in_p = 0
         width = width shr 1
@@ -617,16 +571,13 @@ object Image_process {
         for (i in 0 until pixelCount) {
             val off = i * 4
             data?.put(
-                off + 0,
-                (((data.get(off + 0).toInt() and 0xFF) * inverseAlpha + premult[0]) shr 9).toByte()
+                off + 0, (((data.get(off + 0).toInt() and 0xFF) * inverseAlpha + premult[0]) shr 9).toByte()
             )
             data?.put(
-                off + 1,
-                (((data.get(off + 1).toInt() and 0xFF) * inverseAlpha + premult[1]) shr 9).toByte()
+                off + 1, (((data.get(off + 1).toInt() and 0xFF) * inverseAlpha + premult[1]) shr 9).toByte()
             )
             data?.put(
-                off + 2,
-                (((data.get(off + 2).toInt() and 0xFF) * inverseAlpha + premult[2]) shr 9).toByte()
+                off + 2, (((data.get(off + 2).toInt() and 0xFF) * inverseAlpha + premult[2]) shr 9).toByte()
             )
         }
     }
@@ -645,8 +596,7 @@ object Image_process {
         i = 0
         while (i < height) {
             j = 0
-            while (j < width / 2) {
-                // ByteBuffer getInt/putInt uses byte offset (C++ *(int*)data uses 4-byte elements)
+            while (j < width / 2) { // ByteBuffer getInt/putInt uses byte offset (C++ *(int*)data uses 4-byte elements)
                 temp = data!!.getInt((i * width + j) * 4)
                 data.putInt((i * width + j) * 4, data.getInt((i * width + width - 1 - j) * 4))
                 data.putInt((i * width + width - 1 - j) * 4, temp)
@@ -663,8 +613,7 @@ object Image_process {
         i = 0
         while (i < width) {
             j = 0
-            while (j < height / 2) {
-                // ByteBuffer getInt/putInt uses byte offset (C++ *(int*)data uses 4-byte elements)
+            while (j < height / 2) { // ByteBuffer getInt/putInt uses byte offset (C++ *(int*)data uses 4-byte elements)
                 temp = data!!.getInt((j * width + i) * 4)
                 val index: Int = ((height - 1 - j) * width + i) * 4
                 data.putInt((j * width + i) * 4, data.getInt(index))
@@ -683,8 +632,7 @@ object Image_process {
         i = 0
         while (i < width) {
             j = 0
-            while (j < width) {
-                // ByteBuffer getInt/putInt uses byte offset (C++ *(int*)data uses 4-byte elements)
+            while (j < width) { // ByteBuffer getInt/putInt uses byte offset (C++ *(int*)data uses 4-byte elements)
                 temp.putInt((i * width + j) * 4, data!!.getInt((j * width + i) * 4))
                 j++
             }

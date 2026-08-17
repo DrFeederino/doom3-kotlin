@@ -32,12 +32,7 @@ object Extrapolate {
         private var startValue: T = _Copy(value)
 
         fun Init(
-            startTime: Float,
-            duration: Float,
-            startValue: T,
-            baseSpeed: T,
-            speed: T,
-            extrapolationType: Int
+            startTime: Float, duration: Float, startValue: T, baseSpeed: T, speed: T, extrapolationType: Int
         ) {
             this.extrapolationType = extrapolationType
             this.startTime = startTime
@@ -176,7 +171,7 @@ object Extrapolate {
                 else -> {
                     return baseSpeed!!
                 }
-            } as T
+            }
         }
 
         fun IsDone(time: Float): Boolean {

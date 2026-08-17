@@ -41,8 +41,7 @@ import org.lwjgl.PointerBuffer
 import org.lwjgl.stb.STBVorbis
 import java.nio.FloatBuffer
 
-object snd_decoder {
-    /*
+object snd_decoder {/*
      ===================================================================================
 
        Thread safe decoder memory allocator.
@@ -50,8 +49,7 @@ object snd_decoder {
        Each OggVorbis decoder consumes about 150kB of memory.
 
      ===================================================================================
-     */
-    // NOTE: Kotlin-only — decoderMemoryAllocator and custom malloc/calloc/realloc/free
+     */ // NOTE: Kotlin-only — decoderMemoryAllocator and custom malloc/calloc/realloc/free
     // are not needed; JVM handles memory management. dhewm3 kept these from original
     // id Tech 4 but noted they're unused with stb_vorbis.
 
@@ -155,8 +153,7 @@ object snd_decoder {
 
             lastDecodeTime = snd_system.soundSystemLocal.CurrentSoundTime
 
-            if (failed) {
-                // FIX: Was dest.array() which crashes on direct FloatBuffers
+            if (failed) { // FIX: Was dest.array() which crashes on direct FloatBuffers
                 for (i in 0 until sampleCount44k) {
                     dest.put(i, 0.0f)
                 }
@@ -183,8 +180,7 @@ object snd_decoder {
                 win_main.Sys_LeaveCriticalSection(CRITICAL_SECTION_ONE)
             }
 
-            if (readSamples44k < sampleCount44k) {
-                // FIX: Was dest.array() which crashes on direct FloatBuffers
+            if (readSamples44k < sampleCount44k) { // FIX: Was dest.array() which crashes on direct FloatBuffers
                 for (i in readSamples44k until sampleCount44k) {
                     dest.put(i, 0.0f)
                 }
@@ -250,8 +246,7 @@ object snd_decoder {
          ====================
          idSampleDecoderLocal::DecodePCM
          ====================
-         */
-        // FIX: Was a stub throwing TODO_Exception — now fully implemented from C++ source
+         */ // FIX: Was a stub throwing TODO_Exception — now fully implemented from C++ source
         fun DecodePCM(sample: idSoundSample, sampleOffset44k: Int, sampleCount44k: Int, dest: FloatBuffer): Int {
             lastFormat = snd_local.WAVE_FORMAT_TAG_PCM
             lastSample = sample
@@ -260,13 +255,11 @@ object snd_decoder {
             val sampleOffset = sampleOffset44k shr shift
             val sampleCount = sampleCount44k shr shift
 
-            if (sample.nonCacheData == null) {
-                // this should never happen ( note: I've seen that happen with the main thread
+            if (sample.nonCacheData == null) { // this should never happen ( note: I've seen that happen with the main thread
                 // down in idGameLocal::MapClear clearing entities - TTimo )
                 // DG: see comment in DecodeOGG()
                 Common.common.Warning(
-                    "Called idSampleDecoderLocal::DecodePCM() on idSoundSample '%s' without nonCacheData\n",
-                    sample.name
+                    "Called idSampleDecoderLocal::DecodePCM() on idSoundSample '%s' without nonCacheData\n", sample.name
                 )
                 failed = true
                 return 0
@@ -299,8 +292,11 @@ object snd_decoder {
             // NOTE: Differs from C++ — SIMDProcessor.UpSamplePCMTo44kHz takes FloatArray, not FloatBuffer
             // We use a temp array and copy back to the FloatBuffer
             SIMDProcessor!!.UpSamplePCMTo44kHz(
-                pcmFloatScratch, pcmShortScratch, readSamples,
-                sample.objectInfo.nSamplesPerSec, sample.objectInfo.nChannels
+                pcmFloatScratch,
+                pcmShortScratch,
+                readSamples,
+                sample.objectInfo.nSamplesPerSec,
+                sample.objectInfo.nChannels
             )
             for (i in 0 until (readSamples shl shift)) {
                 dest.put(i, pcmFloatScratch[i])
@@ -324,8 +320,7 @@ object snd_decoder {
 
             // open OGG file if not yet opened
             if (lastSample == null) {
-                if (sample.nonCacheData == null) {
-                    // DG: turned this assertion into a warning, because this can happen, at least with
+                if (sample.nonCacheData == null) { // DG: turned this assertion into a warning, because this can happen, at least with
                     // the Classic Doom3 mod (when starting a new game). See dhewm3 issue #461
                     Common.common.Warning(
                         "Called idSampleDecoderLocal::DecodeOGG() on idSoundSample '%s' without nonCacheData\n",
@@ -338,11 +333,11 @@ object snd_decoder {
                 file.SetData(sample.nonCacheData!!, sample.objectMemSize)
                 oggOpenError[0] = 0
                 ogg = ov_openFile(file, oggOpenError)
-                if (oggOpenError[0] != 0) {
-                    // FIX: Was using java.util.logging.Logger — matches C++ common->Warning()
+                if (oggOpenError[0] != 0) { // FIX: Was using java.util.logging.Logger — matches C++ common->Warning()
                     Common.common.Warning(
                         "idSampleDecoderLocal::DecodeOGG() stb_vorbis_open_memory() for %s failed: %s\n",
-                        sample.name, getErrorMessage(oggOpenError[0])
+                        sample.name,
+                        getErrorMessage(oggOpenError[0])
                     )
                     failed = true
                     return 0
@@ -364,7 +359,9 @@ object snd_decoder {
                     val stbVorbErr = STBVorbis.stb_vorbis_get_error(ogg)
                     Common.common.Warning(
                         "idSampleDecoderLocal::DecodeOGG() stb_vorbis_seek(%d) for %s failed: %s\n",
-                        sampleOffset / sample.objectInfo.nChannels, sample.name, getErrorMessage(stbVorbErr)
+                        sampleOffset / sample.objectInfo.nChannels,
+                        sample.name,
+                        getErrorMessage(stbVorbErr)
                     )
                     failed = true
                     return 0
@@ -386,8 +383,7 @@ object snd_decoder {
             }
             val samplesArray = oggSamplesArray
 
-            do {
-                // DG: in contrast to libvorbisfile's ov_read_float(), stb_vorbis_get_samples_float()
+            do { // DG: in contrast to libvorbisfile's ov_read_float(), stb_vorbis_get_samples_float()
                 // expects you to pass a buffer to store the decoded samples in,
                 // so limit it to MIXBUFFER_SAMPLES samples/channel per iteration
                 val reqSamples = Min(MIXBUFFER_SAMPLES, totalSamples / nChannels)
@@ -395,8 +391,7 @@ object snd_decoder {
                 // (can happen with stereo files and odd sample counts)
                 if (reqSamples == 0) {
                     Common.common.DPrintf(
-                        "idSampleDecoderLocal::DecodeOGG() reqSamples == 0\n  for %s ?!\n",
-                        sample.name
+                        "idSampleDecoderLocal::DecodeOGG() reqSamples == 0\n  for %s ?!\n", sample.name
                     )
                     readSamples += totalSamples
                     totalSamples = 0
@@ -410,19 +405,23 @@ object snd_decoder {
                 }
 
                 var ret = STBVorbis.stb_vorbis_get_samples_float(ogg, samples, reqSamples)
-                if (ret == 0) {
-                    // Accept up to 5 "dropped" samples if there's no actual error
+                if (ret == 0) { // Accept up to 5 "dropped" samples if there's no actual error
                     val stbVorbErr = STBVorbis.stb_vorbis_get_error(ogg)
                     if (stbVorbErr == STBVorbis.VORBIS__no_error && reqSamples < 5) {
                         ret = reqSamples // pretend decoding went ok
                         Common.common.DPrintf(
                             "idSampleDecoderLocal::DecodeOGG() IGNORING stb_vorbis_get_samples_float() dropping %d (%d) samples\n  for %s\n",
-                            reqSamples, totalSamples, sample.name
+                            reqSamples,
+                            totalSamples,
+                            sample.name
                         )
                     } else {
                         Common.common.Warning(
                             "idSampleDecoderLocal::DecodeOGG() stb_vorbis_get_samples_float() %d (%d) samples\n  for %s failed: %s\n",
-                            reqSamples, totalSamples, sample.name, getErrorMessage(stbVorbErr)
+                            reqSamples,
+                            totalSamples,
+                            sample.name,
+                            getErrorMessage(stbVorbErr)
                         )
                         failed = true
                         break
@@ -438,12 +437,7 @@ object snd_decoder {
                     channelBuffers[i].get(samplesArray[i], 0, reqSamples)
                 }
                 SIMDProcessor!!.UpSampleOGGTo44kHz(
-                    dest,
-                    readSamples shl shift,
-                    samplesArray,
-                    ret,
-                    sample.objectInfo.nSamplesPerSec,
-                    nChannels
+                    dest, readSamples shl shift, samplesArray, ret, sample.objectInfo.nSamplesPerSec, nChannels
                 )
                 readSamples += ret
                 totalSamples -= ret

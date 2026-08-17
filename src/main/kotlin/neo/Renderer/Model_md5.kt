@@ -203,8 +203,7 @@ object Model_md5 {
                 j = 0
                 while (j < numWeightsForVertex[i]) {
                     scaledWeights!![count] = idVec4()
-                    scaledWeights!![count]!!
-                        .set(tempWeights[num].offset.times(tempWeights[num].jointWeight))
+                    scaledWeights!![count]!!.set(tempWeights[num].offset.times(tempWeights[num].jointWeight))
                     scaledWeights!![count]!!.w = tempWeights[num].jointWeight
                     weightIndex!![count * 2 + 0] = tempWeights[num].joint * idJointMat.SIZE
                     j++
@@ -241,8 +240,7 @@ object Model_md5 {
                 i++
             }
             TransformVerts(verts, joints)
-            deformInfo =
-                R_BuildDeformInfo(texCoords.Num(), verts, tris.Num(), tris, shader!!.UseUnsmoothedTangents())
+            deformInfo = R_BuildDeformInfo(texCoords.Num(), verts, tris.Num(), tris, shader!!.UseUnsmoothedTangents())
         }
 
         fun UpdateSurface(ent: renderEntity_s?, entJoints: Array<idJointMat?>, surf: modelSurface_s?) {
@@ -253,8 +251,7 @@ object Model_md5 {
             tr.pc!!.c_deformedVerts += deformInfo!!.numOutputVerts
             tr.pc!!.c_deformedIndexes += deformInfo!!.numIndexes
             surf!!.shader = shader
-            if (surf.geometry != null) {
-                // if the number of verts and indexes are the same we can re-use the triangle surface
+            if (surf.geometry != null) { // if the number of verts and indexes are the same we can re-use the triangle surface
                 // the number of indexes must be the same to assure the correct amount of memory is allocated for the facePlanes
                 if (surf.geometry!!.numVerts == deformInfo!!.numOutputVerts && surf.geometry!!.numIndexes == deformInfo!!.numIndexes) {
                     R_FreeStaticTriSurfVertexCaches(surf.geometry!!)
@@ -286,8 +283,8 @@ object Model_md5 {
                 R_AllocStaticTriSurfVerts(tri, tri.numVerts)
                 i = 0
                 while (i < deformInfo!!.numSourceVerts) {
-                    tri.verts!![i]!!.Clear()
-                    tri.verts!![i]!!.st.set(texCoords[i])
+                    tri.verts!![i].Clear()
+                    tri.verts!![i].st.set(texCoords[i])
                     i++
                 }
             }
@@ -314,8 +311,7 @@ object Model_md5 {
             // R_DeriveTangents() to get normals, tangents, and face planes.  If it only
             // needs shadows generated, it will only have to generate face planes.  If it only
             // has ambient drawing, or is culled, no additional work will be necessary
-            if (!r_useDeferredTangents!!.GetBool()) {
-                // set face planes, vertex normals, tangents
+            if (!r_useDeferredTangents.GetBool()) { // set face planes, vertex normals, tangents
                 R_DeriveTangents(tri)
             }
         }
@@ -324,7 +320,7 @@ object Model_md5 {
             val bounds = idBounds()
             val verts: Array<idDrawVert> = Array(texCoords.Num()) { idDrawVert() }
             TransformVerts(verts, entJoints)
-            SIMDProcessor!!.MinMax(bounds[0], bounds[1], verts as Array<idDrawVert>, texCoords.Num())
+            SIMDProcessor!!.MinMax(bounds[0], bounds[1], verts, texCoords.Num())
             return bounds
         }
 
@@ -342,8 +338,7 @@ object Model_md5 {
                 vertNum = b
             } else if (c >= 0 && c < texCoords.Num()) {
                 vertNum = c
-            } else {
-                // all vertices are duplicates which shouldn't happen
+            } else { // all vertices are duplicates which shouldn't happen
                 return 0
             }
 
@@ -409,12 +404,7 @@ object Model_md5 {
                 w
             }
             SIMDProcessor!!.TransformVerts(
-                verts,
-                texCoords.Num(),
-                entJoints,
-                localWeights,
-                weightIndex!!,
-                numWeights
+                verts, texCoords.Num(), entJoints, localWeights, weightIndex!!, numWeights
             )
         }
     }
@@ -442,8 +432,7 @@ object Model_md5 {
          ====================
          */
         override fun Bounds(ent: renderEntity_s?): idBounds {
-            if (null == ent) {
-                // this is the bounds for the reference pose
+            if (null == ent) { // this is the bounds for the reference pose
                 return bounds
             }
             return ent.bounds
@@ -486,12 +475,7 @@ object Model_md5 {
                 totalVerts += mesh.NumVerts()
             }
             Common.common.Printf(
-                " %4dk %3d %4d %4d %s(MD5)",
-                Memory() / 1024,
-                meshes.Num(),
-                totalVerts,
-                totalTris,
-                Name()
+                " %4dk %3d %4d %4d %s(MD5)", Memory() / 1024, meshes.Num(), totalVerts, totalTris, Name()
             )
             if (defaulted) {
                 Common.common.Printf(" (DEFAULTED)")
@@ -602,8 +586,7 @@ object Model_md5 {
                         (poseMat3[i]!!.ToMat3().times(poseMat3[parentNum]!!.ToMat3().Transpose())).ToQuat()
                     )
                     pose.t.set(
-                        (poseMat3[i]!!
-                            .ToVec3().minus(poseMat3[parentNum]!!.ToVec3())).times(
+                        (poseMat3[i]!!.ToVec3().minus(poseMat3[parentNum]!!.ToVec3())).times(
                                 poseMat3[parentNum]!!.ToMat3().Transpose()
                             )
                     )
@@ -650,14 +633,12 @@ object Model_md5 {
         }
 
         override fun InstantiateDynamicModel(
-            ent: renderEntity_s?,
-            view: viewDef_s?,
-            cachedModel: idRenderModel?
+            ent: renderEntity_s?, view: viewDef_s?, cachedModel: idRenderModel?
         ): idRenderModel? {
             var cachedModel: idRenderModel? = cachedModel
             val surfaceNum = CInt()
             val staticModel: idRenderModelStatic
-            if (cachedModel != null && !r_useCachedDynamicModels!!.GetBool()) {
+            if (cachedModel != null && !r_useCachedDynamicModels.GetBool()) {
                 cachedModel = null
             }
             if (purged) {
@@ -666,8 +647,7 @@ object Model_md5 {
             }
             if (null == ent!!.joints) {
                 Common.common.Printf(
-                    "idRenderModelMD5::InstantiateDynamicModel: NULL joints on renderEntity for '%s'\n",
-                    Name()
+                    "idRenderModelMD5::InstantiateDynamicModel: NULL joints on renderEntity for '%s'\n", Name()
                 )
                 return null
             } else if (ent.numJoints != joints.Num()) {
@@ -687,13 +667,11 @@ object Model_md5 {
                 staticModel.InitEmpty(MD5_SnapshotName)
             }
             staticModel.bounds.Clear()
-            if (r_showSkel!!.GetInteger() != 0) {
-                if ((view != null) && (!r_skipSuppress!!.GetBool() || (0 == ent.suppressSurfaceInViewID) || (ent.suppressSurfaceInViewID != view.renderView.viewID))) {
-                    // only draw the skeleton
+            if (r_showSkel.GetInteger() != 0) {
+                if ((view != null) && (!r_skipSuppress.GetBool() || (0 == ent.suppressSurfaceInViewID) || (ent.suppressSurfaceInViewID != view.renderView.viewID))) { // only draw the skeleton
                     DrawJoints(ent, view)
                 }
-                if (r_showSkel!!.GetInteger() > 1) {
-                    // turn off the model when showing the skeleton
+                if (r_showSkel.GetInteger() > 1) { // turn off the model when showing the skeleton
                     staticModel.InitEmpty(MD5_SnapshotName)
                     return staticModel
                 }
@@ -834,27 +812,22 @@ object Model_md5 {
             val bounds = idBounds()
             bounds.FromTransformedBounds(ent.bounds, vec3_zero, ent.axis)
             Session.session.rw.DebugBounds(colorMagenta, bounds, ent.origin)
-            if ((r_jointNameScale!!.GetFloat() != 0.0f) && (bounds.Expand(128.0f).ContainsPoint(
+            if ((r_jointNameScale.GetFloat() != 0.0f) && (bounds.Expand(128.0f).ContainsPoint(
                     view.renderView.vieworg.minus(
                         ent.origin
                     )
                 ))
             ) {
-                val offset = idVec3(0.0f, 0.0f, r_jointNameOffset!!.GetFloat())
+                val offset = idVec3(0.0f, 0.0f, r_jointNameOffset.GetFloat())
                 val scale: Float
-                scale = r_jointNameScale!!.GetFloat()
+                scale = r_jointNameScale.GetFloat()
                 num = ent.numJoints
                 i = 0
                 while (i < num) {
                     joint = ent.joints!![i]!!
                     pos.set(ent.origin.plus(joint.ToVec3().times(ent.axis)))
                     Session.session.rw.DrawText(
-                        joints[i]!!.name.toString(),
-                        pos.plus(offset),
-                        scale,
-                        colorWhite,
-                        view.renderView.viewaxis,
-                        1
+                        joints[i]!!.name.toString(), pos.plus(offset), scale, colorWhite, view.renderView.viewaxis, 1
                     )
                     i++
                 }

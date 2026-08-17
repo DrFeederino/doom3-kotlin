@@ -501,13 +501,25 @@ class Physics_Static {
         override fun ClipTranslation(results: trace_s, translation: idVec3, model: idClipModel?) {
             if (model != null) {
                 Game_local.gameLocal.clip.TranslationModel(
-                    results, current.origin, current.origin + translation,
-                    clipModel, current.axis, Game_local.MASK_SOLID, model.Handle(), model.GetOrigin(), model.GetAxis()
+                    results,
+                    current.origin,
+                    current.origin + translation,
+                    clipModel,
+                    current.axis,
+                    Game_local.MASK_SOLID,
+                    model.Handle(),
+                    model.GetOrigin(),
+                    model.GetAxis()
                 )
             } else {
                 Game_local.gameLocal.clip.Translation(
-                    results, current.origin, current.origin + translation,
-                    clipModel, current.axis, Game_local.MASK_SOLID, self
+                    results,
+                    current.origin,
+                    current.origin + translation,
+                    clipModel,
+                    current.axis,
+                    Game_local.MASK_SOLID,
+                    self
                 )
             }
         }
@@ -520,18 +532,15 @@ class Physics_Static {
         override fun ClipRotation(results: trace_s, rotation: idRotation, model: idClipModel?) {
             if (model != null) {
                 Game_local.gameLocal.clip.RotationModel(
-                    results, current.origin, rotation,
-                    clipModel, current.axis, Game_local.MASK_SOLID, model.Handle(), model.GetOrigin(), model.GetAxis()
-                )
-            } else {
-                Game_local.gameLocal.clip.Rotation(
                     results,
                     current.origin,
                     rotation,
                     clipModel,
-                    current.axis,
-                    Game_local.MASK_SOLID,
-                    self
+                    current.axis, Game_local.MASK_SOLID, model.Handle(), model.GetOrigin(), model.GetAxis()
+                )
+            } else {
+                Game_local.gameLocal.clip.Rotation(
+                    results, current.origin, rotation, clipModel, current.axis, Game_local.MASK_SOLID, self
                 )
             }
         }
@@ -545,16 +554,13 @@ class Physics_Static {
             return if (clipModel != null) {
                 if (model != null) {
                     Game_local.gameLocal.clip.ContentsModel(
-                        clipModel!!.GetOrigin(), clipModel, clipModel!!.GetAxis(), -1,
-                        model.Handle(), model.GetOrigin(), model.GetAxis()
+                        clipModel!!.GetOrigin(),
+                        clipModel,
+                        clipModel!!.GetAxis(), -1, model.Handle(), model.GetOrigin(), model.GetAxis()
                     )
                 } else {
                     Game_local.gameLocal.clip.Contents(
-                        clipModel!!.GetOrigin(),
-                        clipModel,
-                        clipModel!!.GetAxis(),
-                        -1,
-                        null
+                        clipModel!!.GetOrigin(), clipModel, clipModel!!.GetAxis(), -1, null
                     )
                 }
             } else 0
@@ -703,8 +709,7 @@ class Physics_Static {
         */
         override fun SetMaster(master: idEntity?, orientated: Boolean /*= true*/) {
             if (master != null) {
-                if (!hasMaster) {
-                    // transform from world space to master space
+                if (!hasMaster) { // transform from world space to master space
                     self!!.GetMasterPosition(masterOriginScratch, masterAxisScratch)
                     TransformWorldToLocal(current.localOrigin, current.origin, masterOriginScratch, masterAxisScratch)
                     if (orientated) {

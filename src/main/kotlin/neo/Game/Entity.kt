@@ -282,8 +282,7 @@ open class idEntity : idClass() {
 
          Physics.
 
-         ***********************************************************************/
-        // physics
+         ***********************************************************************/ // physics
         // initialize the default physics
         fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
             return eventCallbacks
@@ -360,10 +359,7 @@ open class idEntity : idClass() {
         }
 
         private fun Event_BindToJoint(
-            e: idEntity,
-            master: idEventArg<idEntity>,
-            jointname: idEventArg<String>,
-            orientated: idEventArg<Float>
+            e: idEntity, master: idEventArg<idEntity>, jointname: idEventArg<String>, orientated: idEventArg<Float>
         ) {
             e.BindToJoint(master.value, jointname.value, orientated.value != 0.0f)
         }
@@ -413,10 +409,7 @@ open class idEntity : idClass() {
         }
 
         private fun Event_SetColor(
-            e: idEntity,
-            red: idEventArg<Float>,
-            green: idEventArg<Float>,
-            blue: idEventArg<Float>
+            e: idEntity, red: idEventArg<Float>, green: idEventArg<Float>, blue: idEventArg<Float>
         ) {
             e.SetColor(red.value, green.value, blue.value)
         }
@@ -426,11 +419,8 @@ open class idEntity : idClass() {
         }
 
         private fun Event_StartSoundShader(
-            e: idEntity,
-            soundName: idEventArg<String>,
-            channel: idEventArg<Int>
-        ) {
-            // DG: some d3xp map scripts pass "" to stop a playing sound
+            e: idEntity, soundName: idEventArg<String>, channel: idEventArg<Int>
+        ) { // DG: some d3xp map scripts pass "" to stop a playing sound
             if (soundName.value.isEmpty()) {
                 e.StopSound(channel.value, false)
                 idThread.ReturnFloat(0.0f)
@@ -439,10 +429,7 @@ open class idEntity : idClass() {
             val length = CInt()
             e.StartSoundShader(
                 DeclManager.declManager.FindSound(soundName.value),  /*(s_channelType)*/
-                channel.value,
-                0,
-                false,
-                length
+                channel.value, 0, false, length
             )
             idThread.ReturnFloat(MS2SEC(length._val.toFloat()))
         }
@@ -452,10 +439,7 @@ open class idEntity : idClass() {
         }
 
         private fun Event_StartSound(
-            e: idEntity,
-            soundName: idEventArg<String>,
-            channel: idEventArg<Int>,
-            netSync: idEventArg<Int>
+            e: idEntity, soundName: idEventArg<String>, channel: idEventArg<Int>, netSync: idEventArg<Int>
         ) {
             val time = CInt()
             e.StartSound(soundName.value,  /*(s_channelType)*/channel.value, 0, netSync.value != 0, time)
@@ -463,10 +447,7 @@ open class idEntity : idClass() {
         }
 
         private fun Event_FadeSound(
-            e: idEntity,
-            channel: idEventArg<Int>,
-            to: idEventArg<Float>,
-            over: idEventArg<Float>
+            e: idEntity, channel: idEventArg<Int>, to: idEventArg<Float>, over: idEventArg<Float>
         ) {
             if (e.refSound.referenceSound != null) {
                 e.refSound.referenceSound!!.FadeSound(channel.value, to.value, over.value)
@@ -632,18 +613,14 @@ open class idEntity : idClass() {
             ent = Game_local.gameLocal.FindEntity(entName[0]!!)
             if (null == ent) {
                 Game_local.gameLocal.Warning(
-                    "Couldn't find entity '%s' specified in '%s' key in entity '%s'",
-                    entName,
-                    key,
-                    e.name
+                    "Couldn't find entity '%s' specified in '%s' key in entity '%s'", entName, key, e.name
                 )
             }
             idThread.ReturnEntity(ent)
         }
 
         private fun Event_DistanceTo(e: idEntity, ent: idEventArg<idEntity?>) {
-            if (null == ent.value) {
-                // just say it's really far away
+            if (null == ent.value) { // just say it's really far away
                 idThread.ReturnFloat(MAX_WORLD_SIZE.toFloat())
             } else {
                 val dist = e.GetPhysics().GetOrigin().minus(ent.value!!.GetPhysics().GetOrigin()).LengthFast()
@@ -662,52 +639,41 @@ open class idEntity : idClass() {
 
         init {
             eventCallbacks.putAll(idClass.getEventCallBacks())
-            eventCallbacks[EV_GetName] =
-                eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetName() }
-            eventCallbacks[EV_SetName] =
-                eventCallback_t1<idEntity> { e: idEntity, newName: idEventArg<*>? ->
-                    Event_SetName(
-                        e,
-                        newName as idEventArg<String>
-                    )
-                }
-            eventCallbacks[EV_FindTargets] =
-                eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_FindTargets() }
-            eventCallbacks[EV_ActivateTargets] =
-                eventCallback_t1<idEntity> { e: idEntity, activator: idEventArg<*>? ->
-                    Event_ActivateTargets(e, activator as idEventArg<idEntity>)
-                }
-            eventCallbacks[EV_NumTargets] =
-                eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_NumTargets() }
+            eventCallbacks[EV_GetName] = eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetName() }
+            eventCallbacks[EV_SetName] = eventCallback_t1<idEntity> { e: idEntity, newName: idEventArg<*>? ->
+                Event_SetName(
+                    e, newName as idEventArg<String>
+                )
+            }
+            eventCallbacks[EV_FindTargets] = eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_FindTargets() }
+            eventCallbacks[EV_ActivateTargets] = eventCallback_t1<idEntity> { e: idEntity, activator: idEventArg<*>? ->
+                Event_ActivateTargets(e, activator as idEventArg<idEntity>)
+            }
+            eventCallbacks[EV_NumTargets] = eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_NumTargets() }
             eventCallbacks[EV_GetTarget] = eventCallback_t1<idEntity> { e: idEntity, index: idEventArg<*>? ->
                 Event_GetTarget(e, index as idEventArg<Float>)
             }
             eventCallbacks[EV_RandomTarget] = eventCallback_t1<idEntity> { e: idEntity, ignor: idEventArg<*>? ->
                 Event_RandomTarget(e, ignor as idEventArg<String?>)
             }
-            eventCallbacks[EV_BindToJoint] = eventCallback_t3<idEntity> { e: idEntity,
-                                                                          master: idEventArg<*>?,
-                                                                          jointname: idEventArg<*>?,
-                                                                          orientated: idEventArg<*>? ->
-                Event_BindToJoint(
-                    e,
-                    master as idEventArg<idEntity>,
-                    jointname as idEventArg<String>,
-                    orientated as idEventArg<Float>
-                )
-            }
-            eventCallbacks[EV_RemoveBinds] =
-                eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_RemoveBinds() }
+            eventCallbacks[EV_BindToJoint] =
+                eventCallback_t3<idEntity> { e: idEntity, master: idEventArg<*>?, jointname: idEventArg<*>?, orientated: idEventArg<*>? ->
+                    Event_BindToJoint(
+                        e,
+                        master as idEventArg<idEntity>,
+                        jointname as idEventArg<String>,
+                        orientated as idEventArg<Float>
+                    )
+                }
+            eventCallbacks[EV_RemoveBinds] = eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_RemoveBinds() }
             eventCallbacks[EV_Bind] = eventCallback_t1<idEntity> { e: idEntity, master: idEventArg<*>? ->
                 Event_Bind(e, master as idEventArg<idEntity>)
             }
             eventCallbacks[EV_BindPosition] = eventCallback_t1<idEntity> { e: idEntity, master: idEventArg<*>? ->
                 Event_BindPosition(e, master as idEventArg<idEntity>)
             }
-            eventCallbacks[EV_Unbind] =
-                eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_Unbind() }
-            eventCallbacks[EV_SpawnBind] =
-                eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_SpawnBind() }
+            eventCallbacks[EV_Unbind] = eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_Unbind() }
+            eventCallbacks[EV_SpawnBind] = eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_SpawnBind() }
             eventCallbacks[EV_SetOwner] = eventCallback_t1<idEntity> { e: idEntity, owner: idEventArg<*>? ->
                 Event_SetOwner(e, owner as idEventArg<idEntity>)
             }
@@ -724,101 +690,78 @@ open class idEntity : idClass() {
                 eventCallback_t2<idEntity> { e: idEntity, parmnum: idEventArg<*>?, value: idEventArg<*>? ->
                     Event_SetShaderParm(e, parmnum as idEventArg<Int>, value as idEventArg<Float>)
                 }
-            eventCallbacks[EV_SetShaderParms] = eventCallback_t4<idEntity> { e: idEntity, parm0: idEventArg<*>?,
-                                                                             parm1: idEventArg<*>?,
-                                                                             parm2: idEventArg<*>?,
-                                                                             parm3: idEventArg<*>? ->
-                Event_SetShaderParms(
-                    e,
-                    parm0 as idEventArg<Float>,
-                    parm1 as idEventArg<Float>,
-                    parm2 as idEventArg<Float>,
-                    parm3 as idEventArg<Float>
-                )
-            }
-            eventCallbacks[EV_SetColor] = eventCallback_t3<idEntity> { e: idEntity, red: idEventArg<*>?,
-                                                                       green: idEventArg<*>?,
-                                                                       blue: idEventArg<*>? ->
-                Event_SetColor(
-                    e,
-                    red as idEventArg<Float>,
-                    green as idEventArg<Float>,
-                    blue as idEventArg<Float>
-                )
-            }
-            eventCallbacks[EV_GetColor] =
-                eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetColor() }
-            eventCallbacks[EV_IsHidden] =
-                eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_IsHidden() }
-            eventCallbacks[EV_Hide] =
-                eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_Hide() }
-            eventCallbacks[EV_Show] =
-                eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_Show() }
-            eventCallbacks[EV_CacheSoundShader] =
-                eventCallback_t1<idEntity> { e: idEntity, soundName: idEventArg<*>? ->
-                    Event_CacheSoundShader(e, soundName as idEventArg<String>)
+            eventCallbacks[EV_SetShaderParms] =
+                eventCallback_t4<idEntity> { e: idEntity, parm0: idEventArg<*>?, parm1: idEventArg<*>?, parm2: idEventArg<*>?, parm3: idEventArg<*>? ->
+                    Event_SetShaderParms(
+                        e,
+                        parm0 as idEventArg<Float>,
+                        parm1 as idEventArg<Float>,
+                        parm2 as idEventArg<Float>,
+                        parm3 as idEventArg<Float>
+                    )
                 }
+            eventCallbacks[EV_SetColor] =
+                eventCallback_t3<idEntity> { e: idEntity, red: idEventArg<*>?, green: idEventArg<*>?, blue: idEventArg<*>? ->
+                    Event_SetColor(
+                        e, red as idEventArg<Float>, green as idEventArg<Float>, blue as idEventArg<Float>
+                    )
+                }
+            eventCallbacks[EV_GetColor] = eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetColor() }
+            eventCallbacks[EV_IsHidden] = eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_IsHidden() }
+            eventCallbacks[EV_Hide] = eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_Hide() }
+            eventCallbacks[EV_Show] = eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_Show() }
+            eventCallbacks[EV_CacheSoundShader] = eventCallback_t1<idEntity> { e: idEntity, soundName: idEventArg<*>? ->
+                Event_CacheSoundShader(e, soundName as idEventArg<String>)
+            }
             eventCallbacks[EV_StartSoundShader] =
-                eventCallback_t2<idEntity> { e: idEntity, soundName: idEventArg<*>?,
-                                             channel: idEventArg<*>? ->
+                eventCallback_t2<idEntity> { e: idEntity, soundName: idEventArg<*>?, channel: idEventArg<*>? ->
                     Event_StartSoundShader(e, soundName as idEventArg<String>, channel as idEventArg<Int>)
                 }
-            eventCallbacks[EV_StartSound] = eventCallback_t3<idEntity> { e: idEntity, soundName: idEventArg<*>?,
-                                                                         channel: idEventArg<*>?,
-                                                                         netSync: idEventArg<*>? ->
-                Event_StartSound(
-                    e,
-                    soundName as idEventArg<String>,
-                    channel as idEventArg<Int>,
-                    netSync as idEventArg<Int>
-                )
-            }
+            eventCallbacks[EV_StartSound] =
+                eventCallback_t3<idEntity> { e: idEntity, soundName: idEventArg<*>?, channel: idEventArg<*>?, netSync: idEventArg<*>? ->
+                    Event_StartSound(
+                        e, soundName as idEventArg<String>, channel as idEventArg<Int>, netSync as idEventArg<Int>
+                    )
+                }
             eventCallbacks[EV_StopSound] =
                 eventCallback_t2<idEntity> { e: idEntity, channel: idEventArg<*>?, netSync: idEventArg<*>? ->
                     Event_StopSound(e, channel as idEventArg<Int>, netSync as idEventArg<Int>)
                 }
-            eventCallbacks[EV_FadeSound] = eventCallback_t3<idEntity> { e: idEntity, channel: idEventArg<*>?,
-                                                                        to: idEventArg<*>?,
-                                                                        over: idEventArg<*>? ->
-                Event_FadeSound(e, channel as idEventArg<Int>, to as idEventArg<Float>, over as idEventArg<Float>)
-            }
+            eventCallbacks[EV_FadeSound] =
+                eventCallback_t3<idEntity> { e: idEntity, channel: idEventArg<*>?, to: idEventArg<*>?, over: idEventArg<*>? ->
+                    Event_FadeSound(e, channel as idEventArg<Int>, to as idEventArg<Float>, over as idEventArg<Float>)
+                }
             eventCallbacks[EV_GetWorldOrigin] =
                 eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetWorldOrigin() }
             eventCallbacks[EV_SetWorldOrigin] = eventCallback_t1<idEntity> { e: idEntity, org: idEventArg<*>? ->
                 Event_SetWorldOrigin(e, org as idEventArg<idVec3>)
             }
-            eventCallbacks[EV_GetOrigin] =
-                eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetOrigin() }
+            eventCallbacks[EV_GetOrigin] = eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetOrigin() }
             eventCallbacks[EV_SetOrigin] = eventCallback_t1<idEntity> { e: idEntity, org: idEventArg<*>? ->
                 Event_SetOrigin(e, org as idEventArg<idVec3>)
             }
-            eventCallbacks[EV_GetAngles] =
-                eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetAngles() }
+            eventCallbacks[EV_GetAngles] = eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetAngles() }
             eventCallbacks[EV_SetAngles] = eventCallback_t1<idEntity> { e: idEntity, eventArg: idEventArg<*>? ->
                 Event_SetAngles(e, eventArg as idEventArg<idVec3>)
             }
             eventCallbacks[EV_GetLinearVelocity] =
                 eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetLinearVelocity() }
-            eventCallbacks[EV_SetLinearVelocity] =
-                eventCallback_t1<idEntity> { e: idEntity, velocity: idEventArg<*>? ->
-                    Event_SetLinearVelocity(e, velocity as idEventArg<idVec3>)
-                }
+            eventCallbacks[EV_SetLinearVelocity] = eventCallback_t1<idEntity> { e: idEntity, velocity: idEventArg<*>? ->
+                Event_SetLinearVelocity(e, velocity as idEventArg<idVec3>)
+            }
             eventCallbacks[EV_GetAngularVelocity] =
                 eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetAngularVelocity() }
             eventCallbacks[EV_SetAngularVelocity] =
                 eventCallback_t1<idEntity> { e: idEntity, velocity: idEventArg<*>? ->
                     Event_SetAngularVelocity(e, velocity as idEventArg<idVec3>)
                 }
-            eventCallbacks[EV_GetSize] =
-                eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetSize() }
+            eventCallbacks[EV_GetSize] = eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetSize() }
             eventCallbacks[EV_SetSize] =
                 eventCallback_t2<idEntity> { e: idEntity, mins: idEventArg<*>?, maxs: idEventArg<*>? ->
                     Event_SetSize(e, mins as idEventArg<idVec3>, maxs as idEventArg<idVec3>)
                 }
-            eventCallbacks[EV_GetMins] =
-                eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetMins() }
-            eventCallbacks[EV_GetMaxs] =
-                eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetMaxs() }
+            eventCallbacks[EV_GetMins] = eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetMins() }
+            eventCallbacks[EV_GetMaxs] = eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetMaxs() }
             eventCallbacks[EV_Touches] = eventCallback_t1<idEntity> { e: idEntity, ent: idEventArg<*>? ->
                 Event_Touches(e, ent as idEventArg<idEntity?>)
             }
@@ -829,16 +772,14 @@ open class idEntity : idClass() {
             eventCallbacks[EV_SetGuiFloat] =
                 eventCallback_t2<idEntity> { e: idEntity, key: idEventArg<*>?, f: idEventArg<*>? ->
                     Event_SetGuiFloat(e, key as idEventArg<String>, f as idEventArg<Float>)
-                }
-            // D3XP GUI events
+                } // D3XP GUI events
             eventCallbacks[EV_SetGui] =
                 eventCallback_t2<idEntity> { e: idEntity, guiNum: idEventArg<*>?, guiName: idEventArg<*>? ->
                     Event_SetGui(e, guiNum as idEventArg<Int>, guiName as idEventArg<String>)
                 }
-            eventCallbacks[EV_PrecacheGui] =
-                eventCallback_t1<idEntity> { e: idEntity, guiName: idEventArg<*>? ->
-                    Event_PrecacheGui(e, guiName as idEventArg<String>)
-                }
+            eventCallbacks[EV_PrecacheGui] = eventCallback_t1<idEntity> { e: idEntity, guiName: idEventArg<*>? ->
+                Event_PrecacheGui(e, guiName as idEventArg<String>)
+            }
             eventCallbacks[EV_GetGuiParm] =
                 eventCallback_t2<idEntity> { e: idEntity, guiNum: idEventArg<*>?, key: idEventArg<*>? ->
                     Event_GetGuiParm(e, guiNum as idEventArg<Int>, key as idEventArg<String>)
@@ -881,27 +822,23 @@ open class idEntity : idClass() {
             eventCallbacks[EV_DistanceTo] = eventCallback_t1<idEntity> { e: idEntity, ent: idEventArg<*>? ->
                 Event_DistanceTo(e, ent as idEventArg<idEntity?>)
             }
-            eventCallbacks[EV_DistanceToPoint] =
-                eventCallback_t1<idEntity> { e: idEntity, point: idEventArg<*>? ->
-                    Event_DistanceToPoint(e, point as idEventArg<idVec3>)
-                }
+            eventCallbacks[EV_DistanceToPoint] = eventCallback_t1<idEntity> { e: idEntity, point: idEventArg<*>? ->
+                Event_DistanceToPoint(e, point as idEventArg<idVec3>)
+            }
             eventCallbacks[EV_StartFx] = eventCallback_t1<idEntity> { e: idEntity, fx: idEventArg<*>? ->
                 Event_StartFx(e, fx as idEventArg<String>)
             }
-            eventCallbacks[EV_Thread_WaitFrame] =
-                eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_WaitFrame() }
+            eventCallbacks[EV_Thread_WaitFrame] = eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_WaitFrame() }
             eventCallbacks[EV_Thread_Wait] =
                 eventCallback_t1<idEntity> { obj: idEntity, time: idEventArg<*>? -> obj.Event_Wait(time as idEventArg<Float>) }
             eventCallbacks[EV_HasFunction] =
                 eventCallback_t1<idEntity> { obj: idEntity, name: idEventArg<*>? -> obj.Event_HasFunction(name as idEventArg<String>) }
-            eventCallbacks[EV_CallFunction] =
-                eventCallback_t1<idEntity> { obj: idEntity, _funcName: idEventArg<*>? ->
-                    obj.Event_CallFunction(_funcName as idEventArg<String>)
-                }
-            eventCallbacks[EV_SetNeverDormant] =
-                eventCallback_t1<idEntity> { obj: idEntity, enable: idEventArg<*>? ->
-                    obj.Event_SetNeverDormant(enable as idEventArg<Int>)
-                }
+            eventCallbacks[EV_CallFunction] = eventCallback_t1<idEntity> { obj: idEntity, _funcName: idEventArg<*>? ->
+                obj.Event_CallFunction(_funcName as idEventArg<String>)
+            }
+            eventCallbacks[EV_SetNeverDormant] = eventCallback_t1<idEntity> { obj: idEntity, enable: idEventArg<*>? ->
+                obj.Event_SetNeverDormant(enable as idEventArg<Int>)
+            }
         }
     }
 
@@ -1110,7 +1047,7 @@ open class idEntity : idClass() {
             renderEntity!!.xrayIndex = 1
             val xraySkinStr = spawnArgs.GetString("skin_xray", "")
             if (!xraySkinStr.isNullOrEmpty()) {
-                xraySkin = DeclManager.declManager.FindSkin(xraySkinStr) as? idDeclSkin
+                xraySkin = DeclManager.declManager.FindSkin(xraySkinStr)
             }
         }
 
@@ -1127,8 +1064,7 @@ open class idEntity : idClass() {
         refSound.listenerId = entityNumber + 1
         cameraTarget = null
         temp[0] = spawnArgs.GetString("cameraTarget")
-        if (temp.isNotEmpty() && !temp[0].isNullOrEmpty()) {
-            // update the camera taget
+        if (temp.isNotEmpty() && !temp[0].isNullOrEmpty()) { // update the camera taget
             PostEventMS(EV_UpdateCameraTarget, 0)
         }
         i = 0
@@ -1139,8 +1075,7 @@ open class idEntity : idClass() {
         fl.solidForTeam = spawnArgs.GetBool("solidForTeam", "0")
         fl.neverDormant = spawnArgs.GetBool("neverDormant", "0")
         fl.hidden = spawnArgs.GetBool("hide", "0")
-        if (fl.hidden) {
-            // make sure we're hidden, since a spawn function might not set it up right
+        if (fl.hidden) { // make sure we're hidden, since a spawn function might not set it up right
             PostEventMS(EV_Hide, 0)
         }
         cinematic = spawnArgs.GetBool("cinematic", "0")
@@ -1149,12 +1084,10 @@ open class idEntity : idClass() {
             fl.networkSync = atoi(networkSync.GetValue()) != 0
         }
         if (false) {
-            if (!Game_local.gameLocal.isClient) {
-                // common.DPrintf( "NET: DBG %s - %s is synced: %s\n", spawnArgs.GetString( "classname", "" ), GetType().classname, fl.networkSync ? "true" : "false" );
+            if (!Game_local.gameLocal.isClient) { // common.DPrintf( "NET: DBG %s - %s is synced: %s\n", spawnArgs.GetString( "classname", "" ), GetType().classname, fl.networkSync ? "true" : "false" );
                 if (spawnArgs.GetString("classname", "")!![0] == '\u0000' && !fl.networkSync) {
                     idLib.common.DPrintf(
-                        "NET: WRN %s entity, no classname, and no networkSync?\n",
-                        GetType().javaClass.name
+                        "NET: WRN %s entity, no classname, and no networkSync?\n", GetType().javaClass.name
                     )
                 }
             }
@@ -1162,8 +1095,7 @@ open class idEntity : idClass() {
 
         // every object will have a unique name
         temp[0] = spawnArgs.GetString(
-            "name",
-            va("%s_%s_%d", GetClassname(), spawnArgs.GetString("classname"), entityNumber)
+            "name", va("%s_%s_%d", GetClassname(), spawnArgs.GetString("classname"), entityNumber)
         )!!
         SetName(temp[0])
 
@@ -1171,8 +1103,7 @@ open class idEntity : idClass() {
         if (spawnArgs.MatchPrefix("target") != null || spawnArgs.MatchPrefix("guiTarget") != null) {
             if (Game_local.gameLocal.GameState() == gameState_t.GAMESTATE_STARTUP) {
                 PostEventMS(EV_FindTargets, 0)
-            } else {
-                // not during spawn, so it's ok to get the targets
+            } else { // not during spawn, so it's ok to get the targets
                 FindTargets()
             }
         }
@@ -1197,9 +1128,7 @@ open class idEntity : idClass() {
         if (ShouldConstructScriptObjectAtSpawn() && spawnArgs.GetString("scriptobject", "", scriptObjectName)) {
             if (!scriptObject.SetType(scriptObjectName[0])) {
                 idGameLocal.Error(
-                    "Script object '%s' not found on entity '%s'.",
-                    scriptObjectName[0],
-                    name
+                    "Script object '%s' not found on entity '%s'.", scriptObjectName[0], name
                 )
             }
             ConstructScriptObject()
@@ -1237,8 +1166,7 @@ open class idEntity : idClass() {
         }
         val flags = fl
         LittleBitField(flags)
-        savefile.Write(flags)
-        // D3XP: save time group, grab, and xray state
+        savefile.Write(flags) // D3XP: save time group, grab, and xray state
         if (isD3XP) {
             savefile.WriteInt(timeGroup)
             savefile.WriteBool(noGrab)
@@ -1311,17 +1239,16 @@ open class idEntity : idClass() {
             i++
         }
         savefile.Read(fl)
-        LittleBitField(fl)
-        // D3XP: restore time group, grab, and xray state
+        LittleBitField(fl) // D3XP: restore time group, grab, and xray state
         if (isD3XP) {
             timeGroup = savefile.ReadInt()
             noGrab = savefile.ReadBool()
             xrayEntity = savefile.ReadRenderEntity()
             xrayEntityHandle = savefile.ReadInt()
             if (xrayEntityHandle != -1) {
-                xrayEntityHandle = gameRenderWorld!!.AddEntityDef(xrayEntity!!)
+                xrayEntityHandle = gameRenderWorld!!.AddEntityDef(xrayEntity)
             }
-            xraySkin = savefile.ReadSkin() as? idDeclSkin
+            xraySkin = savefile.ReadSkin()
         }
         renderEntity = savefile.ReadRenderEntity()
         modelDefHandle = savefile.ReadInt()
@@ -1383,8 +1310,7 @@ open class idEntity : idClass() {
             Game_local.gameLocal.program.SetEntity(name.toString(), null)
         }
         name.set(newname)
-        if (name.Length() != 0) {
-//            if ( ( name == "NULL" ) || ( name == "null_entity" ) ) {
+        if (name.Length() != 0) { //            if ( ( name == "NULL" ) || ( name == "null_entity" ) ) {
             if ("NULL" == newname || "null_entity" == newname) {
                 idGameLocal.Error("Cannot name entity '%s'.  '%s' is reserved for script.", name, name)
             }
@@ -1420,8 +1346,7 @@ open class idEntity : idClass() {
         }
         cameraTarget = null
         target = source.GetString("cameraTarget")
-        if (target != null && !target.isEmpty()) {
-            // update the camera taget
+        if (target != null && !target.isEmpty()) { // update the camera taget
             PostEventMS(EV_UpdateCameraTarget, 0)
         }
         i = 0
@@ -1437,15 +1362,13 @@ open class idEntity : idClass() {
 
          This is used by remote camera views to look from an entity
          =============
-         */
-    // clients generate views based on all the player specific options,
+         */ // clients generate views based on all the player specific options,
     // cameras have custom code, and everything else just uses the axis orientation
     open fun GetRenderView(): renderView_s? {
         if (renderView == null) {
             renderView = renderView_s()
         }
-        renderView = renderView_s()
-        //	memset( renderView, 0, sizeof( *renderView ) );
+        renderView = renderView_s() //	memset( renderView, 0, sizeof( *renderView ) );
         renderView!!.vieworg.set(GetPhysics().GetOrigin())
         renderView!!.fov_x = 120.0f
         renderView!!.fov_y = 120.0f
@@ -1453,11 +1376,7 @@ open class idEntity : idClass() {
 
         // copy global shader parms
         System.arraycopy(
-            Game_local.gameLocal.globalShaderParms,
-            0,
-            renderView!!.shaderParms,
-            0,
-            RenderWorld.MAX_GLOBAL_SHADER_PARMS
+            Game_local.gameLocal.globalShaderParms, 0, renderView!!.shaderParms, 0, RenderWorld.MAX_GLOBAL_SHADER_PARMS
         )
         renderView!!.globalMaterial = Game_local.gameLocal.GetGlobalMaterial()
         renderView!!.time = Game_local.gameLocal.time
@@ -1469,8 +1388,7 @@ open class idEntity : idClass() {
 
          Thinking
 
-         ***********************************************************************/
-    // thinking
+         ***********************************************************************/ // thinking
     open fun Think() {
         RunPhysics()
         Present()
@@ -1519,12 +1437,10 @@ open class idEntity : idClass() {
     }
 
     fun BecomeActive(flags: Int) {
-        if ((flags and TH_PHYSICS) != 0) {
-            // enable the team master if this entity is part of a physics team
+        if ((flags and TH_PHYSICS) != 0) { // enable the team master if this entity is part of a physics team
             if (teamMaster != null && teamMaster !== this) {
                 teamMaster!!.BecomeActive(TH_PHYSICS)
-            } else if (0 == (thinkFlags and TH_PHYSICS)) {
-                // if this is a pusher
+            } else if (0 == (thinkFlags and TH_PHYSICS)) { // if this is a pusher
                 if (physics is idPhysics_Parametric || physics is idPhysics_Actor) {
                     Game_local.gameLocal.sortPushers = true
                 }
@@ -1535,8 +1451,7 @@ open class idEntity : idClass() {
         if (thinkFlags != 0) {
             if (!IsActive()) {
                 activeNode.AddToEnd(Game_local.gameLocal.activeEntities)
-            } else if (0 == oldFlags) {
-                // we became inactive this frame, so we have to decrease the count of entities to deactivate
+            } else if (0 == oldFlags) { // we became inactive this frame, so we have to decrease the count of entities to deactivate
                 Game_local.gameLocal.numEntitiesToDeactivate--
             }
         }
@@ -1544,8 +1459,7 @@ open class idEntity : idClass() {
 
     fun BecomeInactive(flags: Int) {
         var flags = flags
-        if ((flags and TH_PHYSICS) != 0) {
-            // may only disable physics on a team master if no team members are running physics or bound to a joints
+        if ((flags and TH_PHYSICS) != 0) { // may only disable physics on a team master if no team members are running physics or bound to a joints
             if (teamMaster == this) {
                 var ent = teamMaster!!.teamChain
                 while (ent != null) {
@@ -1563,10 +1477,8 @@ open class idEntity : idClass() {
                 Game_local.gameLocal.numEntitiesToDeactivate++
             }
         }
-        if ((flags and TH_PHYSICS) != 0) {
-            // if this entity has a team master
-            if (teamMaster != null && teamMaster != this) {
-                // if the team master is at rest
+        if ((flags and TH_PHYSICS) != 0) { // if this entity has a team master
+            if (teamMaster != null && teamMaster != this) { // if the team master is at rest
                 if (teamMaster!!.IsAtRest()) {
                     teamMaster!!.BecomeInactive(TH_PHYSICS)
                 }
@@ -1587,8 +1499,7 @@ open class idEntity : idClass() {
 
          Visuals
 
-         ***********************************************************************/
-    // visuals
+         ***********************************************************************/ // visuals
     /*
          ================
          idEntity::Present
@@ -1677,8 +1588,7 @@ open class idEntity : idClass() {
     }
 
     open fun SetColor(color: idVec3) {
-        SetColor(color[0], color[1], color[2])
-        //	UpdateVisuals();
+        SetColor(color[0], color[1], color[2]) //	UpdateVisuals();
     }
 
     open fun GetColor(out: idVec3) {
@@ -1759,8 +1669,7 @@ open class idEntity : idClass() {
 
         // check if the entity has an MD5 model
         val animator = GetAnimator()
-        if (animator != null && animator.ModelHandle() != null) {
-            // set the callback to update the joints
+        if (animator != null && animator.ModelHandle() != null) { // set the callback to update the joints
             renderEntity!!.callback = ModelCallback.getInstance()
         }
 
@@ -1773,12 +1682,12 @@ open class idEntity : idClass() {
         // D3XP: if the entity has an xray skin, go ahead and add/update it
         if (isD3XP && xraySkin != null) {
             xrayEntity = renderEntity_s(renderEntity!!)
-            xrayEntity!!.xrayIndex = 2
-            xrayEntity!!.customSkin = xraySkin
+            xrayEntity.xrayIndex = 2
+            xrayEntity.customSkin = xraySkin
             if (xrayEntityHandle == -1) {
-                xrayEntityHandle = gameRenderWorld!!.AddEntityDef(xrayEntity!!)
+                xrayEntityHandle = gameRenderWorld!!.AddEntityDef(xrayEntity)
             } else {
-                gameRenderWorld!!.UpdateEntityDef(xrayEntityHandle, xrayEntity!!)
+                gameRenderWorld!!.UpdateEntityDef(xrayEntityHandle, xrayEntity)
             }
         }
     }
@@ -1880,8 +1789,7 @@ open class idEntity : idClass() {
     }
 
     // animation
-    open fun UpdateAnimationControllers(): Boolean {
-        // any ragdoll and IK animation controllers should be updated here
+    open fun UpdateAnimationControllers(): Boolean { // any ragdoll and IK animation controllers should be updated here
         return false
     }
 
@@ -1913,8 +1821,7 @@ open class idEntity : idClass() {
 
          Sound
 
-         ***********************************************************************/
-    // sound
+         ***********************************************************************/ // sound
     /*
          ================
          idEntity::CanPlayChatterSounds
@@ -1928,10 +1835,7 @@ open class idEntity : idClass() {
 
     fun StartSound(
         soundName: String,    /*s_channelType*/
-        channel: Int,
-        soundShaderFlags: Int,
-        broadcast: Boolean,
-        length: CInt? = null
+        channel: Int, soundShaderFlags: Int, broadcast: Boolean, length: CInt? = null
     ): Boolean {
         val shader: idSoundShader?
         val sound = idStr()
@@ -1942,8 +1846,7 @@ open class idEntity : idClass() {
         if (sound.IsEmpty()) {
             return false
         }
-        if (!Game_local.gameLocal.isNewFrame) {
-            // don't play the sound, but don't report an error
+        if (!Game_local.gameLocal.isNewFrame) { // don't play the sound, but don't report an error
             return true
         }
         shader = DeclManager.declManager.FindSound(sound)
@@ -1951,21 +1854,14 @@ open class idEntity : idClass() {
     }
 
     fun StartSound(
-        soundName: String,
-        channel: Enum<*>,
-        soundShaderFlags: Int,
-        broadcast: Boolean,
-        length: CInt? = null
+        soundName: String, channel: Enum<*>, soundShaderFlags: Int, broadcast: Boolean, length: CInt? = null
     ): Boolean {
         return StartSound(soundName, channel.ordinal, soundShaderFlags, broadcast, length)
     }
 
     fun StartSoundShader(
         shader: idSoundShader?,    /*s_channelType*/
-        channel: Int,
-        soundShaderFlags: Int,
-        broadcast: Boolean,
-        length: CInt? = null
+        channel: Int, soundShaderFlags: Int, broadcast: Boolean, length: CInt? = null
     ): Boolean {
         val diversity: Float
         val len: Int
@@ -2007,17 +1903,12 @@ open class idEntity : idClass() {
     }
 
     fun StartSoundShader(
-        shader: idSoundShader?,
-        channel: Enum<*>,
-        soundShaderFlags: Int,
-        broadcast: Boolean,
-        length: CInt
+        shader: idSoundShader?, channel: Enum<*>, soundShaderFlags: Int, broadcast: Boolean, length: CInt
     ): Boolean {
         return StartSoundShader(shader, channel.ordinal, soundShaderFlags, broadcast, length)
     }
 
-    fun StopSound(   /*s_channelType*/channel: Int,
-                     broadcast: Boolean
+    fun StopSound(   /*s_channelType*/channel: Int, broadcast: Boolean
     ) {    // pass SND_CHANNEL_ANY to stop all sounds
         if (!Game_local.gameLocal.isNewFrame) {
             return
@@ -2078,8 +1969,7 @@ open class idEntity : idClass() {
 
          entity binding
 
-         ***********************************************************************/
-    // entity binding
+         ***********************************************************************/ // entity binding
     open fun PreBind() {}
     open fun PostBind() {}
     fun PreUnbind() {}
@@ -2102,8 +1992,7 @@ open class idEntity : idClass() {
 
         // check if our new team mate is already on a team
         master = teammember!!.teamMaster
-        if (null == master) {
-            // he's not on a team, so he's the new teamMaster
+        if (null == master) { // he's not on a team, so he's the new teamMaster
             master = teammember
             teammember.teamMaster = teammember
             teammember.teamChain = this
@@ -2114,19 +2003,16 @@ open class idEntity : idClass() {
                 ent.teamMaster = master
                 ent = ent.teamChain
             }
-        } else {
-            // skip past the chain members bound to the entity we're teaming up with
+        } else { // skip past the chain members bound to the entity we're teaming up with
             prev = teammember
             next = teammember.teamChain
-            if (bindMaster != null) {
-                // if we have a bindMaster, join after any entities bound to the entity
+            if (bindMaster != null) { // if we have a bindMaster, join after any entities bound to the entity
                 // we're joining
                 while (next != null && next.IsBoundTo(teammember)) {
                     prev = next
                     next = next.teamChain
                 }
-            } else {
-                // if we're not bound to someone, then put us at the end of the team
+            } else { // if we're not bound to someone, then put us at the end of the team
                 while (next != null) {
                     prev = next
                     next = next.teamChain
@@ -2185,17 +2071,14 @@ open class idEntity : idClass() {
         masterAnimator = master.GetAnimator()
         if (null == masterAnimator) {
             Game_local.gameLocal.Warning(
-                "idEntity::BindToJoint: entity '%s' cannot support skeletal models.",
-                master.GetName()
+                "idEntity::BindToJoint: entity '%s' cannot support skeletal models.", master.GetName()
             )
             return
         }
         jointnum = masterAnimator.GetJointHandle(jointname)
         if (jointnum == Model.INVALID_JOINT) {
             Game_local.gameLocal.Warning(
-                "idEntity::BindToJoint: joint '%s' not found on entity '%s'.",
-                jointname,
-                master.GetName()
+                "idEntity::BindToJoint: joint '%s' not found on entity '%s'.", jointname, master.GetName()
             )
         }
         PreBind()
@@ -2263,8 +2146,7 @@ open class idEntity : idClass() {
         if (null == bindMaster) {
             return
         }
-        if (null == teamMaster) {
-            // Teammaster already has been freed
+        if (null == teamMaster) { // Teammaster already has been freed
             bindMaster = null
             return
         }
@@ -2311,8 +2193,7 @@ open class idEntity : idClass() {
             if (null == next && teamMaster == prev) {
                 prev.teamMaster = null
             }
-        } else if (next != null) {
-            // If we were the teamMaster, then the nodes that were not bound to me are now
+        } else if (next != null) { // If we were the teamMaster, then the nodes that were not bound to me are now
             // a disconnected chain.  Make them into their own team.
             ent = next
             while (ent!!.teamChain != null) {
@@ -2323,11 +2204,9 @@ open class idEntity : idClass() {
         }
 
         // If we don't have anyone on our team, then clear the team variables.
-        teamMaster = if (teamChain != null) {
-            // make myself my own team
+        teamMaster = if (teamChain != null) { // make myself my own team
             this
-        } else {
-            // no longer a team
+        } else { // no longer a team
             null
         }
         bindJoint = Model.INVALID_JOINT
@@ -2470,8 +2349,7 @@ open class idEntity : idClass() {
 
     fun GetMasterPosition(masterOrigin: idVec3, masterAxis: idMat3): Boolean {
         val masterAnimator: idAnimator?
-        return if (bindMaster != null) {
-            // if bound to a joint of an animated model
+        return if (bindMaster != null) { // if bound to a joint of an animated model
             if (bindJoint != Model.INVALID_JOINT) {
                 masterAnimator = bindMaster!!.GetAnimator()
                 if (null == masterAnimator) {
@@ -2530,18 +2408,15 @@ open class idEntity : idClass() {
 
          Physics.
 
-         ***********************************************************************/
-    // physics
+         ***********************************************************************/ // physics
     // set a new physics object to be used by this entity
-    fun SetPhysics(phys: idPhysics?) {
-        // clear any contacts the current physics object has
+    fun SetPhysics(phys: idPhysics?) { // clear any contacts the current physics object has
         if (physics != null) {
             physics.ClearContacts()
             if (physics !== phys) {
                 physics.UnlinkClip()
             }
-        }
-        // set new physics object or set the default physics if NULL
+        } // set new physics object or set the default physics if NULL
         if (phys != null) {
             defaultPhysicsObj.SetClipModel(null, 1.0f)
             physics = phys
@@ -2560,8 +2435,7 @@ open class idEntity : idClass() {
 
     // restore physics pointer for save games
     fun RestorePhysics(phys: idPhysics) {
-        assert(phys != null)
-        // restore physics pointer
+        assert(phys != null) // restore physics pointer
         physics = phys
     }
 
@@ -2577,8 +2451,7 @@ open class idEntity : idClass() {
         var moved: Boolean
 
         // don't run physics if not enabled
-        if (0 == (thinkFlags and TH_PHYSICS)) {
-            // however do update any animation controllers
+        if (0 == (thinkFlags and TH_PHYSICS)) { // however do update any animation controllers
             if (UpdateAnimationControllers()) {
                 BecomeActive(TH_ANIMATE)
             }
@@ -2604,12 +2477,10 @@ open class idEntity : idClass() {
                 part.physics.SaveState()
             }
             part = part.teamChain
-        }
-        // move the whole team
+        } // move the whole team
         part = this
         while (part != null) {
-            if (part.physics != null) {
-                // run physics
+            if (part.physics != null) { // run physics
                 moved = part.physics.Evaluate(endTime - startTime, endTime)
 
                 // check if the object is blocked
@@ -2645,8 +2516,7 @@ open class idEntity : idClass() {
         }
 
         // if one of the team entities is a pusher and blocked
-        if (blockedPart != null) {
-            // move the parts back to the previous position
+        if (blockedPart != null) { // move the parts back to the previous position
             part = this
             while (part !== blockedPart) {
                 if (part!!.physics != null) {
@@ -2661,8 +2531,7 @@ open class idEntity : idClass() {
             }
             part = this
             while (part != null) {
-                if (part.physics != null) {
-                    // update the physics time without moving
+                if (part.physics != null) { // update the physics time without moving
                     part.physics.UpdateTime(endTime)
                 }
                 part = part.teamChain
@@ -2676,8 +2545,7 @@ open class idEntity : idClass() {
 
             // if the master pusher has a "blocked" function, call it
             Signal(signalNum_t.SIG_BLOCKED)
-            ProcessEvent(EV_TeamBlocked, blockedPart, blockingEntity)
-            // call the blocked function on the blocked part
+            ProcessEvent(EV_TeamBlocked, blockedPart, blockingEntity) // call the blocked function on the blocked part
             blockedPart.ProcessEvent(EV_PartBlocked, blockingEntity)
             return false
         }
@@ -2762,8 +2630,9 @@ open class idEntity : idClass() {
     // };
     //
     // retrieves the transformation going from the physics origin/axis to the sound origin/axis
-    open fun GetPhysicsToSoundTransform(origin: idVec3, axis: idMat3): Boolean {
-        // by default play the sound at the center of the bounding box of the first clip model
+    open fun GetPhysicsToSoundTransform(
+        origin: idVec3, axis: idMat3
+    ): Boolean { // by default play the sound at the center of the bounding box of the first clip model
         if (GetPhysics().GetNumClipModels() > 0) {
             origin.set(GetPhysics().GetBounds().GetCenter())
             axis.Identity()
@@ -2773,8 +2642,7 @@ open class idEntity : idClass() {
     }
 
     // called from the physics object when colliding, should return true if the physics simulation should stop
-    open fun Collide(collision: trace_s, velocity: idVec3): Boolean {
-        // this entity collides with collision.c.entityNum
+    open fun Collide(collision: trace_s, velocity: idVec3): Boolean { // this entity collides with collision.c.entityNum
         return false
     }
 
@@ -2822,8 +2690,7 @@ open class idEntity : idClass() {
 
          Damage
 
-         ***********************************************************************/
-    // damage
+         ***********************************************************************/ // damage
     /*
          ============
          idEntity::CanDamage
@@ -2831,8 +2698,7 @@ open class idEntity : idClass() {
          Returns true if the inflictor can directly damage the target.  Used for
          explosions and melee attacks.
          ============
-         */
-    // returns true if this entity can be damaged from the given origin
+         */ // returns true if this entity can be damaged from the given origin
     fun CanDamage(origin: idVec3, damagePoint: idVec3): Boolean {
         val dest = idVec3()
         val tr = trace_s()
@@ -2916,15 +2782,9 @@ open class idEntity : idClass() {
          inflictor, attacker, dir, and point can be NULL for environmental effects
 
          ============
-         */
-    // applies damage to this entity
+         */ // applies damage to this entity
     open fun Damage(
-        inflictor: idEntity?,
-        attacker: idEntity?,
-        dir: idVec3,
-        damageDefName: String,
-        damageScale: Float,
-        location: Int
+        inflictor: idEntity?, attacker: idEntity?, dir: idVec3, damageDefName: String, damageScale: Float, location: Int
     ) {
         var inflictor = inflictor
         var attacker = attacker
@@ -2948,8 +2808,7 @@ open class idEntity : idClass() {
 
             // inform the attacker that they hit someone
             attacker!!.DamageFeedback(this, inflictor, damage)
-            if (0 != damage._val) {
-                // do the damage
+            if (0 != damage._val) { // do the damage
                 health -= damage._val
                 if (health <= 0) {
                     if (health < -999) {
@@ -2981,14 +2840,10 @@ open class idEntity : idClass() {
         }
         if (!sound.isEmpty()) { // != '\0' ) {
             StartSoundShader(
-                DeclManager.declManager.FindSound(sound),
-                gameSoundChannel_t.SND_CHANNEL_BODY.ordinal,
-                0,
-                false
+                DeclManager.declManager.FindSound(sound), gameSoundChannel_t.SND_CHANNEL_BODY.ordinal, 0, false
             )
         }
-        if (SysCvar.g_decals.GetBool()) {
-            // place a wound overlay on the model
+        if (SysCvar.g_decals.GetBool()) { // place a wound overlay on the model
             key = va("mtr_wound_%s", materialType)
             decal = spawnArgs.RandomPrefix(key, Game_local.gameLocal.random)!!
             if (decal.isEmpty()) { // == '\0' ) {
@@ -3008,10 +2863,8 @@ open class idEntity : idClass() {
 
          callback function for when another entity received damage from this entity.  damage can be adjusted and returned to the caller.
          ================
-         */
-    // callback function for when another entity received damage from this entity.  damage can be adjusted and returned to the caller.
-    open fun DamageFeedback(victim: idEntity?, inflictor: idEntity?, damage: CInt) {
-        // implemented in subclasses
+         */ // callback function for when another entity received damage from this entity.  damage can be adjusted and returned to the caller.
+    open fun DamageFeedback(victim: idEntity?, inflictor: idEntity?, damage: CInt) { // implemented in subclasses
     }
 
     /*
@@ -3021,8 +2874,7 @@ open class idEntity : idClass() {
          Called whenever an entity recieves damage.  Returns whether the entity responds to the pain.
          This is a virtual function that subclasses are expected to implement.
          ============
-         */
-    // notifies this entity that it is in pain
+         */ // notifies this entity that it is in pain
     open fun Pain(inflictor: idEntity?, attacker: idEntity?, damage: Int, dir: idVec3, location: Int): Boolean {
         return false
     }
@@ -3034,16 +2886,14 @@ open class idEntity : idClass() {
          Called whenever an entity's health is reduced to 0 or less.
          This is a virtual function that subclasses are expected to implement.
          ============
-         */
-    // notifies this entity that is has been killed
+         */ // notifies this entity that is has been killed
     open fun Killed(inflictor: idEntity?, attacker: idEntity?, damage: Int, dir: idVec3, location: Int) {}
 
     /* **********************************************************************
 
          Script functions
 
-         ***********************************************************************/
-    // scripting
+         ***********************************************************************/ // scripting
     /*
          ================
          idEntity::ShouldConstructScriptObjectAtSpawn
@@ -3073,8 +2923,7 @@ open class idEntity : idClass() {
 
         // call script object's constructor
         constructor = scriptObject.GetConstructor()
-        if (constructor != null) {
-            // start a thread that will initialize after Spawn is done being called
+        if (constructor != null) { // start a thread that will initialize after Spawn is done being called
             thread = idThread()
             thread.SetThreadName(name.toString())
             thread.CallFunction(this, constructor, true)
@@ -3108,13 +2957,11 @@ open class idEntity : idClass() {
 
         // call script object's destructor
         destructor = scriptObject.GetDestructor()
-        if (destructor != null) {
-            // start a thread that will run immediately and be destroyed
+        if (destructor != null) { // start a thread that will run immediately and be destroyed
             thread = idThread()
             thread.SetThreadName(name.toString())
             thread.CallFunction(this, destructor, true)
-            thread.Execute()
-            //		delete thread;
+            thread.Execute() //		delete thread;
         }
     }
 
@@ -3248,8 +3095,7 @@ open class idEntity : idClass() {
 
          Guis.
 
-         ***********************************************************************/
-    // gui
+         ***********************************************************************/ // gui
     fun TriggerGuis() {
         var i: Int
         i = 0
@@ -3305,8 +3151,7 @@ open class idEntity : idClass() {
                             token3 = idToken()
                             if (!src.ReadToken(token3)) {
                                 idGameLocal.Error(
-                                    "Expecting function name following '::' in gui for entity '%s'",
-                                    entityGui.name
+                                    "Expecting function name following '::' in gui for entity '%s'", entityGui.name
                                 )
                             }
                             token2.Append("::$token3")
@@ -3314,9 +3159,7 @@ open class idEntity : idClass() {
                         val func = Game_local.gameLocal.program.FindFunction(token2)
                         if (null == func) {
                             idGameLocal.Error(
-                                "Can't find function '%s' for gui in entity '%s'",
-                                token2,
-                                entityGui.name
+                                "Can't find function '%s' for gui in entity '%s'", token2, entityGui.name
                             )
                         } else {
                             val thread = idThread(func)
@@ -3388,8 +3231,10 @@ open class idEntity : idClass() {
 
                 // if we get to this point we don't know how to handle it
                 src.UnreadToken(token)
-                if (!HandleSingleGuiCommand(entityGui, src)) {
-                    // not handled there see if entity or any of its targets can handle it
+                if (!HandleSingleGuiCommand(
+                        entityGui, src
+                    )
+                ) { // not handled there see if entity or any of its targets can handle it
                     // this will only work for one target atm
                     if (entityGui.HandleSingleGuiCommand(entityGui, src)) {
                         continue
@@ -3404,8 +3249,7 @@ open class idEntity : idClass() {
                         }
                         i++
                     }
-                    if (i == c) {
-                        // not handled
+                    if (i == c) { // not handled
                         idLib.common.DPrintf("idEntity::HandleGuiCommands: '%s' not handled\n", token.toString())
                         src.ReadToken(token)
                     }
@@ -3423,8 +3267,7 @@ open class idEntity : idClass() {
 
          Targets
 
-         ***********************************************************************/
-    // targets
+         ***********************************************************************/ // targets
     /*
          ===============
          idEntity::FindTargets
@@ -3498,8 +3341,7 @@ open class idEntity : idClass() {
 
          Misc.
 
-         ***********************************************************************/
-    // misc
+         ***********************************************************************/ // misc
     open fun Teleport(origin: idVec3, angles: idAngles, destination: idEntity?) {
         GetPhysics().SetOrigin(origin)
         GetPhysics().SetAxis(angles.ToMat3())
@@ -3524,10 +3366,7 @@ open class idEntity : idClass() {
         trace.endpos.set(GetPhysics().GetOrigin())
         trace.endAxis.set(GetPhysics().GetAxis())
         numClipModels = Game_local.gameLocal.clip.ClipModelsTouchingBounds(
-            GetPhysics().GetAbsBounds(),
-            Material.CONTENTS_TRIGGER,
-            clipModels,
-            Game_local.MAX_GENTITIES
+            GetPhysics().GetAbsBounds(), Material.CONTENTS_TRIGGER, clipModels, Game_local.MAX_GENTITIES
         )
         numEntities = 0
         i = 0
@@ -3636,8 +3475,7 @@ open class idEntity : idClass() {
         return when (event) {
             EVENT_STARTSOUNDSHADER -> {
                 assert(Game_local.gameLocal.isNewFrame)
-                if (time < Game_local.gameLocal.realClientTime - 1000) {
-                    // too old, skip it ( reliable messages don't need to be parsed in full )
+                if (time < Game_local.gameLocal.realClientTime - 1000) { // too old, skip it ( reliable messages don't need to be parsed in full )
                     idLib.common.DPrintf(
                         "ent 0x%x: start sound shader too old (%d ms)\n",
                         entityNumber.toString(),
@@ -3664,8 +3502,7 @@ open class idEntity : idClass() {
             else -> {
                 false
             }
-        }
-        //            return false;
+        } //            return false;
     }
 
     fun WriteBindToSnapshot(msg: idBitMsgDelta) {
@@ -3735,8 +3572,7 @@ open class idEntity : idClass() {
         renderEntity!!.shaderParms[RenderWorld.SHADERPARM_ALPHA] = color[3]
     }
 
-    fun WriteGUIToSnapshot(msg: idBitMsgDelta) {
-        // no need to loop over MAX_RENDERENTITY_GUI at this time
+    fun WriteGUIToSnapshot(msg: idBitMsgDelta) { // no need to loop over MAX_RENDERENTITY_GUI at this time
         if (renderEntity!!.gui.isNotEmpty()) {
             msg.WriteByte(renderEntity!!.gui[0]!!.State().GetInt("networkState"))
         } else {
@@ -3827,9 +3663,7 @@ open class idEntity : idClass() {
         for (i in 0 until spawnArgs.GetNumKeyVals()) {
             val kv = spawnArgs.GetKeyVal(i)!!
             if (idStr.Cmpn(
-                    kv.GetValue().toString(),
-                    Common.STRTABLE_ID,
-                    Common.STRTABLE_ID_LENGTH
+                    kv.GetValue().toString(), Common.STRTABLE_ID, Common.STRTABLE_ID_LENGTH
                 ) == 0
             ) {
                 spawnArgs.Set(kv.GetKey(), idLib.common.GetLanguageDict().GetString(kv.GetValue()))
@@ -3854,11 +3688,9 @@ open class idEntity : idClass() {
         return if (!Game_local.gameLocal.InPlayerConnectedArea(this)) {
             if (dormantStart == 0) {
                 dormantStart = Game_local.gameLocal.time
-            }
-            // just got closed off, don't go dormant yet
+            } // just got closed off, don't go dormant yet
             Game_local.gameLocal.time - dormantStart >= DELAY_DORMANT_TIME
-        } else {
-            // the monster area is topologically connected to a player, but if
+        } else { // the monster area is topologically connected to a player, but if
             // the monster hasn't been woken up before, do the more precise PVS check
             if (!fl.hasAwakened) {
                 if (!Game_local.gameLocal.InPlayerPVS(this)) {
@@ -3872,7 +3704,7 @@ open class idEntity : idClass() {
             false
         }
 
-//            return false;
+        //            return false;
     }
 
     private fun InitDefaultPhysics(origin: idVec3, axis: idMat3) {
@@ -3892,18 +3724,14 @@ open class idEntity : idClass() {
                 val size = idVec3()
                 val bounds = idBounds()
                 var setClipModel = false
-                if (spawnArgs.GetVector("mins", null, bounds[0])
-                    && spawnArgs.GetVector("maxs", null, bounds[1])
-                ) {
+                if (spawnArgs.GetVector("mins", null, bounds[0]) && spawnArgs.GetVector("maxs", null, bounds[1])) {
                     setClipModel = true
-                    if (bounds[0].get(0) > bounds[1].get(0) || bounds[0].get(1) > bounds[1]
-                            .get(1) || bounds[0].get(2) > bounds[1].get(2)
+                    if (bounds[0].get(0) > bounds[1].get(0) || bounds[0].get(1) > bounds[1].get(1) || bounds[0].get(2) > bounds[1].get(
+                            2
+                        )
                     ) {
                         idGameLocal.Error(
-                            "Invalid bounds '%s'-'%s' on entity '%s'",
-                            bounds[0].ToString(),
-                            bounds[1].ToString(),
-                            name
+                            "Invalid bounds '%s'-'%s' on entity '%s'", bounds[0].ToString(), bounds[1].ToString(), name
                         )
                     }
                 } else if (spawnArgs.GetVector("size", null, size)) {
@@ -3983,8 +3811,7 @@ open class idEntity : idClass() {
             this.AddBindConstraints()
         }
 
-        if (master == null || master == Game_local.gameLocal.world) {
-            // this can happen in scripts, so safely exit out.
+        if (master == null || master == Game_local.gameLocal.world) { // this can happen in scripts, so safely exit out.
             return false
         }
 
@@ -4032,13 +3859,10 @@ open class idEntity : idClass() {
         }
 
         // check if I'm the teamMaster
-        if (teamMaster == this) {
-            // do we have more than one teammate?
-            if (null == teamChain!!.teamChain) {
-                // no, break up the team
+        if (teamMaster == this) { // do we have more than one teammate?
+            if (null == teamChain!!.teamChain) { // no, break up the team
                 teamChain!!.teamMaster = null
-            } else {
-                // yes, so make the first teammate the teamMaster
+            } else { // yes, so make the first teammate the teamMaster
                 ent = teamChain
                 while (ent != null) {
                     ent.teamMaster = teamChain
@@ -4082,9 +3906,7 @@ open class idEntity : idClass() {
         // the first MAX_PVS_AREAS may not be visible to a network client and as a result the particle system may not show up when it should
         if (localNumPVSAreas > MAX_PVS_AREAS) {
             localNumPVSAreas = Game_local.gameLocal.pvs.GetPVSAreas(
-                idBounds(modelAbsBounds.GetCenter()).Expand(64.0f),
-                localPVSAreas,
-                localPVSAreas.size
+                idBounds(modelAbsBounds.GetCenter()).Expand(64.0f), localPVSAreas, localPVSAreas.size
             )
         }
         numPVSAreas = 0
@@ -4103,8 +3925,7 @@ open class idEntity : idClass() {
 
          Events
 
-         ***********************************************************************/
-    // events
+         ***********************************************************************/ // events
     private fun Event_GetName() {
         idThread.ReturnString(name.toString())
     }
@@ -4137,19 +3958,18 @@ open class idEntity : idClass() {
         val animNum: Int
         val parentAnimator: idAnimator?
         if (spawnArgs.GetString("bind", "", bind)) {
-            if (idStr.Icmp(bind[0]!!, "worldspawn") == 0) {
-                //FIXME: Completely unneccessary since the worldspawn is called "world"
+            if (idStr.Icmp(
+                    bind[0]!!, "worldspawn"
+                ) == 0
+            ) { //FIXME: Completely unneccessary since the worldspawn is called "world"
                 parent = Game_local.gameLocal.world
             } else {
                 parent = Game_local.gameLocal.FindEntity(bind[0]!!)
             }
             bindOrientated = spawnArgs.GetBool("bindOrientated", "1")
-            if (parent != null) {
-                // bind to a joint of the skeletal model of the parent
+            if (parent != null) { // bind to a joint of the skeletal model of the parent
                 if (spawnArgs.GetString(
-                        "bindToJoint",
-                        "",
-                        joint
+                        "bindToJoint", "", joint
                     ) && joint.isNotEmpty()
                 ) { //TODO:check if java actually compiles them in the right order.
                     parentAnimator = parent.GetAnimator()
@@ -4168,9 +3988,7 @@ open class idEntity : idClass() {
 
                     // bind it relative to a specific anim
                     if ((parent.spawnArgs.GetString("bindanim", "", bindanim) || parent.spawnArgs.GetString(
-                            "anim",
-                            "",
-                            bindanim
+                            "anim", "", bindanim
                         )) && bindanim.isNotEmpty()
                     ) {
                         animNum = parentAnimator.GetAnim(bindanim[0]!!)
@@ -4280,8 +4098,7 @@ open class idEntity : idClass() {
             angles[0] = 0.0f
             angles[1] = spawnArgs.GetFloat("angle")
             angles[2] = 0.0f
-        }
-        // DG: save old origin for debug warning
+        } // DG: save old origin for debug warning
         val oldOrg = idVec3(GetPhysics().GetOrigin())
         Teleport(org, angles, null)
         part = teamChain
@@ -4293,24 +4110,24 @@ open class idEntity : idClass() {
             if (part.GetPhysics() is idPhysics_Parametric) {
                 if ((part.GetPhysics() as idPhysics_Parametric).IsPusher()) {
                     Game_local.gameLocal.Warning(
-                        "teleported '%s' which has the pushing mover '%s' bound to it\n",
-                        GetName(),
-                        part.GetName()
+                        "teleported '%s' which has the pushing mover '%s' bound to it\n", GetName(), part.GetName()
                     )
                     Game_local.gameLocal.Warning(
                         "  from (%.2f %.2f %.2f) to (%.2f %.2f %.2f)\n",
-                        oldOrg.x, oldOrg.y, oldOrg.z, org.x, org.y, org.z
+                        oldOrg.x,
+                        oldOrg.y,
+                        oldOrg.z,
+                        org.x,
+                        org.y,
+                        org.z
                     )
                 }
             } else if (part.GetPhysics() is idPhysics_AF) {
                 Game_local.gameLocal.Warning(
-                    "teleported '%s' which has the articulated figure '%s' bound to it\n",
-                    GetName(),
-                    part.GetName()
+                    "teleported '%s' which has the articulated figure '%s' bound to it\n", GetName(), part.GetName()
                 )
                 Game_local.gameLocal.Warning(
-                    "  from (%.2f %.2f %.2f) to (%.2f %.2f %.2f)\n",
-                    oldOrg.x, oldOrg.y, oldOrg.z, org.x, org.y, org.z
+                    "  from (%.2f %.2f %.2f) to (%.2f %.2f %.2f)\n", oldOrg.x, oldOrg.y, oldOrg.z, org.x, org.y, org.z
                 )
             }
             part = part.teamChain
@@ -4379,8 +4196,7 @@ open class idEntity : idClass() {
         }
         if (func.type!!.NumParameters() != 1) {
             idGameLocal.Error(
-                "Function '%s' has the wrong number of parameters for 'callFunction'",
-                funcName
+                "Function '%s' has the wrong number of parameters for 'callFunction'", funcName
             )
         }
         if (!scriptObject.GetTypeDef().Inherits(func.type!!.GetParmType(0))) {
@@ -4427,8 +4243,7 @@ open class idEntity : idClass() {
                 = false
 
         override fun readFrom(file: idFile) {
-            val bits = file.ReadShort().toInt()
-            // C++ bitfield order from Entity.h lines 146-158
+            val bits = file.ReadShort().toInt() // C++ bitfield order from Entity.h lines 146-158
             notarget = (bits and (1 shl 0)) != 0
             noknockback = (bits and (1 shl 1)) != 0
             takedamage = (bits and (1 shl 2)) != 0
@@ -4445,8 +4260,7 @@ open class idEntity : idClass() {
         }
 
         override fun writeTo(file: idFile) {
-            var bits = 0
-            // C++ bitfield order from Entity.h lines 146-158
+            var bits = 0 // C++ bitfield order from Entity.h lines 146-158
             if (notarget) bits = bits or (1 shl 0)
             if (noknockback) bits = bits or (1 shl 1)
             if (takedamage) bits = bits or (1 shl 2)
@@ -4578,8 +4392,9 @@ open class idAnimatedEntity : idEntity() {
          looks up the number of the specified joint.  returns INVALID_JOINT if the joint is not found.
          ================
          */
-        private fun Event_GetJointHandle(e: idAnimatedEntity, jointname: idEventArg<String>) {
-//            jointHandle_t joint = new jointHandle_t();
+        private fun Event_GetJointHandle(
+            e: idAnimatedEntity, jointname: idEventArg<String>
+        ) { //            jointHandle_t joint = new jointHandle_t();
             val joint: Int
             joint = e.animator.GetJointHandle(jointname.value)
             idThread.ReturnInt(joint)
@@ -4605,9 +4420,7 @@ open class idAnimatedEntity : idEntity() {
          */
         private fun Event_SetJointPos(
             e: idAnimatedEntity,    /*jointHandle_t*/
-            jointnum: idEventArg<Int>,
-            transform_type: idEventArg<jointModTransform_t>,
-            pos: idEventArg<idVec3>
+            jointnum: idEventArg<Int>, transform_type: idEventArg<jointModTransform_t>, pos: idEventArg<idVec3>
         ) {
             e.animator.SetJointPos(jointnum.value, transform_type.value, pos.value)
         }
@@ -4622,8 +4435,7 @@ open class idAnimatedEntity : idEntity() {
         private fun Event_SetJointAngle(
             e: idAnimatedEntity,    /*jointHandle_t*/
             jointnum: idEventArg<Int>,    /*jointModTransform_t*/
-            transform_type: idEventArg<Int>,
-            angles: idEventArg<idVec3>
+            transform_type: idEventArg<Int>, angles: idEventArg<idVec3>
         ) {
             val mat: idMat3
             val ang = idAngles(angles.value[0], angles.value[1], angles.value[2])
@@ -4692,9 +4504,7 @@ open class idAnimatedEntity : idEntity() {
                     Event_ClearJoint(e, jointnum as idEventArg<Int>)
                 }
             eventCallbacks[EV_SetJointPos] =
-                eventCallback_t3<idAnimatedEntity> { e: idAnimatedEntity, jointnum: idEventArg<*>?,
-                                                     transform_type: idEventArg<*>?,
-                                                     pos: idEventArg<*>? ->
+                eventCallback_t3<idAnimatedEntity> { e: idAnimatedEntity, jointnum: idEventArg<*>?, transform_type: idEventArg<*>?, pos: idEventArg<*>? ->
                     Event_SetJointPos(
                         e,
                         jointnum as idEventArg<Int>,
@@ -4703,14 +4513,9 @@ open class idAnimatedEntity : idEntity() {
                     )
                 }
             eventCallbacks[EV_SetJointAngle] =
-                eventCallback_t3<idAnimatedEntity> { e: idAnimatedEntity, jointnum: idEventArg<*>?,
-                                                     transform_type: idEventArg<*>?,
-                                                     angles: idEventArg<*>? ->
+                eventCallback_t3<idAnimatedEntity> { e: idAnimatedEntity, jointnum: idEventArg<*>?, transform_type: idEventArg<*>?, angles: idEventArg<*>? ->
                     Event_SetJointAngle(
-                        e,
-                        jointnum as idEventArg<Int>,
-                        transform_type as idEventArg<Int>,
-                        angles as idEventArg<idVec3>
+                        e, jointnum as idEventArg<Int>, transform_type as idEventArg<Int>, angles as idEventArg<idVec3>
                     )
                 }
             eventCallbacks[EV_GetJointPos] =
@@ -4762,8 +4567,7 @@ open class idAnimatedEntity : idEntity() {
         animator.Restore(savefile)
 
         // check if the entity has an MD5 model
-        if (animator.ModelHandle() != null) {
-            // set the callback to update the joints
+        if (animator.ModelHandle() != null) { // set the callback to update the joints
             renderEntity!!.callback = ModelCallback.getInstance()
             arrayOf<Array<idJointMat?>?>(null)
             renderEntity!!.numJoints = animator.GetJoints(renderEntity!!)
@@ -4789,15 +4593,13 @@ open class idAnimatedEntity : idEntity() {
 
     fun UpdateAnimation() {
         val ts = if (isD3XP) SetTimeState(timeGroup) else null
-        try {
-            // don't do animations if they're not enabled
+        try { // don't do animations if they're not enabled
             if (0 == (thinkFlags and TH_ANIMATE)) {
                 return
             }
 
             // is the model an MD5?
-            if (animator.ModelHandle() == null) {
-                // no, so nothing to do
+            if (animator.ModelHandle() == null) { // no, so nothing to do
                 return
             }
 
@@ -4807,8 +4609,7 @@ open class idAnimatedEntity : idEntity() {
             }
 
             // if the model is animating then we have to update it
-            if (!animator.FrameHasChanged(Game_local.gameLocal.time)) {
-                // still fine the way it was
+            if (!animator.FrameHasChanged(Game_local.gameLocal.time)) { // still fine the way it was
                 return
             }
 
@@ -4850,10 +4651,7 @@ open class idAnimatedEntity : idEntity() {
         UpdateVisuals()
     }
 
-    fun GetJointWorldTransform(   /*jointHandle_t*/jointHandle: Int,
-                                  currentTime: Int,
-                                  offset: idVec3,
-                                  axis: idMat3
+    fun GetJointWorldTransform(   /*jointHandle_t*/jointHandle: Int, currentTime: Int, offset: idVec3, axis: idMat3
     ): Boolean {
         if (!animator.GetJointTransform(jointHandle, currentTime, offset, axis)) {
             return false
@@ -4948,9 +4746,7 @@ open class idAnimatedEntity : idEntity() {
             msg.WriteLong(Game_local.gameLocal.ServerRemapDecl(-1, declType_t.DECL_ENTITYDEF, def.Index()))
             msg.WriteLong(
                 Game_local.gameLocal.ServerRemapDecl(
-                    -1,
-                    declType_t.DECL_MATERIAL,
-                    collision.c.material!!.Index()
+                    -1, declType_t.DECL_MATERIAL, collision.c.material!!.Index()
                 )
             )
             ServerSendEvent(EVENT_ADD_DAMAGE_EFFECT, msg, false, -1)
@@ -4998,10 +4794,7 @@ open class idAnimatedEntity : idEntity() {
             }
             if (sound != null && !sound.isEmpty()) { // != '\0' ) {
                 StartSoundShader(
-                    DeclManager.declManager.FindSound(sound),
-                    gameSoundChannel_t.SND_CHANNEL_BODY.ordinal,
-                    0,
-                    false
+                    DeclManager.declManager.FindSound(sound), gameSoundChannel_t.SND_CHANNEL_BODY.ordinal, 0, false
                 )
             }
 
@@ -5016,8 +4809,7 @@ open class idAnimatedEntity : idEntity() {
             }
 
             // can't see wounds on the player model in single player mode
-            if (!(this is idPlayer && !Game_local.gameLocal.isMultiplayer)) {
-                // place a wound overlay on the model
+            if (!(this is idPlayer && !Game_local.gameLocal.isMultiplayer)) { // place a wound overlay on the model
                 key = va("mtr_wound_%s", materialType)
                 decal = spawnArgs.RandomPrefix(key, Game_local.gameLocal.random)
                 if (decal.isNullOrEmpty()) {
@@ -5083,11 +4875,7 @@ open class idAnimatedEntity : idEntity() {
             origin.set(renderEntity!!.origin.plus(origin.times(renderEntity!!.axis)))
             start.set(origin.plus(de.localOrigin.times(axis)))
             if (!Game_local.gameLocal.smokeParticles!!.EmitSmoke(
-                    de.type,
-                    de.time,
-                    Game_local.gameLocal.random.CRandomFloat(),
-                    start,
-                    axis
+                    de.type, de.time, Game_local.gameLocal.random.CRandomFloat(), start, axis
                 )
             ) {
                 de.time = 0
@@ -5114,14 +4902,11 @@ open class idAnimatedEntity : idEntity() {
                 damageDefIndex = Game_local.gameLocal.ClientRemapDecl(declType_t.DECL_ENTITYDEF, msg.ReadLong())
                 materialIndex = Game_local.gameLocal.ClientRemapDecl(declType_t.DECL_MATERIAL, msg.ReadLong())
                 val damageDef = DeclManager.declManager.DeclByIndex(
-                    declType_t.DECL_ENTITYDEF,
-                    damageDefIndex
+                    declType_t.DECL_ENTITYDEF, damageDefIndex
                 ) as idDeclEntityDef
-                val collisionMaterial: Material.idMaterial =
-                    DeclManager.declManager.DeclByIndex(
-                        declType_t.DECL_MATERIAL,
-                        materialIndex
-                    ) as Material.idMaterial
+                val collisionMaterial: Material.idMaterial = DeclManager.declManager.DeclByIndex(
+                    declType_t.DECL_MATERIAL, materialIndex
+                ) as Material.idMaterial
                 AddLocalDamageEffect(jointNum, localOrigin, localNormal, localDir, damageDef, collisionMaterial)
                 true
             }
@@ -5129,8 +4914,7 @@ open class idAnimatedEntity : idEntity() {
             else -> {
                 super.ClientReceiveEvent(event, time, msg)
             }
-        }
-        //            return false;
+        } //            return false;
     }
 
     /*
@@ -5231,10 +5015,8 @@ class SetTimeState(timeGroup: Int = -1) : AutoCloseable {
 
     fun push(timeGroup: Int) {
         if (Game_local.gameLocal.isMultiplayer) return
-        activated = true
-        // remember which timeline we were on
-        previousFast = Game_local.gameLocal.time != Game_local.gameLocal.slow.time
-        // switch to the requested timeline
+        activated = true // remember which timeline we were on
+        previousFast = Game_local.gameLocal.time != Game_local.gameLocal.slow.time // switch to the requested timeline
         Game_local.gameLocal.SelectTimeGroup(timeGroup)
     }
 

@@ -36,14 +36,12 @@ object AASFileManager {
         //        virtual						~idAASFileManagerLocal( void ) {}
         override fun LoadAAS(fileName: String, mapFileCRC: Long): idAASFile? {
             val file = idAASFileLocal()
-            return if (!file.Load(idStr(fileName), mapFileCRC)) {
-//		delete file;
+            return if (!file.Load(idStr(fileName), mapFileCRC)) { //		delete file;
                 null
             } else file
         }
 
-        override fun FreeAAS(file: idAASFile) {
-//            delete file
+        override fun FreeAAS(file: idAASFile) { //            delete file
         }
     }
 }

@@ -55,10 +55,7 @@ object NoGameTypeInfo {
 
     // NOTE: C++ struct field order: typeName, superType, size, variables
     class classTypeInfo_t(
-        var typeName: String?,
-        var superType: String?,
-        var size: Int,
-        var variables: Array<classVariableInfo_t>?
+        var typeName: String?, var superType: String?, var size: Int, var variables: Array<classVariableInfo_t>?
     )
 
     // Empty sentinel arrays — null-terminated like C++ originals

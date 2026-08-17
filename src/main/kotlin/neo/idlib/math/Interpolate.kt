@@ -134,8 +134,7 @@ class Interpolate {
             currentTime = 0.0f
             currentValue = _Copy(value)
             startValue = _Copy(value)
-            endValue = _Copy(value)
-            // Initialize with default values based on common types
+            endValue = _Copy(value) // Initialize with default values based on common types
         }
     }
 
@@ -156,12 +155,7 @@ class Interpolate {
         private var startTime: Float = 0.0f
         private var startValue: T = _Copy(value)
         fun Init(
-            startTime: Float,
-            accelTime: Float,
-            decelTime: Float,
-            duration: Float,
-            startValue: T,
-            endValue: T
+            startTime: Float, accelTime: Float, decelTime: Float, duration: Float, startValue: T, endValue: T
         ) {
             val speed: T
             this.startTime = startTime
@@ -178,8 +172,7 @@ class Interpolate {
             }
             linearTime = duration - this.accelTime - this.decelTime
             speed = _Multiply(
-                _Minus(endValue, startValue),
-                1000.0f / (linearTime + (this.accelTime + this.decelTime) * 0.5f)
+                _Minus(endValue, startValue), 1000.0f / (linearTime + (this.accelTime + this.decelTime) * 0.5f)
             )
             if (this.accelTime != 0.0f) {
                 extrapolate.Init(
@@ -323,8 +316,7 @@ class Interpolate {
             linearTime = file.ReadFloat()
             decelTime = file.ReadFloat()
             startValue = _readValue(file)
-            endValue = _readValue(file)
-            // idExtrapolate fields
+            endValue = _readValue(file) // idExtrapolate fields
             val extType = file.ReadInt()
             val extStartTime = file.ReadFloat()
             val extDuration = file.ReadFloat()
@@ -342,8 +334,7 @@ class Interpolate {
             file.WriteFloat(linearTime)
             file.WriteFloat(decelTime)
             _writeValue(file, startValue)
-            _writeValue(file, endValue)
-            // idExtrapolate fields
+            _writeValue(file, endValue) // idExtrapolate fields
             file.WriteInt(extrapolate.GetExtrapolationType())
             file.WriteFloat(extrapolate.GetStartTime())
             file.WriteFloat(extrapolate.GetDuration())
@@ -446,8 +437,7 @@ class Interpolate {
             linearTime = 0f
             decelTime = 0f
             accelTime = 0f
-            startTime = 0f
-            //	memset( &startValue, 0, sizeof( startValue ) );
+            startTime = 0f //	memset( &startValue, 0, sizeof( startValue ) );
             extrapolate = idExtrapolate(value)
         }
     }
@@ -469,12 +459,7 @@ class Interpolate {
         private var startTime: Float = 0f
         private var startValue: T = _Copy(value)
         fun Init(
-            startTime: Float,
-            accelTime: Float,
-            decelTime: Float,
-            duration: Float,
-            startValue: T,
-            endValue: T
+            startTime: Float, accelTime: Float, decelTime: Float, duration: Float, startValue: T, endValue: T
         ) {
             val speed: T
             this.startTime = startTime
@@ -608,29 +593,17 @@ class Interpolate {
             } else if (deltaTime < accelTime + linearTime) {
                 if (extrapolate.GetExtrapolationType() != Extrapolate.EXTRAPOLATION_LINEAR) {
                     extrapolate.Init(
-                        startTime + accelTime,
-                        linearTime,
-                        _Plus(
-                            startValue!!,
-                            _Multiply(extrapolate.GetSpeed()!!, (accelTime * 0.001f * idMath.SQRT_1OVER2))
-                        ),
-                        extrapolate.GetBaseSpeed(),
-                        extrapolate.GetSpeed(),
-                        Extrapolate.EXTRAPOLATION_LINEAR
+                        startTime + accelTime, linearTime, _Plus(
+                            startValue!!, _Multiply(extrapolate.GetSpeed()!!, (accelTime * 0.001f * idMath.SQRT_1OVER2))
+                        ), extrapolate.GetBaseSpeed(), extrapolate.GetSpeed(), Extrapolate.EXTRAPOLATION_LINEAR
                     )
                 }
             } else {
                 if (extrapolate.GetExtrapolationType() != Extrapolate.EXTRAPOLATION_DECELSINE) {
                     extrapolate.Init(
-                        startTime + accelTime + linearTime,
-                        decelTime,
-                        _Minus(
-                            endValue!!,
-                            _Multiply(extrapolate.GetSpeed()!!, (decelTime * 0.001f * idMath.SQRT_1OVER2))
-                        ),
-                        extrapolate.GetBaseSpeed(),
-                        extrapolate.GetSpeed(),
-                        Extrapolate.EXTRAPOLATION_DECELSINE
+                        startTime + accelTime + linearTime, decelTime, _Minus(
+                            endValue!!, _Multiply(extrapolate.GetSpeed()!!, (decelTime * 0.001f * idMath.SQRT_1OVER2))
+                        ), extrapolate.GetBaseSpeed(), extrapolate.GetSpeed(), Extrapolate.EXTRAPOLATION_DECELSINE
                     )
                 }
             }
@@ -684,8 +657,7 @@ class Interpolate {
             linearTime = 0f
             decelTime = 0f
             accelTime = 0f
-            startTime = 0f
-            //	memset( &startValue, 0, sizeof( startValue ) );
+            startTime = 0f //	memset( &startValue, 0, sizeof( startValue ) );
             extrapolate = idExtrapolate(value)
         }
     }

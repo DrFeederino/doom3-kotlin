@@ -107,19 +107,12 @@ object CmdSystem {
         // Registers a command and the function to call for it.
         @Throws(idException::class)
         abstract fun AddCommand(
-            cmdName: String,
-            function: cmdFunction_t,
-            flags: Long,
-            description: String,
-            argCompletion: argCompletion_t?
+            cmdName: String, function: cmdFunction_t, flags: Long, description: String, argCompletion: argCompletion_t?
         )
 
         @Throws(idException::class)
         fun AddCommand(
-            cmdName: String,
-            function: cmdFunction_t,
-            flags: Long,
-            description: String
+            cmdName: String, function: cmdFunction_t, flags: Long, description: String
         ) {
             AddCommand(cmdName, function, flags, description, null)
         }
@@ -245,8 +238,7 @@ object CmdSystem {
             @Throws(idException::class)
             override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
                 cmdSystem.ArgCompletion_FolderExtension(
-                    args, callback, "models/", false,
-                    ".lwo", ".ase", ".md5mesh", ".ma", null
+                    args, callback, "models/", false, ".lwo", ".ase", ".md5mesh", ".ma", null
                 )
             }
 
@@ -276,8 +268,7 @@ object CmdSystem {
             @Throws(idException::class)
             override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
                 cmdSystem.ArgCompletion_FolderExtension(
-                    args, callback, "/", false,
-                    ".tga", ".dds", ".jpg", ".pcx", null
+                    args, callback, "/", false, ".tga", ".dds", ".jpg", ".pcx", null
                 )
             }
 
@@ -398,18 +389,12 @@ object CmdSystem {
                 ArgCompletion_ConfigName.getInstance()
             )
             AddCommand(
-                "vstr",
-                Vstr_f.getInstance(),
-                CMD_FL_SYSTEM,
-                "inserts the current value of a cvar as command text"
+                "vstr", Vstr_f.getInstance(), CMD_FL_SYSTEM, "inserts the current value of a cvar as command text"
             )
             AddCommand("echo", Echo_f.getInstance(), CMD_FL_SYSTEM, "prints text")
             AddCommand("parse", Parse_f.getInstance(), CMD_FL_SYSTEM, "prints tokenized string")
             AddCommand(
-                "wait",
-                Wait_f.getInstance(),
-                CMD_FL_SYSTEM,
-                "delays remaining buffered commands one or more frames"
+                "wait", Wait_f.getInstance(), CMD_FL_SYSTEM, "delays remaining buffered commands one or more frames"
             )
 
             completionString.set("*")
@@ -421,8 +406,7 @@ object CmdSystem {
         idCmdSystemLocal::Shutdown
         ============
         */
-        override fun Shutdown() {
-            // In C++ this frees each command node; in Kotlin the GC handles it
+        override fun Shutdown() { // In C++ this frees each command node; in Kotlin the GC handles it
             commands = null
             completionString.Clear()
             completionParms.clear()
@@ -437,13 +421,8 @@ object CmdSystem {
         */
         @Throws(idException::class)
         override fun AddCommand(
-            cmdName: String,
-            function: cmdFunction_t,
-            flags: Long,
-            description: String,
-            argCompletion: argCompletion_t?
-        ) {
-            // fail if the command already exists
+            cmdName: String, function: cmdFunction_t, flags: Long, description: String, argCompletion: argCompletion_t?
+        ) { // fail if the command already exists
             var cmd = commands
             while (cmd != null) {
                 if (idStr.Cmp(cmdName, cmd.name) == 0) {
@@ -475,16 +454,16 @@ object CmdSystem {
             var last: commandDef_s?
             last = commands.also { cmd = it }
             while (cmd != null) {
-                if (idStr.Cmp(cmdName, cmd!!.name) == 0) {
+                if (idStr.Cmp(cmdName, cmd.name) == 0) {
                     if (cmd == commands) {
-                        commands = cmd!!.next
+                        commands = cmd.next
                     } else {
-                        last!!.next = cmd!!.next
+                        last!!.next = cmd.next
                     }
                     return
                 }
                 last = cmd
-                cmd = cmd!!.next
+                cmd = cmd.next
             }
         }
 
@@ -492,21 +471,18 @@ object CmdSystem {
         ============
         idCmdSystemLocal::RemoveFlaggedCommands
         ============
-        */
-        // FIX: Original code did not check flags and did not remove commands from the linked list.
+        */ // FIX: Original code did not check flags and did not remove commands from the linked list.
         // Now properly implements the C++ double-pointer traversal: removes matching commands from the list.
         override fun RemoveFlaggedCommands(flags: Int) {
             var prev: commandDef_s? = null
             var cmd = commands
             while (cmd != null) {
-                if (cmd.flags and flags.toLong() != 0L) {
-                    // Remove this command from the linked list
+                if (cmd.flags and flags.toLong() != 0L) { // Remove this command from the linked list
                     if (prev == null) {
                         commands = cmd.next
                     } else {
                         prev.next = cmd.next
-                    }
-                    // Don't advance prev — it still points to the node before the next one
+                    } // Don't advance prev — it still points to the node before the next one
                     cmd = if (prev == null) commands else prev.next
                     continue
                 }
@@ -592,8 +568,7 @@ object CmdSystem {
 
             while (textLength != 0) {
 
-                if (wait != 0) {
-                    // skip out while text still remains in buffer, leaving it for next frame
+                if (wait != 0) { // skip out while text still remains in buffer, leaving it for next frame
                     wait--
                     break
                 }
@@ -816,32 +791,30 @@ object CmdSystem {
             prev = commands.also { cmd = it }
             while (cmd != null) {
 
-                if (idStr.Icmp(args.Argv(0), cmd!!.name) == 0) {
-                    // rearrange the links so that the command will be
+                if (idStr.Icmp(args.Argv(0), cmd.name) == 0) { // rearrange the links so that the command will be
                     // near the head of the list next time it is used
                     if (cmd !== commands) {
-                        prev!!.next = cmd!!.next
-                        cmd!!.next = commands
+                        prev!!.next = cmd.next
+                        cmd.next = commands
                         commands = cmd
                     }
 
-                    if (cmd!!.flags and (CMD_FL_CHEAT or CMD_FL_TOOL) != 0L
-                        && Session.session != null && Session.session.IsMultiplayer()
-                        && !CVarSystem.cvarSystem.GetCVarBool("net_allowCheats")
+                    if (cmd.flags and (CMD_FL_CHEAT or CMD_FL_TOOL) != 0L && Session.session != null && Session.session.IsMultiplayer() && !CVarSystem.cvarSystem.GetCVarBool(
+                            "net_allowCheats"
+                        )
                     ) {
-                        idLib.common.Printf("Command '%s' not valid in multiplayer mode.\n", cmd!!.name)
+                        idLib.common.Printf("Command '%s' not valid in multiplayer mode.\n", cmd.name)
                         return
-                    }
-                    // perform the action
-                    if (null == cmd!!.function) {
+                    } // perform the action
+                    if (null == cmd.function) {
                         break
                     } else {
-                        cmd!!.function!!.run(args)
+                        cmd.function!!.run(args)
                     }
                     return
                 }
                 prev = cmd
-                cmd = cmd!!.next
+                cmd = cmd.next
             }
 
             // check cvars
@@ -1195,8 +1168,7 @@ object CmdSystem {
                     if (0L == cmd.flags and cmdFlags_t) {
                         cmd = cmd.next
                         continue
-                    }
-                    // FIX: Filter condition was inverted — C++ skips when Filter() == 0 (no match),
+                    } // FIX: Filter condition was inverted — C++ skips when Filter() == 0 (no match),
                     // meaning only matching commands are shown. The Kotlin code was skipping matches.
                     if (match.isNotEmpty() && !idStr(cmd.name).Filter(match, false)) {
                         cmd = cmd.next
@@ -1211,7 +1183,7 @@ object CmdSystem {
                 i = 0
                 while (i < cmdList.Num()) {
                     cmd = cmdList[i]
-                    idLib.common.Printf("  %-21s %s\n", cmd!!.name, cmd.description)
+                    idLib.common.Printf("  %-21s %s\n", cmd.name, cmd.description)
                     i++
                 }
                 idLib.common.Printf("%d commands\n", cmdList.Num())

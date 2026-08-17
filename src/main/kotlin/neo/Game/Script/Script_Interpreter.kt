@@ -74,35 +74,29 @@ object Script_Interpreter {
         //
         private var thread: idThread? = null
 
-        init {
-            //            memset(localstack, 0, sizeof(localstack));
-//            memset(callStack, 0, sizeof(callStack));
+        init { //            memset(localstack, 0, sizeof(localstack));
+            //            memset(callStack, 0, sizeof(callStack));
             Reset()
         }
 
-        private fun PopParms(numParms: Int) {
-            // pop our parms off the stack
+        private fun PopParms(numParms: Int) { // pop our parms off the stack
             if (localstackUsed < numParms) {
                 Error("locals stack underflow\n")
             }
             localstackUsed -= numParms
         }
 
-        private fun PushString(string: String?) {
-//            System.out.println("+++ " + string);
+        private fun PushString(string: String?) { //            System.out.println("+++ " + string);
             if (localstackUsed + Script_Program.MAX_STRING_LEN > LOCALSTACK_SIZE) {
                 Error("PushString: locals stack overflow\n")
-            }
-            // C++ uses idStr::Copynz which does strncpy (zero-pads) + null-terminates
+            } // C++ uses idStr::Copynz which does strncpy (zero-pads) + null-terminates
             val bytes = (string ?: "").toByteArray()
             val copyLen = Math.min(bytes.size, Script_Program.MAX_STRING_LEN - 1)
-            System.arraycopy(bytes, 0, localstack, localstackUsed, copyLen)
-            // zero-fill remainder of the 128-byte slot (strncpy zero-pads + null terminate)
+            System.arraycopy(
+                bytes, 0, localstack, localstackUsed, copyLen
+            ) // zero-fill remainder of the 128-byte slot (strncpy zero-pads + null terminate)
             Arrays.fill(
-                localstack,
-                localstackUsed + copyLen,
-                localstackUsed + Script_Program.MAX_STRING_LEN,
-                0.toByte()
+                localstack, localstackUsed + copyLen, localstackUsed + Script_Program.MAX_STRING_LEN, 0.toByte()
             )
             localstackUsed += Script_Program.MAX_STRING_LEN
         }
@@ -114,8 +108,7 @@ object Script_Interpreter {
             localstack[localstackUsed + 0] = (value ushr 0).toByte()
             localstack[localstackUsed + 1] = (value ushr 8).toByte()
             localstack[localstackUsed + 2] = (value ushr 16).toByte()
-            localstack[localstackUsed + 3] = (value ushr 24).toByte()
-            // zero upper bytes (padding for 64-bit alignment)
+            localstack[localstackUsed + 3] = (value ushr 24).toByte() // zero upper bytes (padding for 64-bit alignment)
             for (i in 4 until Script_Program.SIZEOF_INTPTR) {
                 localstack[localstackUsed + i] = 0
             }
@@ -130,8 +123,7 @@ object Script_Interpreter {
                 .order(ByteOrder.LITTLE_ENDIAN)
             bb.putFloat(vector.x)
             bb.putFloat(vector.y)
-            bb.putFloat(vector.z)
-            // zero padding bytes (4 bytes on 64-bit)
+            bb.putFloat(vector.z) // zero padding bytes (4 bytes on 64-bit)
             for (i in 12 until Script_Program.E_EVENT_SIZEOF_VEC) {
                 localstack[localstackUsed + i] = 0
             }
@@ -148,8 +140,7 @@ object Script_Interpreter {
         }
 
         private fun AppendString(def: idVarDef?, from: String?) {
-            if (def!!.initialized == initialized_t.stackVariable) {
-                // C++ uses idStr::Append(dest, MAX_STRING_LEN, src) which finds strlen(dest),
+            if (def!!.initialized == initialized_t.stackVariable) { // C++ uses idStr::Append(dest, MAX_STRING_LEN, src) which finds strlen(dest),
                 // then Copynz(dest + l1, size - l1, src) — limits write to remaining slot space
                 val offset = localstackBase + def.value!!.stackOffset
                 val existingLen = strLen(localstack, offset) - offset
@@ -159,13 +150,11 @@ object Script_Interpreter {
                 val remaining = Script_Program.MAX_STRING_LEN - existingLen
                 val bytes = (from ?: "").toByteArray()
                 val copyLen = Math.min(bytes.size, remaining - 1)
-                System.arraycopy(bytes, 0, localstack, offset + existingLen, copyLen)
-                // null-terminate and zero-fill remainder
+                System.arraycopy(
+                    bytes, 0, localstack, offset + existingLen, copyLen
+                ) // null-terminate and zero-fill remainder
                 Arrays.fill(
-                    localstack,
-                    offset + existingLen + copyLen,
-                    offset + Script_Program.MAX_STRING_LEN,
-                    0.toByte()
+                    localstack, offset + existingLen + copyLen, offset + Script_Program.MAX_STRING_LEN, 0.toByte()
                 )
             } else {
                 def.value!!.stringPtr = Append(def.value!!.stringPtr!!, Script_Program.MAX_STRING_LEN, from!!)
@@ -174,13 +163,13 @@ object Script_Interpreter {
         }
 
         private fun SetString(def: idVarDef?, from: String?) {
-            if (def!!.initialized == initialized_t.stackVariable) {
-                // C++ uses idStr::Copynz which does strncpy (zero-pads) + null-terminates
+            if (def!!.initialized == initialized_t.stackVariable) { // C++ uses idStr::Copynz which does strncpy (zero-pads) + null-terminates
                 val offset = localstackBase + def.value!!.stackOffset
                 val bytes = (from ?: "").toByteArray()
                 val copyLen = Math.min(bytes.size, Script_Program.MAX_STRING_LEN - 1)
-                System.arraycopy(bytes, 0, localstack, offset, copyLen)
-                // zero-fill remainder of the 128-byte slot (strncpy zero-pads + null terminate)
+                System.arraycopy(
+                    bytes, 0, localstack, offset, copyLen
+                ) // zero-fill remainder of the 128-byte slot (strncpy zero-pads + null terminate)
                 Arrays.fill(localstack, offset + copyLen, offset + Script_Program.MAX_STRING_LEN, 0.toByte())
             } else {
                 def.value!!.stringPtr = from
@@ -238,8 +227,7 @@ object Script_Interpreter {
             return null
         }
 
-        private fun NextInstruction(position: Int) {
-            // Before we execute an instruction, we increment instructionPointer,
+        private fun NextInstruction(position: Int) { // Before we execute an instruction, we increment instructionPointer,
             // therefore we need to compensate for that here.
             instructionPointer = position - 1
         }
@@ -296,8 +284,7 @@ object Script_Interpreter {
             currentFunction = stack!!.f
             localstackBase = stack.stackbase
             NextInstruction(stack.s)
-            if (0 == callStackDepth) {
-                // all done
+            if (0 == callStackDepth) { // all done
                 doneProcessing = true
                 threadDying = true
                 currentFunction = null
@@ -322,12 +309,9 @@ object Script_Interpreter {
             `var`.setIntPtr(localstack, start)
             eventEntity = GetEntity(`var`.entityNumberPtr)
             if (null == eventEntity || !eventEntity!!.RespondsTo(evdef!!)) {
-                if (eventEntity != null && Common.com_developer.GetBool()) {
-                    // give a warning in developer mode
+                if (eventEntity != null && Common.com_developer.GetBool()) { // give a warning in developer mode
                     Warning(
-                        "Function '%s' not supported on entity '%s'",
-                        evdef!!.GetName(),
-                        eventEntity!!.name.toString()
+                        "Function '%s' not supported on entity '%s'", evdef!!.GetName(), eventEntity!!.name.toString()
                     )
                 }
                 when (evdef!!.GetReturnType()) {
@@ -369,8 +353,7 @@ object Script_Interpreter {
 
                     D_EVENT_STRING -> data[i] = toArg(
                         btos(
-                            localstack,
-                            start + pos
+                            localstack, start + pos
                         )
                     ) //( *( const char ** )&data[ i ] ) = ( char * )&localstack[ start + pos ];
                     D_EVENT_ENTITY -> {
@@ -390,8 +373,7 @@ object Script_Interpreter {
                     }
 
                     D_EVENT_TRACE -> Error(
-                        "trace type not supported from script for '%s' event.",
-                        evdef.GetName()
+                        "trace type not supported from script for '%s' event.", evdef.GetName()
                     )
 
                     else -> Error("Invalid arg format string for '%s' event.", evdef.GetName())
@@ -432,7 +414,7 @@ object Script_Interpreter {
             i = 0
             pos = 0
             while (i < format!!.length) {
-                when (format!![i]) {
+                when (format[i]) {
                     D_EVENT_INTEGER -> {
                         source.setIntPtr(localstack, start + pos)
                         data[i] = toArg(source.floatPtr.toInt())
@@ -466,8 +448,7 @@ object Script_Interpreter {
                     }
 
                     D_EVENT_TRACE -> Error(
-                        "trace type not supported from script for '%s' event.",
-                        evdef.GetName()
+                        "trace type not supported from script for '%s' event.", evdef.GetName()
                     )
 
                     else -> Error("Invalid arg format string for '%s' event.", evdef.GetName())
@@ -476,7 +457,7 @@ object Script_Interpreter {
                 i++
             }
 
-//            throw new TODO_Exception();
+            //            throw new TODO_Exception();
             popParms = argsize
             thread!!.ProcessEventArgPtr(evdef, data)
             if (popParms != 0) {
@@ -735,7 +716,7 @@ object Script_Interpreter {
         fun ThreadCall(source: idInterpreter, func: function_t, args: Int) {
             Reset()
 
-//	memcpy( localstack, &source.localstack[ source.localstackUsed - args ], args );
+            //	memcpy( localstack, &source.localstack[ source.localstackUsed - args ], args );
             System.arraycopy(source.localstack, source.localstackUsed - args, localstack, 0, args)
             localstackUsed = args
             localstackBase = 0
@@ -851,13 +832,11 @@ object Script_Interpreter {
             var newThread: idThread
             var floatVal: Float
             var obj: idScriptObject?
-            var func: function_t?
-            //            System.out.println(instructionPointer);
+            var func: function_t? //            System.out.println(instructionPointer);
             if (threadDying || currentFunction == null) {
                 return true
             }
-            if (multiFrameEvent != null) {
-                // move to previous instruction and call it again
+            if (multiFrameEvent != null) { // move to previous instruction and call it again
                 instructionPointer--
             }
             runaway = 5000000
@@ -892,8 +871,7 @@ object Script_Interpreter {
 
                             // return the thread number to the script
                             Game_local.gameLocal.program.ReturnFloat(newThread.GetThreadNum().toFloat())
-                        } else {
-                            // return a null thread to the script
+                        } else { // return a null thread to the script
                             Game_local.gameLocal.program.ReturnFloat(0.0f)
                         }
                         PopParms(st.c!!.value!!.argSize)
@@ -907,8 +885,7 @@ object Script_Interpreter {
                         if (obj != null) {
                             func = obj.GetTypeDef().GetFunction(st.b!!.value!!.virtualFunction)!!
                             EnterFunction(func, false)
-                        } else {
-                            // return a 'safe' value
+                        } else { // return a 'safe' value
                             Game_local.gameLocal.program.ReturnVector(idVec3())
                             Game_local.gameLocal.program.ReturnString("")
                             PopParms(st.c!!.value!!.argSize)
@@ -1036,9 +1013,8 @@ object Script_Interpreter {
                             Warning("Divide by zero")
                             var_c!!.floatPtr = (var_a!!.floatPtr)
                         } else {
-                            var_c!!.floatPtr = (
-                                    (var_a!!.floatPtr.toInt() % var_b.floatPtr.toInt()).toFloat()
-                                    ) //TODO:casts!
+                            var_c!!.floatPtr =
+                                ((var_a!!.floatPtr.toInt() % var_b.floatPtr.toInt()).toFloat()) //TODO:casts!
                         }
                     }
 
@@ -1381,8 +1357,9 @@ object Script_Interpreter {
                         obj = GetScriptObject(var_a!!.entityNumberPtr)
                         if (obj == null) {
                             var_b!!.entityNumberPtr = (0)
-                        } else if (!obj.GetTypeDef().Inherits(st.b!!.TypeDef())) {
-                            //Warning( "object '%s' cannot be converted to '%s'", obj.GetTypeName(), st.b.TypeDef().Name() );
+                        } else if (!obj.GetTypeDef()
+                                .Inherits(st.b!!.TypeDef())
+                        ) { //Warning( "object '%s' cannot be converted to '%s'", obj.GetTypeName(), st.b.TypeDef().Name() );
                             var_b!!.entityNumberPtr = (0)
                         } else {
                             var_b!!.entityNumberPtr = (var_a.entityNumberPtr)
@@ -1541,8 +1518,9 @@ object Script_Interpreter {
                                 // st.b points to type_pointer, which is just a temporary that gets its type reassigned, so we store the real type in st.c
                                 // so that we can do a type check during run time since we don't know what type the script object is at compile time because it
                                 // comes from an entity
-                            } else if (!obj.GetTypeDef().Inherits(st.c!!.TypeDef())) {
-                                //Warning( "object '%s' cannot be converted to '%s'", obj.GetTypeName(), st.c.TypeDef().Name() );
+                            } else if (!obj.GetTypeDef()
+                                    .Inherits(st.c!!.TypeDef())
+                            ) { //Warning( "object '%s' cannot be converted to '%s'", obj.GetTypeName(), st.c.TypeDef().Name() );
                                 var_b.evalPtr!!.entityNumberPtr = 0
                             } else {
                                 var_b.evalPtr!!.entityNumberPtr = var_a.entityNumberPtr
@@ -1749,8 +1727,7 @@ object Script_Interpreter {
             }
             Copynz(funcObject, func.Name(), 4)
             funcIndex = funcObject[0].indexOf("::")
-            if (funcIndex != -1) {
-//                funcName = "\0";
+            if (funcIndex != -1) { //                funcName = "\0";
                 scope = Game_local.gameLocal.program.GetDef(null, funcObject[0], Script_Program.def_namespace)
                 funcName = funcObject[0].substring(funcIndex + 2) //TODO:check pointer location
             } else {
@@ -1789,13 +1766,15 @@ object Script_Interpreter {
                     true
                 }
 
-                Script_Program.ev_vector -> {
-                    //                    if (reg.vectorPtr != null) {
+                Script_Program.ev_vector -> { //                    if (reg.vectorPtr != null) {
                     val vectorPtr = idVec3(reg!!.getVectorPtrs())
-                    out.set(String.format("%g,%g,%g", vectorPtr.x, vectorPtr.y, vectorPtr.z))
-                    //                    } else {
-//                        out.set("0,0,0");
-//                    }
+                    out.set(
+                        String.format(
+                            "%g,%g,%g", vectorPtr.x, vectorPtr.y, vectorPtr.z
+                        )
+                    ) //                    } else {
+                    //                        out.set("0,0,0");
+                    //                    }
                     true
                 }
 
@@ -1809,16 +1788,14 @@ object Script_Interpreter {
                 }
 
                 Script_Program.ev_field -> {
-                    if (scope === Script_Program.def_namespace) {
-                        // should never happen, but handle it safely anyway
+                    if (scope === Script_Program.def_namespace) { // should never happen, but handle it safely anyway
                         return false
                     }
                     field = scope!!.TypeDef()!!.GetParmType(reg!!.ptrOffset)!!.FieldType()
                     obj = idScriptObject()
                     val _bb = ByteBuffer.wrap(
                         Arrays.copyOf(
-                            localstack,
-                            callStack[callStackDepth]!!.stackbase
+                            localstack, callStack[callStackDepth]!!.stackbase
                         )
                     )
                     val _mf = neo.framework.File_h.idFile_Memory("scratch")
@@ -1827,7 +1804,7 @@ object Script_Interpreter {
                     if (field == null || obj == null) {
                         return false
                     }
-                    when (field!!.Type()) {
+                    when (field.Type()) {
                         Script_Program.ev_boolean -> {
                             out.set(String.format("%d", obj.data!!.getInt(reg.ptrOffset)))
                             true
@@ -1854,8 +1831,7 @@ object Script_Interpreter {
                 }
 
                 else -> false
-            }
-            //            return false;
+            } //            return false;
         }
 
         fun GetCallstackDepth(): Int {

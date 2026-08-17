@@ -43,7 +43,6 @@ import neo.idlib.geometry.DrawVert
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Random.idRandom
 import neo.idlib.math.idVec3
-import java.util.*
 import kotlin.math.floor
 
 object SmokeParticles {
@@ -123,8 +122,7 @@ object SmokeParticles {
          ================
          idSmokeParticles::Init
          ================
-         */
-        // creats an entity covering the entire world that will call back each rendering
+         */ // creats an entity covering the entire world that will call back each rendering
         fun Init() {
             if (initialized) {
                 Shutdown()
@@ -174,8 +172,7 @@ object SmokeParticles {
          idSmokeParticles::Shutdown
          ================
          */
-        fun Shutdown() {
-            // make sure the render entity is freed before the model is freed
+        fun Shutdown() { // make sure the render entity is freed before the model is freed
             if (renderEntityHandle != -1) {
                 Game_local.gameRenderWorld!!.FreeEntityDef(renderEntityHandle)
                 renderEntityHandle = -1
@@ -191,8 +188,7 @@ object SmokeParticles {
          ================
          idSmokeParticles::FreeSmokes
          ================
-         */
-        // free old smokes
+         */ // free old smokes
         fun FreeSmokes() {
             var activeStageNum = 0
             while (activeStageNum < activeStages.Num()) {
@@ -208,8 +204,7 @@ object SmokeParticles {
                 while (smoke != null) {
                     next = smoke.next
 
-                    val frac = if (isD3XP) {
-                        // D3XP: use correct timeline based on particle's timeGroup
+                    val frac = if (isD3XP) { // D3XP: use correct timeline based on particle's timeGroup
                         if (smoke.timeGroup != 0) {
                             (Game_local.gameLocal.fast.time - smoke.privateStartTime).toFloat() / (stage.particleLife * 1000)
                         } else {
@@ -218,14 +213,12 @@ object SmokeParticles {
                     } else {
                         (Game_local.gameLocal.time - smoke.privateStartTime).toFloat() / (stage.particleLife * 1000)
                     }
-                    if (frac >= 1.0f) {
-                        // remove the particle from the stage list
+                    if (frac >= 1.0f) { // remove the particle from the stage list
                         if (last != null) {
                             last.next = smoke.next
                         } else {
                             active.smokes = smoke.next
-                        }
-                        // put the particle on the free list
+                        } // put the particle on the free list
                         smoke.next = freeSmokes
                         freeSmokes = smoke
                         numActiveSmokes--
@@ -237,8 +230,7 @@ object SmokeParticles {
                     smoke = next
                 }
 
-                if (null == active.smokes) {
-                    // remove this from the activeStages list
+                if (null == active.smokes) { // remove this from the activeStages list
                     activeStages.RemoveIndex(activeStageNum)
                     activeStageNum--
                 }
@@ -252,8 +244,7 @@ object SmokeParticles {
 
          Called by game code to drop another particle into the list
          ================
-         */
-        // spits out a particle, returning false if the system will not emit any more particles in the future
+         */ // spits out a particle, returning false if the system will not emit any more particles in the future
         fun EmitSmoke(
             smoke: idDeclParticle?,
             systemStartTime: Int,
@@ -311,8 +302,7 @@ object SmokeParticles {
 
                     var nowCount = 0
                     var prevCount: Int
-                    if (finalParticleTime == 0) {
-                        // if spawnBunching is 0, they will all come out at once
+                    if (finalParticleTime == 0) { // if spawnBunching is 0, they will all come out at once
                         if (Game_local.gameLocal.time == systemStartTime) {
                             prevCount = -1
                             nowCount = stage.totalParticles - 1
@@ -320,26 +310,22 @@ object SmokeParticles {
                             prevCount = stage.totalParticles
                         }
                     } else {
-                        nowCount =
-                            floor((deltaMsec.toFloat() / finalParticleTime * stage.totalParticles)).toInt()
+                        nowCount = floor((deltaMsec.toFloat() / finalParticleTime * stage.totalParticles)).toInt()
                         if (nowCount >= stage.totalParticles) {
                             nowCount = stage.totalParticles - 1
                         }
                         prevCount =
-                            floor(((deltaMsec - if (isD3XP) Game_local.gameLocal.msec else UsercmdGen.USERCMD_MSEC).toFloat() / finalParticleTime * stage.totalParticles))
-                                .toInt()
+                            floor(((deltaMsec - if (isD3XP) Game_local.gameLocal.msec else UsercmdGen.USERCMD_MSEC).toFloat() / finalParticleTime * stage.totalParticles)).toInt()
                         if (prevCount < -1) {
                             prevCount = -1
                         }
                     }
 
-                    if (prevCount >= stage.totalParticles) {
-                        // no more particles from this stage
+                    if (prevCount >= stage.totalParticles) { // no more particles from this stage
                         continue
                     }
 
-                    if (nowCount < stage.totalParticles - 1) {
-                        // the system will need to emit particles next frame as well
+                    if (nowCount < stage.totalParticles - 1) { // the system will need to emit particles next frame as well
                         continues = true
                     }
 
@@ -354,8 +340,7 @@ object SmokeParticles {
                         }
                         i++
                     }
-                    if (i == activeStages.Num()) {
-                        // add a new one
+                    if (i == activeStages.Num()) { // add a new one
                         val newActive = activeSmokeStage_t()
                         newActive.smokes = null
                         newActive.stage = stage
@@ -473,14 +458,12 @@ object SmokeParticles {
                     } else {
                         (Game_local.gameLocal.time - smoke.privateStartTime).toFloat() / (stage.particleLife * 1000)
                     }
-                    if (g.frac >= 1.0f) {
-                        // remove the particle from the stage list
+                    if (g.frac >= 1.0f) { // remove the particle from the stage list
                         if (last != null) {
                             last.next = smoke.next
                         } else {
                             active.smokes = smoke.next
-                        }
-                        // put the particle on the free list
+                        } // put the particle on the free list
                         smoke.next = freeSmokes
                         freeSmokes = smoke
                         numActiveSmokes--
@@ -515,13 +498,11 @@ object SmokeParticles {
                     // they were all removed
                     renderEntity.hModel!!.FreeSurfaceTriangles(tri)
 
-                    if (null == active.smokes) {
-                        // remove this from the activeStages list
+                    if (null == active.smokes) { // remove this from the activeStages list
                         activeStages.RemoveIndex(activeStageNum)
                         activeStageNum--
                     }
-                } else {
-                    // build the index list
+                } else { // build the index list
                     var indexes = 0
                     var i = 0
                     while (i < tri.numVerts) {
@@ -552,17 +533,13 @@ object SmokeParticles {
          ================
          idSmokeParticles::ModelCallback
          ================
-         */
-        // NOTE: Differs from C++ — C++ uses a static function pointer; Kotlin uses a singleton
+         */ // NOTE: Differs from C++ — C++ uses a static function pointer; Kotlin uses a singleton
         // implementing the deferredEntityCallback_t interface.
         private class ModelCallback private constructor() : deferredEntityCallback_t() {
-            override fun run(e: renderEntity_s?, v: renderView_s?): Boolean {
-                // update the particles
-                return if (Game_local.gameLocal.smokeParticles != null) {
-                    Game_local.gameLocal.smokeParticles!!.UpdateRenderEntity(e!!, v)
-                } else {
-                    true
-                }
+            override fun run(e: renderEntity_s?, v: renderView_s?): Boolean { // update the particles
+                return Game_local.gameLocal.smokeParticles == null || Game_local.gameLocal.smokeParticles!!.UpdateRenderEntity(
+                    e!!, v
+                )
             }
 
             companion object {

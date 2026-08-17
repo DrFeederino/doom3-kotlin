@@ -7,12 +7,10 @@ import neo.idlib.Text.Token.idToken
 
 class CmdArgs {
     class idCmdArgs {
-        private val argv: Array<String> =
-            Array(MAX_COMMAND_ARGS) { String() } // points into tokenized
+        private val argv: Array<String> = Array(MAX_COMMAND_ARGS) { String() } // points into tokenized
         private var argc // number of arguments
                 = 0
-        private var tokenized: StringBuilder =
-            StringBuilder(MAX_COMMAND_STRING) // will have 0 bytes inserted
+        private var tokenized: StringBuilder = StringBuilder(MAX_COMMAND_STRING) // will have 0 bytes inserted
 
         //
         //
@@ -24,13 +22,12 @@ class CmdArgs {
         //operator=( final idCmdArgs &args );
         fun set(args: idCmdArgs) {
             var i: Int
-            argc = args.argc
-            //	memcpy( tokenized, args.tokenized, MAX_COMMAND_STRING );
+            argc = args.argc //	memcpy( tokenized, args.tokenized, MAX_COMMAND_STRING );
             tokenized = StringBuilder(args.tokenized)
             i = 0
             while (i < argc) {
 
-//		argv[ i ] = tokenized + ( args.argv[ i ] - args.tokenized );//TODO:what the hell does this do??????
+                //		argv[ i ] = tokenized + ( args.argv[ i ] - args.tokenized );//TODO:what the hell does this do??????
                 argv[i] = args.argv[i]
                 i++
             }
@@ -53,8 +50,9 @@ class CmdArgs {
         // Returns a single string containing argv(start) to argv(end)
         // escapeArgs is a fugly way to put the string back into a state ready to tokenize again
 
-        fun Args(start: Int = 1, end: Int = -1, escapeArgs: Boolean = false): String {
-//	char []cmd_args=new char[MAX_COMMAND_STRING];
+        fun Args(
+            start: Int = 1, end: Int = -1, escapeArgs: Boolean = false
+        ): String { //	char []cmd_args=new char[MAX_COMMAND_STRING];
             var end = end
             var cmd_args = ""
             var i: Int
@@ -62,47 +60,37 @@ class CmdArgs {
                 end = argc - 1
             } else if (end >= argc) {
                 end = argc - 1
-            }
-            //	cmd_args[0] = '\0';
-            if (escapeArgs) {
-//		strcat( cmd_args, "\"" );
+            } //	cmd_args[0] = '\0';
+            if (escapeArgs) { //		strcat( cmd_args, "\"" );
                 cmd_args += "\""
             }
             i = start
             while (i <= end) {
                 if (i > start) {
-                    cmd_args += if (escapeArgs) {
-//				strcat( cmd_args, "\" \"" );
+                    cmd_args += if (escapeArgs) { //				strcat( cmd_args, "\" \"" );
                         "\" \""
-                    } else {
-//				strcat( cmd_args, " " );
+                    } else { //				strcat( cmd_args, " " );
                         " "
                     }
-                }
-                //		if ( escapeArgs && strchr( argv[i], '\\' ) ) {
-                if (escapeArgs && argv[i].contains("\\")) {
-//			char *p = argv[i];
+                } //		if ( escapeArgs && strchr( argv[i], '\\' ) ) {
+                if (escapeArgs && argv[i].contains("\\")) { //			char *p = argv[i];
                     var p = 0
                     while (p < argv[i].length) {
-                        if (argv[i][p] == '\\') {
-//					strcat( cmd_args, "\\\\" );
+                        if (argv[i][p] == '\\') { //					strcat( cmd_args, "\\\\" );
                             cmd_args += "\\\\"
                         } else {
                             cmd_args.length
-                            cmd_args += argv[i][p]
-                            //					cmd_args[ l ] = *p;
-//					cmd_args[ l+1 ] = '\0';
+                            cmd_args += argv[i][p] //					cmd_args[ l ] = *p;
+                            //					cmd_args[ l+1 ] = '\0';
                         }
                         p++
                     }
-                } else {
-//			strcat( cmd_args, argv[i] );
+                } else { //			strcat( cmd_args, argv[i] );
                     cmd_args += argv[i]
                 }
                 i++
             }
-            if (escapeArgs) {
-//		strcat( cmd_args, "\"" );
+            if (escapeArgs) { //		strcat( cmd_args, "\"" );
                 cmd_args += "\""
             }
             return cmd_args
@@ -136,12 +124,7 @@ class CmdArgs {
             }
             lex.LoadMemory(text, text.length, "idCmdSystemLocal::TokenizeString")
             lex.SetFlags(
-                Lexer.LEXFL_NOERRORS
-                        or Lexer.LEXFL_NOWARNINGS
-                        or Lexer.LEXFL_NOSTRINGCONCAT
-                        or Lexer.LEXFL_ALLOWPATHNAMES
-                        or Lexer.LEXFL_NOSTRINGESCAPECHARS
-                        or Lexer.LEXFL_ALLOWIPADDRESSES or if (keepAsStrings) Lexer.LEXFL_ONLYSTRINGS else 0
+                Lexer.LEXFL_NOERRORS or Lexer.LEXFL_NOWARNINGS or Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_ALLOWPATHNAMES or Lexer.LEXFL_NOSTRINGESCAPECHARS or Lexer.LEXFL_ALLOWIPADDRESSES or if (keepAsStrings) Lexer.LEXFL_ONLYSTRINGS else 0
             )
             totalLen = 0
             while (true) {
@@ -171,13 +154,13 @@ class CmdArgs {
                     return  // this is usually something malicious
                 }
 
-//                tokenized.append(token);//damn pointers!
+                //                tokenized.append(token);//damn pointers!
                 // regular token
                 argv[argc] = tokenized.replace(totalLen, tokenized.capacity(), token.toString()).substring(totalLen)
                 argc++
 
-//                idStr::Copynz( tokenized + totalLen, token.c_str(), sizeof( tokenized ) - totalLen );
-//                tokenized.replace(totalLen, tokenized.capacity() - token.Length(), token.toString());
+                //                idStr::Copynz( tokenized + totalLen, token.c_str(), sizeof( tokenized ) - totalLen );
+                //                tokenized.replace(totalLen, tokenized.capacity() - token.Length(), token.toString());
                 totalLen += len //+ 1;//we don't need the '\0'.
             }
         }
@@ -185,12 +168,10 @@ class CmdArgs {
         fun AppendArg(text: String) {
             if (0 == argc) {
                 argc = 1
-                argv[0] = text
-                //		idStr::Copynz( tokenized, text, sizeof( tokenized ) );
+                argv[0] = text //		idStr::Copynz( tokenized, text, sizeof( tokenized ) );
                 tokenized = StringBuilder(tokenized.capacity()).append(text)
-            } else {
-//              argv[ argc ] = argv[ argc-1 ] + strlen( argv[ argc-1 ] ) + 1;
-//              idStr::Copynz( argv[ argc ], text, sizeof( tokenized ) - ( argv[ argc ] - tokenized ) );
+            } else { //              argv[ argc ] = argv[ argc-1 ] + strlen( argv[ argc-1 ] ) + 1;
+                //              idStr::Copynz( argv[ argc ], text, sizeof( tokenized ) - ( argv[ argc ] - tokenized ) );
                 argv[argc++] = text
             }
         }

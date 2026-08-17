@@ -25,7 +25,6 @@ Translated to Kotlin by Dr. Feederino with support of Claude Code.
 */
 package neo.Renderer
 
-import neo.Renderer.*
 import neo.Renderer.Model.idRenderModel
 import neo.Renderer.Model_beam.idRenderModelBeam
 import neo.Renderer.Model_liquid.idRenderModelLiquid
@@ -155,10 +154,7 @@ object ModelManager {
         @Throws(idException::class)
         override fun Init() {
             cmdSystem.AddCommand(
-                "listModels",
-                ListModels_f.instance,
-                CMD_FL_RENDERER,
-                "lists all models"
+                "listModels", ListModels_f.instance, CMD_FL_RENDERER, "lists all models"
             )
             cmdSystem.AddCommand(
                 "printModel",
@@ -168,10 +164,7 @@ object ModelManager {
                 idCmdSystem.ArgCompletion_ModelName.getInstance()
             )
             cmdSystem.AddCommand(
-                "reloadModels",
-                ReloadModels_f.instance,
-                CMD_FL_RENDERER or CMD_FL_CHEAT,
-                "reloads models"
+                "reloadModels", ReloadModels_f.instance, CMD_FL_RENDERER or CMD_FL_CHEAT, "reloads models"
             )
             cmdSystem.AddCommand(
                 "touchModel",
@@ -273,8 +266,7 @@ object ModelManager {
                 if (!model!!.IsReloadable()) {
                     continue
                 }
-                if (!forceAll) {
-                    // check timestamp
+                if (!forceAll) { // check timestamp
                     val current = LongArray(1)
                     fileSystem.ReadFile(model.Name(), null, current)
                     if (current[0] <= model.Timestamp()[0]) {
@@ -341,13 +333,13 @@ object ModelManager {
                 val model: idRenderModel? = models[i]
                 if (!model!!.IsLevelLoadReferenced() && model.IsLoaded() && model.IsReloadable()) {
 
-//			common.Printf( "purging %s\n", model.Name() );
+                    //			common.Printf( "purging %s\n", model.Name() );
                     purgeCount++
                     tr_lightrun.R_CheckForEntityDefsUsingModel(model)
                     model.PurgeModel()
                 } else {
 
-//			common.Printf( "keeping %s\n", model.Name() );
+                    //			common.Printf( "keeping %s\n", model.Name() );
                     keepCount++
                 }
             }
@@ -398,9 +390,7 @@ object ModelManager {
             while (i < localModelManager.models.Num() - 1) {
                 j = i + 1
                 while (j < localModelManager.models.Num()) {
-                    if (localModelManager.models[sortIndex[i]]!!
-                            .Memory() < localModelManager.models[sortIndex[j]]!!.Memory()
-                    ) {
+                    if (localModelManager.models[sortIndex[i]]!!.Memory() < localModelManager.models[sortIndex[j]]!!.Memory()) {
                         val temp: Int = sortIndex[i]
                         sortIndex[i] = sortIndex[j]
                         sortIndex[j] = temp
@@ -445,11 +435,9 @@ object ModelManager {
             while (i != -1) {
                 val model: idRenderModel? = models[i]
                 if (canonical.Icmp(model!!.Name()) == 0) {
-                    if (!model.IsLoaded()) {
-                        // reload it if it was purged
+                    if (!model.IsLoaded()) { // reload it if it was purged
                         model.LoadModel()
-                    } else if (insideLevelLoad && !model.IsLevelLoadReferenced()) {
-                        // we are reusing a model already in memory, but
+                    } else if (insideLevelLoad && !model.IsLevelLoadReferenced()) { // we are reusing a model already in memory, but
                         // touch all the materials to make sure they stay
                         // in memory as well
                         model.TouchData()
@@ -475,8 +463,7 @@ object ModelManager {
                 model.InitFromFile(modelName)
             } else if (extension.Icmp("md3") == 0) {
                 model = idRenderModelMD3()
-                model.InitFromFile(modelName)
-                // DG: no idea why this needs special treatment, but otherwise
+                model.InitFromFile(modelName) // DG: no idea why this needs special treatment, but otherwise
                 //     idRenderModelMD3::InstantiateDynamicModel() is called all the time
                 if (model.IsDefaultModel()) {
                     return null

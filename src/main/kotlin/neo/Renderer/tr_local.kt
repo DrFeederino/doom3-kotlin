@@ -173,8 +173,7 @@ val DEFAULT_FOG_DISTANCE: Float = 500.0f
  SURFACES
 
  ==============================================================================
- */
-//
+ */ //
 //
 //
 // drawSurf_t structures command the back end to render surfaces
@@ -281,7 +280,7 @@ enum class programParameter_t {
     PP_SPECULAR_MATRIX_S,
     PP_SPECULAR_MATRIX_T,
     PP_COLOR_MODULATE,
-    PP_COLOR_ADD,// 17
+    PP_COLOR_ADD, // 17
     _18_,
     _19_,
     PP_LIGHT_FALLOFF_TQ, // = 20,	// only for NV programs - DG: unused
@@ -289,7 +288,7 @@ enum class programParameter_t {
 
     // DG: for soft particles from TDM: reciprocal of _currentDepth size.
     //     Lets us convert a screen position to a texcoord in _currentDepth
-    PP_CURDEPTH_RECIPR,//  = 22,
+    PP_CURDEPTH_RECIPR, //  = 22,
 
     // DG: for soft particles from TDM: particle radius, given as { radius, 1/(fadeRange), 1/radius }
     //     fadeRange is the particle diameter for alpha blends (like smoke), but the particle radius for additive
@@ -522,8 +521,8 @@ class shadowFrustum_t {
     // all planes are in global coordinates
     //
     var makeClippedPlanes: Boolean = false
-    var numPlanes: Int = 0 // this is always 6 for now
-    // a projected light with a single frustum needs to make sil planes
+    var numPlanes: Int =
+        0 // this is always 6 for now // a projected light with a single frustum needs to make sil planes
     // from triangles that clip against side planes, but a point light
     // that has adjacent frustums doesn't need to
 }
@@ -1047,16 +1046,14 @@ class viewDef_s {
 // simple interaction shader
 class drawInteraction_t {
     //
-    val diffuseColor: idVec4 =
-        idVec4() // may have a light color baked into it, will be < tr.backEndRendererMaxLight
+    val diffuseColor: idVec4 = idVec4() // may have a light color baked into it, will be < tr.backEndRendererMaxLight
 
     //                                                              // (not a bool just to avoid an uninitialized memory check of the pad region by valgrind)
     //
     // these are loaded into the vertex program
     val localLightOrigin: idVec4 = idVec4()
     val localViewOrigin: idVec4 = idVec4()
-    val specularColor: idVec4 =
-        idVec4() // may have a light color baked into it, will be < tr.backEndRendererMaxLight
+    val specularColor: idVec4 = idVec4() // may have a light color baked into it, will be < tr.backEndRendererMaxLight
 
     //
     var ambientLight: Int = 0 // use tr.ambientNormalMap instead of normalization cube map
@@ -1436,21 +1433,20 @@ class idRenderSystemLocal : idRenderSystem() {
      ==================
      */
     fun SetBackEndRenderer() {            // sets tr.backEndRenderer based on cvars
-        if (!r_renderer!!.IsModified()) {
+        if (!r_renderer.IsModified()) {
             return
         }
         val oldVPstate: Boolean = backEndRendererHasVertexPrograms
         backEndRenderer = backEndName_t.BE_BAD
 
-        if (Icmp((r_renderer!!.GetString())!!, "arb2") == 0) {
+        if (Icmp((r_renderer.GetString())!!, "arb2") == 0) {
             if (glConfig.allowARB2Path) {
                 backEndRenderer = backEndName_t.BE_ARB2
             }
         }
 
         // fallback
-        if (backEndRenderer == backEndName_t.BE_BAD) {
-            // choose the best
+        if (backEndRenderer == backEndName_t.BE_BAD) { // choose the best
             if (glConfig.allowARB2Path) {
                 backEndRenderer = backEndName_t.BE_ARB2
             }
@@ -1476,7 +1472,7 @@ class idRenderSystemLocal : idRenderSystem() {
                 primaryWorld!!.FreeInteractions()
             }
         }
-        r_renderer!!.ClearModified()
+        r_renderer.ClearModified()
     }
 
     /*
@@ -1545,7 +1541,7 @@ class idRenderSystemLocal : idRenderSystem() {
     override fun Shutdown() {
         Common.common.Printf("idRenderSystem::Shutdown()\n")
 
-        Common.common.SetRefreshOnPrint(false)// without a renderer there's nothing to refresh
+        Common.common.SetRefreshOnPrint(false) // without a renderer there's nothing to refresh
 
 
         tr_font.R_DoneFreeType()
@@ -1576,8 +1572,7 @@ class idRenderSystemLocal : idRenderSystem() {
         ShutdownOpenGL()
     }
 
-    override fun InitOpenGL() {
-        // if OpenGL isn't started, start it now
+    override fun InitOpenGL() { // if OpenGL isn't started, start it now
         if (!glConfig.isInitialized) {
             var err: Int
 
@@ -1592,8 +1587,7 @@ class idRenderSystemLocal : idRenderSystem() {
         }
     }
 
-    override fun ShutdownOpenGL() {
-        // free the context and close the window
+    override fun ShutdownOpenGL() { // free the context and close the window
         tr_main.R_ShutdownFrameData()
 
         // as the input is tied to the window, it should be shut down when the window
@@ -1642,7 +1636,7 @@ class idRenderSystemLocal : idRenderSystem() {
     override fun EndLevelLoad() {
         ModelManager.renderModelManager.EndLevelLoad()
         Image.globalImages.EndLevelLoad()
-        if (r_forceLoadImages!!.GetBool()) {
+        if (r_forceLoadImages.GetBool()) {
             tr_backend.RB_ShowImages()
         }
     }
@@ -1672,8 +1666,7 @@ class idRenderSystemLocal : idRenderSystem() {
                 pointSize = 24
             } else {
                 pointSize = 48
-            }
-            // we also need to adjust the scale based on point size relative to 48 points as the ui scaling is based on a 48 point font
+            } // we also need to adjust the scale based on point size relative to 48 points as the ui scaling is based on a 48 point font
             var glyphScale =
                 1.0f // change the scale to be relative to 1 based on 72 dpi ( so dpi of 144 means a scale of .5 )
             glyphScale *= 48.0f / pointSize
@@ -1712,8 +1705,7 @@ class idRenderSystemLocal : idRenderSystem() {
                 outFont.glyphs[i]!!.t = tr_font.readFloat()
                 outFont.glyphs[i]!!.s2 = tr_font.readFloat()
                 outFont.glyphs[i]!!.t2 = tr_font.readFloat()
-                /* font.glyphs[i].glyph */tr_font.readInt()
-                // the +6, -6 skips the embedded "fonts/" prefix
+                tr_font.readInt() // the +6, -6 skips the embedded "fonts/" prefix
                 outFont.glyphs[i]!!.shaderName =
                     String(Arrays.copyOfRange(tr_font.fdFile, tr_font.fdOffset + 6, tr_font.fdOffset + 32))
                 tr_font.fdOffset += 32
@@ -1794,15 +1786,7 @@ class idRenderSystemLocal : idRenderSystem() {
      =============
      */
     override fun DrawStretchPic(
-        x: Float,
-        y: Float,
-        w: Float,
-        h: Float,
-        s1: Float,
-        t1: Float,
-        s2: Float,
-        t2: Float,
-        material: idMaterial?
+        x: Float, y: Float, w: Float, h: Float, s1: Float, t1: Float, s2: Float, t2: Float, material: idMaterial?
     ) {
         guiModel!!.DrawStretchPic(x, y, w, h, s1, t1, s2, t2, material)
     }
@@ -1815,13 +1799,7 @@ class idRenderSystemLocal : idRenderSystem() {
      =============
      */
     override fun DrawStretchTri(
-        p1: idVec2,
-        p2: idVec2,
-        p3: idVec2,
-        t1: idVec2,
-        t2: idVec2,
-        t3: idVec2,
-        material: idMaterial?
+        p1: idVec2, p2: idVec2, p3: idVec2, t1: idVec2, t2: idVec2, t3: idVec2, material: idMaterial?
     ) {
         tr.guiModel!!.DrawStretchTri(p1, p2, p3, t1, t2, t3, material)
     }
@@ -1835,8 +1813,7 @@ class idRenderSystemLocal : idRenderSystem() {
         height._val = glConfig.vidHeight
     }
 
-    override fun PrintMemInfo(mi: MemInfo_t) {
-        // sum up image totals
+    override fun PrintMemInfo(mi: MemInfo_t) { // sum up image totals
         Image.globalImages.PrintMemInfo(mi)
 
         // sum up model totals
@@ -1895,12 +1872,7 @@ class idRenderSystemLocal : idRenderSystem() {
      ==================
      */
     override fun DrawSmallStringExt(
-        x: Int,
-        y: Int,
-        string: CharArray,
-        setColor: idVec4,
-        forceColor: Boolean,
-        material: idMaterial?
+        x: Int, y: Int, string: CharArray, setColor: idVec4, forceColor: Boolean, material: idMaterial?
     ) {
         val color = idVec4()
         var s: Int
@@ -1974,12 +1946,7 @@ class idRenderSystemLocal : idRenderSystem() {
      ==================
      */
     override fun DrawBigStringExt(
-        x: Int,
-        y: Int,
-        string: String,
-        setColor: idVec4,
-        forceColor: Boolean,
-        material: idMaterial?
+        x: Int, y: Int, string: String, setColor: idVec4, forceColor: Boolean, material: idMaterial?
     ) {
         val color = idVec4()
         var s: Int
@@ -2059,11 +2026,9 @@ class idRenderSystemLocal : idRenderSystem() {
         currentRenderCrop = 0
 
         // screenFraction is just for quickly testing fill rate limitations
-        if (r_screenFraction!!.GetInteger() != 100) {
-            val w: Int =
-                (RenderSystem.SCREEN_WIDTH * r_screenFraction.GetInteger() / 100.0f).toInt()
-            val h: Int =
-                (RenderSystem.SCREEN_HEIGHT * r_screenFraction!!.GetInteger() / 100.0f).toInt()
+        if (r_screenFraction.GetInteger() != 100) {
+            val w: Int = (RenderSystem.SCREEN_WIDTH * r_screenFraction.GetInteger() / 100.0f).toInt()
+            val h: Int = (RenderSystem.SCREEN_HEIGHT * r_screenFraction.GetInteger() / 100.0f).toInt()
             CropRenderSize(w, h)
         }
 
@@ -2087,7 +2052,7 @@ class idRenderSystemLocal : idRenderSystem() {
         RenderSystem.R_GetCommandBuffer(setBufferCommand_t().also({ cmd = it }))
         cmd.commandId = renderCommand_t.RC_SET_BUFFER
         cmd.frameCount = frameCount
-        if (r_frontBuffer!!.GetBool()) {
+        if (r_frontBuffer.GetBool()) {
             cmd.buffer = GL11.GL_FRONT
         } else {
             cmd.buffer = GL11.GL_BACK
@@ -2138,7 +2103,7 @@ class idRenderSystemLocal : idRenderSystem() {
         if (Session.session.writeDemo != null) {
             Session.session.writeDemo!!.WriteInt(demoSystem_t.DS_RENDER)
             Session.session.writeDemo!!.WriteInt(demoCommand_t.DC_END_FRAME)
-            if (r_showDemo!!.GetBool()) {
+            if (r_showDemo.GetBool()) {
                 Common.common.Printf("write DC_END_FRAME\n")
             }
         }
@@ -2177,7 +2142,7 @@ class idRenderSystemLocal : idRenderSystem() {
             val shortBuffer = ShortArray(pix * 2 * 3)
 
             // enable anti-aliasing jitter
-            r_jitter!!.SetBool(true)
+            r_jitter.SetBool(true)
             i = 0
             while (i < blends) {
                 R_ReadTiledPixels(width, height, buffer, 18, ref)
@@ -2196,7 +2161,7 @@ class idRenderSystemLocal : idRenderSystem() {
                 i++
             }
 
-            r_jitter!!.SetBool(false)
+            r_jitter.SetBool(false)
         }
 
         // fill in the header (this is vertically flipped, which qglReadPixels emits)
@@ -2254,7 +2219,7 @@ class idRenderSystemLocal : idRenderSystem() {
             Session.session.writeDemo!!.WriteInt(width)
             Session.session.writeDemo!!.WriteInt(height)
             Session.session.writeDemo!!.WriteInt((makePowerOfTwo).toInt())
-            if (r_showDemo!!.GetBool()) {
+            if (r_showDemo.GetBool()) {
                 Common.common.Printf("write DC_CROP_RENDER\n")
             }
         }
@@ -2269,8 +2234,7 @@ class idRenderSystemLocal : idRenderSystem() {
         RenderViewToViewport(renderView, r)
         width = r.x2 - r.x1 + 1
         height = r.y2 - r.y1 + 1
-        if (forceDimensions) {
-            // just give exactly what we ask for
+        if (forceDimensions) { // just give exactly what we ask for
             width = renderView.width
             height = renderView.height
         }
@@ -2309,7 +2273,7 @@ class idRenderSystemLocal : idRenderSystem() {
             Session.session.writeDemo!!.WriteInt(demoSystem_t.DS_RENDER)
             Session.session.writeDemo!!.WriteInt(demoCommand_t.DC_CAPTURE_RENDER)
             Session.session.writeDemo!!.WriteHashString((imageName)!!)
-            if (r_showDemo!!.GetBool()) {
+            if (r_showDemo.GetBool()) {
                 Common.common.Printf("write DC_CAPTURE_RENDER: %s\n", (imageName))
             }
         }
@@ -2317,11 +2281,7 @@ class idRenderSystemLocal : idRenderSystem() {
         // look up the image before we create the render command, because it
         // may need to sync to create the image
         val image: idImage? = Image.globalImages.ImageFromFile(
-            imageName,
-            textureFilter_t.TF_DEFAULT,
-            true,
-            textureRepeat_t.TR_REPEAT,
-            textureDepth_t.TD_DEFAULT
+            imageName, textureFilter_t.TF_DEFAULT, true, textureRepeat_t.TR_REPEAT, textureDepth_t.TD_DEFAULT
         )
         val rc: renderCrop_t? = renderCrops[currentRenderCrop]
         var cmd: copyRenderCommand_t
@@ -2380,7 +2340,7 @@ class idRenderSystemLocal : idRenderSystem() {
         if (Session.session.writeDemo != null) {
             Session.session.writeDemo!!.WriteInt(demoSystem_t.DS_RENDER)
             Session.session.writeDemo!!.WriteInt(demoCommand_t.DC_UNCROP_RENDER)
-            if (r_showDemo!!.GetBool()) {
+            if (r_showDemo.GetBool()) {
                 Common.common.Printf("write DC_UNCROP\n")
             }
         }

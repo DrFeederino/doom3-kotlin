@@ -25,7 +25,6 @@ Translated to Kotlin by Dr. Feederino with support of Claude Code.
 */
 package neo.Renderer
 
-import neo.Renderer.*
 import neo.Renderer.Image.idImage
 import neo.Renderer.Material.cullType_t
 import neo.framework.Common
@@ -36,7 +35,6 @@ import org.lwjgl.opengl.ARBMultitexture
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL13
-import java.nio.*
 
 object tr_backend {
     /*
@@ -55,8 +53,7 @@ object tr_backend {
      GL_State
      This routine is responsible for setting the most commonly changed state
      ====================
-     */
-    /*
+     *//*
      ======================
      RB_SetDefaultGLState
 
@@ -92,7 +89,7 @@ object tr_backend {
         qgl.qglDepthFunc(GL11.GL_ALWAYS)
         qgl.qglCullFace(GL11.GL_FRONT_AND_BACK)
         qgl.qglShadeModel(GL11.GL_SMOOTH)
-        if (r_useScissor!!.GetBool()) {
+        if (r_useScissor.GetBool()) {
             qgl.qglScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight)
         }
         i = glConfig.maxTextureUnits - 1
@@ -187,9 +184,7 @@ object tr_backend {
         tmu.texEnv = env
         when (env) {
             GL13.GL_COMBINE, GL11.GL_MODULATE, GL11.GL_REPLACE, GL11.GL_DECAL, GL11.GL_ADD -> qgl.qglTexEnvi(
-                GL11.GL_TEXTURE_ENV,
-                GL11.GL_TEXTURE_ENV_MODE,
-                env
+                GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, env
             )
 
             else -> Common.common.Error("GL_TexEnv: invalid env '%d' passed\n", env)
@@ -216,8 +211,7 @@ object tr_backend {
      */
     fun GL_State(stateBits: Int) {
         val diff: Int
-        if (!r_useStateCaching!!.GetBool() || backEnd!!.glState.forceGlState) {
-            // make sure everything is set all the time, so we
+        if (!r_useStateCaching.GetBool() || backEnd!!.glState.forceGlState) { // make sure everything is set all the time, so we
             // can see if our delta checking is screwing up
             diff = -1
             backEnd!!.glState.forceGlState = false
@@ -346,10 +340,9 @@ object tr_backend {
      This is not used by the normal game paths, just by some tools
      =============
      */
-    fun RB_SetGL2D() {
-        // set 2D virtual screen size
+    fun RB_SetGL2D() { // set 2D virtual screen size
         qgl.qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight)
-        if (r_useScissor!!.GetBool()) {
+        if (r_useScissor.GetBool()) {
             qgl.qglScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight)
         }
         qgl.qglMatrixMode(GL11.GL_PROJECTION)
@@ -358,9 +351,7 @@ object tr_backend {
         qgl.qglMatrixMode(GL11.GL_MODELVIEW)
         qgl.qglLoadIdentity()
         GL_State(
-            (GLS_DEPTHFUNC_ALWAYS
-                    or GLS_SRCBLEND_SRC_ALPHA
-                    or GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA)
+            (GLS_DEPTHFUNC_ALWAYS or GLS_SRCBLEND_SRC_ALPHA or GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA)
         )
         GL_Cull(cullType_t.CT_TWO_SIDED)
         qgl.qglDisable(GL11.GL_DEPTH_TEST)
@@ -402,8 +393,8 @@ object tr_backend {
         // clear screen for debugging
         // automatically enable this with several other debug tools
         // that might leave unrendered portions of the screen
-        if ((r_clear!!.GetFloat() != 0.0f) || (r_clear!!.GetString()!!.length != 1) || r_lockSurfaces!!.GetBool() || r_singleArea!!.GetBool() || r_showOverDraw!!.GetBool()) {
-            val clear = r_clear!!.GetString()!!
+        if ((r_clear.GetFloat() != 0.0f) || (r_clear.GetString()!!.length != 1) || r_lockSurfaces.GetBool() || r_singleArea.GetBool() || r_showOverDraw.GetBool()) {
+            val clear = r_clear.GetString()!!
             if (clear.length != 1 && clear != clearColorString) {
                 clearColorString = clear
                 clearColorValid = ParseClearColor(clear, clearColor)
@@ -411,9 +402,9 @@ object tr_backend {
             if (clear.length != 1 && clearColorValid) {
                 qgl.qglClearColor(clearColor[0], clearColor[1], clearColor[2], 1.0f)
             } else {
-                if (r_clear!!.GetInteger() == 2) {
+                if (r_clear.GetInteger() == 2) {
                     qgl.qglClearColor(0.0f, 0.0f, 0.0f, 1.0f)
-                } else if (r_showOverDraw!!.GetBool()) {
+                } else if (r_showOverDraw.GetBool()) {
                     qgl.qglClearColor(1.0f, 1.0f, 1.0f, 1.0f)
                 } else {
                     qgl.qglClearColor(0.4f, 0.0f, 0.25f, 1.0f)
@@ -459,7 +450,7 @@ object tr_backend {
             y = i / 20 * h
 
             // show in proportional size in mode 2
-            if (r_showImages!!.GetInteger() == 2) {
+            if (r_showImages.GetInteger() == 2) {
                 w *= image.uploadWidth._val / 512.0f
                 h *= image.uploadHeight._val / 512.0f
             }
@@ -487,18 +478,16 @@ object tr_backend {
 
      =============
      */
-    fun RB_SwapBuffers(data: Any?) {
-        // texture swapping test
-        if (r_showImages!!.GetInteger() != 0) {
+    fun RB_SwapBuffers(data: Any?) { // texture swapping test
+        if (r_showImages.GetInteger() != 0) {
             RB_ShowImages()
         }
 
         // force a gl sync if requested
-        if (r_finish!!.GetBool()) {
+        if (r_finish.GetBool()) {
             qgl.qglFinish()
-        }
-        // don't flip if drawing to front buffer
-        if (!r_frontBuffer!!.GetBool()) {
+        } // don't flip if drawing to front buffer
+        if (!r_frontBuffer.GetBool()) {
             GLimp_SwapBuffers()
         }
     }
@@ -513,7 +502,7 @@ object tr_backend {
     fun RB_CopyRender(data: Any) {
         val cmd: copyRenderCommand_t
         cmd = data as copyRenderCommand_t
-        if (r_skipCopyTexture!!.GetBool()) {
+        if (r_skipCopyTexture.GetBool()) {
             return
         }
         if (cmd.image != null) {
@@ -525,8 +514,7 @@ object tr_backend {
         }
     }
 
-    fun RB_ExecuteBackEndCommands(cmds: emptyCommand_t?) {
-        // r_debugRenderToTexture
+    fun RB_ExecuteBackEndCommands(cmds: emptyCommand_t?) { // r_debugRenderToTexture
         var cmds: emptyCommand_t? = cmds
         var c_draw3d = 0
         var c_draw2d = 0
@@ -582,7 +570,7 @@ object tr_backend {
         // stop rendering on this thread
         backEndFinishTime = Sys_Milliseconds()
         backEnd!!.pc.msec = backEndFinishTime - backEndStartTime
-        if (r_debugRenderToTexture!!.GetInteger() == 1) {
+        if (r_debugRenderToTexture.GetInteger() == 1) {
             Common.common.Printf(
                 "3d: %d, 2d: %d, SetBuf: %d, SwpBuf: %d, CpyRenders: %d, CpyFrameBuf: %d\n",
                 c_draw3d,

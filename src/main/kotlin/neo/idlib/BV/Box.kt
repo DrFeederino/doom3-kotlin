@@ -277,8 +277,7 @@ object Box {
 
         fun Compare(a: idBox, epsilon: Float): Boolean {    // compare with epsilon
             return center.Compare(a.center, epsilon) && extents.Compare(a.extents, epsilon) && axis.Compare(
-                a.axis,
-                epsilon
+                a.axis, epsilon
             )
         }
 
@@ -355,9 +354,7 @@ object Box {
             bounds1[0].minusAssign(extents)
             bounds1[1].plusAssign(extents)
 
-            if (!bounds1.AddPoint(idVec3(v * axis[0], v * axis[1], v * axis[2]))
-            ) {
-                // point is contained in the box
+            if (!bounds1.AddPoint(idVec3(v * axis[0], v * axis[1], v * axis[2]))) { // point is contained in the box
                 return false
             }
             axis2[0] = v - center
@@ -411,8 +408,7 @@ object Box {
             bounds[0][0].minusAssign(extents)
             bounds[0][1].plusAssign(extents)
             a.AxisProjection(ax[0], b)
-            if (!bounds[0].AddBounds(b)) {
-                // the other box is contained in this box
+            if (!bounds[0].AddBounds(b)) { // the other box is contained in this box
                 return false
             }
 
@@ -424,8 +420,7 @@ object Box {
             bounds[1][0].minusAssign(a.extents)
             bounds[1][1].plusAssign(a.extents)
             AxisProjection(ax[1], b)
-            if (!bounds[1].AddBounds(b)) {
-                // this box is contained in the other box
+            if (!bounds[1].AddBounds(b)) { // this box is contained in the other box
                 center.set(a.center)
                 extents.set(a.extents)
                 axis.set(a.axis)
@@ -504,9 +499,8 @@ object Box {
             val d1: Float
             val d2: Float
             d1 = plane.Distance(center)
-            d2 = (abs(extents[0] * plane.Normal()[0])
-                    + abs(extents[1] * plane.Normal()[1])
-                    + abs(extents[2] * plane.Normal()[2]))
+            d2 =
+                (abs(extents[0] * plane.Normal()[0]) + abs(extents[1] * plane.Normal()[1]) + abs(extents[2] * plane.Normal()[2]))
             if (d1 - d2 > 0.0f) {
                 return d1 - d2
             }
@@ -520,9 +514,8 @@ object Box {
             val d1: Float
             val d2: Float
             d1 = plane.Distance(center)
-            d2 = (abs(extents[0] * plane.Normal()[0])
-                    + abs(extents[1] * plane.Normal()[1])
-                    + abs(extents[2] * plane.Normal()[2]))
+            d2 =
+                (abs(extents[0] * plane.Normal()[0]) + abs(extents[1] * plane.Normal()[1]) + abs(extents[2] * plane.Normal()[2]))
             if (d1 - d2 > epsilon) {
                 return PLANESIDE_FRONT
             }
@@ -533,9 +526,7 @@ object Box {
 
         fun ContainsPoint(p: idVec3): Boolean {            // includes touching
             val lp = p - center
-            return !(abs(lp * axis[0]) > extents[0]
-                    || abs(lp * axis[1]) > extents[1]
-                    || abs(lp * axis[2]) > extents[2])
+            return !(abs(lp * axis[0]) > extents[0] || abs(lp * axis[1]) > extents[1] || abs(lp * axis[2]) > extents[2])
         }
 
         fun IntersectsBox(a: idBox): Boolean {            // includes touching
@@ -738,8 +729,7 @@ object Box {
          The ray can intersect the box in both directions from the start point.
          If start is inside the box then scale1 < 0 and scale2 > 0.
          ============
-         */
-        // intersection points are (start + dir * scale1) and (start + dir * scale2)
+         */ // intersection points are (start + dir * scale1) and (start + dir * scale2)
         fun RayIntersection(start: idVec3, dir: idVec3, scale1: CFloat, scale2: CFloat): Boolean {
             val localStart = idVec3()
             val localDir = idVec3()
@@ -750,12 +740,13 @@ object Box {
             scale1._val = (-idMath.INFINITY)
             scale2._val = (idMath.INFINITY)
 
-            return (BoxPlaneClip(localDir.x, -localStart.x - extents[0], scale1, scale2)
-                    && BoxPlaneClip(-localDir.x, localStart.x - extents[0], scale1, scale2)
-                    && BoxPlaneClip(localDir.y, -localStart.y - extents[1], scale1, scale2)
-                    && BoxPlaneClip(-localDir.y, localStart.y - extents[1], scale1, scale2)
-                    && BoxPlaneClip(localDir.z, -localStart.z - extents[2], scale1, scale2)
-                    && BoxPlaneClip(-localDir.z, localStart.z - extents[2], scale1, scale2))
+            return (BoxPlaneClip(localDir.x, -localStart.x - extents[0], scale1, scale2) && BoxPlaneClip(
+                -localDir.x, localStart.x - extents[0], scale1, scale2
+            ) && BoxPlaneClip(localDir.y, -localStart.y - extents[1], scale1, scale2) && BoxPlaneClip(
+                -localDir.y, localStart.y - extents[1], scale1, scale2
+            ) && BoxPlaneClip(localDir.z, -localStart.z - extents[2], scale1, scale2) && BoxPlaneClip(
+                -localDir.z, localStart.z - extents[2], scale1, scale2
+            ))
         }
 
         /*
@@ -764,8 +755,7 @@ object Box {
 
          Tight box for a collection of points.
          ============
-         */
-        // tight box for a collection of points
+         */ // tight box for a collection of points
         fun FromPoints(points: Array<idVec3>, numPoints: Int) {
             var i: Int
             val invNumPoints: Float
@@ -883,9 +873,8 @@ object Box {
         // calculates the projection of this box onto the given axis
         fun AxisProjection(dir: idVec3, min: CFloat, max: CFloat) {
             val d1 = dir * center
-            val d2 = abs(extents[0] * (dir * axis[0])) +
-                    abs(extents[1] * (dir * axis[1])) +
-                    abs(extents[2] * (dir * axis[2]))
+            val d2 =
+                abs(extents[0] * (dir * axis[0])) + abs(extents[1] * (dir * axis[1])) + abs(extents[2] * (dir * axis[2]))
             min._val = (d1 - d2)
             max._val = (d1 + d2)
         }
@@ -893,9 +882,8 @@ object Box {
         fun AxisProjection(ax: idMat3, bounds: idBounds) {
             for (i in 0..2) {
                 val d1 = ax[i] * center
-                val d2 = abs(extents[0] * (ax[i] * axis[0])) +
-                        abs(extents[1] * (ax[i] * axis[1])) +
-                        abs(extents[2] * (ax[i] * axis[2]))
+                val d2 =
+                    abs(extents[0] * (ax[i] * axis[0])) + abs(extents[1] * (ax[i] * axis[1])) + abs(extents[2] * (ax[i] * axis[2]))
                 bounds[0, i] = d1 - d2
                 bounds[1, i] = d1 + d2
             }

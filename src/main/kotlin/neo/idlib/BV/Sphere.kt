@@ -228,8 +228,7 @@ class Sphere {
          The ray can intersect the sphere in both directions from the start point.
          If start is inside the sphere then scale1 < 0 and scale2 > 0.
          ============
-         */
-        // intersection points are (start + dir * scale1) and (start + dir * scale2)
+         */ // intersection points are (start + dir * scale1) and (start + dir * scale2)
         fun RayIntersection(start: idVec3, dir: idVec3, scale1: CFloat, scale2: CFloat): Boolean {
             var a: Float
             val b: Float
@@ -263,8 +262,7 @@ class Sphere {
 
          Tight sphere for a point set.
          ============
-         */
-        // Tight sphere for a point set.
+         */ // Tight sphere for a point set.
         fun FromPoints(points: Array<idVec3>, numPoints: Int) {
             var radiusSqr: Float
             var dist: Float

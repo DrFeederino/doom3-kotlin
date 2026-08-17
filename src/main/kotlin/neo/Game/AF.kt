@@ -143,8 +143,7 @@ class idAF {
      ================
      idAF::Restore
      ================
-     */
-    // NOTE: Differs from C++ — ReadBool/ReadInt return values instead of pass-by-reference
+     */ // NOTE: Differs from C++ — ReadBool/ReadInt return values instead of pass-by-reference
     fun Restore(savefile: idRestoreGame) {
         self = savefile.ReadObject() as idEntity?
         savefile.ReadString(name)
@@ -166,8 +165,7 @@ class idAF {
         }
         savefile.ReadStaticObject(physicsObj)
         if (self != null) {
-            if (isActive) {
-                // clear all animations
+            if (isActive) { // clear all animations
                 animator!!.ClearAllAnims(Game_local.gameLocal.time, 0)
                 animator!!.ClearAllJoints()
 
@@ -331,8 +329,7 @@ class idAF {
         while (i < physicsObj.GetNumConstraints()) {
             val constraint = physicsObj.GetConstraint(i)!!
             j = 0
-            while (j < file.constraints.Num()) {
-                // DG: FIXME: GCC rightfully complains that file->constraints[j]->type and constraint->GetType()
+            while (j < file.constraints.Num()) { // DG: FIXME: GCC rightfully complains that file->constraints[j]->type and constraint->GetType()
                 //  are of different enum types, and their values are different in some cases:
                 //  CONSTRAINT_HINGESTEERING has no DECLAF_CONSTRAINT_ equivalent,
                 //  and thus DECLAF_CONSTRAINT_SLIDER != CONSTRAINT_SLIDER (5 != 6)
@@ -596,13 +593,10 @@ class idAF {
     fun Start() {
         if (!IsLoaded()) {
             return
-        }
-        // clear all animations
+        } // clear all animations
         animator!!.ClearAllAnims(Game_local.gameLocal.time, 0)
-        animator!!.ClearAllJoints()
-        // switch to articulated figure physics
-        self!!.SetPhysics(physicsObj)
-        // start the articulated figure physics simulation
+        animator!!.ClearAllJoints() // switch to articulated figure physics
+        self!!.SetPhysics(physicsObj) // start the articulated figure physics simulation
         physicsObj.EnableClip()
         physicsObj.Activate()
         isActive = true
@@ -629,8 +623,7 @@ class idAF {
 
             // change the pose for the current time and set velocities
             ChangePose(self, Game_local.gameLocal.time)
-        } else {
-            // transform the articulated figure to reflect the current animation pose
+        } else { // transform the articulated figure to reflect the current animation pose
             SetupPose(self, Game_local.gameLocal.time)
         }
         physicsObj.UpdateClipModels()
@@ -650,8 +643,7 @@ class idAF {
      idAF::Stop
      ================
      */
-    fun Stop() {
-        // disable the articulated figure for collision detection
+    fun Stop() { // disable the articulated figure for collision detection
         physicsObj.UnlinkClip()
         isActive = false
     }
@@ -835,8 +827,7 @@ class idAF {
      ================
      idAF::GetImpactInfo
      ================
-     */
-    // NOTE: Differs from C++ — returns impactInfo_s instead of using output parameter
+     */ // NOTE: Differs from C++ — returns impactInfo_s instead of using output parameter
     fun GetImpactInfo(ent: idEntity?, id: Int, point: idVec3): impactInfo_s {
         SetupPose(self, Game_local.gameLocal.time)
         return physicsObj.GetImpactInfo(BodyForClipModelId(id), point)
@@ -921,8 +912,7 @@ class idAF {
             body = physicsObj.GetBody(name.toString())
             if (body != null) {
                 val sscanf = Scanner(kv.GetValue().toString())
-                sscanf.useLocale(Locale.US)
-                //			sscanf( kv.GetValue(), "%f %f %f %f %f %f", &origin.x, &origin.y, &origin.z, &angles.pitch, &angles.yaw, &angles.roll );
+                sscanf.useLocale(Locale.US) //			sscanf( kv.GetValue(), "%f %f %f %f %f %f", &origin.x, &origin.y, &origin.z, &angles.pitch, &angles.yaw, &angles.roll );
                 origin.x = sscanf.nextFloat()
                 origin.y = sscanf.nextFloat()
                 origin.z = sscanf.nextFloat()
@@ -1151,11 +1141,9 @@ class idAF {
 
                 // direction of bone
                 axis[2] = fb.v2.ToVec3().minus(fb.v1.ToVec3())
-                length = axis[2].Normalize()
-                // axis of bone trace model
+                length = axis[2].Normalize() // axis of bone trace model
                 axis[2].NormalVectors(axis[0], axis[1])
-                axis[1] = axis[1].unaryMinus()
-                // create bone trace model
+                axis[1] = axis[1].unaryMinus() // create bone trace model
                 trm.SetupBone(length, fb.width)
             }
 
@@ -1472,15 +1460,10 @@ class idAF {
      ================
      GetJointTransform
      ================
-     */
-    // NOTE: Differs from C++ — implemented as inner class singleton instead of static function, to match getJointTransform_t callback pattern
+     */ // NOTE: Differs from C++ — implemented as inner class singleton instead of static function, to match getJointTransform_t callback pattern
     internal class GetJointTransform private constructor() : getJointTransform_t() {
         override fun run(
-            model: Any,
-            frame: Array<idJointMat>,
-            jointName: idStr,
-            origin: idVec3,
-            axis: idMat3
+            model: Any, frame: Array<idJointMat>, jointName: idStr, origin: idVec3, axis: idMat3
         ): Boolean {
             val joint: Int
 

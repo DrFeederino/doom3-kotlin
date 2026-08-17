@@ -10,8 +10,7 @@ class Queue {
      Queue template
 
      ===============================================================================
-     */
-    //#define idQueue( T, next )		idQueueTemplate<T, (int)&(((T*)NULL)->next)>
+     */ //#define idQueue( T, next )		idQueueTemplate<T, (int)&(((T*)NULL)->next)>
     class idQueueTemplate<T>  //TODO:fix the nextOffset part.
     //        private final static int QUEUE_BLOCK_SIZE = 10;
     //        //
@@ -22,29 +21,26 @@ class Queue {
     //        //
     //        //
         : LinkedList<T>() {
-        fun Add(element: T): Boolean {
-//            if (nextOffset >= queue.length) {
-////		QUEUE_NEXT_PTR(last) = element;
-//                expandQueue();
-//            }
-//            queue[nextOffset] = element;
-////            last = element;
-//            nextOffset++;
+        fun Add(element: T): Boolean { //            if (nextOffset >= queue.length) {
+            ////		QUEUE_NEXT_PTR(last) = element;
+            //                expandQueue();
+            //            }
+            //            queue[nextOffset] = element;
+            ////            last = element;
+            //            nextOffset++;
             return super.add(element)
         }
 
         fun Get(): T? {
             return if (super.isEmpty()) {
                 null
-            } else super.pop()
+            } else super.pop() //
+            //            if (nextOffset <= queue.length - QUEUE_BLOCK_SIZE) {
+            //                shrinkQueue();
+            //            }
             //
-//            if (nextOffset <= queue.length - QUEUE_BLOCK_SIZE) {
-//                shrinkQueue();
-//            }
-//
-//            return queue[--nextOffset];
-        } //        private void expandQueue() {
-        //            final T[] tempQueue = queue;
+            //            return queue[--nextOffset];
+        } //        private void expandQueue() { //            final T[] tempQueue = queue;
         //            queue = (T[]) new Object[queue.length + QUEUE_BLOCK_SIZE];
         //
         //            System.arraycopy(tempQueue, 0, queue, 0, tempQueue.length);

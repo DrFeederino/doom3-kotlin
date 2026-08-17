@@ -977,7 +977,11 @@ object AsyncClient {
                             if (numUsercmds > AsyncNetwork.MAX_USERCMD_RELAY) {
                                 Common.common.Warning(
                                     "snapshot %d contains too many user commands for client %d (numUsercmds=%d > %d), firstClient was %d. Possible message misalignment.",
-                                    snapshotSequence, i, numUsercmds, AsyncNetwork.MAX_USERCMD_RELAY, firstClientVal
+                                    snapshotSequence,
+                                    i,
+                                    numUsercmds,
+                                    AsyncNetwork.MAX_USERCMD_RELAY,
+                                    firstClientVal
                                 )
                                 break
                             }
@@ -1343,8 +1347,7 @@ object AsyncClient {
                 msg.ReadString(serverInfo.nickname[serverInfo.clients], AsyncNetwork.MAX_NICKLEN)
                 if (verbose) {
                     Common.common.Printf(
-                        "client %2d: %s, ping = %d, rate = %d\n",
-                        i, ctos(serverInfo.nickname[serverInfo.clients]),
+                        "client %2d: %s, ping = %d, rate = %d\n", i, ctos(serverInfo.nickname[serverInfo.clients]),
                         serverInfo.pings[serverInfo.clients],
                         serverInfo.rate[serverInfo.clients]
                     )
@@ -1946,11 +1949,9 @@ object AsyncClient {
 
         private fun BuildSafeDownloadPath(relativePakPath: String): Path? {
             val normalizedPakPath = relativePakPath.replace('\\', '/')
-            if (normalizedPakPath.isEmpty()
-                || normalizedPakPath.startsWith("/")
-                || normalizedPakPath.contains('\u0000')
-                || normalizedPakPath.contains(':')
-                || !normalizedPakPath.lowercase(Locale.ROOT).endsWith(".pk4")
+            if (normalizedPakPath.isEmpty() || normalizedPakPath.startsWith("/") || normalizedPakPath.contains('\u0000') || normalizedPakPath.contains(
+                    ':'
+                ) || !normalizedPakPath.lowercase(Locale.ROOT).endsWith(".pk4")
             ) {
                 return null
             }

@@ -36,15 +36,13 @@ import neo.idlib.math.*
  Trace model vs. polygonal model collision detection.
 
  ===============================================================================
- */
-/*
+ *//*
  ===============================================================================
 
  Collision detection for translational motion
 
  ===============================================================================
- */
-/*
+ *//*
  ================
  CM_AddContact
  ================
@@ -52,13 +50,11 @@ import neo.idlib.math.*
 fun CM_AddContact(tw: cm_traceWork_s) {
     if (tw.numContacts >= tw.maxContacts) {
         return
-    }
-    // copy contact information from trace_t
+    } // copy contact information from trace_t
     // re-creates contactInfo_t? In src code it's just a ref
     //tw.contacts[tw.numContacts] = new contactInfo_t(tw.trace.c);
     tw.contacts!![tw.numContacts] = contactInfo_t(tw.trace.c)
-    tw.numContacts++
-    // set fraction back to 1 to find all other contacts
+    tw.numContacts++ // set fraction back to 1 to find all other contacts
     tw.trace.fraction = 1.0f
 }
 
@@ -100,8 +96,8 @@ fun CM_SetEdgeSidedness(edge: cm_edge_s, vpl: idPluecker, epl: idPluecker, bitNu
  */
 fun CM_TranslationPlaneFraction(plane: idPlane, start: idVec3, end: idVec3): Float {
     val d2eps: Float
-    var d2: Float = plane.Distance(end)
-    // if the end point is closer to the plane than an epsilon we still take it for a collision
+    var d2: Float =
+        plane.Distance(end) // if the end point is closer to the plane than an epsilon we still take it for a collision
     // if ( d2 >= CM_CLIP_EPSILON ) {
     d2eps = d2 - CM_CLIP_EPSILON
     if (FLOATSIGNBITNOTSET(d2eps) != 0) {
@@ -112,8 +108,7 @@ fun CM_TranslationPlaneFraction(plane: idPlane, start: idVec3, end: idVec3): Flo
     // if completely behind the polygon
     if (FLOATSIGNBITSET(d1) != 0) {
         return 1.0f
-    }
-    // if going towards the front of the plane and
+    } // if going towards the front of the plane and
     // the start and end point are not at equal distance from the plane
     // if ( d1 > d2 )
     d2 = d1 - d2

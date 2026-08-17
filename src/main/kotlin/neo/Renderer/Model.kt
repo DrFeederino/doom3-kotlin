@@ -56,8 +56,7 @@ object Model {
      Render Model
 
      ===============================================================================
-     */
-    // shared between the renderer, game, and Maya export DLL
+     */ // shared between the renderer, game, and Maya export DLL
     val MD5_VERSION_STRING: String = "MD5Version"
 
     //
@@ -213,38 +212,7 @@ object Model {
                 : Array<silEdge_t?>? = null
 
         override fun toString(): String {
-            return ("srfTriangles_s{" +
-                    "bounds=" + bounds +
-                    ", facePlanes=" + facePlanes.contentToString() +
-                    ", indexes=" + indexes.contentToString() +
-                    ", numIndexes=" + numIndexes +
-                    ", numShadowIndexesNoCaps=" + numShadowIndexesNoCaps +
-                    ", numShadowIndexesNoFrontCaps=" + numShadowIndexesNoFrontCaps +
-                    ", numVerts=" + numVerts +
-                    ", shadowCapPlaneBits=" + shadowCapPlaneBits +
-                    ", shadowVertexes=" + shadowVertexes.contentToString() +
-                    ", silIndexes=" + silIndexes.contentToString() +
-                    ", tangentsCalculated=" + tangentsCalculated +
-                    ", verts=" + verts.contentToString() +
-                    ", ambientCache=" + ambientCache +
-                    ", ambientSurface=" + ambientSurface +
-                    ", ambientViewCount=" + ambientViewCount +
-                    ", deformedSurface=" + deformedSurface +
-                    ", dominantTris=" + dominantTris.contentToString() +
-                    ", dupVerts=" + dupVerts.contentToString() +
-                    ", facePlanesCalculated=" + facePlanesCalculated +
-                    ", generateNormals=" + generateNormals +
-                    ", indexCache=" + indexCache +
-                    ", lightingCache=" + lightingCache +
-                    ", mirroredVerts=" + mirroredVerts.contentToString() +
-                    ", nextDeferredFree=" + nextDeferredFree +
-                    ", numDupVerts=" + numDupVerts +
-                    ", numMirroredVerts=" + numMirroredVerts +
-                    ", numSilEdges=" + numSilEdges +
-                    ", perfectHull=" + perfectHull +
-                    ", shadowCache=" + shadowCache +
-                    ", silEdges=" + silEdges.contentToString() +
-                    '}')
+            return ("srfTriangles_s{" + "bounds=" + bounds + ", facePlanes=" + facePlanes.contentToString() + ", indexes=" + indexes.contentToString() + ", numIndexes=" + numIndexes + ", numShadowIndexesNoCaps=" + numShadowIndexesNoCaps + ", numShadowIndexesNoFrontCaps=" + numShadowIndexesNoFrontCaps + ", numVerts=" + numVerts + ", shadowCapPlaneBits=" + shadowCapPlaneBits + ", shadowVertexes=" + shadowVertexes.contentToString() + ", silIndexes=" + silIndexes.contentToString() + ", tangentsCalculated=" + tangentsCalculated + ", verts=" + verts.contentToString() + ", ambientCache=" + ambientCache + ", ambientSurface=" + ambientSurface + ", ambientViewCount=" + ambientViewCount + ", deformedSurface=" + deformedSurface + ", dominantTris=" + dominantTris.contentToString() + ", dupVerts=" + dupVerts.contentToString() + ", facePlanesCalculated=" + facePlanesCalculated + ", generateNormals=" + generateNormals + ", indexCache=" + indexCache + ", lightingCache=" + lightingCache + ", mirroredVerts=" + mirroredVerts.contentToString() + ", nextDeferredFree=" + nextDeferredFree + ", numDupVerts=" + numDupVerts + ", numMirroredVerts=" + numMirroredVerts + ", numSilEdges=" + numSilEdges + ", perfectHull=" + perfectHull + ", shadowCache=" + shadowCache + ", silEdges=" + silEdges.contentToString() + '}')
         }
     }
 
@@ -390,9 +358,7 @@ object Model {
         // This isn't const, because it may need to reload a purged model if it
         // wasn't precached correctly.
         abstract fun InstantiateDynamicModel(
-            ent: renderEntity_s?,
-            view: viewDef_s?,
-            cachedModel: idRenderModel?
+            ent: renderEntity_s?, view: viewDef_s?, cachedModel: idRenderModel?
         ): idRenderModel?
 
         // Returns the number of joints or 0 if the model is not an MD5

@@ -104,14 +104,13 @@ abstract class AbstractCollisionModel_local {
         val normal: idVec3 = idVec3() // edge normal
 
         companion object {
-            val SIZE: Int =
-                Integer.SIZE +                  // checkcount
-                        java.lang.Short.SIZE +          // internal (stored as short in C++)
-                        java.lang.Short.SIZE +          // numUsers
-                        java.lang.Long.SIZE +           // side (Long in Kotlin, unsigned int in C++)
-                        java.lang.Long.SIZE +           // sideSet (Long in Kotlin, unsigned int in C++)
-                        Integer.SIZE * 2 +              // vertexNum[2]
-                        idVec3.SIZE                     // normal
+            val SIZE: Int = Integer.SIZE +                  // checkcount
+                    java.lang.Short.SIZE +          // internal (stored as short in C++)
+                    java.lang.Short.SIZE +          // numUsers
+                    java.lang.Long.SIZE +           // side (Long in Kotlin, unsigned int in C++)
+                    java.lang.Long.SIZE +           // sideSet (Long in Kotlin, unsigned int in C++)
+                    Integer.SIZE * 2 +              // vertexNum[2]
+                    idVec3.SIZE                     // normal
             val BYTES = SIZE / java.lang.Byte.SIZE
 
             fun generateArray(length: Int): Array<cm_edge_s> {
@@ -174,7 +173,7 @@ abstract class AbstractCollisionModel_local {
             result = 31 * result + checkcount
             result = 31 * result + contents
             result = 31 * result + edges.contentHashCode()
-            result = 31 * result + (material?.hashCode() ?: 0)
+            result = 31 * result + material.hashCode()
             result = 31 * result + numEdges
             result = 31 * result + plane.hashCode()
             return result

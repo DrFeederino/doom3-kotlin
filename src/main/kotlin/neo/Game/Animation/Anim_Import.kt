@@ -175,8 +175,7 @@ object Anim_Import {
                     return 0
                 }
                 parser.ExpectTokenString("{")
-            } else if (!parser.CheckTokenString("{")) {
-                // skip the export mask
+            } else if (!parser.CheckTokenString("{")) { // skip the export mask
                 parser.ReadToken(token)
                 parser.ExpectTokenString("{")
             }
@@ -187,8 +186,7 @@ object Anim_Import {
 
             while (true) {
 
-                if (!parser.ReadToken(command)) {
-                    // NOTE: Original C++ has typo "Unexpoected" — preserved for fidelity
+                if (!parser.ReadToken(command)) { // NOTE: Original C++ has typo "Unexpoected" — preserved for fidelity
                     parser.Error("Unexpoected end-of-file")
                     break
                 }
@@ -236,19 +234,13 @@ object Anim_Import {
                             dest.SetFileExtension(Model.MD5_CAMERA_EXT)
                         } else {
                             dest.SetFileExtension(command.toString())
-                        }
-                        // FIX: C++ uses commandLine.c_str() in the sprintf while writing into commandLine,
+                        } // FIX: C++ uses commandLine.c_str() in the sprintf while writing into commandLine,
                         // which is undefined behavior. We correctly save commandLine to 'back' first and
                         // use that saved copy in the format string.
                         val back = commandLine.toString()
                         commandLine.set(
                             String.format(
-                                "%s %s -dest %s -game %s%s",
-                                command,
-                                src.toString(),
-                                dest.toString(),
-                                game,
-                                back
+                                "%s %s -dest %s -game %s%s", command, src.toString(), dest.toString(), game, back
                             )
                         )
                         if (ConvertMayaToMD5()) {
@@ -295,8 +287,7 @@ object Anim_Import {
             }
 
             // get the source file's time
-            if (FileSystem_h.fileSystem.ReadFile(src, null, sourceTime) < 0) {
-                // source file doesn't exist
+            if (FileSystem_h.fileSystem.ReadFile(src, null, sourceTime) < 0) { // source file doesn't exist
                 return true
             }
 
@@ -315,8 +306,7 @@ object Anim_Import {
                         parser.ReadToken(cmdLine)
 
                         // check the file time, scale, and version
-                        if ((destTime[0] >= sourceTime[0]) && (version == Model.MD5_VERSION) && (cmdLine.toString() == commandLine.toString())) {
-                            // don't convert it
+                        if ((destTime[0] >= sourceTime[0]) && (version == Model.MD5_VERSION) && (cmdLine.toString() == commandLine.toString())) { // don't convert it
                             return true
                         }
                     }
@@ -353,8 +343,7 @@ object Anim_Import {
             // get the os path in case it needs to create one
             path.set(FileSystem_h.fileSystem.RelativePathToOSPath(""))
 
-            Common.common.SetRefreshOnPrint(true)
-            // NOTE: Differs from C++ — Maya DLL function pointer call (Maya_ConvertModel) cannot
+            Common.common.SetRefreshOnPrint(true) // NOTE: Differs from C++ — Maya DLL function pointer call (Maya_ConvertModel) cannot
             // be performed on JVM. The Maya export pipeline requires a native Windows DLL.
             // On JVM, this path is only reached if CheckMayaInstall() returned true, which
             // currently always returns false. If a future JVM-native Maya bridge is implemented,
@@ -458,13 +447,11 @@ object Anim_Import {
 
             count = 0
 
-            if (!CheckMayaInstall()) {
-                // if Maya isn't installed, don't bother checking if we have anims to export
+            if (!CheckMayaInstall()) { // if Maya isn't installed, don't bother checking if we have anims to export
                 return 0
             }
 
-            Game_local.gameLocal.Printf("----- Exporting models -----\n")
-            // NOTE: Original C++ has `if ( !g_exportMask.GetString()[ 0 ] )` which prints
+            Game_local.gameLocal.Printf("----- Exporting models -----\n") // NOTE: Original C++ has `if ( !g_exportMask.GetString()[ 0 ] )` which prints
             // the mask value when it is EMPTY — this is likely a C++ bug (should print when
             // mask IS set). Preserving original C++ behavior here.
             if (SysCvar.g_exportMask.GetString().isNullOrEmpty()) {
@@ -498,8 +485,7 @@ object Anim_Import {
              Determines if Maya is installed on the user's machine
              =====================
              */
-            private fun CheckMayaInstall(): Boolean {
-                // NOTE: Differs from C++ — Original checks Windows registry for Maya installation.
+            private fun CheckMayaInstall(): Boolean { // NOTE: Differs from C++ — Original checks Windows registry for Maya installation.
                 // On JVM/Kotlin there is no Maya DLL loading support, so this always returns false.
                 return false
             }
@@ -511,8 +497,7 @@ object Anim_Import {
              Checks to see if we can load the Maya export dll
              =====================
              */
-            private fun LoadMayaDll() {
-                // NOTE: Differs from C++ — Original loads MayaImport DLL and resolves function
+            private fun LoadMayaDll() { // NOTE: Differs from C++ — Original loads MayaImport DLL and resolves function
                 // pointers (dllEntry, Maya_ConvertModel, Maya_Shutdown). This is not applicable
                 // on JVM. The function is a no-op; hasMayaConvert/hasMayaShutdown remain false.
             }
@@ -522,8 +507,7 @@ object Anim_Import {
              idModelExport::Shutdown
              ====================
              */
-            fun Shutdown() {
-                // NOTE: Differs from C++ — Original calls Maya_Shutdown() and unloads the DLL.
+            fun Shutdown() { // NOTE: Differs from C++ — Original calls Maya_Shutdown() and unloads the DLL.
                 // On JVM we just reset the state variables.
                 importDLL = 0
                 hasMayaShutdown = false

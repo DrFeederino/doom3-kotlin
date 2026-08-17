@@ -106,8 +106,7 @@ object GameEdit {
         //~idCursor3D( void );
         val draggedPosition: idVec3 = idVec3()
 
-        override fun Present() {
-            // don't present to the renderer if the entity hasn't changed
+        override fun Present() { // don't present to the renderer if the entity hasn't changed
             if (0 == thinkFlags and TH_UPDATEVISUALS) {
                 return
             }
@@ -115,10 +114,7 @@ object GameEdit {
             val origin = GetPhysics().GetOrigin()
             val axis = GetPhysics().GetAxis()
             Game_local.gameRenderWorld!!.DebugArrow(
-                colorYellow,
-                origin + (axis[1] * -5.0f + axis[2] * 5.0f),
-                origin,
-                2
+                colorYellow, origin + (axis[1] * -5.0f + axis[2] * 5.0f), origin, 2
             )
             Game_local.gameRenderWorld!!.DebugArrow(colorRed, origin, draggedPosition, 2)
         }
@@ -201,10 +197,9 @@ object GameEdit {
                                 val af = newEnt
 
                                 // joint being dragged
-                                newJoint = Clip.CLIPMODEL_ID_TO_JOINT_HANDLE(trace.c.id)
-                                // get the body id from the trace model id which might be a joint handle
-                                trace.c.id = af.BodyForClipModelId(trace.c.id)
-                                // get the name of the body being dragged
+                                newJoint =
+                                    Clip.CLIPMODEL_ID_TO_JOINT_HANDLE(trace.c.id) // get the body id from the trace model id which might be a joint handle
+                                trace.c.id = af.BodyForClipModelId(trace.c.id) // get the name of the body being dragged
                                 newBodyName = af.GetAFPhysics().GetBody(trace.c.id)!!.GetName()
                             } else if (newEnt !is idWorldspawn) {
                                 newJoint = if (trace.c.id < 0) {
@@ -235,10 +230,7 @@ object GameEdit {
                             cursor!!.drag.Init(SysCvar.g_dragDamping.GetFloat())
                             cursor!!.drag.SetPhysics(phys, id, localEntityPoint)
                             cursor!!.Show()
-                            if (phys is idPhysics_AF
-                                || phys is idPhysics_RigidBody
-                                || phys is idPhysics_Monster
-                            ) {
+                            if (phys is idPhysics_AF || phys is idPhysics_RigidBody || phys is idPhysics_Monster) {
                                 cursor!!.BecomeActive(TH_THINK)
                             }
                         }
@@ -274,23 +266,18 @@ object GameEdit {
                     cursor!!.draggedPosition.set(cursor!!.GetPhysics().GetOrigin())
                     Game_local.gameRenderWorld!!.DrawText(
                         Str.va(
-                            "%s\n%s\n%s",
-                            drag.GetName(),
-                            drag.GetType().name,
-                            bodyName
+                            "%s\n%s\n%s", drag.GetName(), drag.GetType().name, bodyName
                         ), cursor!!.GetPhysics().GetOrigin(), 0.1f, colorWhite, viewAxis, 1
                     )
                 }
             }
 
             // if there is a selected entity
-            if (selected.GetEntity() != null && SysCvar.g_dragShowSelection.GetBool()) {
-                // draw the bbox of the selected entity
+            if (selected.GetEntity() != null && SysCvar.g_dragShowSelection.GetBool()) { // draw the bbox of the selected entity
                 val renderEntity = selected.GetEntity()!!.GetRenderEntity()
                 if (renderEntity != null) {
                     Game_local.gameRenderWorld!!.DebugBox(
-                        colorYellow,
-                        idBox(renderEntity.bounds, renderEntity.origin, renderEntity.axis)
+                        colorYellow, idBox(renderEntity.bounds, renderEntity.origin, renderEntity.axis)
                     )
                 }
             }
@@ -305,8 +292,7 @@ object GameEdit {
             return selected.GetEntity()
         }
 
-        fun DeleteSelected() {
-//	delete selected.GetEntity();
+        fun DeleteSelected() { //	delete selected.GetEntity();
             selected.oSet(null)
             StopDrag()
         }
@@ -345,8 +331,7 @@ object GameEdit {
                 lexer.FreeSource()
 
                 // if there already exists a bind constraint for this body
-                if (bodyName.Icmp(bindBodyName) == 0) {
-                    // delete the bind constraint
+                if (bodyName.Icmp(bindBodyName) == 0) { // delete the bind constraint
                     af.spawnArgs.Delete(kv.GetKey())
                     kv = null
                 }
@@ -570,68 +555,39 @@ object GameEdit {
                     val end = idVec3(start.plus(idVec3(1, 0, 0).times(20.0f)))
                     Game_local.gameRenderWorld!!.DebugArrow(colorWhite, start, end, 2)
                     Game_local.gameRenderWorld!!.DrawText(
-                        "x+",
-                        end.plus(idVec3(4, 0, 0)),
-                        0.15f,
-                        colorWhite,
-                        axis
+                        "x+", end.plus(idVec3(4, 0, 0)), 0.15f, colorWhite, axis
                     )
                     end.set(start.plus(idVec3(1, 0, 0).times(-20.0f)))
                     Game_local.gameRenderWorld!!.DebugArrow(colorWhite, start, end, 2)
                     Game_local.gameRenderWorld!!.DrawText(
-                        "x-",
-                        end.plus(idVec3(-4, 0, 0)),
-                        0.15f,
-                        colorWhite,
-                        axis
+                        "x-", end.plus(idVec3(-4, 0, 0)), 0.15f, colorWhite, axis
                     )
                     end.set(start.plus(idVec3(0, 1, 0).times(20.0f)))
                     Game_local.gameRenderWorld!!.DebugArrow(colorGreen, start, end, 2)
                     Game_local.gameRenderWorld!!.DrawText(
-                        "y+",
-                        end.plus(idVec3(0, 4, 0)),
-                        0.15f,
-                        colorWhite,
-                        axis
+                        "y+", end.plus(idVec3(0, 4, 0)), 0.15f, colorWhite, axis
                     )
                     end.set(start.plus(idVec3(0, 1, 0).times(-20.0f)))
                     Game_local.gameRenderWorld!!.DebugArrow(colorGreen, start, end, 2)
                     Game_local.gameRenderWorld!!.DrawText(
-                        "y-",
-                        end.plus(idVec3(0, -4, 0)),
-                        0.15f,
-                        colorWhite,
-                        axis
+                        "y-", end.plus(idVec3(0, -4, 0)), 0.15f, colorWhite, axis
                     )
                     end.set(start.plus(idVec3(0, 0, 1).times(20.0f)))
                     Game_local.gameRenderWorld!!.DebugArrow(colorBlue, start, end, 2)
                     Game_local.gameRenderWorld!!.DrawText(
-                        "z+",
-                        end.plus(idVec3(0, 0, 4)),
-                        0.15f,
-                        colorWhite,
-                        axis
+                        "z+", end.plus(idVec3(0, 0, 4)), 0.15f, colorWhite, axis
                     )
                     end.set(start.plus(idVec3(0, 0, 1).times(-20.0f)))
                     Game_local.gameRenderWorld!!.DebugArrow(colorBlue, start, end, 2)
                     Game_local.gameRenderWorld!!.DrawText(
-                        "z-",
-                        end.plus(idVec3(0, 0, -4)),
-                        0.15f,
-                        colorWhite,
-                        axis
+                        "z-", end.plus(idVec3(0, 0, -4)), 0.15f, colorWhite, axis
                     )
                 }
                 if (textKey.Length() != 0) {
                     val text = ent.spawnArgs.GetString(textKey.toString())
                     if (viewTextBounds.ContainsPoint(ent.GetPhysics().GetOrigin())) {
                         Game_local.gameRenderWorld!!.DrawText(
-                            text,
-                            ent.GetPhysics().GetOrigin().plus(idVec3(0, 0, 12)),
-                            0.25f,
-                            colorWhite,
-                            axis,
-                            1
+                            text, ent.GetPhysics().GetOrigin().plus(idVec3(0, 0, 12)), 0.25f, colorWhite, axis, 1
                         )
                     }
                 }
@@ -641,9 +597,7 @@ object GameEdit {
 
 
         fun EntityIsSelectable(
-            ent: idEntity,
-            color: idVec4? = null /* = NULL*/,
-            text: idStr? = null /*= NULL*/
+            ent: idEntity, color: idVec4? = null /* = NULL*/, text: idStr? = null /*= NULL*/
         ): Boolean {
             for (i in 0 until selectableEntityClasses.Num()) {
                 if (ent.IsType(selectableEntityClasses[i].typeInfo!!)) {

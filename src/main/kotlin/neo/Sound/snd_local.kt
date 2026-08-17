@@ -51,13 +51,8 @@ class snd_local {
                 = 0
 
         companion object {
-            const val SIZE = (java.lang.Short.SIZE
-                    + java.lang.Short.SIZE
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + java.lang.Short.SIZE
-                    + java.lang.Short.SIZE
-                    + java.lang.Short.SIZE)
+            const val SIZE =
+                (java.lang.Short.SIZE + java.lang.Short.SIZE + Integer.SIZE + Integer.SIZE + java.lang.Short.SIZE + java.lang.Short.SIZE + java.lang.Short.SIZE)
             private const val BYTES = SIZE / java.lang.Byte.SIZE
         }
     }
@@ -78,11 +73,8 @@ class snd_local {
                 = 0
 
         companion object {
-            const val SIZE = (java.lang.Short.SIZE
-                    + java.lang.Short.SIZE
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + java.lang.Short.SIZE)
+            const val SIZE =
+                (java.lang.Short.SIZE + java.lang.Short.SIZE + Integer.SIZE + Integer.SIZE + java.lang.Short.SIZE)
             private const val BYTES = SIZE / java.lang.Byte.SIZE
         }
     }
@@ -113,8 +105,7 @@ class snd_local {
         }
 
         companion object {
-            private const val SIZE = (waveformat_s.SIZE
-                    + java.lang.Short.SIZE)
+            private const val SIZE = (waveformat_s.SIZE + java.lang.Short.SIZE)
             const val BYTES = SIZE / java.lang.Byte.SIZE
         }
     }
@@ -141,10 +132,8 @@ class snd_local {
                 = 0
 
         companion object {
-            private const val SIZE = (waveformatex_s.SIZE
-                    + java.lang.Short.SIZE //union
-                    + Integer.SIZE
-                    + Integer.SIZE)
+            private const val SIZE = (waveformatex_s.SIZE + java.lang.Short.SIZE //union
+                    + Integer.SIZE + Integer.SIZE)
             private const val BYTES = SIZE / java.lang.Byte.SIZE
         }
 
@@ -188,10 +177,7 @@ class snd_local {
         }
 
         companion object {
-            private const val SIZE = (Integer.SIZE
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + Integer.SIZE)
+            private const val SIZE = (Integer.SIZE + Integer.SIZE + Integer.SIZE + Integer.SIZE)
             private const val BYTES = SIZE / java.lang.Byte.SIZE
         }
     }

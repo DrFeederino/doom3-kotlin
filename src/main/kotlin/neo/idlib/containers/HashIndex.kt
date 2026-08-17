@@ -206,8 +206,7 @@ class idHashIndex {
     }
 
     // clear the hash
-    fun Clear() {
-        // only clear the hash table because clearing the indexChain is not really needed
+    fun Clear() { // only clear the hash table because clearing the indexChain is not really needed
         if (hash !== INVALID_INDEX) {
             hash.fill(-1) //0xff in the original code
         }
@@ -292,8 +291,7 @@ class idHashIndex {
             }
             totalItems += numHashItems[i]
             i++
-        }
-        // if no items in hash
+        } // if no items in hash
         if (totalItems <= 1) {
             return 100
         }
@@ -338,12 +336,10 @@ class idHashIndex {
         assert(idMath.IsPowerOfTwo(newHashSize))
         Free()
         hashSize = newHashSize
-        hash = IntArray(hashSize)
-        //            memset(hash, 0xff, hashSize * sizeof(hash[0]));
+        hash = IntArray(hashSize) //            memset(hash, 0xff, hashSize * sizeof(hash[0]));
         Arrays.fill(hash, -1) //0xff);
         indexSize = newIndexSize
-        indexChain = IntArray(indexSize)
-        //            memset(indexChain, 0xff, indexSize * sizeof(indexChain[0]));
+        indexChain = IntArray(indexSize) //            memset(indexChain, 0xff, indexSize * sizeof(indexChain[0]));
         Arrays.fill(indexChain, -1) //0xff);
         hashMask = hashSize - 1
         lookupMask = -1

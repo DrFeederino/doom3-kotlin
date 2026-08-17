@@ -96,14 +96,12 @@ object win_syscon {
         wc.setLocation((swidth - 600) / 2, (sheight - 450) / 2)
         wc.preferredSize = Dimension(540, 450)
         wc.isResizable = false
-        s_wcd.hWnd = wc
-        // create fonts
+        s_wcd.hWnd = wc // create fonts
         //
         nHeight = 12
         s_wcd.hfBufferFont = Font(
             "Courier New", 0, nHeight
-        )
-        // create the input line
+        ) // create the input line
         //
         s_wcd.hwndInputLine = JTextField("edit")
         s_wcd.hwndInputLine!!.isEditable = false

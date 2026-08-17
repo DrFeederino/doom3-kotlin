@@ -246,8 +246,17 @@ class sys_local {
         var timeString: String? = null
         var sysLocal: idSysLocal = idSysLocal()
         val sysLanguageNames: Array<String?> = arrayOf(
-            "english", "spanish", "italian", "german", "french", "russian",
-            "polish", "korean", "japanese", "chinese", null
+            "english",
+            "spanish",
+            "italian",
+            "german",
+            "french",
+            "russian",
+            "polish",
+            "korean",
+            "japanese",
+            "chinese",
+            null
         )
         val sys_lang: idCVar = idCVar(
             "sys_lang",
@@ -267,11 +276,9 @@ class sys_local {
             val time = Date(timeStamp * 1000)
             val out: String
             val lang = idStr(CVarSystem.cvarSystem.GetCVarString("sys_lang"))
-            out = if (lang.Icmp("english") == 0) {
-                // english gets "month/day/year  hour:min" + "am" or "pm"
+            out = if (lang.Icmp("english") == 0) { // english gets "month/day/year  hour:min" + "am" or "pm"
                 SimpleDateFormat("MM/dd/yyyy\thh:mmaa").format(time).lowercase(Locale.getDefault())
-            } else {
-                // europeans get "day/month/year  24hour:min"
+            } else { // europeans get "day/month/year  24hour:min"
                 SimpleDateFormat("dd/MM/yyyy\tHH:mm").format(time)
             }
 

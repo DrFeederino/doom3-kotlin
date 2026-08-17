@@ -10,7 +10,7 @@ import neo.framework.CVarSystem.cvarSystem
 import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem.cmdExecution_t
 import neo.framework.CmdSystem.cmdFunction_t
-import neo.framework.CmdSystem.idCmdSystem.*
+import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_Integer
 import neo.framework.Compressor.idCompressor
 import neo.framework.Console.Companion.console
 import neo.framework.FileSystem_h.idFileList
@@ -185,12 +185,7 @@ class Common {
 
         init {
             string = String.format(
-                "%s.%d%s %s %s",
-                Licensee.ENGINE_VERSION,
-                BUILD_NUMBER,
-                BUILD_DEBUG,
-                BUILD_STRING(),
-                SysCvar.__DATE__
+                "%s.%d%s %s %s", Licensee.ENGINE_VERSION, BUILD_NUMBER, BUILD_DEBUG, BUILD_STRING(), SysCvar.__DATE__
             )
         }
     }
@@ -228,8 +223,7 @@ class Common {
         override fun Init(argc: Int, argv: Array<String>?, cmdline: String) {
             var argc = argc
             var argv = argv
-            try {
-                // set interface pointers used by idLib
+            try { // set interface pointers used by idLib
                 idLib.sys = sys
                 idLib.common = common
                 idLib.cvarSystem = cvarSystem
@@ -243,8 +237,7 @@ class Common {
 
                 // parse command line options
                 val args: CmdArgs.idCmdArgs
-                if (cmdline.isNotEmpty()) {
-                    // tokenize if the OS doesn't do it for us
+                if (cmdline.isNotEmpty()) { // tokenize if the OS doesn't do it for us
                     args = CmdArgs.idCmdArgs()
                     args.TokenizeString(cmdline, true)
                     val cArg = intArrayOf(argc)
@@ -285,8 +278,7 @@ class Common {
                 win_net.Sys_InitNetworking()
 
                 // override cvars from command line
-                StartupVariable(null, false)
-                // DG: dhewm3 removed Sys_AlreadyRunning() check
+                StartupVariable(null, false) // DG: dhewm3 removed Sys_AlreadyRunning() check
 
                 // initialize processor specific SIMD implementation
                 InitSIMD()
@@ -327,8 +319,7 @@ class Common {
             }
         }
 
-        override fun Shutdown() {
-            // stop the async thread before shutting down
+        override fun Shutdown() { // stop the async thread before shutting down
             if (asyncThread.threadHandle != null) {
                 runAsyncThread = false
                 win_main.Sys_DestroyThread(asyncThread)
@@ -342,8 +333,7 @@ class Common {
             ShutdownGame(false)
 
             // shut down non-portable system services
-            Sys_Shutdown()
-            // shut down the console
+            Sys_Shutdown() // shut down the console
             console.Shutdown()
 
             // shut down the key system
@@ -354,8 +344,7 @@ class Common {
 
             // shut down the console command system
             CmdSystem.cmdSystem.Shutdown()
-            if (ID_WRITE_VERSION) {
-                //	delete config_compressor;
+            if (ID_WRITE_VERSION) { //	delete config_compressor;
                 config_compressor = null
             }
 
@@ -371,8 +360,7 @@ class Common {
             idLib.ShutDown()
         }
 
-        override fun Quit() {
-            // don't try to shutdown if we are in a recursive error
+        override fun Quit() { // don't try to shutdown if we are in a recursive error
             if (0 == com_errorEntered) {
                 Shutdown()
             }
@@ -400,14 +388,12 @@ class Common {
          ============================================================================
          */
         override fun Frame() {
-            try {
-                // DG: update tic number here for ticNumAtStart
+            try { // DG: update tic number here for ticNumAtStart
                 Com_UpdateTicNumber()
                 val ticNumAtStart = com_ticNumber
 
                 // pump all the events
-                Sys_GenerateEvents()
-                // write config file if anything changed
+                Sys_GenerateEvents() // write config file if anything changed
                 WriteConfiguration()
 
                 // change SIMD implementation if required
@@ -526,8 +512,7 @@ class Common {
             var i: Int
             var s: String?
             i = 0
-            while (i < com_numConsoleLines) {
-//                if ( strcmp( com_consoleLines[ i ].Argv( 0 ), "set" ) ) {//TODO:strcmp equals returns false.
+            while (i < com_numConsoleLines) { //                if ( strcmp( com_consoleLines[ i ].Argv( 0 ), "set" ) ) {//TODO:strcmp equals returns false.
                 if ("set" != com_consoleLines[i].Argv(0)) {
                     i++
                     continue
@@ -535,8 +520,7 @@ class Common {
                 s = com_consoleLines[i].Argv(1)
                 if (null == match || 0 == idStr.Icmp(s, match)) {
                     cvarSystem.SetCVarString(s, com_consoleLines[i].Argv(2))
-                    if (once) {
-                        // kill the line
+                    if (once) { // kill the line
                         var j = i + 1
                         while (j < com_numConsoleLines) {
                             com_consoleLines[j - 1] = com_consoleLines[j]
@@ -561,8 +545,7 @@ class Common {
          ==================
          */
         override fun ActivateTool(active: Boolean) {
-            com_editorActive = active
-            // DG: dhewm3 removed Sys_GrabMouseCursor from here
+            com_editorActive = active // DG: dhewm3 removed Sys_GrabMouseCursor from here
         }
 
         override fun WriteConfigToFile(filename: String) {
@@ -577,8 +560,7 @@ class Common {
                 val runtag: String
                 val compressed = idFile_Memory("compressed")
                 val out = idBase64()
-                assert(config_compressor != null)
-                //                ID_TIME_T = time(null);
+                assert(config_compressor != null) //                ID_TIME_T = time(null);
                 curTime = Date().toString()
                 runtag = String.format("%s - %s", cvarSystem.GetCVarString("si_version"), curTime)
                 config_compressor!!.Init(compressed, true, 8)
@@ -663,8 +645,7 @@ class Common {
                 var t = win_shared.Sys_Milliseconds()
                 if (com_timestampPrints.GetInteger() == 1) {
                     t /= 1000
-                }
-                //                sprintf(msg, "[%i]", t);
+                } //                sprintf(msg, "[%i]", t);
                 msg[0] = String.format("[%d]", t)
                 timeLength = msg[0].length
             } else {
@@ -680,8 +661,7 @@ class Common {
                 if (msg[0].length + rd_buffer!!.length > rd_buffersize - 1) {
                     rd_flush!!(rd_buffer.toString())
                     rd_buffer!!.setLength(0) // FIX: C++ clears buffer after flush (*rd_buffer = 0)
-                }
-                //		strcat( rd_buffer, msg );
+                } //		strcat( rd_buffer, msg );
                 rd_buffer!!.append(msg[0])
                 return
             }
@@ -698,8 +678,7 @@ class Common {
             // print to script debugger server
             // DebuggerServerPrint( msg );
             // logFile
-            if (com_logFile.GetInteger() != 0 && !logFileFailed && FileSystem_h.fileSystem.IsInitialized()) {
-//		static bool recursing;
+            if (com_logFile.GetInteger() != 0 && !logFileFailed && FileSystem_h.fileSystem.IsInitialized()) { //		static bool recursing;
                 if (null == logFile && !recursing) {
                     val newTime = Date().toString()
                     val fileName =
@@ -713,8 +692,7 @@ class Common {
                         FatalError("failed to open log file '%s'\n", fileName)
                     }
                     recursing = false
-                    if (com_logFile.GetInteger() > 1) {
-                        // force it to not buffer so we get valid
+                    if (com_logFile.GetInteger() > 1) { // force it to not buffer so we get valid
                         // data even if we are crashing
                         logFile!!.ForceFlush()
                     }
@@ -727,8 +705,7 @@ class Common {
             }
 
             // don't trigger any updates if we are in the process of doing a fatal error
-            if (com_errorEntered != (errorParm_t.ERP_FATAL).ordinal) {
-                // update the console if we are in a long-running command, like dmap
+            if (com_errorEntered != (errorParm_t.ERP_FATAL).ordinal) { // update the console if we are in a long-running command, like dmap
                 if (com_refreshOnPrint) {
                     Session.session.UpdateScreen()
                 }
@@ -750,8 +727,9 @@ class Common {
             if (!cvarSystem.IsInitialized() || !com_developer.GetBool()) {
                 return  // don't confuse non-developers with techie stuff...
             }
-            idStr.vsnPrintf(msg, MAX_PRINT_MSG_SIZE, fmt, *args)
-            // never refresh the screen, which could cause reentrency problems
+            idStr.vsnPrintf(
+                msg, MAX_PRINT_MSG_SIZE, fmt, *args
+            ) // never refresh the screen, which could cause reentrency problems
             val temp = com_refreshOnPrint
             com_refreshOnPrint = false
             Printf(Str.S_COLOR_RED + "%s", msg[0])
@@ -855,8 +833,7 @@ class Common {
             }
 
             // if we got a recursive error, make it fatal
-            if (com_errorEntered != 0) {
-                // if we are recursively erroring while exiting
+            if (com_errorEntered != 0) { // if we are recursively erroring while exiting
                 // from a fatal error, just kill the entire
                 // process immediately, which will prevent a
                 // full screen rendering window covering the
@@ -893,8 +870,7 @@ class Common {
             }
             if (code == (errorParm_t.ERP_DISCONNECT).ordinal) {
                 com_errorEntered = 0
-                throw idException(errorMessage[0])
-                // The gui editor doesnt want thing to com_error so it handles exceptions instead
+                throw idException(errorMessage[0]) // The gui editor doesnt want thing to com_error so it handles exceptions instead
             } else if (com_editors and (EDITOR_GUI or EDITOR_DEBUGGER) != 0) {
                 com_errorEntered = 0
                 throw idException(errorMessage[0])
@@ -920,10 +896,8 @@ class Common {
          ==================
          */
         @Throws(idException::class)
-        override fun FatalError(fmt: String, vararg args: Any) {
-            // if we got a recursive error, make it fatal
-            if (com_errorEntered != 0) {
-                // if we are recursively erroring while exiting
+        override fun FatalError(fmt: String, vararg args: Any) { // if we got a recursive error, make it fatal
+            if (com_errorEntered != 0) { // if we are recursively erroring while exiting
                 // from a fatal error, just kill the entire
                 // process immediately, which will prevent a
                 // full screen rendering window covering the
@@ -931,8 +905,7 @@ class Common {
                 win_main.Sys_Printf("FATAL: recursed fatal error:\n%s\n", errorMessage[0])
 
                 idStr.vsnPrintf(errorMessage, MAX_PRINT_MSG_SIZE, fmt, *args)
-                win_main.Sys_Printf("%s\n", errorMessage[0])
-                // write the console to a log file?
+                win_main.Sys_Printf("%s\n", errorMessage[0]) // write the console to a log file?
                 win_main.Sys_Quit()
             }
             com_errorEntered = (errorParm_t.ERP_FATAL).ordinal
@@ -943,8 +916,7 @@ class Common {
             }
             win_main.Sys_Printf(
                 "shutting down: %s\n", errorMessage[0]
-            )
-            // DG: dhewm3 removed Sys_SetFatalError, just uses Printf above
+            ) // DG: dhewm3 removed Sys_SetFatalError, just uses Printf above
             Shutdown()
             win_main.Sys_Error("%s", errorMessage[0])
         }
@@ -994,8 +966,7 @@ class Common {
         }
 
         @Throws(idException::class)
-        fun InitGame() {
-            // initialize the file system
+        fun InitGame() { // initialize the file system
             FileSystem_h.fileSystem.Init()
 
             // initialize the declaration manager
@@ -1010,7 +981,7 @@ class Common {
             )
             val sysDetect = null == file
             if (!sysDetect) {
-                FileSystem_h.fileSystem.CloseFile(file!!)
+                FileSystem_h.fileSystem.CloseFile(file)
             } else {
                 file = FileSystem_h.fileSystem.OpenFileWrite(Licensee.CONFIG_SPEC)
                 FileSystem_h.fileSystem.CloseFile(file!!)
@@ -1029,8 +1000,7 @@ class Common {
             PrintLoadingMessage(common.GetLanguageDict().GetString("#str_04344"))
 
             // load the font, etc
-            console.LoadGraphics()
-            // init journalling, etc
+            console.LoadGraphics() // init journalling, etc
             EventLoop.eventLoop.Init()
             PrintLoadingMessage(common.GetLanguageDict().GetString("#str_04345"))
 
@@ -1077,8 +1047,7 @@ class Common {
                 if (idAsyncNetwork.serverDedicated.GetInteger() == 1) {
                     idAsyncNetwork.server.InitPort()
                     cvarSystem.SetCVarBool("s_noSound", true)
-                } else {
-                    // init OpenGL, which will open a window and connect sound and input hardware
+                } else { // init OpenGL, which will open a window and connect sound and input hardware
                     PrintLoadingMessage(common.GetLanguageDict().GetString("#str_04348"))
                     InitRenderSystem()
                 }
@@ -1175,15 +1144,13 @@ class Common {
             //Loop through the list and filter
             var currentLangList = langList
             FilterLangList(currentLangList, langName)
-            if (currentLangList.size() == 0) {
-                // reset cvar to default and try to load again
+            if (currentLangList.size() == 0) { // reset cvar to default and try to load again
                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "reset sys_lang")
                 langName = idStr(cvarSystem.GetCVarString("sys_lang"))
                 currentLangList = langList
                 FilterLangList(currentLangList, langName)
             }
-            for (i in 0 until currentLangList.size()) {
-                //common.Printf("%s\n", currentLangList[i].c_str());
+            for (i in 0 until currentLangList.size()) { //common.Printf("%s\n", currentLangList[i].c_str());
                 languageDict.Load(currentLangList[i].toString(), false)
             }
             FileSystem_h.fileSystem.FreeFileList(langFiles)
@@ -1225,8 +1192,7 @@ class Common {
                         }
                         work = token.Right(6)
                         if (token.Icmp("text") == 0 || work.Icmp("::text") == 0 || token.Icmp("choices") == 0) {
-                            if (src.ReadToken(token)) {
-                                // see if already exists, if so save that id to this position in this file
+                            if (src.ReadToken(token)) { // see if already exists, if so save that id to this position in this file
                                 // otherwise add this to the list and save the id to this position in this file
                                 src.GetLastWhiteSpace(ws)
                                 out.Append(ws)
@@ -1249,8 +1215,7 @@ class Common {
                                 out.Append("\"")
                             }
                         } else if (token.Icmp("comment") == 0) {
-                            if (src.ReadToken(token)) {
-                                // need to write these out by hand to preserve any \n's
+                            if (src.ReadToken(token)) { // need to write these out by hand to preserve any \n's
                                 // see if already exists, if so save that id to this position in this file
                                 // otherwise add this to the list and save the id to this position in this file
                                 src.GetLastWhiteSpace(ws)
@@ -1523,8 +1488,7 @@ class Common {
         private fun AddStartupCommands(): Boolean {
             var i: Int
             var added: Boolean
-            added = false
-            // quote every token, so args with semicolons can work
+            added = false // quote every token, so args with semicolons can work
             i = 0
             while (i < com_numConsoleLines) {
                 if (0 == com_consoleLines[i].Argc()) {
@@ -1535,8 +1499,7 @@ class Common {
                 // set commands won't override menu startup
                 if (idStr.Icmpn(com_consoleLines[i].Argv(0), "set", 3) != 0) {
                     added = true
-                }
-                // directly as tokenized so nothing gets screwed
+                } // directly as tokenized so nothing gets screwed
                 CmdSystem.cmdSystem.BufferCommandArgs(cmdExecution_t.CMD_EXEC_APPEND, com_consoleLines[i])
                 i++
             }
@@ -1547,8 +1510,7 @@ class Common {
             var i: Int
             val current_count: Int
             com_numConsoleLines = 0
-            current_count = 0
-            // API says no program path
+            current_count = 0 // API says no program path
             i = 0
             while (i < argc) {
                 if (argv[i][0] == '+') {
@@ -1648,8 +1610,7 @@ class Common {
          Writes key bindings and archived cvars to config file if modified
          ===============
          */
-        private fun WriteConfiguration() {
-            // if we are quiting without fully initializing, make sure
+        private fun WriteConfiguration() { // if we are quiting without fully initializing, make sure
             // we don't write out anything
             if (!com_fullyInitialized) {
                 return
@@ -1731,13 +1692,12 @@ class Common {
             return 0
         }
 
-        fun SingleAsyncTic() {
-            // main thread code can prevent this from happening while modifying
+        fun SingleAsyncTic() { // main thread code can prevent this from happening while modifying
             // critical data structures
             val stat = com_asyncStats[com_ticNumber and MAX_ASYNC_STATS - 1] //memset( stat, 0, sizeof( *stat ) );
             stat.milliseconds = win_shared.Sys_Milliseconds()
-            stat.deltaMsec = stat.milliseconds - com_asyncStats[com_ticNumber - 1 and MAX_ASYNC_STATS - 1].milliseconds
-            // DG: dhewm3 removed com_asyncInput — input is always synchronous now
+            stat.deltaMsec =
+                stat.milliseconds - com_asyncStats[com_ticNumber - 1 and MAX_ASYNC_STATS - 1].milliseconds // DG: dhewm3 removed com_asyncInput — input is always synchronous now
             // FIX: Cases 1,3 both call AsyncUpdateWrite (dhewm3 fall-through); case 2 calls AsyncUpdate
             when (com_asyncSound.GetInteger()) {
                 1, 3 -> snd_system.soundSystem.AsyncUpdateWrite(stat.milliseconds)
@@ -1757,8 +1717,7 @@ class Common {
             }
         }
 
-        private fun UnloadGameDLL() {
-            // shut down the game object
+        private fun UnloadGameDLL() { // shut down the game object
             if (Game_local.game != null) {
                 Game_local.game.Shutdown()
             }
@@ -1815,7 +1774,7 @@ class Common {
             var milliseconds = 0 // should always be incremeting by 60hz
             var mostRecentServerPacketSequence = 0
             var serverPacketsReceived = 0
-            var timeConsumed = 0// msec spent in Com_AsyncThread()
+            var timeConsumed = 0 // msec spent in Com_AsyncThread()
         }
 
         companion object {
@@ -1869,11 +1828,9 @@ class Common {
      */
     internal class Com_ScriptDebugger_f : cmdFunction_t() {
         @Throws(idException::class)
-        override fun run(args: CmdArgs.idCmdArgs?) {
-            // Make sure it wasnt on the command line
+        override fun run(args: CmdArgs.idCmdArgs?) { // Make sure it wasnt on the command line
             if (0 == com_editors and EDITOR_DEBUGGER) {
-                common.Printf("Script debugger is currently disabled\n")
-                // DebuggerClientLaunch();
+                common.Printf("Script debugger is currently disabled\n") // DebuggerClientLaunch();
             }
         }
 
@@ -1909,8 +1866,7 @@ class Common {
      =============
      */
     internal class Com_MaterialEditor_f : cmdFunction_t() {
-        override fun run(args: CmdArgs.idCmdArgs?) {
-            // Turn off sounds
+        override fun run(args: CmdArgs.idCmdArgs?) { // Turn off sounds
             snd_system.soundSystem.SetMute(true)
             idLib.common.Warning("editor tools not supported")
         }
@@ -2177,8 +2133,7 @@ class Common {
         @Throws(idException::class)
         override fun run(args: CmdArgs.idCmdArgs?) {
             if (!com_developer.GetBool()) {
-                commonLocal.Printf("crash may only be used in developer mode\n")
-                //                return;
+                commonLocal.Printf("crash may only be used in developer mode\n") //                return;
             }
 
         }
@@ -2263,8 +2218,7 @@ class Common {
      =================
      */
     internal class Com_ExecMachineSpec_f : cmdFunction_t() {
-        override fun run(args: CmdArgs.idCmdArgs?) {
-            // DG: add an optional "nores" argument for "don't change the resolution" (r_mode)
+        override fun run(args: CmdArgs.idCmdArgs?) { // DG: add an optional "nores" argument for "don't change the resolution" (r_mode)
             val nores = args != null && args.Argc() > 1 && idStr.Icmp(args.Argv(1), "nores") == 0
             if (com_machineSpec.GetInteger() == 3) { // ultra
                 cvarSystem.SetCVarInteger("image_lodbias", 0, CVarSystem.CVAR_ARCHIVE)
@@ -2283,8 +2237,7 @@ class Common {
                 cvarSystem.SetCVarInteger("image_useCompression", 0, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_ignoreHighQuality", 0, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("s_maxSoundsPerShader", 0, CVarSystem.CVAR_ARCHIVE)
-                if (!nores)
-                    cvarSystem.SetCVarInteger("r_mode", 5, CVarSystem.CVAR_ARCHIVE)
+                if (!nores) cvarSystem.SetCVarInteger("r_mode", 5, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_useNormalCompression", 0, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("r_multiSamples", 0, CVarSystem.CVAR_ARCHIVE)
             } else if (com_machineSpec.GetInteger() == 2) { // high
@@ -2305,8 +2258,7 @@ class Common {
                 cvarSystem.SetCVarInteger("image_ignoreHighQuality", 0, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("s_maxSoundsPerShader", 0, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_useNormalCompression", 0, CVarSystem.CVAR_ARCHIVE)
-                if (!nores)
-                    cvarSystem.SetCVarInteger("r_mode", 4, CVarSystem.CVAR_ARCHIVE)
+                if (!nores) cvarSystem.SetCVarInteger("r_mode", 4, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("r_multiSamples", 0, CVarSystem.CVAR_ARCHIVE)
             } else if (com_machineSpec.GetInteger() == 1) { // medium
                 cvarSystem.SetCVarString("image_filter", "GL_LINEAR_MIPMAP_LINEAR", CVarSystem.CVAR_ARCHIVE)
@@ -2324,8 +2276,7 @@ class Common {
                 cvarSystem.SetCVarInteger("image_downSizeSpecularLimit", 64, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_downSizeBumpLimit", 256, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_useNormalCompression", 2, CVarSystem.CVAR_ARCHIVE)
-                if (!nores)
-                    cvarSystem.SetCVarInteger("r_mode", 3, CVarSystem.CVAR_ARCHIVE)
+                if (!nores) cvarSystem.SetCVarInteger("r_mode", 3, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("r_multiSamples", 0, CVarSystem.CVAR_ARCHIVE)
             } else { // low
                 cvarSystem.SetCVarString("image_filter", "GL_LINEAR_MIPMAP_LINEAR", CVarSystem.CVAR_ARCHIVE)
@@ -2344,8 +2295,7 @@ class Common {
                 cvarSystem.SetCVarInteger("image_downSizeBump", 1, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_downSizeSpecularLimit", 64, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_downSizeBumpLimit", 256, CVarSystem.CVAR_ARCHIVE)
-                if (!nores)
-                    cvarSystem.SetCVarInteger("r_mode", 3, CVarSystem.CVAR_ARCHIVE)
+                if (!nores) cvarSystem.SetCVarInteger("r_mode", 3, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_useNormalCompression", 2, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("r_multiSamples", 0, CVarSystem.CVAR_ARCHIVE)
             }
@@ -2442,8 +2392,7 @@ class Common {
             }
             val strTable = idLangDict()
             val filename = Str.va("strings/english%.3i.lang", com_product_lang_ext.GetInteger())
-            if (strTable.Load(filename) == false) {
-                //This is a new file so set the base index
+            if (strTable.Load(filename) == false) { //This is a new file so set the base index
                 strTable.SetBaseID(com_product_lang_ext.GetInteger() * 100000)
             }
             common.SetRefreshOnPrint(true)
@@ -2492,8 +2441,7 @@ class Common {
             }
             val strTable = idLangDict()
             val filename = Str.va("strings/english%.3i.lang", com_product_lang_ext.GetInteger())
-            if (strTable.Load(filename) == false) {
-                //This is a new file so set the base index
+            if (strTable.Load(filename) == false) { //This is a new file so set the base index
                 strTable.SetBaseID(com_product_lang_ext.GetInteger() * 100000)
             }
             var files: idFileList
@@ -2780,12 +2728,7 @@ class Common {
 
         // DG: dhewm3 unified com_asyncSound across platforms
         val com_asyncSound: idCVar = idCVar(
-            "com_asyncSound",
-            "1",
-            CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_SYSTEM,
-            ASYNCSOUND_INFO,
-            0.0f,
-            3.0f
+            "com_asyncSound", "1", CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_SYSTEM, ASYNCSOUND_INFO, 0.0f, 3.0f
         )
         val com_developer: idCVar = idCVar(
             "developer", "0",
@@ -2921,12 +2864,12 @@ class Common {
         var com_frameNumber = 0 // variable frame number
 
         @Volatile
-        var com_frameTime = 0// time for the current frame in milliseconds
+        var com_frameTime = 0 // time for the current frame in milliseconds
         var   /*HWND*/com_hwndMsg: Long = 0
         var com_outputMsg = false
 
         @Volatile
-        var com_ticNumber = 0// 60 hz tics
+        var com_ticNumber = 0 // 60 hz tics
 
         // DG: dhewm3 precise timing state — file-level statics in C++
         private var nextTicTime: Double = 0.0
@@ -2946,8 +2889,7 @@ class Common {
                 if (nextTicTime == 0.0) {
                     nextTicTime = now + com_preciseFrameLengthMS
                     com_ticNumber = 1
-                } else {
-                    // usually numTics should be 1, except if timeDiff > 16.6667 (skipped a frame?)
+                } else { // usually numTics should be 1, except if timeDiff > 16.6667 (skipped a frame?)
                     val numTics = (1 + timeDiff * 0.06).toInt()
                     com_ticNumber += numTics
 
@@ -3053,8 +2995,7 @@ class Common {
             }
         }
 
-        fun TestMapVal(str: idStr): Boolean {
-            //Already Localized?
+        fun TestMapVal(str: idStr): Boolean { //Already Localized?
             return str.Find("#str_") == -1
         }
 
@@ -3146,8 +3087,7 @@ class Common {
                                 }
 
                                 if (`val`.isNotEmpty() && TestMapVal(`val`)) {
-                                    if (!hasLocation || list[k].toString() == "location") {
-                                        // Localize it!
+                                    if (!hasLocation || list[k].toString() == "location") { // Localize it!
                                         strCount++
                                         ent.epairs.Set(list[k].toString(), langDict.AddString(`val`))
                                     }
@@ -3159,8 +3099,7 @@ class Common {
                         if (allList != null) {
                             for (k in 0 until allList.size()) {
                                 val `val` = ent.epairs.GetString(allList[k].toString(), "")!!
-                                if (`val`.isNotEmpty() && TestMapVal(`val`)) {
-                                    // Localize it!
+                                if (`val`.isNotEmpty() && TestMapVal(`val`)) { // Localize it!
                                     strCount++
                                     ent.epairs.Set(allList[k].toString(), langDict.AddString(`val`))
                                 }
@@ -3170,8 +3109,7 @@ class Common {
                         // Localize the gui_parms
                         var kv = ent.epairs.MatchPrefix("gui_parm")
                         while (kv != null) {
-                            if (TestGuiParm(kv.GetKey(), kv.GetValue(), excludeList)) {
-                                // Localize it!
+                            if (TestGuiParm(kv.GetKey(), kv.GetValue(), excludeList)) { // Localize it!
                                 strCount++
                                 ent.epairs.Set(kv.GetKey(), langDict.AddString(kv.GetValue().toString()))
                             }
@@ -3179,8 +3117,7 @@ class Common {
                         }
                     }
                 }
-                if (writeFile && strCount > 0) {
-                    // Before we write the map file lets make a backup of the original
+                if (writeFile && strCount > 0) { // Before we write the map file lets make a backup of the original
                     val file = idStr(FileSystem_h.fileSystem.RelativePathToOSPath(mapName))
                     val bak = file.Left(file.Length() - 4)
                     bak.Append(".bak_loc")

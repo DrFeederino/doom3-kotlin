@@ -15,8 +15,10 @@ import neo.framework.DeclSkin.idDeclSkin
 import neo.framework.DeclTable.idDeclTable
 import neo.framework.FileSystem_h.idFileList
 import neo.framework.File_h.idFile
-import neo.idlib.*
 import neo.idlib.BitMsg.idBitMsg
+import neo.idlib.CmdArgs
+import neo.idlib.LittleRevBytes
+import neo.idlib.Max
 import neo.idlib.Text.Lexer
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
@@ -28,6 +30,7 @@ import neo.idlib.containers.List
 import neo.idlib.containers.bbtocb
 import neo.idlib.containers.idHashIndex
 import neo.idlib.hashing.MD5_BlockChecksum
+import neo.idlib.idException
 import java.math.BigInteger
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
@@ -332,9 +335,7 @@ class DeclManager {
         // Registers a new decl type.
         @Throws(idException::class)
         abstract fun <T> RegisterDeclType(
-            typeName: String,
-            type: declType_t,
-            allocator: () -> T /* *(*allocator)()*/
+            typeName: String, type: declType_t, allocator: () -> T /* *(*allocator)()*/
         ) where T : idDecl
 
         // Registers a new folder with decl files.
@@ -617,8 +618,8 @@ class DeclManager {
             if (USE_COMPRESSED_DECLS) {
                 HuffmanDecompressText(text, textLength, textSource!!, compressedLength)
             } else {
-                text[0] = StandardCharsets.ISO_8859_1.decode(textSource!!).toString()
-                // memcpy( text, textSource, textLength+1 );
+                text[0] = StandardCharsets.ISO_8859_1.decode(textSource!!)
+                    .toString() // memcpy( text, textSource, textLength+1 );
             }
         }
 
@@ -644,27 +645,27 @@ class DeclManager {
 
             // get length and allocate buffer to hold the file
             oldFileLength = sourceFile!!.fileSize
-            newFileLength = oldFileLength - sourceTextLength + textLength
-            //            buffer = (char[]) Mem_Alloc(Max(newFileLength, oldFileLength));
+            newFileLength =
+                oldFileLength - sourceTextLength + textLength //            buffer = (char[]) Mem_Alloc(Max(newFileLength, oldFileLength));
             buffer = ByteArray(Max(newFileLength, oldFileLength))
 
             // read original file
             if (sourceFile!!.fileSize != 0) {
                 file = FileSystem_h.fileSystem.OpenFileRead(GetFileName())
-                if (null == file) {
-//                    Mem_Free(buffer);
+                if (null == file) { //                    Mem_Free(buffer);
                     Common.common.Warning("Couldn't open %s for reading.", GetFileName())
                     return false
                 }
-                if (file.Length() != sourceFile!!.fileSize || file.Timestamp() != sourceFile!!.timestamp[0]) {
-//                    Mem_Free(buffer);
+                if (file.Length() != sourceFile!!.fileSize || file.Timestamp() != sourceFile!!.timestamp[0]) { //                    Mem_Free(buffer);
                     Common.common.Warning("The file %s has been modified outside of the engine.", GetFileName())
                     return false
                 }
                 file.Read(ByteBuffer.wrap(buffer), oldFileLength)
                 FileSystem_h.fileSystem.CloseFile(file)
-                if (MD5_BlockChecksum(buffer, oldFileLength) != sourceFile!!.checksum.toString()) {
-//                    Mem_Free(buffer);
+                if (MD5_BlockChecksum(
+                        buffer, oldFileLength
+                    ) != sourceFile!!.checksum.toString()
+                ) { //                    Mem_Free(buffer);
                     Common.common.Warning("The file %s has been modified outside of the engine.", GetFileName())
                     return false
                 }
@@ -672,26 +673,23 @@ class DeclManager {
 
             // insert new text
             val declString = arrayOf("")
-            GetText(declString)
-            // FIX: C++ works with char* throughout (char and byte are the same in C++).
+            GetText(declString) // FIX: C++ works with char* throughout (char and byte are the same in C++).
             // Was: declText as CharArray, then System.arraycopy(CharArray -> ByteArray) which throws
             // ArrayStoreException at runtime. Convert to bytes using ISO-8859-1 (1:1 char->byte mapping).
-            val declBytes = declString[0].toByteArray(StandardCharsets.ISO_8859_1)
-            //	memmove( buffer + sourceTextOffset + textLength, buffer + sourceTextOffset + sourceTextLength, oldFileLength - sourceTextOffset - sourceTextLength );
+            val declBytes =
+                declString[0].toByteArray(StandardCharsets.ISO_8859_1) //	memmove( buffer + sourceTextOffset + textLength, buffer + sourceTextOffset + sourceTextLength, oldFileLength - sourceTextOffset - sourceTextLength );
             System.arraycopy(
                 buffer,
                 sourceTextOffset + sourceTextLength,
                 buffer,
                 sourceTextOffset + textLength,
                 oldFileLength - sourceTextOffset - sourceTextLength
-            )
-            //	memcpy( buffer + sourceTextOffset, declText, textLength );
+            ) //	memcpy( buffer + sourceTextOffset, declText, textLength );
             System.arraycopy(declBytes, 0, buffer, sourceTextOffset, textLength)
 
             // write out new file
             file = FileSystem_h.fileSystem.OpenFileWrite(GetFileName(), "fs_devpath")
-            if (null == file) {
-//                Mem_Free(buffer);
+            if (null == file) { //                Mem_Free(buffer);
                 Common.common.Warning("Couldn't open %s for writing.", GetFileName())
                 return false
             }
@@ -704,7 +702,7 @@ class DeclManager {
             FileSystem_h.fileSystem.ReadFile(GetFileName(), null, sourceFile!!.timestamp)
 
             // free buffer
-//            Mem_Free(buffer);
+            //            Mem_Free(buffer);
             // move all decls in the same file
             var decl = sourceFile!!.decls
             while (decl != null) {
@@ -720,8 +718,7 @@ class DeclManager {
         }
 
         override fun SourceFileChanged(): Boolean {
-            val newLength: Int
-            /*ID_TIME_T*/
+            val newLength: Int/*ID_TIME_T*/
             val newTimestamp = LongArray(1)
             if (sourceFile!!.fileSize <= 0) {
                 return false
@@ -807,9 +804,7 @@ class DeclManager {
             // always free data before parsing
             self!!.FreeData()
             declManagerLocal.MediaPrint(
-                "parsing %s %s\n",
-                declManagerLocal.declTypes[type.ordinal]!!.typeName,
-                name
+                "parsing %s %s\n", declManagerLocal.declTypes[type.ordinal]!!.typeName, name
             )
 
             // if no text source try to generate default text
@@ -834,8 +829,7 @@ class DeclManager {
             self!!.Parse(declText[0], GetTextLength())
 
             // free generated text
-            if (generatedDefaultText) {
-//                Mem_Free(textSource);
+            if (generatedDefaultText) { //                Mem_Free(textSource);
                 textSource = null
                 textLength = 0
             }
@@ -845,8 +839,7 @@ class DeclManager {
         // Does a MakeDefualt, but flags the decl so that it
         // will Parse() the next time the decl is found.
         @Throws(idException::class)
-        fun Purge() {
-            // never purge things that were referenced outside level load,
+        fun Purge() { // never purge things that were referenced outside level load,
             // like the console and menu graphics
             if (parsedOutsideLevelLoad) {
                 return
@@ -861,7 +854,7 @@ class DeclManager {
         // Set textSource possible with compression.
         fun SetTextLocal(text: String, length: Int) {
 
-//            Mem_Free(textSource);
+            //            Mem_Free(textSource);
             textSource = null
             checksum = BigInteger(MD5_BlockChecksum(text, length))
             if (GET_HUFFMAN_FREQUENCIES) {
@@ -880,7 +873,7 @@ class DeclManager {
                 compressedLength = length
                 textSource = atobb(text) //(char *) Mem_Alloc( length + 1 );
                 //	memcpy( textSource, text, length );
-//	textSource[length] = '\0';
+                //	textSource[length] = '\0';
             }
             textLength = length
         }
@@ -950,10 +943,8 @@ class DeclManager {
          ================
          */
         @Throws(idException::class)
-        fun Reload(force: Boolean) {
-            // check for an unchanged timestamp
-            if (!force && timestamp[0] != 0L) {
-                /*ID_TIME_T*/
+        fun Reload(force: Boolean) { // check for an unchanged timestamp
+            if (!force && timestamp[0] != 0L) {/*ID_TIME_T*/
                 val testTimeStamp = LongArray(1)
                 FileSystem_h.fileSystem.ReadFile(fileName.toString(), null, testTimeStamp)
                 if (testTimeStamp[0] == timestamp[0]) {
@@ -986,8 +977,7 @@ class DeclManager {
                 return BigInteger.ZERO
             }
             if (!src.LoadMemory(bbtocb(buffer[0]!!), length, fileName.toString())) {
-                Common.common.Error("Couldn't parse %s", fileName.toString())
-                //                Mem_Free(buffer);
+                Common.common.Error("Couldn't parse %s", fileName.toString()) //                Mem_Free(buffer);
                 return BigInteger.ZERO
             }
 
@@ -1018,20 +1008,19 @@ class DeclManager {
                 if (matchedType != null) {
                     identifiedType = matchedType.type
                 } else {
-                    identifiedType = if (tokenStr == "{") {
-                        // if we ever see an open brace, we somehow missed the [type] <name> prefix
-                        src.Warning("Missing decl name")
-                        src.SkipBracedSection(false)
-                        continue
-                    } else {
-                        if (defaultType == declType_t.DECL_MAX_TYPES) {
-                            src.Warning("No type")
+                    identifiedType =
+                        if (tokenStr == "{") { // if we ever see an open brace, we somehow missed the [type] <name> prefix
+                            src.Warning("Missing decl name")
+                            src.SkipBracedSection(false)
                             continue
+                        } else {
+                            if (defaultType == declType_t.DECL_MAX_TYPES) {
+                                src.Warning("No type")
+                                continue
+                            }
+                            src.UnreadToken(token) // use the default type
+                            defaultType
                         }
-                        src.UnreadToken(token)
-                        // use the default type
-                        defaultType
-                    }
                 }
 
                 // now parse the name
@@ -1039,8 +1028,7 @@ class DeclManager {
                     src.Warning("Type without definition at end of file")
                     break
                 }
-                if (token.toString() == "{") {
-                    // if we ever see an open brace, we somehow missed the [type] <name> prefix
+                if (token.toString() == "{") { // if we ever see an open brace, we somehow missed the [type] <name> prefix
                     src.Warning("Missing decl name")
                     src.SkipBracedSection(false)
                     continue
@@ -1071,8 +1059,7 @@ class DeclManager {
                 // look it up, possibly getting a newly created default decl
                 reparse = false
                 newDecl = declManagerLocal.FindTypeWithoutParsing(identifiedType, name, false)
-                if (newDecl != null) {
-                    // update the existing copy
+                if (newDecl != null) { // update the existing copy
                     if (newDecl.sourceFile !== this || newDecl.redefinedInReload) {
                         src.Warning(
                             "%s '%s' previously defined at %s:%d",
@@ -1086,8 +1073,7 @@ class DeclManager {
                     if (newDecl.declState != declState_t.DS_UNPARSED) {
                         reparse = true
                     }
-                } else {
-                    // allow it to be created as a default, then add it to the per-file list
+                } else { // allow it to be created as a default, then add it to the per-file list
                     newDecl = declManagerLocal.FindTypeWithoutParsing(identifiedType, name, true)!!
                     newDecl.nextInFile = decls
                     decls = newDecl
@@ -1112,7 +1098,7 @@ class DeclManager {
             }
             numLines = src.GetLineNum()
 
-//            Mem_Free(buffer);
+            //            Mem_Free(buffer);
             // any defs that weren't redefinedInReload should now be defaulted
             decl = decls
             while (decl != null) {
@@ -1189,22 +1175,13 @@ class DeclManager {
 
             // add console commands
             CmdSystem.cmdSystem.AddCommand(
-                "listDecls",
-                ListDecls_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "lists all decls"
+                "listDecls", ListDecls_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "lists all decls"
             )
             CmdSystem.cmdSystem.AddCommand(
-                "reloadDecls",
-                ReloadDecls_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "reloads decls"
+                "reloadDecls", ReloadDecls_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "reloads decls"
             )
             CmdSystem.cmdSystem.AddCommand(
-                "touch",
-                TouchDecl_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "touches a decl"
+                "touch", TouchDecl_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "touches a decl"
             )
             CmdSystem.cmdSystem.AddCommand(
                 "listTables",
@@ -1379,8 +1356,7 @@ class DeclManager {
                 ListHuffmanFrequencies_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "lists decl text character frequencies"
-            )
-            // DG: dhewm3 removed banner print here
+            ) // DG: dhewm3 removed banner print here
         }
 
         override fun Shutdown() {
@@ -1397,8 +1373,7 @@ class DeclManager {
                     if (decl.self != null) {
                         decl.self!!.FreeData()
                     }
-                    if (decl.textSource != null) {
-//                        Mem_Free(decl.textSource);
+                    if (decl.textSource != null) { //                        Mem_Free(decl.textSource);
                         decl.textSource = null
                     }
                     j++
@@ -1451,9 +1426,7 @@ class DeclManager {
 
         @Throws(idException::class)
         override fun <T> RegisterDeclType(
-            typeName: String,
-            type: declType_t,
-            allocator: () -> T
+            typeName: String, type: declType_t, allocator: () -> T
         ) where  T : idDecl {
             val declType: idDeclType
             if (type.ordinal < declTypes.Num() && declTypes[type.ordinal] != null) {
@@ -1505,8 +1478,8 @@ class DeclManager {
             // load and parse decl files
             i = 0
             while (i < fileList.GetNumFiles()) {
-                fileName = idStr(declFolder.folder.toString() + "/" + fileList.GetFile(i))
-                // check whether this file has already been loaded
+                fileName =
+                    idStr(declFolder.folder.toString() + "/" + fileList.GetFile(i)) // check whether this file has already been loaded
                 j = 0
                 while (j < loadedFiles.Num()) {
                     if (fileName.Icmp(loadedFiles[j].fileName.toString()) == 0) {
@@ -1543,9 +1516,7 @@ class DeclManager {
                 val type = declType_t.entries[i]
 
                 // FIXME: not particularly pretty but PDAs and associated decls are localized and should not be checksummed
-                if (type == declType_t.DECL_PDA || type == declType_t.DECL_VIDEO
-                    || type == declType_t.DECL_AUDIO || type == declType_t.DECL_EMAIL
-                ) {
+                if (type == declType_t.DECL_PDA || type == declType_t.DECL_VIDEO || type == declType_t.DECL_AUDIO || type == declType_t.DECL_EMAIL) {
                     continue
                 }
 
@@ -1585,8 +1556,7 @@ class DeclManager {
         override fun GetDeclTypeFromName(typeName: String): declType_t {
             var i: Int
             i = 0
-            while (i < declTypes.Num()) {
-                // FIX: C++ uses Icmp() (case-insensitive). Was using == (case-sensitive).
+            while (i < declTypes.Num()) { // FIX: C++ uses Icmp() (case-insensitive). Was using == (case-sensitive).
                 if (declTypes[i] != null && declTypes[i]!!.typeName.Icmp(typeName) == 0) {
                     return declTypes[i]!!.type
                 }
@@ -1601,8 +1571,8 @@ class DeclManager {
             val decl: idDeclLocal?
 
             if (name == null || name.isEmpty()) {
-                name = "_emptyName"
-                //common.Warning( "idDeclManager::FindType: empty %s name", GetDeclType( (int)type ).typeName.c_str() );
+                name =
+                    "_emptyName" //common.Warning( "idDeclManager::FindType: empty %s name", GetDeclType( (int)type ).typeName.c_str() );
             }
             decl = FindTypeWithoutParsing(type, name, makeDefault)
             if (null == decl) {
@@ -1649,8 +1619,7 @@ class DeclManager {
         }
 
         @Throws(idException::class)
-        override fun GetNumDecls(typeIndex: Int): Int {
-//            int typeIndex = typeIndex;
+        override fun GetNumDecls(typeIndex: Int): Int { //            int typeIndex = typeIndex;
             if (typeIndex < 0 || typeIndex >= declTypes.Num() || declTypes[typeIndex] == null) {
                 Common.common.FatalError("idDeclManager::GetNumDecls: bad type: %d", typeIndex)
             }
@@ -1698,8 +1667,7 @@ class DeclManager {
         @Throws(idException::class)
         override fun ListType(args: CmdArgs.idCmdArgs, type: declType_t) {
             val all: Boolean
-            val ever: Boolean
-            // FIX: C++ uses !idStr::Icmp() (case-insensitive). Was == (case-sensitive).
+            val ever: Boolean // FIX: C++ uses !idStr::Icmp() (case-insensitive). Was == (case-sensitive).
             all = args.Argv(1).equals("all", ignoreCase = true)
             ever = args.Argv(1).equals("ever", ignoreCase = true)
             Common.common.Printf("--------------------\n")
@@ -1727,8 +1695,7 @@ class DeclManager {
                 }
                 Common.common.Printf("%4d: ", decl.index)
                 printed++
-                if (decl.declState == declState_t.DS_UNPARSED) {
-                    // doesn't have any type specific data yet
+                if (decl.declState == declState_t.DS_UNPARSED) { // doesn't have any type specific data yet
                     Common.common.Printf("%s\n", decl.GetName())
                 } else {
                     decl.self!!.List()
@@ -1739,8 +1706,9 @@ class DeclManager {
         }
 
         @Throws(idException::class)
-        override fun PrintType(args: CmdArgs.idCmdArgs, type: declType_t) {
-            // individual decl types may use additional command parameters
+        override fun PrintType(
+            args: CmdArgs.idCmdArgs, type: declType_t
+        ) { // individual decl types may use additional command parameters
             if (args.Argc() < 2) {
                 Common.common.Printf("USAGE: Print<decl type> <decl name> [type specific parms]\n")
                 return
@@ -1750,9 +1718,7 @@ class DeclManager {
             val decl = FindTypeWithoutParsing(type, args.Argv(1), false)
             if (null == decl) {
                 Common.common.Printf(
-                    "%s '%s' not found.\n",
-                    declTypes[type.ordinal]!!.typeName.toString(),
-                    args.Argv(1)
+                    "%s '%s' not found.\n", declTypes[type.ordinal]!!.typeName.toString(), args.Argv(1)
                 )
                 return
             }
@@ -1837,17 +1803,15 @@ class DeclManager {
             val size: Int = header.Length() + 1 + canonicalName.length + 1 + defaultText.Length()
             val declText = CharArray(size + 1)
 
-//	memcpy( declText, header, header.Length() );
+            //	memcpy( declText, header, header.Length() );
             System.arraycopy(header.data.toCharArray(), 0, declText, 0, header.Length())
-            declText[header.Length()] = ' '
-            //	memcpy( declText + header.Length() + 1, canonicalName, idStr::Length( canonicalName ) );
+            declText[header.Length()] =
+                ' ' //	memcpy( declText + header.Length() + 1, canonicalName, idStr::Length( canonicalName ) );
             System.arraycopy(canonicalNameChars, 0, declText, header.Length() + 1, canonicalName.length)
-            declText[header.Length() + 1 + canonicalName.length] = ' '
-            //	memcpy( declText + header.Length() + 1 + idStr::Length( canonicalName ) + 1, defaultText, defaultText.Length() + 1 );
+            declText[header.Length() + 1 + canonicalName.length] =
+                ' ' //	memcpy( declText + header.Length() + 1 + idStr::Length( canonicalName ) + 1, defaultText, defaultText.Length() + 1 );
             System.arraycopy(
-                defaultText.data.toCharArray(),
-                0,
-                declText, header.Length() + 1 + canonicalName.length + 1,
+                defaultText.data.toCharArray(), 0, declText, header.Length() + 1 + canonicalName.length + 1,
                 defaultText.Length() + 1
             )
             val declString = ctos(declText)
@@ -1922,13 +1886,10 @@ class DeclManager {
             }
             for (i in 0 until indent) {
                 Common.common.Printf("    ")
-            }
-            //	va_list		argptr;
-            val buffer = arrayOf("") //new char[1024];
-            //	va_start (argptr,fmt);
-            idStr.vsnPrintf(buffer, 1024, fmt, *arg)
-            //	va_end (argptr);
-//            buffer[1024 - 1] = '\0';
+            } //	va_list		argptr;
+            val buffer = arrayOf("") //new char[1024]; //	va_start (argptr,fmt);
+            idStr.vsnPrintf(buffer, 1024, fmt, *arg) //	va_end (argptr);
+            //            buffer[1024 - 1] = '\0';
             Common.common.Printf("%s", buffer[0])
         }
 
@@ -2022,8 +1983,7 @@ class DeclManager {
             hash = hashTables[typeIndex].GenerateKey(canonicalName, false)
             i = hashTables[typeIndex].First(hash)
             while (i >= 0) {
-                if (linearLists[typeIndex][i].name.toString() == canonicalName) {
-                    // only print these when decl_show is set to 2, because it can be a lot of clutter
+                if (linearLists[typeIndex][i].name.toString() == canonicalName) { // only print these when decl_show is set to 2, because it can be a lot of clutter
                     if (decl_show.GetInteger() > 1) {
                         MediaPrint("referencing %s %s\n", declTypes[type.ordinal]!!.typeName.toString(), name)
                     }
@@ -2088,18 +2048,14 @@ class DeclManager {
                     j = 0
                     while (j < num) {
                         size += declManagerLocal.linearLists[i][j].Size().toInt()
-                        if (declManagerLocal.linearLists[i][j].self != null) {
-                            // FIX: C++ adds self->Size() (virtual, gives subclass size). Was += 4 (C++ pointer size, wrong).
+                        if (declManagerLocal.linearLists[i][j].self != null) { // FIX: C++ adds self->Size() (virtual, gives subclass size). Was += 4 (C++ pointer size, wrong).
                             size += declManagerLocal.linearLists[i][j].self!!.Size().toInt()
                         }
                         j++
                     }
                     totalStructs += size
                     Common.common.Printf(
-                        "%4dk %4d %s\n",
-                        size shr 10,
-                        num,
-                        declManagerLocal.declTypes[i]!!.typeName.toString()
+                        "%4dk %4d %s\n", size shr 10, num, declManagerLocal.declTypes[i]!!.typeName.toString()
                     )
                     i++
                 }
@@ -2110,9 +2066,7 @@ class DeclManager {
                     i++
                 }
                 Common.common.Printf(
-                    "%d total decls is %d decl files\n",
-                    totalDecls,
-                    declManagerLocal.loadedFiles.Num()
+                    "%d total decls is %d decl files\n", totalDecls, declManagerLocal.loadedFiles.Num()
                 )
                 Common.common.Printf("%dKB in text, %dKB in structures\n", totalText shr 10, totalStructs shr 10)
             }
@@ -2175,8 +2129,7 @@ class DeclManager {
                     while (i < declManagerLocal.declTypes.Num()) {
                         if (declManagerLocal.declTypes[i] != null) {
                             Common.common.Printf(
-                                "%s ",
-                                declManagerLocal.declTypes[i]!!.typeName.toString()
+                                "%s ", declManagerLocal.declTypes[i]!!.typeName.toString()
                             )
                         }
                         i++
@@ -2205,9 +2158,7 @@ class DeclManager {
                     val decl: idDecl? = declManagerLocal.FindType(values[i], idStr(args.Argv(2)), false)
                     if (null == decl) {
                         Common.common.Printf(
-                            "%s '%s' not found\n",
-                            declManagerLocal.declTypes[i]!!.typeName.toString(),
-                            args.Argv(2)
+                            "%s '%s' not found\n", declManagerLocal.declTypes[i]!!.typeName.toString(), args.Argv(2)
                         )
                     }
                 }
@@ -2283,10 +2234,14 @@ class DeclManager {
             while (i < MAX_HUFFMAN_SYMBOLS) {
                 Common.common.Printf(
                     "\t0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x,\n",
-                    huffmanFrequencies[i + 0], huffmanFrequencies[i + 1],
-                    huffmanFrequencies[i + 2], huffmanFrequencies[i + 3],
-                    huffmanFrequencies[i + 4], huffmanFrequencies[i + 5],
-                    huffmanFrequencies[i + 6], huffmanFrequencies[i + 7]
+                    huffmanFrequencies[i + 0],
+                    huffmanFrequencies[i + 1],
+                    huffmanFrequencies[i + 2],
+                    huffmanFrequencies[i + 3],
+                    huffmanFrequencies[i + 4],
+                    huffmanFrequencies[i + 5],
+                    huffmanFrequencies[i + 6],
+                    huffmanFrequencies[i + 7]
                 )
                 i += 8
             }
@@ -2322,43 +2277,266 @@ class DeclManager {
                     Lexer.LEXFL_ALLOWMULTICHARLITERALS or  // allow multi character literals
                     Lexer.LEXFL_ALLOWBACKSLASHSTRINGCONCAT or  // allow multiple strings seperated by '\' to be concatenated
                     Lexer.LEXFL_NOFATALERRORS // just set a flag instead of fatal erroring
-        val listDeclStrings: Array<String?> =
-            arrayOf("current", "all", "ever", null)
+        val listDeclStrings: Array<String?> = arrayOf("current", "all", "ever", null)
 
         // compression ratio = 64%
         val huffmanFrequencies: IntArray = intArrayOf(
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
-            0x00000001, 0x00078fb6, 0x000352a7, 0x00000002, 0x00000001, 0x0002795e, 0x00000001, 0x00000001,
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
-            0x00049600, 0x000000dd, 0x00018732, 0x0000005a, 0x00000007, 0x00000092, 0x0000000a, 0x00000919,
-            0x00002dcf, 0x00002dda, 0x00004dfc, 0x0000039a, 0x000058be, 0x00002d13, 0x00014d8c, 0x00023c60,
-            0x0002ddb0, 0x0000d1fc, 0x000078c4, 0x00003ec7, 0x00003113, 0x00006b59, 0x00002499, 0x0000184a,
-            0x0000250b, 0x00004e38, 0x000001ca, 0x00000011, 0x00000020, 0x000023da, 0x00000012, 0x00000091,
-            0x0000000b, 0x00000b14, 0x0000035d, 0x0000137e, 0x000020c9, 0x00000e11, 0x000004b4, 0x00000737,
-            0x000006b8, 0x00001110, 0x000006b3, 0x000000fe, 0x00000f02, 0x00000d73, 0x000005f6, 0x00000be4,
-            0x00000d86, 0x0000014d, 0x00000d89, 0x0000129b, 0x00000db3, 0x0000015a, 0x00000167, 0x00000375,
-            0x00000028, 0x00000112, 0x00000018, 0x00000678, 0x0000081a, 0x00000677, 0x00000003, 0x00018112,
-            0x00000001, 0x000441ee, 0x000124b0, 0x0001fa3f, 0x00026125, 0x0005a411, 0x0000e50f, 0x00011820,
-            0x00010f13, 0x0002e723, 0x00003518, 0x00005738, 0x0002cc26, 0x0002a9b7, 0x0002db81, 0x0003b5fa,
-            0x000185d2, 0x00001299, 0x00030773, 0x0003920d, 0x000411cd, 0x00018751, 0x00005fbd, 0x000099b0,
-            0x00009242, 0x00007cf2, 0x00002809, 0x00005a1d, 0x00000001, 0x00005a1d, 0x00000001, 0x00000001,
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
-            0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00078fb6,
+            0x000352a7,
+            0x00000002,
+            0x00000001,
+            0x0002795e,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00049600,
+            0x000000dd,
+            0x00018732,
+            0x0000005a,
+            0x00000007,
+            0x00000092,
+            0x0000000a,
+            0x00000919,
+            0x00002dcf,
+            0x00002dda,
+            0x00004dfc,
+            0x0000039a,
+            0x000058be,
+            0x00002d13,
+            0x00014d8c,
+            0x00023c60,
+            0x0002ddb0,
+            0x0000d1fc,
+            0x000078c4,
+            0x00003ec7,
+            0x00003113,
+            0x00006b59,
+            0x00002499,
+            0x0000184a,
+            0x0000250b,
+            0x00004e38,
+            0x000001ca,
+            0x00000011,
+            0x00000020,
+            0x000023da,
+            0x00000012,
+            0x00000091,
+            0x0000000b,
+            0x00000b14,
+            0x0000035d,
+            0x0000137e,
+            0x000020c9,
+            0x00000e11,
+            0x000004b4,
+            0x00000737,
+            0x000006b8,
+            0x00001110,
+            0x000006b3,
+            0x000000fe,
+            0x00000f02,
+            0x00000d73,
+            0x000005f6,
+            0x00000be4,
+            0x00000d86,
+            0x0000014d,
+            0x00000d89,
+            0x0000129b,
+            0x00000db3,
+            0x0000015a,
+            0x00000167,
+            0x00000375,
+            0x00000028,
+            0x00000112,
+            0x00000018,
+            0x00000678,
+            0x0000081a,
+            0x00000677,
+            0x00000003,
+            0x00018112,
+            0x00000001,
+            0x000441ee,
+            0x000124b0,
+            0x0001fa3f,
+            0x00026125,
+            0x0005a411,
+            0x0000e50f,
+            0x00011820,
+            0x00010f13,
+            0x0002e723,
+            0x00003518,
+            0x00005738,
+            0x0002cc26,
+            0x0002a9b7,
+            0x0002db81,
+            0x0003b5fa,
+            0x000185d2,
+            0x00001299,
+            0x00030773,
+            0x0003920d,
+            0x000411cd,
+            0x00018751,
+            0x00005fbd,
+            0x000099b0,
+            0x00009242,
+            0x00007cf2,
+            0x00002809,
+            0x00005a1d,
+            0x00000001,
+            0x00005a1d,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001,
+            0x00000001
         )
         var huffmanCodes = Array(MAX_HUFFMAN_SYMBOLS) { huffmanCode_s() }
         var huffmanTree: huffmanNode_s? = null
@@ -2418,9 +2596,7 @@ class DeclManager {
          ================
          */
         fun BuildHuffmanCode_r(
-            node: huffmanNode_s,
-            code: huffmanCode_s,
-            codes: Array<huffmanCode_s> /*[MAX_HUFFMAN_SYMBOLS]*/
+            node: huffmanNode_s, code: huffmanCode_s, codes: Array<huffmanCode_s> /*[MAX_HUFFMAN_SYMBOLS]*/
         ) {
             if (node.symbol == -1) {
                 val newCode = huffmanCode_s(code)
@@ -2447,8 +2623,7 @@ class DeclManager {
             if (node.symbol == -1) {
                 FreeHuffmanTree_r(node.children[0]!!)
                 FreeHuffmanTree_r(node.children[1]!!)
-            }
-            //	delete node;
+            } //	delete node;
         }
 
         /*
@@ -2525,20 +2700,15 @@ class DeclManager {
          ================
          */
         private fun HuffmanCompressText(
-            text: String,
-            textLength: Int,
-            compressed: ByteBuffer,
-            maxCompressedSize: Int
-        ): Int {
-            // FIX: C++ declares j inside the outer for, with the inner for resetting j=0 per character.
+            text: String, textLength: Int, compressed: ByteBuffer, maxCompressedSize: Int
+        ): Int { // FIX: C++ declares j inside the outer for, with the inner for resetting j=0 per character.
             //      Was: var j: Int = 0 outside the loop — j accumulated across characters, corrupting
             //      Huffman output for any character whose code required more than one 32-bit word.
             val msg = idBitMsg()
             totalUncompressedLength += textLength
             msg.Init(compressed, maxCompressedSize)
             msg.BeginWriting()
-            for (i in 0 until textLength) {
-                // NOTE: C++ casts to (unsigned char) — and 0xFF ensures we stay in 0..255 range.
+            for (i in 0 until textLength) { // NOTE: C++ casts to (unsigned char) — and 0xFF ensures we stay in 0..255 range.
                 val code: huffmanCode_s = huffmanCodes[text[i].code and 0xFF]
                 val fullWords = code.numBits shr 5
                 for (j in 0 until fullWords) {
@@ -2558,10 +2728,7 @@ class DeclManager {
          ================
          */
         fun HuffmanDecompressText(
-            text: Array<String>,
-            textLength: Int,
-            compressed: ByteBuffer,
-            compressedSize: Int
+            text: Array<String>, textLength: Int, compressed: ByteBuffer, compressedSize: Int
         ): Int {
             var bit: Int
             val msg = idBitMsg()
@@ -2574,8 +2741,7 @@ class DeclManager {
                 node = huffmanTree!!
                 do {
                     bit = msg.ReadBits(1)
-                    node = node.children[bit]!!
-                    //                System.out.println(bit + ":" + node.symbol);
+                    node = node.children[bit]!! //                System.out.println(bit + ":" + node.symbol);
                 } while (node.symbol == -1)
                 sb.append(node.symbol.toChar())
             }

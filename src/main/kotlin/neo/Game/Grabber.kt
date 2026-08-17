@@ -85,10 +85,8 @@ class Grabber {
     class idGrabber : idEntity() {
         companion object {
             val Type: idTypeInfo = idTypeInfo(
-                "idGrabber",
-                "idEntity"
-            )
-            { idGrabber() }
+                "idGrabber", "idEntity"
+            ) { idGrabber() }
         }
 
         override fun GetType(): idTypeInfo = Type
@@ -124,8 +122,7 @@ class Grabber {
         */
         override fun Save(savefile: idSaveGame) {
             super.Save(savefile)
-            dragEnt.Save(savefile)
-            // savefile.WriteStaticObject(drag) — TODO: implement static object serialization
+            dragEnt.Save(savefile) // savefile.WriteStaticObject(drag) — TODO: implement static object serialization
             drag.Save(savefile)
 
             savefile.WriteVec3(saveGravity)
@@ -158,12 +155,10 @@ class Grabber {
         ==============
         */
         override fun Restore(savefile: idRestoreGame) {
-            super.Restore(savefile)
-            // Spawn the beams
+            super.Restore(savefile) // Spawn the beams
             Initialize()
 
-            dragEnt.Restore(savefile)
-            // savefile.ReadStaticObject(drag) — TODO: implement static object serialization
+            dragEnt.Restore(savefile) // savefile.ReadStaticObject(drag) — TODO: implement static object serialization
             drag.Restore(savefile)
 
             savefile.ReadVec3(saveGravity)
@@ -174,9 +169,7 @@ class Grabber {
             // Restore the drag force's physics object
             if (dragEnt.IsValid()) {
                 drag.SetPhysics(
-                    dragEnt.GetEntity()!!.GetPhysics(),
-                    id,
-                    dragEnt.GetEntity()!!.GetPhysics().GetOrigin()
+                    dragEnt.GetEntity()!!.GetPhysics(), id, dragEnt.GetEntity()!!.GetPhysics().GetOrigin()
                 )
             }
 
@@ -304,8 +297,7 @@ class Grabber {
                     savedClipmask = grabEnt.GetPhysics().GetClipMask()
                 }
                 grabEnt.GetPhysics().SetContents(0)
-                grabEnt.GetPhysics()
-                    .SetClipMask(CONTENTS_SOLID or CONTENTS_BODY)
+                grabEnt.GetPhysics().SetClipMask(CONTENTS_SOLID or CONTENTS_BODY)
 
             } else if (grabEnt.IsType(idExplodingBarrel.Type)) {
                 val ebarrel = grabEnt as idExplodingBarrel
@@ -332,8 +324,7 @@ class Grabber {
 
             // hold it directly in front of player
             localPlayerPoint.set(
-                thePlayer.firstPersonViewAxis[0].times(HOLD_DISTANCE)
-                    .times(thePlayer.firstPersonViewAxis.Transpose())
+                thePlayer.firstPersonViewAxis[0].times(HOLD_DISTANCE).times(thePlayer.firstPersonViewAxis.Transpose())
             )
 
             // Set the ending time for the hold
@@ -348,11 +339,7 @@ class Grabber {
 
             // start the screen warp
             warpId = thePlayer.playerView.AddWarp(
-                phys.GetOrigin(),
-                SCREEN_WIDTH / 2f,
-                SCREEN_HEIGHT / 2f,
-                160f,
-                2000f
+                phys.GetOrigin(), SCREEN_WIDTH / 2f, SCREEN_HEIGHT / 2f, 160f, 2000f
             )
         }
 
@@ -400,8 +387,7 @@ class Grabber {
                     afPhys.Activate()
 
                     afPhys.SetTimeScaleRamp(
-                        MS2SEC(gameLocal.slow.time.toFloat()) - 1.5f,
-                        MS2SEC(gameLocal.slow.time.toFloat()) + 1.0f
+                        MS2SEC(gameLocal.slow.time.toFloat()) - 1.5f, MS2SEC(gameLocal.slow.time.toFloat()) + 1.0f
                     )
                 }
 
@@ -410,7 +396,10 @@ class Grabber {
                     ent.GetPhysics().SetLinearVelocity(vec3_origin)
                     thePlayer?.StartSoundShader(
                         declManager.FindSound("grabber_maindrop"),
-                        Game_local.gameSoundChannel_t.SND_CHANNEL_WEAPON.ordinal, 0, false, CInt()
+                        Game_local.gameSoundChannel_t.SND_CHANNEL_WEAPON.ordinal,
+                        0,
+                        false,
+                        CInt()
                     )
 
                     if (ent.IsType(idExplodingBarrel.Type)) {
@@ -418,15 +407,17 @@ class Grabber {
                         ebarrel.SetStability(true)
                         ebarrel.StopBurning()
                     }
-                } else {
-                    // Shoot the object forward
+                } else { // Shoot the object forward
                     ent.ApplyImpulse(
                         thePlayer, 0, ent.GetPhysics().GetOrigin(),
                         thePlayer!!.firstPersonViewAxis[0].times((THROW_SCALE * ent.GetPhysics().GetMass()))
                     )
                     thePlayer.StartSoundShader(
                         declManager.FindSound("grabber_release"),
-                        Game_local.gameSoundChannel_t.SND_CHANNEL_WEAPON.ordinal, 0, false, CInt()
+                        Game_local.gameSoundChannel_t.SND_CHANNEL_WEAPON.ordinal,
+                        0,
+                        false,
+                        CInt()
                     )
 
                     // Orient projectiles away from the player
@@ -441,8 +432,7 @@ class Grabber {
                         ent.GetPhysics().SetContents(savedContents)
                         ent.GetPhysics().SetClipMask(savedClipmask)
 
-                    } else if (ent.IsType(idMoveable.Type)) {
-                        // Turn on damage for this object
+                    } else if (ent.IsType(idMoveable.Type)) { // Turn on damage for this object
                         val obj = ent as idMoveable
                         obj.EnableDamage(true, 2.5f)
                         obj.SetAttacker(thePlayer)
@@ -506,12 +496,8 @@ class Grabber {
                 }
                 if (!abort && dragEnt.GetEntity()!!.IsHidden()) {
                     abort = true
-                }
-                // Not in multiplayer :: Pressing "reload" lets you carefully drop an item
-                if (!gameLocal.isMultiplayer && !abort
-                    && ((player.usercmd.flags.toInt() and UCF_IMPULSE_SEQUENCE) != (oldUcmdFlags and UCF_IMPULSE_SEQUENCE))
-                    && (player.usercmd.impulse.toInt() == IMPULSE_13)
-                ) {
+                } // Not in multiplayer :: Pressing "reload" lets you carefully drop an item
+                if (!gameLocal.isMultiplayer && !abort && ((player.usercmd.flags.toInt() and UCF_IMPULSE_SEQUENCE) != (oldUcmdFlags and UCF_IMPULSE_SEQUENCE)) && (player.usercmd.impulse.toInt() == IMPULSE_13)) {
                     abort = true
                 }
 
@@ -549,14 +535,11 @@ class Grabber {
                     }
 
                     // Check if this is a valid entity to hold
-                    if (newEnt != null
-                        && (newEnt.IsType(idMoveable.Type)
-                                || newEnt.IsType(idMoveableItem.Type)
-                                || newEnt.IsType(idProjectile.Type)
-                                || newEnt.IsType(idAFEntity_Gibbable.Type))
-                        && !newEnt.noGrab
-                        && newEnt.GetPhysics().GetBounds().GetRadius() < MAX_PICKUP_SIZE
-                        && newEnt.GetPhysics().GetLinearVelocity().LengthSqr() < MAX_PICKUP_VELOCITY
+                    if (newEnt != null && (newEnt.IsType(idMoveable.Type) || newEnt.IsType(idMoveableItem.Type) || newEnt.IsType(
+                            idProjectile.Type
+                        ) || newEnt.IsType(idAFEntity_Gibbable.Type)) && !newEnt.noGrab && newEnt.GetPhysics()
+                            .GetBounds().GetRadius() < MAX_PICKUP_SIZE && newEnt.GetPhysics().GetLinearVelocity()
+                            .LengthSqr() < MAX_PICKUP_VELOCITY
                     ) {
 
                         var validAF = true
@@ -564,8 +547,7 @@ class Grabber {
                         if (newEnt.IsType(idAFEntity_Gibbable.Type)) {
                             val afEnt = newEnt as idAFEntity_Gibbable
 
-                            if (grabbableAI(newEnt.spawnArgs.GetString("classname"))) {
-                                // Make sure it's also active
+                            if (grabbableAI(newEnt.spawnArgs.GetString("classname"))) { // Make sure it's also active
                                 if (!afEnt.IsActive()) {
                                     validAF = false
                                 }
@@ -574,11 +556,9 @@ class Grabber {
                             }
                         }
 
-                        if (validAF && (player.usercmd.buttons.toInt() and BUTTON_ATTACK) != 0) {
-                            // Grab this entity and start dragging it around
+                        if (validAF && (player.usercmd.buttons.toInt() and BUTTON_ATTACK) != 0) { // Grab this entity and start dragging it around
                             StartDrag(newEnt, trace.c.id)
-                        } else if (validAF) {
-                            // A holdable object is ready to be grabbed
+                        } else if (validAF) { // A holdable object is ready to be grabbed
                             return 1
                         }
                     }
@@ -588,8 +568,7 @@ class Grabber {
             // check backwards server time in multiplayer
             var allow = true
 
-            if (gameLocal.isMultiplayer) {
-                // if we've marched backwards
+            if (gameLocal.isMultiplayer) { // if we've marched backwards
                 if (gameLocal.slow.time < startDragTime) {
                     allow = false
                 }
@@ -723,8 +702,8 @@ class Grabber {
 
                 beamTarget?.SetOrigin(dragEnt.GetEntity()!!.GetPhysics().GetAbsBounds().GetCenter())
 
-                val muzzleJoint = thePlayer.weapon.GetEntity()?.GetAnimator()?.GetJointHandle("particle_upper")
-                    ?: INVALID_JOINT
+                val muzzleJoint =
+                    thePlayer.weapon.GetEntity()?.GetAnimator()?.GetJointHandle("particle_upper") ?: INVALID_JOINT
                 val muzzleOrigin = idVec3()
                 val muzzleAxis = idMat3()
 
@@ -786,16 +765,11 @@ class Grabber {
         idGrabber::grabbableAI
         ==============
         */
-        private fun grabbableAI(aiName: String): Boolean {
-            // skip "monster_"
+        private fun grabbableAI(aiName: String): Boolean { // skip "monster_"
             if (aiName.length <= 8) return false
             val name = aiName.substring(8)
 
-            return (name.startsWith("flying_lostsoul")
-                    || name.startsWith("demon_trite")
-                    || name == "flying_forgotten"
-                    || name == "demon_cherub"
-                    || name == "demon_tick")
+            return (name.startsWith("flying_lostsoul") || name.startsWith("demon_trite") || name == "flying_forgotten" || name == "demon_cherub" || name == "demon_tick")
         }
 
         override fun _deconstructor() {

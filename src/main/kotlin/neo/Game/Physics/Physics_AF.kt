@@ -65,12 +65,7 @@ object Physics_AF {
     const val TEST_COLLISION_DETECTION = false
     private val vec6_lcp_epsilon: idVec6
         get() = idVec6(
-            LCP_EPSILON,
-            LCP_EPSILON,
-            LCP_EPSILON,
-            LCP_EPSILON,
-            LCP_EPSILON,
-            LCP_EPSILON
+            LCP_EPSILON, LCP_EPSILON, LCP_EPSILON, LCP_EPSILON, LCP_EPSILON, LCP_EPSILON
         )
 
     // #ifdef AF_TIMINGS
@@ -398,7 +393,7 @@ object Physics_AF {
             boxIndex[0] = boxIndex[1]
             firstIndex = 0
 
-//	memset( &fl, 0, sizeof( fl ) );
+            //	memset( &fl, 0, sizeof( fl ) );
             fl = constraintFlags_s()
         }
     }
@@ -459,15 +454,11 @@ object Physics_AF {
             master = if (body2 != null) body2 else physics!!.GetMasterBody()
             if (master != null) {
                 Game_local.gameRenderWorld!!.DebugLine(
-                    colorRed,
-                    body1!!.GetWorldOrigin(),
-                    master.GetWorldOrigin()
+                    colorRed, body1!!.GetWorldOrigin(), master.GetWorldOrigin()
                 )
             } else {
                 Game_local.gameRenderWorld!!.DebugLine(
-                    colorRed,
-                    body1!!.GetWorldOrigin(),
-                    vec3_origin
+                    colorRed, body1!!.GetWorldOrigin(), vec3_origin
                 )
             }
         }
@@ -548,10 +539,7 @@ object Physics_AF {
                 relAxis
             }
             J1.set(
-                idMat3.getMat3_identity(),
-                idMat3.getMat3_zero(),
-                idMat3.getMat3_zero(),
-                idMat3.getMat3_identity()
+                idMat3.getMat3_identity(), idMat3.getMat3_zero(), idMat3.getMat3_zero(), idMat3.getMat3_identity()
             )
             if (body2 != null) {
                 J2.set(
@@ -564,14 +552,11 @@ object Physics_AF {
                 J2.Zero(6, 6)
             }
             c1.SubVec3_oSet(
-                0,
-                ofs.minus(body1!!.GetWorldOrigin()).times(-(invTimeStep * ERROR_REDUCTION))
+                0, ofs.minus(body1!!.GetWorldOrigin()).times(-(invTimeStep * ERROR_REDUCTION))
             )
             r = body1!!.GetWorldAxis().Transpose().times(ax).ToRotation()
             c1.SubVec3_oSet(
-                1,
-                r.GetVec().times(-DEG2RAD(r.GetAngle()))
-                    .times(-(invTimeStep * ERROR_REDUCTION))
+                1, r.GetVec().times(-DEG2RAD(r.GetAngle())).times(-(invTimeStep * ERROR_REDUCTION))
             )
             c1.Clamp(-ERROR_REDUCTION_MAX, ERROR_REDUCTION_MAX)
         }
@@ -581,8 +566,7 @@ object Physics_AF {
         idAFConstraint_Fixed::ApplyFriction
         ================
         */
-        override fun ApplyFriction(invTimeStep: Float) {
-            // no friction
+        override fun ApplyFriction(invTimeStep: Float) { // no friction
         }
 
         /*
@@ -644,8 +628,7 @@ object Physics_AF {
 
             // get anchor relative to center of mass of body1
             anchor1.set(worldPosition.minus(body1!!.GetWorldOrigin()).times(body1!!.GetWorldAxis().Transpose()))
-            if (body2 != null) {
-                // get anchor relative to center of mass of body2
+            if (body2 != null) { // get anchor relative to center of mass of body2
                 anchor2.set(worldPosition.minus(body2!!.GetWorldOrigin()).times(body2!!.GetWorldAxis().Transpose()))
             } else {
                 anchor2.set(worldPosition)
@@ -675,12 +658,10 @@ object Physics_AF {
         ================
         */
         fun SetNoLimit() {
-            if (coneLimit != null) {
-//		delete coneLimit;
+            if (coneLimit != null) { //		delete coneLimit;
                 coneLimit = null
             }
-            if (pyramidLimit != null) {
-//		delete pyramidLimit;
+            if (pyramidLimit != null) { //		delete pyramidLimit;
                 pyramidLimit = null
             }
         }
@@ -709,12 +690,7 @@ object Physics_AF {
                 )
             } else {
                 coneLimit!!.Setup(
-                    body1,
-                    body2,
-                    anchor2,
-                    coneAxis,
-                    coneAngle,
-                    body1Axis.times(body1!!.GetWorldAxis().Transpose())
+                    body1, body2, anchor2, coneAxis, coneAngle, body1Axis.times(body1!!.GetWorldAxis().Transpose())
                 )
             }
         }
@@ -794,19 +770,13 @@ object Physics_AF {
         override fun DebugDraw() {
             val a1 = idVec3(body1!!.GetWorldOrigin().plus(anchor1.times(body1!!.GetWorldAxis())))
             Game_local.gameRenderWorld!!.DebugLine(
-                colorBlue,
-                a1.minus(idVec3(5, 0, 0)),
-                a1.plus(idVec3(5, 0, 0))
+                colorBlue, a1.minus(idVec3(5, 0, 0)), a1.plus(idVec3(5, 0, 0))
             )
             Game_local.gameRenderWorld!!.DebugLine(
-                colorBlue,
-                a1.minus(idVec3(0, 5, 0)),
-                a1.plus(idVec3(0, 5, 0))
+                colorBlue, a1.minus(idVec3(0, 5, 0)), a1.plus(idVec3(0, 5, 0))
             )
             Game_local.gameRenderWorld!!.DebugLine(
-                colorBlue,
-                a1.minus(idVec3(0, 0, 5)),
-                a1.plus(idVec3(0, 0, 5))
+                colorBlue, a1.minus(idVec3(0, 0, 5)), a1.plus(idVec3(0, 0, 5))
             )
             if (SysCvar.af_showLimits.GetBool()) {
                 if (coneLimit != null) {
@@ -919,9 +889,7 @@ object Physics_AF {
             } else {
                 a2.Zero()
                 c1.SubVec3_oSet(
-                    0,
-                    anchor2.minus(a1.plus(body1!!.GetWorldOrigin()))
-                        .times(-(invTimeStep * ERROR_REDUCTION))
+                    0, anchor2.minus(a1.plus(body1!!.GetWorldOrigin())).times(-(invTimeStep * ERROR_REDUCTION))
                 )
             }
             c1.Clamp(-ERROR_REDUCTION_MAX, ERROR_REDUCTION_MAX)
@@ -1042,12 +1010,10 @@ object Physics_AF {
 
         override fun Translate(translation: idVec3) {}
         override fun Rotate(rotation: idRotation) {}
-        override fun Evaluate(invTimeStep: Float) {
-            // do nothing
+        override fun Evaluate(invTimeStep: Float) { // do nothing
         }
 
-        override fun ApplyFriction(invTimeStep: Float) {
-            // do nothing
+        override fun ApplyFriction(invTimeStep: Float) { // do nothing
         }
 
         //
@@ -1102,8 +1068,7 @@ object Physics_AF {
 
             // get anchor relative to center of mass of body1
             anchor1.set(worldPosition.minus(body1!!.GetWorldOrigin()).times(body1!!.GetWorldAxis().Transpose()))
-            if (body2 != null) {
-                // get anchor relative to center of mass of body2
+            if (body2 != null) { // get anchor relative to center of mass of body2
                 anchor2.set(worldPosition.minus(body2!!.GetWorldOrigin()).times(body2!!.GetWorldAxis().Transpose()))
             } else {
                 anchor2.set(worldPosition)
@@ -1199,12 +1164,7 @@ object Physics_AF {
             }
             if (body2 != null) {
                 coneLimit!!.Setup(
-                    body1,
-                    body2,
-                    anchor2,
-                    coneAxis.times(body2!!.GetWorldAxis().Transpose()),
-                    coneAngle,
-                    shaft1
+                    body1, body2, anchor2, coneAxis.times(body2!!.GetWorldAxis().Transpose()), coneAngle, shaft1
                 )
             } else {
                 coneLimit!!.Setup(body1, body2, anchor2, coneAxis, coneAngle, shaft1)
@@ -1442,30 +1402,19 @@ object Physics_AF {
                 s2.set(shaft2)
                 d2.set(axis2)
                 c1.SubVec3_oSet(
-                    0,
-                    a2.minus(a1.plus(body1!!.GetWorldOrigin())).times(-(invTimeStep * ERROR_REDUCTION))
+                    0, a2.minus(a1.plus(body1!!.GetWorldOrigin())).times(-(invTimeStep * ERROR_REDUCTION))
                 )
             }
             J1.set(
-                idMat3.getMat3_identity(),
-                idMat3.SkewSymmetric(a1).unaryMinus(),
-                idMat3.getMat3_zero(),
-                idMat3(
-                    s1[0], s1[1], s1[2],
-                    0.0f, 0.0f, 0.0f,
-                    0.0f, 0.0f, 0.0f
+                idMat3.getMat3_identity(), idMat3.SkewSymmetric(a1).unaryMinus(), idMat3.getMat3_zero(), idMat3(
+                    s1[0], s1[1], s1[2], 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f
                 )
             )
             J1.SetSize(4, 6)
             if (body2 != null) {
                 J2.set(
-                    idMat3.getMat3_identity().unaryMinus(),
-                    idMat3.SkewSymmetric(a2),
-                    idMat3.getMat3_zero(),
-                    idMat3(
-                        s2[0], s2[1], s2[2],
-                        0.0f, 0.0f, 0.0f,
-                        0.0f, 0.0f, 0.0f
+                    idMat3.getMat3_identity().unaryMinus(), idMat3.SkewSymmetric(a2), idMat3.getMat3_zero(), idMat3(
+                        s2[0], s2[1], s2[2], 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f
                     )
                 )
                 J2.SetSize(4, 6)
@@ -1610,12 +1559,10 @@ object Physics_AF {
 
         override fun Translate(translation: idVec3) {}
         override fun Rotate(rotation: idRotation) {}
-        override fun Evaluate(invTimeStep: Float) {
-            // do nothing
+        override fun Evaluate(invTimeStep: Float) { // do nothing
         }
 
-        override fun ApplyFriction(invTimeStep: Float) {
-            // do nothing
+        override fun ApplyFriction(invTimeStep: Float) { // do nothing
         }
 
         //
@@ -1713,11 +1660,9 @@ object Physics_AF {
         idAFConstraint_Hinge::SetAnchor
         ================
         */
-        fun SetAnchor(worldPosition: idVec3) {
-            // get anchor relative to center of mass of body1
+        fun SetAnchor(worldPosition: idVec3) { // get anchor relative to center of mass of body1
             anchor1.set(worldPosition.minus(body1!!.GetWorldOrigin()).times(body1!!.GetWorldAxis().Transpose()))
-            if (body2 != null) {
-                // get anchor relative to center of mass of body2
+            if (body2 != null) { // get anchor relative to center of mass of body2
                 anchor2.set(worldPosition.minus(body2!!.GetWorldOrigin()).times(body2!!.GetWorldAxis().Transpose()))
             } else {
                 anchor2.set(worldPosition)
@@ -1750,8 +1695,7 @@ object Physics_AF {
 
             // get axis relative to body1
             axis1.set(normAxis.times(body1!!.GetWorldAxis().Transpose()))
-            if (body2 != null) {
-                // get axis relative to body2
+            if (body2 != null) { // get axis relative to body2
                 axis2.set(normAxis.times(body2!!.GetWorldAxis().Transpose()))
             } else {
                 axis2.set(normAxis)
@@ -1785,8 +1729,7 @@ object Physics_AF {
         ================
         */
         fun SetNoLimit() {
-            if (coneLimit != null) {
-//		delete coneLimit;
+            if (coneLimit != null) { //		delete coneLimit;
                 coneLimit = null
             }
         }
@@ -1812,12 +1755,7 @@ object Physics_AF {
                 )
             } else {
                 coneLimit!!.Setup(
-                    body1,
-                    body2,
-                    anchor2,
-                    axis,
-                    angle,
-                    body1Axis.times(body1!!.GetWorldAxis().Transpose())
+                    body1, body2, anchor2, axis, angle, body1Axis.times(body1!!.GetWorldAxis().Transpose())
                 )
             }
         }
@@ -1856,8 +1794,7 @@ object Physics_AF {
         ================
         */
         fun SetSteerAngle(degrees: Float) {
-            if (coneLimit != null) {
-//		delete coneLimit;
+            if (coneLimit != null) { //		delete coneLimit;
                 coneLimit = null
             }
             if (null == steering) {
@@ -1900,20 +1837,13 @@ object Physics_AF {
             val x1 = idVec3(axis1.times(body1!!.GetWorldAxis()))
             x1.OrthogonalBasis(vecX, vecY)
             Game_local.gameRenderWorld!!.DebugArrow(
-                colorBlue,
-                a1.minus(x1.times(4.0f)),
-                a1.plus(x1.times(4.0f)),
-                1
+                colorBlue, a1.minus(x1.times(4.0f)), a1.plus(x1.times(4.0f)), 1
             )
             Game_local.gameRenderWorld!!.DebugLine(
-                colorBlue,
-                a1.minus(vecX.times(2.0f)),
-                a1.plus(vecX.times(2.0f))
+                colorBlue, a1.minus(vecX.times(2.0f)), a1.plus(vecX.times(2.0f))
             )
             Game_local.gameRenderWorld!!.DebugLine(
-                colorBlue,
-                a1.minus(vecY.times(2.0f)),
-                a1.plus(vecY.times(2.0f))
+                colorBlue, a1.minus(vecY.times(2.0f)), a1.plus(vecY.times(2.0f))
             )
             if (SysCvar.af_showLimits.GetBool()) {
                 if (coneLimit != null) {
@@ -2066,30 +1996,19 @@ object Physics_AF {
                 a2.set(anchor2)
                 x2.set(axis2)
                 c1.SubVec3_oSet(
-                    0,
-                    a2.minus(a1.plus(body1!!.GetWorldOrigin())).times(-(invTimeStep * ERROR_REDUCTION))
+                    0, a2.minus(a1.plus(body1!!.GetWorldOrigin())).times(-(invTimeStep * ERROR_REDUCTION))
                 )
             }
             J1.set(
-                idMat3.getMat3_identity(),
-                idMat3.SkewSymmetric(a1).unaryMinus(),
-                idMat3.getMat3_zero(),
-                idMat3(
-                    vecX[0], vecX[1], vecX[2],
-                    vecY[0], vecY[1], vecY[2],
-                    0.0f, 0.0f, 0.0f
+                idMat3.getMat3_identity(), idMat3.SkewSymmetric(a1).unaryMinus(), idMat3.getMat3_zero(), idMat3(
+                    vecX[0], vecX[1], vecX[2], vecY[0], vecY[1], vecY[2], 0.0f, 0.0f, 0.0f
                 )
             )
             J1.SetSize(5, 6)
             if (body2 != null) {
                 J2.set(
-                    idMat3.getMat3_identity().unaryMinus(),
-                    idMat3.SkewSymmetric(a2),
-                    idMat3.getMat3_zero(),
-                    idMat3(
-                        -vecX[0], -vecX[1], -vecX[2],
-                        -vecY[0], -vecY[1], -vecY[2],
-                        0.0f, 0.0f, 0.0f
+                    idMat3.getMat3_identity().unaryMinus(), idMat3.SkewSymmetric(a2), idMat3.getMat3_zero(), idMat3(
+                        -vecX[0], -vecX[1], -vecX[2], -vecY[0], -vecY[1], -vecY[2], 0.0f, 0.0f, 0.0f
                     )
                 )
                 J2.SetSize(5, 6)
@@ -2223,12 +2142,10 @@ object Physics_AF {
 
         override fun Translate(translation: idVec3) {}
         override fun Rotate(rotation: idRotation) {}
-        override fun Evaluate(invTimeStep: Float) {
-            // do nothing
+        override fun Evaluate(invTimeStep: Float) { // do nothing
         }
 
-        override fun ApplyFriction(invTimeStep: Float) {
-            // do nothing
+        override fun ApplyFriction(invTimeStep: Float) { // do nothing
         }
 
         //
@@ -2334,12 +2251,10 @@ object Physics_AF {
             this.epsilon = saveFile.ReadFloat()
         }
 
-        override fun Evaluate(invTimeStep: Float) {
-            // do nothing
+        override fun Evaluate(invTimeStep: Float) { // do nothing
         }
 
-        override fun ApplyFriction(invTimeStep: Float) {
-            // do nothing
+        override fun ApplyFriction(invTimeStep: Float) { // do nothing
         }
 
         //
@@ -2400,16 +2315,13 @@ object Physics_AF {
             master = if (body2 != null) body2 else physics!!.GetMasterBody()
             if (master != null) {
                 ofs.set(
-                    master.GetWorldOrigin()
-                        .plus(master.GetWorldAxis().times(offset).minus(body1!!.GetWorldOrigin()))
+                    master.GetWorldOrigin().plus(master.GetWorldAxis().times(offset).minus(body1!!.GetWorldOrigin()))
                 )
             } else {
                 ofs.set(offset.minus(body1!!.GetWorldOrigin()))
             }
             Game_local.gameRenderWorld!!.DebugLine(
-                colorGreen,
-                ofs,
-                ofs.plus(axis.times(body1!!.GetWorldAxis()))
+                colorGreen, ofs, ofs.plus(axis.times(body1!!.GetWorldAxis()))
             )
         }
 
@@ -2445,8 +2357,7 @@ object Physics_AF {
             master = if (body2 != null) body2 else physics!!.GetMasterBody()
             if (master != null) {
                 center.set(
-                    master.GetWorldOrigin()
-                        .plus(master.GetWorldAxis().times(offset).minus(body1!!.GetWorldOrigin()))
+                    master.GetWorldOrigin().plus(master.GetWorldAxis().times(offset).minus(body1!!.GetWorldOrigin()))
                 )
             } else {
                 center.set(offset.minus(body1!!.GetWorldOrigin()))
@@ -2492,8 +2403,7 @@ object Physics_AF {
             r = if (master != null) {
                 axis.times(master.GetWorldAxis()).OrthogonalBasis(vecX, vecY)
                 ofs.set(
-                    master.GetWorldOrigin()
-                        .plus(master.GetWorldAxis().times(offset).minus(body1!!.GetWorldOrigin()))
+                    master.GetWorldOrigin().plus(master.GetWorldAxis().times(offset).minus(body1!!.GetWorldOrigin()))
                 )
                 body1!!.GetWorldAxis().Transpose().times(relAxis.times(master.GetWorldAxis())).ToRotation()
             } else {
@@ -2502,31 +2412,29 @@ object Physics_AF {
                 body1!!.GetWorldAxis().Transpose().times(relAxis).ToRotation()
             }
             J1.set(
-                idMat3.getMat3_zero(), idMat3.getMat3_identity(),
-                idMat3(vecX, vecY, vec3_origin), idMat3.getMat3_zero()
+                idMat3.getMat3_zero(), idMat3.getMat3_identity(), idMat3(vecX, vecY, vec3_origin), idMat3.getMat3_zero()
             )
             J1.SetSize(5, 6)
             if (body2 != null) {
                 J2.set(
-                    idMat3.getMat3_zero(), idMat3.getMat3_identity().unaryMinus(),
-                    idMat3(vecX.unaryMinus(), vecY.unaryMinus(), vec3_origin), idMat3.getMat3_zero()
+                    idMat3.getMat3_zero(),
+                    idMat3.getMat3_identity().unaryMinus(),
+                    idMat3(vecX.unaryMinus(), vecY.unaryMinus(), vec3_origin),
+                    idMat3.getMat3_zero()
                 )
                 J2.SetSize(5, 6)
             } else {
                 J2.Zero(5, 6)
             }
             c1.SubVec3_oSet(
-                0,
-                r.GetVec().times(-DEG2RAD(r.GetAngle()))
-                    .times(-(invTimeStep * ERROR_REDUCTION))
+                0, r.GetVec().times(-DEG2RAD(r.GetAngle())).times(-(invTimeStep * ERROR_REDUCTION))
             )
             c1.p[3] = -(invTimeStep * ERROR_REDUCTION) * vecX.times(ofs)
             c1.p[4] = -(invTimeStep * ERROR_REDUCTION) * vecY.times(ofs)
             c1.Clamp(-ERROR_REDUCTION_MAX, ERROR_REDUCTION_MAX)
         }
 
-        override fun ApplyFriction(invTimeStep: Float) {
-            // no friction
+        override fun ApplyFriction(invTimeStep: Float) { // no friction
         }
 
         //
@@ -2621,11 +2529,9 @@ object Physics_AF {
         idAFConstraint_Plane::SetPlane
         ================
         */
-        fun SetPlane(normal: idVec3, anchor: idVec3) {
-            // get anchor relative to center of mass of body1
+        fun SetPlane(normal: idVec3, anchor: idVec3) { // get anchor relative to center of mass of body1
             anchor1.set(anchor.minus(body1!!.GetWorldOrigin()).times(body1!!.GetWorldAxis().Transpose()))
-            if (body2 != null) {
-                // get anchor relative to center of mass of body2
+            if (body2 != null) { // get anchor relative to center of mass of body2
                 anchor2.set(anchor.minus(body2!!.GetWorldOrigin()).times(body2!!.GetWorldAxis().Transpose()))
                 planeNormal.set(normal.times(body2!!.GetWorldAxis().Transpose()))
             } else {
@@ -2743,8 +2649,7 @@ object Physics_AF {
             c1.Clamp(-ERROR_REDUCTION_MAX, ERROR_REDUCTION_MAX)
         }
 
-        override fun ApplyFriction(invTimeStep: Float) {
-            // no friction
+        override fun ApplyFriction(invTimeStep: Float) { // no friction
         }
 
         //
@@ -2794,11 +2699,9 @@ object Physics_AF {
         idAFConstraint_Spring::SetAnchor
         ================
         */
-        fun SetAnchor(worldAnchor1: idVec3, worldAnchor2: idVec3) {
-            // get anchor relative to center of mass of body1
+        fun SetAnchor(worldAnchor1: idVec3, worldAnchor2: idVec3) { // get anchor relative to center of mass of body1
             anchor1.set(worldAnchor1.minus(body1!!.GetWorldOrigin()).times(body1!!.GetWorldAxis().Transpose()))
-            if (body2 != null) {
-                // get anchor relative to center of mass of body2
+            if (body2 != null) { // get anchor relative to center of mass of body2
                 anchor2.set(worldAnchor2.minus(body2!!.GetWorldOrigin()).times(body2!!.GetWorldAxis().Transpose()))
             } else {
                 anchor2.set(worldAnchor2)
@@ -2864,38 +2767,20 @@ object Physics_AF {
                 Game_local.gameRenderWorld!!.DebugLine(colorWhite, a2, mid.plus(p))
                 Game_local.gameRenderWorld!!.DebugLine(colorWhite, a1, mid.minus(p))
             }
-            if (minLength > 0.0f) {
-                // draw min length
+            if (minLength > 0.0f) { // draw min length
                 Game_local.gameRenderWorld!!.DebugCircle(
-                    colorBlue,
-                    mid.plus(dir.times(minLength * 0.5f)),
-                    dir,
-                    2.0f,
-                    10
+                    colorBlue, mid.plus(dir.times(minLength * 0.5f)), dir, 2.0f, 10
                 )
                 Game_local.gameRenderWorld!!.DebugCircle(
-                    colorBlue,
-                    mid.minus(dir.times(minLength * 0.5f)),
-                    dir,
-                    2.0f,
-                    10
+                    colorBlue, mid.minus(dir.times(minLength * 0.5f)), dir, 2.0f, 10
                 )
             }
-            if (maxLength > 0.0f) {
-                // draw max length
+            if (maxLength > 0.0f) { // draw max length
                 Game_local.gameRenderWorld!!.DebugCircle(
-                    colorRed,
-                    mid.plus(dir.times(maxLength * 0.5f)),
-                    dir,
-                    2.0f,
-                    10
+                    colorRed, mid.plus(dir.times(maxLength * 0.5f)), dir, 2.0f, 10
                 )
                 Game_local.gameRenderWorld!!.DebugCircle(
-                    colorRed,
-                    mid.minus(dir.times(maxLength * 0.5f)),
-                    dir,
-                    2.0f,
-                    10
+                    colorRed, mid.minus(dir.times(maxLength * 0.5f)), dir, 2.0f, 10
                 )
             }
         }
@@ -2998,15 +2883,13 @@ object Physics_AF {
             length = force.Normalize()
             if (length > restLength) {
                 if (kstretch > 0.0f) {
-                    val springForce =
-                        idVec3(force.times(Square(length - restLength) * kstretch - dampingForce))
+                    val springForce = idVec3(force.times(Square(length - restLength) * kstretch - dampingForce))
                     body1!!.AddForce(a1, springForce)
                     master?.AddForce(a2, springForce.unaryMinus())
                 }
             } else {
                 if (kcompress > 0.0f) {
-                    val springForce =
-                        idVec3(force.times(-(Square(restLength - length) * kcompress - dampingForce)))
+                    val springForce = idVec3(force.times(-(Square(restLength - length) * kcompress - dampingForce)))
                     body1!!.AddForce(a1, springForce)
                     master?.AddForce(a2, springForce.unaryMinus())
                 }
@@ -3044,8 +2927,7 @@ object Physics_AF {
             c1.Clamp(-ERROR_REDUCTION_MAX, ERROR_REDUCTION_MAX)
         }
 
-        override fun ApplyFriction(invTimeStep: Float) {
-            // no friction
+        override fun ApplyFriction(invTimeStep: Float) { // no friction
         }
 
         //
@@ -3144,19 +3026,13 @@ object Physics_AF {
             val y = idVec3()
             contact.normal.NormalVectors(x, y)
             Game_local.gameRenderWorld!!.DebugLine(
-                colorWhite,
-                contact.point,
-                contact.point.plus(contact.normal.times(6.0f))
+                colorWhite, contact.point, contact.point.plus(contact.normal.times(6.0f))
             )
             Game_local.gameRenderWorld!!.DebugLine(
-                colorWhite,
-                contact.point.minus(x.times(2.0f)),
-                contact.point.plus(x.times(2.0f))
+                colorWhite, contact.point.minus(x.times(2.0f)), contact.point.plus(x.times(2.0f))
             )
             Game_local.gameRenderWorld!!.DebugLine(
-                colorWhite,
-                contact.point.minus(y.times(2.0f)),
-                contact.point.plus(y.times(2.0f))
+                colorWhite, contact.point.minus(y.times(2.0f)), contact.point.plus(y.times(2.0f))
             )
         }
 
@@ -3198,8 +3074,7 @@ object Physics_AF {
         idAFConstraint_Contact::Evaluate
         ================
         */
-        override fun Evaluate(invTimeStep: Float) {
-            // do nothing
+        override fun Evaluate(invTimeStep: Float) { // do nothing
         }
 
         /*
@@ -3253,8 +3128,7 @@ object Physics_AF {
             } else {
                 if (null == fc) {
                     fc = idAFConstraint_ContactFriction()
-                }
-                // call setup each frame because contact constraints are re-used for different bodies
+                } // call setup each frame because contact constraints are re-used for different bodies
                 fc!!.Setup(this)
                 fc!!.Add(physics, invTimeStep)
             }
@@ -3308,8 +3182,7 @@ object Physics_AF {
             friction = body1!!.GetContactFriction() * physics!!.GetContactFrictionScale()
 
             // if the body only has friction in one direction
-            if (body1!!.GetFrictionDirection(dir1)) {
-                // project the friction direction into the contact plane
+            if (body1!!.GetFrictionDirection(dir1)) { // project the friction direction into the contact plane
                 dir1.minusAssign(dir1.times(cc!!.GetContact().normal.times(dir1)))
                 dir1.Normalize()
                 r.set(cc!!.GetContact().point.minus(body1!!.GetWorldOrigin()))
@@ -3330,8 +3203,7 @@ object Physics_AF {
                 hi.p[0] = friction
                 boxConstraint = cc
                 boxIndex[0] = 0
-            } else {
-                // get two friction directions orthogonal to contact normal
+            } else { // get two friction directions orthogonal to contact normal
                 cc!!.GetContact().normal.NormalVectors(dir1, dir2)
                 r.set(cc!!.GetContact().point.minus(body1!!.GetWorldOrigin()))
                 J1.SetSize(2, 6)
@@ -3364,8 +3236,7 @@ object Physics_AF {
                 hi.p[1] = friction
                 boxIndex[1] = 0
             }
-            if (body1!!.GetContactMotorDirection(dir1) && body1!!.GetContactMotorForce() > 0.0f) {
-                // project the motor force direction into the contact plane
+            if (body1!!.GetContactMotorDirection(dir1) && body1!!.GetContactMotorForce() > 0.0f) { // project the motor force direction into the contact plane
                 dir1.minusAssign(dir1.times(cc!!.GetContact().normal.times(dir1)))
                 dir1.Normalize()
                 r.set(cc!!.GetContact().point.minus(body1!!.GetWorldOrigin()))
@@ -3419,8 +3290,7 @@ object Physics_AF {
         idAFConstraint_ContactFriction::Evaluate
         ================
         */
-        override fun Evaluate(invTimeStep: Float) {
-            // do nothing
+        override fun Evaluate(invTimeStep: Float) { // do nothing
         }
 
         /*
@@ -3428,8 +3298,7 @@ object Physics_AF {
         idAFConstraint_ContactFriction::ApplyFriction
         ================
         */
-        override fun ApplyFriction(invTimeStep: Float) {
-            // do nothing
+        override fun ApplyFriction(invTimeStep: Float) { // do nothing
         }
 
         init {
@@ -3475,8 +3344,7 @@ object Physics_AF {
          ================
          */
         fun Setup(
-            b1: idAFBody?, b2: idAFBody?, coneAnchor: idVec3, coneAxis: idVec3,
-            coneAngle: Float, body1Axis: idVec3
+            b1: idAFBody?, b2: idAFBody?, coneAnchor: idVec3, coneAxis: idVec3, coneAngle: Float, body1Axis: idVec3
         ) {
             body1 = b1
             body2 = b2
@@ -3613,9 +3481,7 @@ object Physics_AF {
 
             // draw body1 axis
             Game_local.gameRenderWorld!!.DebugLine(
-                colorGreen,
-                anchor,
-                anchor.plus(body1Axis.times(body1!!.GetWorldAxis()).times(size))
+                colorGreen, anchor, anchor.plus(body1Axis.times(body1!!.GetWorldAxis()).times(size))
             )
 
             // draw cone
@@ -3628,8 +3494,7 @@ object Physics_AF {
             a = 0.0f
             while (a < 360.0f) {
                 end.set(
-                    x.times(cos(DEG2RAD(a + 45.0f)))
-                        .plus(y.times(sin(DEG2RAD(a + 45.0f))).plus(z))
+                    x.times(cos(DEG2RAD(a + 45.0f))).plus(y.times(sin(DEG2RAD(a + 45.0f))).plus(z))
                 )
                 Game_local.gameRenderWorld!!.DebugLine(colorMagenta, anchor, start)
                 Game_local.gameRenderWorld!!.DebugLine(colorMagenta, start, end)
@@ -3683,8 +3548,7 @@ object Physics_AF {
             this.epsilon = epsilon._val
         }
 
-        override fun Evaluate(invTimeStep: Float) {
-            // do nothing
+        override fun Evaluate(invTimeStep: Float) { // do nothing
         }
 
         override fun ApplyFriction(invTimeStep: Float) {}
@@ -3728,21 +3592,24 @@ object Physics_AF {
         ================
         */
         fun Setup(
-            b1: idAFBody?, b2: idAFBody?, pyramidAnchor: idVec3, pyramidAxis: idVec3,
-            baseAxis: idVec3, pyramidAngle1: Float, pyramidAngle2: Float, body1Axis: idVec3
+            b1: idAFBody?,
+            b2: idAFBody?,
+            pyramidAnchor: idVec3,
+            pyramidAxis: idVec3,
+            baseAxis: idVec3,
+            pyramidAngle1: Float,
+            pyramidAngle2: Float,
+            body1Axis: idVec3
         ) {
             body1 = b1
-            body2 = b2
-            // setup the base and make sure the basis is orthonormal
+            body2 = b2 // setup the base and make sure the basis is orthonormal
             pyramidBasis[2] = pyramidAxis
             pyramidBasis[2].Normalize()
             pyramidBasis[0] = baseAxis
             pyramidBasis[0].minusAssign(pyramidBasis[2].times(baseAxis.times(pyramidBasis[2])))
             pyramidBasis[0].Normalize()
-            pyramidBasis[1] = pyramidBasis[0].Cross(pyramidBasis[2])
-            // pyramid top
-            this.pyramidAnchor.set(pyramidAnchor)
-            // angles
+            pyramidBasis[1] = pyramidBasis[0].Cross(pyramidBasis[2]) // pyramid top
+            this.pyramidAnchor.set(pyramidAnchor) // angles
             cosAngle[0] = cos(DEG2RAD(pyramidAngle1 * 0.5f))
             cosAngle[1] = cos(DEG2RAD(pyramidAngle2 * 0.5f))
             sinHalfAngle[0] = sin(DEG2RAD(pyramidAngle1 * 0.25f))
@@ -3874,9 +3741,7 @@ object Physics_AF {
 
             // draw body1 axis
             Game_local.gameRenderWorld!!.DebugLine(
-                colorGreen,
-                anchor,
-                anchor.plus(body1Axis.times(body1!!.GetWorldAxis()).times(size))
+                colorGreen, anchor, anchor.plus(body1Axis.times(body1!!.GetWorldAxis()).times(size))
             )
 
             // draw the pyramid
@@ -3959,8 +3824,7 @@ object Physics_AF {
             this.epsilon = epsilon._val
         }
 
-        override fun Evaluate(invTimeStep: Float) {
-            // do nothing
+        override fun Evaluate(invTimeStep: Float) { // do nothing
         }
 
         override fun ApplyFriction(invTimeStep: Float) {}
@@ -4069,19 +3933,13 @@ object Physics_AF {
             if (trace.fraction < 1.0f) {
                 origin.set(trace.c.point)
                 Game_local.gameRenderWorld!!.DebugLine(
-                    colorWhite,
-                    origin,
-                    origin.plus(axis[2].times(6.0f))
+                    colorWhite, origin, origin.plus(axis[2].times(6.0f))
                 )
                 Game_local.gameRenderWorld!!.DebugLine(
-                    colorWhite,
-                    origin.minus(axis[0].times(4.0f)),
-                    origin.plus(axis[0].times(4.0f))
+                    colorWhite, origin.minus(axis[0].times(4.0f)), origin.plus(axis[0].times(4.0f))
                 )
                 Game_local.gameRenderWorld!!.DebugLine(
-                    colorWhite,
-                    origin.minus(axis[1].times(2.0f)),
-                    origin.plus(axis[1].times(2.0f))
+                    colorWhite, origin.minus(axis[1].times(2.0f)), origin.plus(axis[1].times(2.0f))
                 )
             }
         }
@@ -4196,8 +4054,7 @@ object Physics_AF {
             hi.p[1] = friction * physics!!.GetContactFrictionScale()
             boxConstraint = this
             boxIndex[1] = 0
-            if (motorEnabled) {
-                // project the motor force direction into the contact plane
+            if (motorEnabled) { // project the motor force direction into the contact plane
                 motorDir.set(axis[0].minus(axis[0].times(trace.c.normal.times(axis[0]))))
                 motorDir.Normalize()
                 r.set(trace.c.point.minus(body1!!.GetWorldOrigin()))
@@ -4225,8 +4082,7 @@ object Physics_AF {
         idAFConstraint_Suspension::ApplyFriction
         ================
         */
-        override fun ApplyFriction(invTimeStep: Float) {
-            // do nothing
+        override fun ApplyFriction(invTimeStep: Float) { // do nothing
         }
 
         //
@@ -4442,8 +4298,7 @@ object Physics_AF {
             next.oSet(current)
             saved = AFBodyPState_s(current)
             atRestOrigin.set(vec3_zero)
-            atRestAxis.set(idMat3.getMat3_identity())
-            //inverseWorldSpatialInertia.set(idMatX())
+            atRestAxis.set(idMat3.getMat3_identity()) //inverseWorldSpatialInertia.set(idMatX())
             //I.set(idMatX())
             //invI.set(idMatX())
             //J = idMatX()
@@ -4495,10 +4350,9 @@ object Physics_AF {
         idAFBody::SetClipModel
         ================
         */
-        fun SetClipModel(clipModel: idClipModel?) {
-//	if ( this.clipModel && this.clipModel != clipModel ) {
-//		delete this.clipModel;
-//	}
+        fun SetClipModel(clipModel: idClipModel?) { //	if ( this.clipModel && this.clipModel != clipModel ) {
+            //		delete this.clipModel;
+            //	}
             //blessed be the garbage collector
             this.clipModel = clipModel
         }
@@ -4584,8 +4438,7 @@ object Physics_AF {
         ================
         */
         fun SetDensity(
-            density: Float,
-            inertiaScale: idMat3 = idMat3.getMat3_identity() /*= mat3_identity*/
+            density: Float, inertiaScale: idMat3 = idMat3.getMat3_identity() /*= mat3_identity*/
         ) {
             val massTemp = CFloat(mass)
 
@@ -4727,8 +4580,7 @@ object Physics_AF {
             }
         }
 
-        fun GetResponseForce(index: Int): idVec6 {
-//            return reinterpret_cast < idVec6 > (response[ index * 8]);
+        fun GetResponseForce(index: Int): idVec6 { //            return reinterpret_cast < idVec6 > (response[ index * 8]);
             return idVec6(Arrays.copyOfRange(response, index * 8, index * 8 + 6))
         }
 
@@ -4850,7 +4702,9 @@ object Physics_AF {
                         if (!child.invI.InverseFastSelf()) {
                             Game_local.gameLocal.Warning(
                                 "idAFTree::Factor: couldn't invert %dx%d matrix for constraint '%s'",
-                                child.invI.GetNumRows(), child.invI.GetNumColumns(), child.GetName()
+                                child.invI.GetNumRows(),
+                                child.invI.GetNumColumns(),
+                                child.GetName()
                             )
                         }
                         child.J.set(child.invI.times(child.J))
@@ -4861,7 +4715,9 @@ object Physics_AF {
                     if (!body.invI.InverseFastSelf()) {
                         Game_local.gameLocal.Warning(
                             "idAFTree::Factor: couldn't invert %dx%d matrix for body %s",
-                            child.invI.GetNumRows(), child.invI.GetNumColumns(), body.GetName()
+                            child.invI.GetNumRows(),
+                            child.invI.GetNumColumns(),
+                            body.GetName()
                         )
                     }
                     if (body.primaryConstraint != null) {
@@ -4962,7 +4818,7 @@ object Physics_AF {
             if (sortedBodies.Num() == 1) {
                 body = constraint.body1
                 if (body!!.tree === this) {
-                    body!!.SetResponseForce(body.numResponses, constraint.J1.SubVec6(row))
+                    body.SetResponseForce(body.numResponses, constraint.J1.SubVec6(row))
                     body.responseIndex!![body.numResponses++] = auxiliaryIndex
                 } else {
                     body = constraint.body2
@@ -4991,7 +4847,7 @@ object Physics_AF {
             // set right hand side for first constrained body
             body = constraint.body1
             if (body!!.tree === this) {
-                body!!.InverseWorldSpatialInertiaMultiply(v, constraint.J1[row])
+                body.InverseWorldSpatialInertiaMultiply(v, constraint.J1[row])
                 primaryConstraint = body.primaryConstraint
                 if (primaryConstraint != null) {
                     primaryConstraint.J1.times(primaryConstraint.s, v)
@@ -5095,8 +4951,7 @@ object Physics_AF {
                 body.InverseWorldSpatialInertiaMultiply(body.acceleration, body.totalForce.ToFloatPtr())
                 body.acceleration.SubVec6_oPluSet(0, body.current.spatialVelocity.times(invStep))
                 primaryConstraint = body.primaryConstraint
-                if (primaryConstraint != null) {
-                    // b = ( J * acc + c )
+                if (primaryConstraint != null) { // b = ( J * acc + c )
                     c = primaryConstraint
                     c.s.set(
                         c.J1.times(c.body1!!.acceleration).plus(c.J2.times(c.body2!!.acceleration))
@@ -5219,17 +5074,13 @@ object Physics_AF {
             while (i < sortedBodies.Num()) {
                 body = sortedBodies[i]
                 Game_local.gameRenderWorld!!.DebugArrow(
-                    color,
-                    body.parent!!.current.worldOrigin,
-                    body.current.worldOrigin,
-                    1
+                    color, body.parent!!.current.worldOrigin, body.current.worldOrigin, 1
                 )
                 i++
             }
         }
 
-        companion object {
-            // friend class idPhysics_AF;
+        companion object { // friend class idPhysics_AF;
         }
     }
 
@@ -5527,8 +5378,7 @@ object Physics_AF {
          bodies get an id in the order they are added starting at zero
          as such the first body added will get id zero
          ================
-         */
-        // initialisation
+         */ // initialisation
         fun AddBody(body: idAFBody): Int {    // returns body id
             var id = 0
             if (null == body.clipModel) {
@@ -5539,8 +5389,7 @@ object Physics_AF {
             }
             if (GetBody(body.name.toString()) != null) {
                 idGameLocal.Error(
-                    "idPhysics_AF::AddBody: a body with the name '%s' already exists.",
-                    body.name
+                    "idPhysics_AF::AddBody: a body with the name '%s' already exists.", body.name
                 )
             }
             id = bodies.Num()
@@ -5569,20 +5418,17 @@ object Physics_AF {
         fun AddConstraint(constraint: idAFConstraint) {
             if (constraints.Find(constraint) != null) {
                 idGameLocal.Error(
-                    "idPhysics_AF::AddConstraint: constraint '%s' added twice.",
-                    constraint.name
+                    "idPhysics_AF::AddConstraint: constraint '%s' added twice.", constraint.name
                 )
             }
             if (GetConstraint(constraint.name.toString()) != null) {
                 idGameLocal.Error(
-                    "idPhysics_AF::AddConstraint: a constraint with the name '%s' already exists.",
-                    constraint.name
+                    "idPhysics_AF::AddConstraint: a constraint with the name '%s' already exists.", constraint.name
                 )
             }
             if (null == constraint.body1) {
                 idGameLocal.Error(
-                    "idPhysics_AF::AddConstraint: body1 == NULL on constraint '%s'.",
-                    constraint.name
+                    "idPhysics_AF::AddConstraint: body1 == NULL on constraint '%s'.", constraint.name
                 )
             }
             if (null == bodies.Find(constraint.body1!!)) {
@@ -5599,8 +5445,7 @@ object Physics_AF {
             }
             if (constraint.body1 == constraint.body2) {
                 idGameLocal.Error(
-                    "idPhysics_AF::AddConstraint: body1 and body2 of constraint '%s' are the same.",
-                    constraint.name
+                    "idPhysics_AF::AddConstraint: body1 and body2 of constraint '%s' are the same.", constraint.name
                 )
             }
             constraints.Append(constraint)
@@ -5622,15 +5467,13 @@ object Physics_AF {
         ================
         idPhysics_AF::ForceBodyId
         ================
-        */
-        // force a body to have a certain id
+        */ // force a body to have a certain id
         fun ForceBodyId(body: idAFBody, newId: Int) {
             val id: Int
             id = bodies.FindIndex(body)
             if (id == -1) {
                 idGameLocal.Error(
-                    "ForceBodyId: body '%s' is not part of the articulated figure.\n",
-                    body!!.name
+                    "ForceBodyId: body '%s' is not part of the articulated figure.\n", body.name
                 )
             }
             if (id != newId) {
@@ -5645,8 +5488,7 @@ object Physics_AF {
         ================
         idPhysics_AF::GetBodyId
         ================
-        */
-        // get body or constraint id
+        */ // get body or constraint id
         fun GetBodyId(body: idAFBody): Int {
             val id: Int
             id = bodies.FindIndex(body)
@@ -5666,8 +5508,7 @@ object Physics_AF {
                 i++
             }
             idGameLocal.Error(
-                "GetBodyId: no body with the name '%s' is not part of the articulated figure.\n",
-                bodyName
+                "GetBodyId: no body with the name '%s' is not part of the articulated figure.\n", bodyName
             )
             return 0
         }
@@ -5682,8 +5523,7 @@ object Physics_AF {
             id = constraints.FindIndex(constraint)
             if (id == -1 && constraint != null) {
                 idGameLocal.Error(
-                    "GetConstraintId: constraint '%s' is not part of the articulated figure.\n",
-                    constraint.name
+                    "GetConstraintId: constraint '%s' is not part of the articulated figure.\n", constraint.name
                 )
             }
             return id
@@ -5718,8 +5558,7 @@ object Physics_AF {
         ================
         idPhysics_AF::GetBody
         ================
-        */
-        // retrieve body or constraint
+        */ // retrieve body or constraint
         fun GetBody(bodyName: String): idAFBody? {
             var i: Int
             i = 0
@@ -5778,8 +5617,7 @@ object Physics_AF {
         ================
         idPhysics_AF::DeleteBody
         ================
-        */
-        // delete body or constraint
+        */ // delete body or constraint
         fun DeleteBody(bodyName: String) {
             var i: Int
 
@@ -5794,7 +5632,9 @@ object Physics_AF {
             if (i >= bodies.Num()) {
                 Game_local.gameLocal.Warning(
                     "DeleteBody: no body found in the articulated figure with the name '%s' for entity '%s' type '%s'.",
-                    bodyName, self!!.name, self!!.GetType().name
+                    bodyName,
+                    self!!.name,
+                    self!!.GetType().name
                 )
                 return
             }
@@ -5811,8 +5651,7 @@ object Physics_AF {
             // remove any constraints attached to this body
             j = 0
             while (j < constraints.Num()) {
-                if (constraints[j].body1 == bodies[id] || constraints[j].body2 == bodies[id]) {
-//			delete constraints[j];
+                if (constraints[j].body1 == bodies[id] || constraints[j].body2 == bodies[id]) { //			delete constraints[j];
                     constraints.RemoveIndex(j)
                     j--
                 }
@@ -5820,7 +5659,7 @@ object Physics_AF {
             }
 
             // remove the body
-//	delete bodies[id];
+            //	delete bodies[id];
             bodies.RemoveIndex(id)
 
             // set new body ids
@@ -5851,7 +5690,9 @@ object Physics_AF {
             if (i >= constraints.Num()) {
                 Game_local.gameLocal.Warning(
                     "DeleteConstraint: no constriant found in the articulated figure with the name '%s' for entity '%s' type '%s'.",
-                    constraintName, self!!.name, self!!.GetType().name
+                    constraintName,
+                    self!!.name,
+                    self!!.GetType().name
                 )
                 return
             }
@@ -5865,7 +5706,7 @@ object Physics_AF {
             }
 
             // remove the constraint
-//	delete constraints[id];
+            //	delete constraints[id];
             constraints.RemoveIndex(id)
             changedAF = true
         }
@@ -5874,8 +5715,7 @@ object Physics_AF {
         ================
         idPhysics_AF::GetBodyContactConstraints
         ================
-        */
-        // get all the contact constraints acting on the body
+        */ // get all the contact constraints acting on the body
         fun GetBodyContactConstraints(id: Int, contacts: Array<idAFConstraint_Contact?>, maxContacts: Int): Int {
             var i: Int
             var numContacts: Int
@@ -5904,8 +5744,7 @@ object Physics_AF {
         ================
         idPhysics_AF::SetDefaultFriction
         ================
-        */
-        // set the default friction for bodies
+        */ // set the default friction for bodies
         fun SetDefaultFriction(linear: Float, angular: Float, contact: Float) {
             if (linear < 0.0f || linear > 1.0f || angular < 0.0f || angular > 1.0f || contact < 0.0f || contact > 1.0f) {
                 return
@@ -6035,8 +5874,7 @@ object Physics_AF {
         ================
         idPhysics_AF::UpdateClipModels
         ================
-        */
-        // update the clip model positions
+        */ // update the clip model positions
         fun UpdateClipModels() {
             var i: Int
             var body: idAFBody?
@@ -6188,17 +6026,16 @@ object Physics_AF {
         ================
         */
         override fun Evaluate(timeStepMSec: Int, endTimeMSec: Int): Boolean {
-            var timeStep =
-                if (timeScaleRampStart < MS2SEC(endTimeMSec.toFloat()) && timeScaleRampEnd > MS2SEC(
-                        endTimeMSec.toFloat()
-                    )
-                ) {
-                    MS2SEC(timeStepMSec.toFloat()) * (MS2SEC(endTimeMSec.toFloat()) - timeScaleRampStart) / (timeScaleRampEnd - timeScaleRampStart)
-                } else if (SysCvar.af_timeScale.GetFloat() != 1.0f) {
-                    MS2SEC(timeStepMSec.toFloat()) * SysCvar.af_timeScale.GetFloat()
-                } else {
-                    MS2SEC(timeStepMSec.toFloat()) * timeScale
-                }
+            var timeStep = if (timeScaleRampStart < MS2SEC(endTimeMSec.toFloat()) && timeScaleRampEnd > MS2SEC(
+                    endTimeMSec.toFloat()
+                )
+            ) {
+                MS2SEC(timeStepMSec.toFloat()) * (MS2SEC(endTimeMSec.toFloat()) - timeScaleRampStart) / (timeScaleRampEnd - timeScaleRampStart)
+            } else if (SysCvar.af_timeScale.GetFloat() != 1.0f) {
+                MS2SEC(timeStepMSec.toFloat()) * SysCvar.af_timeScale.GetFloat()
+            } else {
+                MS2SEC(timeStepMSec.toFloat()) * timeScale
+            }
             current.lastTimeStep = timeStep
 
             // if the articulated figure changed
@@ -6212,8 +6049,9 @@ object Physics_AF {
             if (masterBody != null) {
                 val masterOrigin = idVec3()
                 val masterAxis = idMat3()
-                self!!.GetMasterPosition(masterOrigin, masterAxis)
-                // FIX: Was !== (referential), C++ uses != (structural equality) to check if master actually moved
+                self!!.GetMasterPosition(
+                    masterOrigin, masterAxis
+                ) // FIX: Was !== (referential), C++ uses != (structural equality) to check if master actually moved
                 if (current.atRest >= 0 && (masterBody!!.current.worldOrigin != masterOrigin || masterBody!!.current.worldAxis != masterAxis)) {
                     Activate()
                 }
@@ -6340,7 +6178,9 @@ object Physics_AF {
             if (IsOutsideWorld()) {
                 Game_local.gameLocal.Warning(
                     "articulated figure moved outside world bounds for entity '%s' type '%s' at (%s)",
-                    self!!.name, self!!.GetType().name, bodies[0].current.worldOrigin.ToString(0)
+                    self!!.name,
+                    self!!.GetType().name,
+                    bodies[0].current.worldOrigin.ToString(0)
                 )
                 Rest()
             }
@@ -6351,9 +6191,12 @@ object Physics_AF {
                         "%12s: t %d pc %2d, %d ac %2d %d lcp %d cd %d\n",
                         self!!.name,
                         timer_total.Milliseconds(),
-                        numPrimary, timer_pc.Milliseconds(),
-                        numAuxiliary, timer_ac.Milliseconds() - timer_lcp.Milliseconds(),
-                        timer_lcp.Milliseconds(), timer_collision.Milliseconds()
+                        numPrimary,
+                        timer_pc.Milliseconds(),
+                        numAuxiliary,
+                        timer_ac.Milliseconds() - timer_lcp.Milliseconds(),
+                        timer_lcp.Milliseconds(),
+                        timer_collision.Milliseconds()
                     )
                 } else if (SysCvar.af_showTimings.GetInteger() == 2) {
                     numArticulatedFigures++
@@ -6362,9 +6205,12 @@ object Physics_AF {
                             "af %d: t %d pc %2d, %d ac %2d %d lcp %d cd %d\n",
                             numArticulatedFigures,
                             timer_total.Milliseconds(),
-                            numPrimary, timer_pc.Milliseconds(),
-                            numAuxiliary, timer_ac.Milliseconds() - timer_lcp.Milliseconds(),
-                            timer_lcp.Milliseconds(), timer_collision.Milliseconds()
+                            numPrimary,
+                            timer_pc.Milliseconds(),
+                            numAuxiliary,
+                            timer_ac.Milliseconds() - timer_lcp.Milliseconds(),
+                            timer_lcp.Milliseconds(),
+                            timer_collision.Milliseconds()
                         )
                     }
                 }
@@ -6398,8 +6244,7 @@ object Physics_AF {
             }
             info.invMass = 1.0f / bodies[id].mass
             info.invInertiaTensor.set(
-                bodies[id].current.worldAxis.Transpose()
-                    .times(bodies[id].inverseInertiaTensor)
+                bodies[id].current.worldAxis.Transpose().times(bodies[id].inverseInertiaTensor)
                     .times(bodies[id].current.worldAxis)
             )
             info.position.set(point.minus(bodies[id].current.worldOrigin))
@@ -6426,8 +6271,7 @@ object Physics_AF {
                 .times(bodies[id].inverseInertiaTensor.times(bodies[id].current.worldAxis))
             bodies[id].current.spatialVelocity.SubVec3_oPluSet(0, impulse.times(bodies[id].invMass))
             bodies[id].current.spatialVelocity.SubVec3_oPluSet(
-                1,
-                invWorldInertiaTensor.times(point.minus(bodies[id].current.worldOrigin).Cross(impulse))
+                1, invWorldInertiaTensor.times(point.minus(bodies[id].current.worldOrigin).Cross(impulse))
             )
             Activate()
         }
@@ -6446,8 +6290,7 @@ object Physics_AF {
             }
             bodies[id].current.externalForce.SubVec3_oPluSet(0, force)
             bodies[id].current.externalForce.SubVec3_oPluSet(
-                1,
-                point.minus(bodies[id].current.worldOrigin).Cross(force)
+                1, point.minus(bodies[id].current.worldOrigin).Cross(force)
             )
             Activate()
         }
@@ -6465,13 +6308,10 @@ object Physics_AF {
         idPhysics_AF::Activate
         ================
         */
-        override fun Activate() {
-            // if the articulated figure was at rest
-            if (current.atRest >= 0) {
-                // normally gravity is added at the end of a simulation frame
+        override fun Activate() { // if the articulated figure was at rest
+            if (current.atRest >= 0) { // normally gravity is added at the end of a simulation frame
                 // if the figure was at rest add gravity here so it is applied this simulation frame
-                AddGravity()
-                // reset the active time for the max move time
+                AddGravity() // reset the active time for the max move time
                 current.activateTime = 0.0f
             }
             current.atRest = -1
@@ -6485,8 +6325,7 @@ object Physics_AF {
 
          put to rest untill something collides with this physics object
          ================
-         */
-        /*
+         *//*
         ================
         idPhysics_AF::PutToRest
         ================
@@ -6510,13 +6349,12 @@ object Physics_AF {
         ================
         */
         override fun SaveState() {
-            var i: Int
-            // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias
+            var i: Int // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias
             saved.set(current)
             i = 0
             while (i < bodies.Num()) {
 
-//                memcpy(bodies.oGet(i).saved, bodies.oGet(i).current, sizeof(AFBodyPState_t));
+                //                memcpy(bodies.oGet(i).saved, bodies.oGet(i).current, sizeof(AFBodyPState_t));
                 bodies[i].saved.oSet(bodies[i].current)
                 i++
             }
@@ -6528,8 +6366,7 @@ object Physics_AF {
         ================
         */
         override fun RestoreState() {
-            var i: Int
-            // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias
+            var i: Int // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias
             current.set(saved)
             i = 0
             while (i < bodies.Num()) {
@@ -6578,8 +6415,7 @@ object Physics_AF {
         override fun Translate(translation: idVec3, id: Int /*= -1*/) {
             var i: Int
             var body: idAFBody?
-            if (!worldConstraintsLocked) {
-                // translate constraints attached to the world
+            if (!worldConstraintsLocked) { // translate constraints attached to the world
                 i = 0
                 while (i < constraints.Num()) {
                     constraints[i].Translate(translation)
@@ -6606,8 +6442,7 @@ object Physics_AF {
         override fun Rotate(rotation: idRotation, id: Int /*= -1*/) {
             var i: Int
             var body: idAFBody?
-            if (!worldConstraintsLocked) {
-                // rotate constraints attached to the world
+            if (!worldConstraintsLocked) { // rotate constraints attached to the world
                 i = 0
                 while (i < constraints.Num()) {
                     constraints[i].Rotate(rotation)
@@ -6701,14 +6536,25 @@ object Physics_AF {
                 if (body.clipModel!!.IsTraceModel()) {
                     if (model != null) {
                         Game_local.gameLocal.clip.TranslationModel(
-                            bodyResults, body.current.worldOrigin, body.current.worldOrigin.plus(translation),
-                            body.clipModel, body.current.worldAxis, body.clipMask,
-                            model.Handle(), model.GetOrigin(), model.GetAxis()
+                            bodyResults,
+                            body.current.worldOrigin,
+                            body.current.worldOrigin.plus(translation),
+                            body.clipModel,
+                            body.current.worldAxis,
+                            body.clipMask,
+                            model.Handle(),
+                            model.GetOrigin(),
+                            model.GetAxis()
                         )
                     } else {
                         Game_local.gameLocal.clip.Translation(
-                            bodyResults, body.current.worldOrigin, body.current.worldOrigin.plus(translation),
-                            body.clipModel, body.current.worldAxis, body.clipMask, self
+                            bodyResults,
+                            body.current.worldOrigin,
+                            body.current.worldOrigin.plus(translation),
+                            body.clipModel,
+                            body.current.worldAxis,
+                            body.clipMask,
+                            self
                         )
                     }
                     if (bodyResults.fraction < results.fraction) {
@@ -6738,14 +6584,25 @@ object Physics_AF {
                 if (body.clipModel!!.IsTraceModel()) {
                     if (model != null) {
                         Game_local.gameLocal.clip.RotationModel(
-                            bodyResults, body.current.worldOrigin, rotation,
-                            body.clipModel, body.current.worldAxis, body.clipMask,
-                            model.Handle(), model.GetOrigin(), model.GetAxis()
+                            bodyResults,
+                            body.current.worldOrigin,
+                            rotation,
+                            body.clipModel,
+                            body.current.worldAxis,
+                            body.clipMask,
+                            model.Handle(),
+                            model.GetOrigin(),
+                            model.GetAxis()
                         )
                     } else {
                         Game_local.gameLocal.clip.Rotation(
-                            bodyResults, body.current.worldOrigin, rotation,
-                            body.clipModel, body.current.worldAxis, body.clipMask, self
+                            bodyResults,
+                            body.current.worldOrigin,
+                            rotation,
+                            body.clipModel,
+                            body.current.worldAxis,
+                            body.clipMask,
+                            self
                         )
                     }
                     if (bodyResults.fraction < results.fraction) {
@@ -6776,13 +6633,16 @@ object Physics_AF {
                     contents = if (model != null) {
                         contents or Game_local.gameLocal.clip.ContentsModel(
                             body.current.worldOrigin,
-                            body.clipModel, body.current.worldAxis, -1,
-                            model.Handle(), model.GetOrigin(), model.GetAxis()
+                            body.clipModel,
+                            body.current.worldAxis,
+                            -1,
+                            model.Handle(),
+                            model.GetOrigin(),
+                            model.GetAxis()
                         )
                     } else {
                         contents or Game_local.gameLocal.clip.Contents(
-                            body.current.worldOrigin,
-                            body.clipModel, body.current.worldAxis, -1, null
+                            body.current.worldOrigin, body.clipModel, body.current.worldAxis, -1, null
                         )
                     }
                 }
@@ -6879,8 +6739,7 @@ object Physics_AF {
                     contactInfo, 10, body.current.worldOrigin, dir.SubVec6(0), 2.0f,  //CONTACT_EPSILON,
                     body.clipModel, body.current.worldAxis, body.clipMask, passEntity
                 )
-                if (true) {
-                    // merge nearby contacts between the same bodies
+                if (true) { // merge nearby contacts between the same bodies
                     // and assure there are at most three planar contacts between any pair of bodies
                     j = 0
                     while (j < numContacts) {
@@ -6888,9 +6747,7 @@ object Physics_AF {
                         k = 0
                         while (k < contacts.Num()) {
                             if (contacts[k].entityNum == contactInfo[j].entityNum) {
-                                if (contacts[k].id == i && contactInfo[j].id == contactBodies[k]
-                                    || contactBodies[k] == i && contacts[k].id == contactInfo[j].id
-                                ) {
+                                if (contacts[k].id == i && contactInfo[j].id == contactBodies[k] || contactBodies[k] == i && contacts[k].id == contactInfo[j].id) {
                                     if (contacts[k].point.minus(contactInfo[j].point).LengthSqr() < Square(
                                             2.0f
                                         )
@@ -6911,12 +6768,12 @@ object Physics_AF {
                         j++
                     }
 
-//}else{
-//
-//		for ( j = 0; j < numContacts; j++ ) {
-//			contacts.Append( contactInfo[j] );
-//			contactBodies.Append( i );
-//		}
+                    //}else{
+                    //
+                    //		for ( j = 0; j < numContacts; j++ ) {
+                    //			contacts.Append( contactInfo[j] );
+                    //			contactBodies.Append( i );
+                    //		}
                 }
                 i++
             }
@@ -6938,13 +6795,10 @@ object Physics_AF {
 
                 // velocity with which the af is pushed
                 current.pushVelocity.SubVec3_oPluSet(
-                    0,
-                    body.current.worldOrigin.minus(body.saved.worldOrigin).div(deltaTime * idMath.M_MS2SEC)
+                    0, body.current.worldOrigin.minus(body.saved.worldOrigin).div(deltaTime * idMath.M_MS2SEC)
                 )
                 current.pushVelocity.SubVec3_oPluSet(
-                    1,
-                    rotation.GetVec().times(-DEG2RAD(rotation.GetAngle()))
-                        .div(deltaTime * idMath.M_MS2SEC)
+                    1, rotation.GetVec().times(-DEG2RAD(rotation.GetAngle())).div(deltaTime * idMath.M_MS2SEC)
                 )
             }
         }
@@ -6963,8 +6817,7 @@ object Physics_AF {
 
          the binding is orientated based on the constraints being used
          ================
-         */
-        /*
+         *//*
         ================
         idPhysics_AF::SetMaster
 
@@ -6979,8 +6832,8 @@ object Physics_AF {
             if (master != null) {
                 self!!.GetMasterPosition(masterOrigin, masterAxis)
                 if (null == masterBody) {
-                    masterBody = idAFBody()
-                    // translate and rotate all the constraints with body2 == NULL from world space to master space
+                    masterBody =
+                        idAFBody() // translate and rotate all the constraints with body2 == NULL from world space to master space
                     rotation = masterAxis.Transpose().ToRotation()
                     i = 0
                     while (i < constraints.Num()) {
@@ -6994,8 +6847,7 @@ object Physics_AF {
                 }
                 masterBody!!.current.worldOrigin.set(masterOrigin)
                 masterBody!!.current.worldAxis.set(masterAxis)
-            } else if (masterBody != null) {
-                // translate and rotate all the constraints with body2 == NULL from master space to world space
+            } else if (masterBody != null) { // translate and rotate all the constraints with body2 == NULL from master space to world space
                 rotation = masterBody!!.current.worldAxis.ToRotation()
                 i = 0
                 while (i < constraints.Num()) {
@@ -7004,8 +6856,7 @@ object Physics_AF {
                         constraints[i].Translate(masterBody!!.current.worldOrigin)
                     }
                     i++
-                }
-                //			delete masterBody;
+                } //			delete masterBody;
                 masterBody = null
                 Activate()
             }
@@ -7023,40 +6874,22 @@ object Physics_AF {
             msg.WriteFloat(current.noMoveTime)
             msg.WriteFloat(current.activateTime)
             msg.WriteDeltaFloat(
-                0.0f,
-                current.pushVelocity[0],
-                AF_VELOCITY_EXPONENT_BITS,
-                AF_VELOCITY_MANTISSA_BITS
+                0.0f, current.pushVelocity[0], AF_VELOCITY_EXPONENT_BITS, AF_VELOCITY_MANTISSA_BITS
             )
             msg.WriteDeltaFloat(
-                0.0f,
-                current.pushVelocity[1],
-                AF_VELOCITY_EXPONENT_BITS,
-                AF_VELOCITY_MANTISSA_BITS
+                0.0f, current.pushVelocity[1], AF_VELOCITY_EXPONENT_BITS, AF_VELOCITY_MANTISSA_BITS
             )
             msg.WriteDeltaFloat(
-                0.0f,
-                current.pushVelocity[2],
-                AF_VELOCITY_EXPONENT_BITS,
-                AF_VELOCITY_MANTISSA_BITS
+                0.0f, current.pushVelocity[2], AF_VELOCITY_EXPONENT_BITS, AF_VELOCITY_MANTISSA_BITS
             )
             msg.WriteDeltaFloat(
-                0.0f,
-                current.pushVelocity[3],
-                AF_VELOCITY_EXPONENT_BITS,
-                AF_VELOCITY_MANTISSA_BITS
+                0.0f, current.pushVelocity[3], AF_VELOCITY_EXPONENT_BITS, AF_VELOCITY_MANTISSA_BITS
             )
             msg.WriteDeltaFloat(
-                0.0f,
-                current.pushVelocity[4],
-                AF_VELOCITY_EXPONENT_BITS,
-                AF_VELOCITY_MANTISSA_BITS
+                0.0f, current.pushVelocity[4], AF_VELOCITY_EXPONENT_BITS, AF_VELOCITY_MANTISSA_BITS
             )
             msg.WriteDeltaFloat(
-                0.0f,
-                current.pushVelocity[5],
-                AF_VELOCITY_EXPONENT_BITS,
-                AF_VELOCITY_MANTISSA_BITS
+                0.0f, current.pushVelocity[5], AF_VELOCITY_EXPONENT_BITS, AF_VELOCITY_MANTISSA_BITS
             )
             msg.WriteByte(bodies.Num())
             i = 0
@@ -7070,40 +6903,22 @@ object Physics_AF {
                 msg.WriteFloat(quat.y)
                 msg.WriteFloat(quat.z)
                 msg.WriteDeltaFloat(
-                    0.0f,
-                    state.spatialVelocity[0],
-                    AF_VELOCITY_EXPONENT_BITS,
-                    AF_VELOCITY_MANTISSA_BITS
+                    0.0f, state.spatialVelocity[0], AF_VELOCITY_EXPONENT_BITS, AF_VELOCITY_MANTISSA_BITS
                 )
                 msg.WriteDeltaFloat(
-                    0.0f,
-                    state.spatialVelocity[1],
-                    AF_VELOCITY_EXPONENT_BITS,
-                    AF_VELOCITY_MANTISSA_BITS
+                    0.0f, state.spatialVelocity[1], AF_VELOCITY_EXPONENT_BITS, AF_VELOCITY_MANTISSA_BITS
                 )
                 msg.WriteDeltaFloat(
-                    0.0f,
-                    state.spatialVelocity[2],
-                    AF_VELOCITY_EXPONENT_BITS,
-                    AF_VELOCITY_MANTISSA_BITS
+                    0.0f, state.spatialVelocity[2], AF_VELOCITY_EXPONENT_BITS, AF_VELOCITY_MANTISSA_BITS
                 )
                 msg.WriteDeltaFloat(
-                    0.0f,
-                    state.spatialVelocity[3],
-                    AF_VELOCITY_EXPONENT_BITS,
-                    AF_VELOCITY_MANTISSA_BITS
+                    0.0f, state.spatialVelocity[3], AF_VELOCITY_EXPONENT_BITS, AF_VELOCITY_MANTISSA_BITS
                 )
                 msg.WriteDeltaFloat(
-                    0.0f,
-                    state.spatialVelocity[4],
-                    AF_VELOCITY_EXPONENT_BITS,
-                    AF_VELOCITY_MANTISSA_BITS
+                    0.0f, state.spatialVelocity[4], AF_VELOCITY_EXPONENT_BITS, AF_VELOCITY_MANTISSA_BITS
                 )
                 msg.WriteDeltaFloat(
-                    0.0f,
-                    state.spatialVelocity[5],
-                    AF_VELOCITY_EXPONENT_BITS,
-                    AF_VELOCITY_MANTISSA_BITS
+                    0.0f, state.spatialVelocity[5], AF_VELOCITY_EXPONENT_BITS, AF_VELOCITY_MANTISSA_BITS
                 )
                 i++
             }
@@ -7156,7 +6971,8 @@ object Physics_AF {
                  state.externalForce[3] = msg.ReadDeltaFloat( 0.0f, AF_FORCE_EXPONENT_BITS, AF_FORCE_MANTISSA_BITS );
                  state.externalForce[4] = msg.ReadDeltaFloat( 0.0f, AF_FORCE_EXPONENT_BITS, AF_FORCE_MANTISSA_BITS );
                  state.externalForce[5] = msg.ReadDeltaFloat( 0.0f, AF_FORCE_EXPONENT_BITS, AF_FORCE_MANTISSA_BITS );
-                 */state.worldAxis.set(quat.ToMat3())
+                 */
+                state.worldAxis.set(quat.ToMat3())
                 i++
             }
             UpdateClipModels()
@@ -7213,8 +7029,7 @@ object Physics_AF {
                     // only bilateral constraints between two non-world bodies that do not
                     // create loops can be used as primary constraints
                     if (null == c.body1!!.primaryConstraint && c.fl.allowPrimary && c.body2 != null && !IsClosedLoop(
-                            c.body1,
-                            c.body2
+                            c.body1, c.body2
                         )
                     ) {
                         c.body1!!.primaryConstraint = c
@@ -7235,8 +7050,8 @@ object Physics_AF {
                 while (i < bodies.Num()) {
                     if (null == bodies[i].parent) {
                         tree = idAFTree()
-                        tree!!.sortedBodies.Clear()
-                        tree!!.sortedBodies.Append(bodies[i])
+                        tree.sortedBodies.Clear()
+                        tree.sortedBodies.Append(bodies[i])
                         bodies[i].tree = tree
                         trees.Append(tree)
                     }
@@ -7259,7 +7074,8 @@ object Physics_AF {
                 if (trees.Num() > 1) {
                     Game_local.gameLocal.Warning(
                         "Articulated figure has multiple separate tree structures for entity '%s' type '%s'.",
-                        self!!.name, self!!.GetType().name
+                        self!!.name,
+                        self!!.GetType().name
                     )
                 }
 
@@ -7275,8 +7091,8 @@ object Physics_AF {
                 i = 0
                 while (i < bodies.Num()) {
                     tree = idAFTree()
-                    tree!!.sortedBodies.Clear()
-                    tree!!.sortedBodies.Append(bodies[i])
+                    tree.sortedBodies.Clear()
+                    tree.sortedBodies.Append(bodies[i])
                     bodies[i].tree = tree
                     trees.Append(tree)
                     i++
@@ -7360,10 +7176,7 @@ object Physics_AF {
                     // spatial inertia in world space
                     massMatrix.setIdentity(body.mass)
                     body.I.set(
-                        massMatrix,
-                        zeroMatrix,
-                        zeroMatrix,
-                        worldInertia
+                        massMatrix, zeroMatrix, zeroMatrix, worldInertia
                     )
 
                     tmp.setMul(axis, body.inverseInertiaTensor)
@@ -7372,10 +7185,7 @@ object Physics_AF {
                     // inverse spatial inertia in world space
                     massMatrix.setIdentity(body.invMass)
                     body.inverseWorldSpatialInertia.set(
-                        massMatrix,
-                        zeroMatrix,
-                        zeroMatrix,
-                        inverseWorldInertia
+                        massMatrix, zeroMatrix, zeroMatrix, inverseWorldInertia
                     )
                     body.fl.spatialInertiaSparse = true
                 } else {
@@ -7387,8 +7197,7 @@ object Physics_AF {
                     // spatial inertia in world space
                     massMatrix.setIdentity(body.mass)
                     body.I.set(
-                        massMatrix, massMoment,
-                        massMomentTranspose, worldInertia
+                        massMatrix, massMoment, massMomentTranspose, worldInertia
                     )
 
                     // inverse spatial inertia in world space
@@ -7467,8 +7276,7 @@ object Physics_AF {
         idPhysics_AF::RemoveFrameConstraints
         ================
         */
-        private fun RemoveFrameConstraints() {
-            // remove all the frame constraints from the auxiliary constraints
+        private fun RemoveFrameConstraints() { // remove all the frame constraints from the auxiliary constraints
             auxiliaryConstraints.SetNum(auxiliaryConstraints.Num() - frameConstraints.Num(), false)
             frameConstraints.SetNum(0, false)
         }
@@ -7484,20 +7292,19 @@ object Physics_AF {
             if (SysCvar.af_skipFriction.GetBool()) {
                 return
             }
-            jointFrictionDentScale =
-                if (jointFrictionDentStart < MS2SEC(endTimeMSec) && jointFrictionDentEnd > MS2SEC(
-                        endTimeMSec
-                    )
-                ) {
-                    val halfTime = (jointFrictionDentEnd - jointFrictionDentStart) * 0.5f
-                    if (jointFrictionDentStart + halfTime > MS2SEC(endTimeMSec)) {
-                        1.0f - (1.0f - jointFrictionDent) * (MS2SEC(endTimeMSec) - jointFrictionDentStart) / halfTime
-                    } else {
-                        jointFrictionDent + (1.0f - jointFrictionDent) * (MS2SEC(endTimeMSec) - jointFrictionDentStart - halfTime) / halfTime
-                    }
+            jointFrictionDentScale = if (jointFrictionDentStart < MS2SEC(endTimeMSec) && jointFrictionDentEnd > MS2SEC(
+                    endTimeMSec
+                )
+            ) {
+                val halfTime = (jointFrictionDentEnd - jointFrictionDentStart) * 0.5f
+                if (jointFrictionDentStart + halfTime > MS2SEC(endTimeMSec)) {
+                    1.0f - (1.0f - jointFrictionDent) * (MS2SEC(endTimeMSec) - jointFrictionDentStart) / halfTime
                 } else {
-                    0.0f
+                    jointFrictionDent + (1.0f - jointFrictionDent) * (MS2SEC(endTimeMSec) - jointFrictionDentStart - halfTime) / halfTime
                 }
+            } else {
+                0.0f
+            }
             contactFrictionDentScale =
                 if (contactFrictionDentStart < MS2SEC(endTimeMSec) && contactFrictionDentEnd > MS2SEC(
                         endTimeMSec
@@ -7590,8 +7397,8 @@ object Physics_AF {
             }
 
             // allocate memory to store the body response to auxiliary constraint forces
-//            forcePtr = new float[bodies.Num() * numAuxConstraints * 8];
-//            index = new int[bodies.Num() * numAuxConstraints];
+            //            forcePtr = new float[bodies.Num() * numAuxConstraints * 8];
+            //            index = new int[bodies.Num() * numAuxConstraints];
             i = 0
             while (i < bodies.Num()) {
                 body = bodies[i]
@@ -7638,10 +7445,10 @@ object Physics_AF {
 
 
                     // calculate body forces in the tree in response to the constraint force
-                    constraint.body1!!.tree!!.Response(constraint, j, k)
-                    // if there is a second body which is part of a different tree
-                    if (constraint.body2 != null && constraint.body2!!.tree !== constraint.body1!!.tree) {
-                        // calculate body forces in the second tree in response to the constraint force
+                    constraint.body1!!.tree!!.Response(
+                        constraint, j, k
+                    ) // if there is a second body which is part of a different tree
+                    if (constraint.body2 != null && constraint.body2!!.tree !== constraint.body1!!.tree) { // calculate body forces in the second tree in response to the constraint force
                         constraint.body2!!.tree!!.Response(constraint, j, k)
                     }
                     j++
@@ -7857,8 +7664,7 @@ object Physics_AF {
                 normal.set(contactConstraints[i].GetContact().normal)
                 if (normal * body!!.next.spatialVelocity.SubVec3(0) <= 0.0f) {
                     body.next.spatialVelocity.SubVec3_oMinSet(
-                        0,
-                        1.0001f * (normal * body.next.spatialVelocity.SubVec3(0)) * normal
+                        0, 1.0001f * (normal * body.next.spatialVelocity.SubVec3(0)) * normal
                     )
                 }
                 body = contactConstraints[i].body2
@@ -7869,13 +7675,11 @@ object Physics_AF {
                 normal.set(normal.unaryMinus())
                 if (normal * body.next.spatialVelocity.SubVec3(0) <= 0.0f) {
                     body.next.spatialVelocity.SubVec3_oMinSet(
-                        0,
-                        1.0001f * (normal * body.next.spatialVelocity.SubVec3(0)) * normal
+                        0, 1.0001f * (normal * body.next.spatialVelocity.SubVec3(0)) * normal
                     )
                 }
                 i++
-            }
-            // }
+            } // }
         }
 
         /*
@@ -7897,8 +7701,7 @@ object Physics_AF {
                 // add contact constraint
                 contactConstraints[i].physics = this
                 if (contacts[i].entityNum == self!!.entityNumber) {
-                    contactConstraints[i]
-                        .Setup(bodies[contactBodies[i]], bodies[contacts[i].id], contacts[i])
+                    contactConstraints[i].Setup(bodies[contactBodies[i]], bodies[contacts[i].id], contacts[i])
                 } else {
                     contactConstraints[i].Setup(bodies[contactBodies[i]], null, contacts[i])
                 }
@@ -7942,15 +7745,13 @@ object Physics_AF {
                         body.acceleration.SubVec6(0).times(timeStep)
                     )
                 )
-                if (maxLinearVelocity > 0.0f) {
-                    // cap the linear velocity
+                if (maxLinearVelocity > 0.0f) { // cap the linear velocity
                     vSqr = body.next.spatialVelocity.SubVec3(0).LengthSqr()
                     if (vSqr > Square(maxLinearVelocity)) {
                         body.next.spatialVelocity.SubVec3_oMulSet(0, idMath.InvSqrt(vSqr) * maxLinearVelocity)
                     }
                 }
-                if (maxAngularVelocity > 0.0f) {
-                    // cap the angular velocity
+                if (maxAngularVelocity > 0.0f) { // cap the angular velocity
                     vSqr = body.next.spatialVelocity.SubVec3(1).LengthSqr()
                     if (vSqr > Square(maxAngularVelocity)) {
                         body.next.spatialVelocity.SubVec3_oMulSet(1, idMath.InvSqrt(vSqr) * maxAngularVelocity)
@@ -7986,12 +7787,10 @@ object Physics_AF {
 
                 // linear and angular friction
                 body.next.spatialVelocity.SubVec3_oMinSet(
-                    0,
-                    body.next.spatialVelocity.SubVec3(0).times(body.linearFriction)
+                    0, body.next.spatialVelocity.SubVec3(0).times(body.linearFriction)
                 )
                 body.next.spatialVelocity.SubVec3_oMinSet(
-                    1,
-                    body.next.spatialVelocity.SubVec3(1).times(body.angularFriction)
+                    1, body.next.spatialVelocity.SubVec3(1).times(body.angularFriction)
                 )
                 i++
             }
@@ -8017,10 +7816,8 @@ object Physics_AF {
                     if (!body.constraints[i].fl.noCollision) {
                         i++
                         continue
-                    }
-                    // if this constraint attaches the body to the world
-                    if (body.constraints[i].body2 == null) {
-                        // don't collide with the world collision model
+                    } // if this constraint attaches the body to the world
+                    if (body.constraints[i].body2 == null) { // don't collide with the world collision model
                         passEntity = Game_local.gameLocal.world
                     }
                     i++
@@ -8047,10 +7844,8 @@ object Physics_AF {
                     if (!body.constraints[i].fl.noCollision) {
                         i++
                         continue
-                    }
-                    // if this constraint attaches the body to the world
-                    if (body.constraints[i].body2 == null) {
-                        // don't collide with the world collision model
+                    } // if this constraint attaches the body to the world
+                    if (body.constraints[i].body2 == null) { // don't collide with the world collision model
                         passEntity = Game_local.gameLocal.world
                     } else {
                         b = if (body.constraints[i].body1 == body) {
@@ -8060,8 +7855,7 @@ object Physics_AF {
                         } else {
                             i++
                             continue
-                        }
-                        // don't collide with this body
+                        } // don't collide with this body
                         b!!.clipModel!!.Disable()
                     }
                     i++
@@ -8094,25 +7888,22 @@ object Physics_AF {
             }
 
             // get info from other entity involved
-            info = ent.GetImpactInfo(self, collision.c.id, collision.c.point)
-            // collision point relative to the body center of mass
-            r.set(collision.c.point.minus(body!!.current.worldOrigin.plus(body.centerOfMass.times(body.current.worldAxis))))
-            // the velocity at the collision point
+            info = ent.GetImpactInfo(
+                self, collision.c.id, collision.c.point
+            ) // collision point relative to the body center of mass
+            r.set(collision.c.point.minus(body!!.current.worldOrigin.plus(body.centerOfMass.times(body.current.worldAxis)))) // the velocity at the collision point
             velocity.set(
                 body.current.spatialVelocity.SubVec3(0).plus(body.current.spatialVelocity.SubVec3(1).Cross(r))
-            )
-            // subtract velocity of other entity
-            velocity.minusAssign(info.velocity)
-            // never stick
+            ) // subtract velocity of other entity
+            velocity.minusAssign(info.velocity) // never stick
             if (velocity.times(collision.c.normal) > 0.0f) {
                 velocity.set(collision.c.normal)
             }
-            inverseWorldInertiaTensor = body.current.worldAxis.Transpose().times(body.inverseInertiaTensor)
-                .times(body.current.worldAxis)
+            inverseWorldInertiaTensor =
+                body.current.worldAxis.Transpose().times(body.inverseInertiaTensor).times(body.current.worldAxis)
             impulseNumerator = -(1.0f + body.bouncyness) * velocity.times(collision.c.normal)
-            impulseDenominator =
-                body.invMass + inverseWorldInertiaTensor.times(r.Cross(collision.c.normal)).Cross(r)
-                    .times(collision.c.normal)
+            impulseDenominator = body.invMass + inverseWorldInertiaTensor.times(r.Cross(collision.c.normal)).Cross(r)
+                .times(collision.c.normal)
             if (info.invMass != 0.0f) {
                 impulseDenominator += info.invMass + info.invInertiaTensor.times(info.position.Cross(collision.c.normal))
                     .Cross(info.position).times(collision.c.normal)
@@ -8138,8 +7929,7 @@ object Physics_AF {
             return false
         }
 
-        private fun CheckForCollisions(timeStep: Float) {
-            //	#define TEST_COLLISION_DETECTION
+        private fun CheckForCollisions(timeStep: Float) { //	#define TEST_COLLISION_DETECTION
             var i: Int
             var index: Int
             var body: idAFBody?
@@ -8161,8 +7951,11 @@ object Physics_AF {
                     passEntity = SetupCollisionForBody(body)
                     if (TEST_COLLISION_DETECTION) {
                         if (Game_local.gameLocal.clip.Contents(
-                                body.current.worldOrigin, body.clipModel,
-                                body.current.worldAxis, body.clipMask, passEntity
+                                body.current.worldOrigin,
+                                body.clipModel,
+                                body.current.worldAxis,
+                                body.clipMask,
+                                passEntity
                             ) != 0
                         ) {
                             startSolid = true
@@ -8174,8 +7967,14 @@ object Physics_AF {
 
                     // if there was a collision
                     if (Game_local.gameLocal.clip.Motion(
-                            collision, body.current.worldOrigin, body.next.worldOrigin, rotation,
-                            body.clipModel, body.current.worldAxis, body.clipMask, passEntity
+                            collision,
+                            body.current.worldOrigin,
+                            body.next.worldOrigin,
+                            rotation,
+                            body.clipModel,
+                            body.current.worldAxis,
+                            body.clipMask,
+                            passEntity
                         )
                     ) {
 
@@ -8192,8 +7991,7 @@ object Physics_AF {
                     }
                     if (TEST_COLLISION_DETECTION) {
                         if (Game_local.gameLocal.clip.Contents(
-                                body.next.worldOrigin, body.clipModel,
-                                body.next.worldAxis, body.clipMask, passEntity
+                                body.next.worldOrigin, body.clipModel, body.next.worldAxis, body.clipMask, passEntity
                             ) != 0
                         ) {
                             if (!startSolid) {
@@ -8231,8 +8029,7 @@ object Physics_AF {
             var body: idAFBody?
             i = 0
             while (i < bodies.Num()) {
-                body = bodies[i]
-                // add gravitational force
+                body = bodies[i] // add gravitational force
                 body.current.externalForce.SubVec3_oPluSet(0, gravityVector.times(body.mass))
                 i++
             }
@@ -8308,8 +8105,7 @@ object Physics_AF {
                     }
                     i++
                 }
-                if (maxTranslationSqr < Square(noMoveTranslation) && maxRotation < noMoveRotation) {
-                    // hardly moved over a period of time so the articulated figure may come to rest
+                if (maxTranslationSqr < Square(noMoveTranslation) && maxRotation < noMoveRotation) { // hardly moved over a period of time so the articulated figure may come to rest
                     return true
                 }
             } else {
@@ -8392,28 +8188,29 @@ object Physics_AF {
                     constraint.GetCenter(center)
                     axis.set(Game_local.gameLocal.GetLocalPlayer()!!.viewAngles.ToMat3())
                     Game_local.gameRenderWorld!!.DebugCone(
-                        colorYellow,
-                        center,
-                        axis[2].minus(axis[1]).times(4.0f),
-                        0.0f,
-                        1.0f,
-                        0
+                        colorYellow, center, axis[2].minus(axis[1]).times(4.0f), 0.0f, 1.0f, 0
                     )
                     if (SysCvar.af_showConstrainedBodies.GetBool()) {
                         idLib.cvarSystem.SetCVarString("cm_drawColor", colorCyan.ToString(0))
                         constrainedBody1 = constraint.body1
                         if (constrainedBody1 != null) {
                             collisionModelManager.DrawModel(
-                                constrainedBody1.clipModel!!.Handle(), constrainedBody1.clipModel!!.GetOrigin(),
-                                constrainedBody1.clipModel!!.GetAxis(), vec3_origin, 0.0f
+                                constrainedBody1.clipModel!!.Handle(),
+                                constrainedBody1.clipModel!!.GetOrigin(),
+                                constrainedBody1.clipModel!!.GetAxis(),
+                                vec3_origin,
+                                0.0f
                             )
                         }
                         idLib.cvarSystem.SetCVarString("cm_drawColor", colorBlue.ToString(0))
                         constrainedBody2 = constraint.body2
                         if (constrainedBody2 != null) {
                             collisionModelManager.DrawModel(
-                                constrainedBody2.clipModel!!.Handle(), constrainedBody2.clipModel!!.GetOrigin(),
-                                constrainedBody2.clipModel!!.GetAxis(), vec3_origin, 0.0f
+                                constrainedBody2.clipModel!!.Handle(),
+                                constrainedBody2.clipModel!!.GetOrigin(),
+                                constrainedBody2.clipModel!!.GetAxis(),
+                                vec3_origin,
+                                0.0f
                             )
                         }
                         idLib.cvarSystem.SetCVarString("cm_drawColor", colorRed.ToString(0))
@@ -8425,8 +8222,11 @@ object Physics_AF {
                 if (highlightBody != null) {
                     idLib.cvarSystem.SetCVarString("cm_drawColor", colorYellow.ToString(0))
                     collisionModelManager.DrawModel(
-                        highlightBody.clipModel!!.Handle(), highlightBody.clipModel!!.GetOrigin(),
-                        highlightBody.clipModel!!.GetAxis(), vec3_origin, 0.0f
+                        highlightBody.clipModel!!.Handle(),
+                        highlightBody.clipModel!!.GetOrigin(),
+                        highlightBody.clipModel!!.GetAxis(),
+                        vec3_origin,
+                        0.0f
                     )
                     idLib.cvarSystem.SetCVarString("cm_drawColor", colorRed.ToString(0))
                 }
@@ -8444,12 +8244,14 @@ object Physics_AF {
                         continue
                     }
                     collisionModelManager.DrawModel(
-                        body.clipModel!!.Handle(), body.clipModel!!.GetOrigin(),
-                        body.clipModel!!.GetAxis(), vec3_origin, 0.0f
+                        body.clipModel!!.Handle(),
+                        body.clipModel!!.GetOrigin(),
+                        body.clipModel!!.GetAxis(),
+                        vec3_origin,
+                        0.0f
                     )
                     DrawTraceModelSilhouette(
-                        Game_local.gameLocal.GetLocalPlayer()!!.GetEyePosition(),
-                        body!!.clipModel!!
+                        Game_local.gameLocal.GetLocalPlayer()!!.GetEyePosition(), body.clipModel!!
                     )
                     i++
                 }
@@ -8503,9 +8305,15 @@ object Physics_AF {
                     Game_local.gameRenderWorld!!.DrawText(
                         Str.va(
                             "\n\n\n( %.1f %.1f %.1f )\n( %.1f %.1f %.1f )\n( %.1f %.1f %.1f )",
-                            I[0].x, I[0].y, I[0].z,
-                            I[1].x, I[1].y, I[1].z,
-                            I[2].x, I[2].y, I[2].z
+                            I[0].x,
+                            I[0].y,
+                            I[0].z,
+                            I[1].x,
+                            I[1].y,
+                            I[1].z,
+                            I[2].x,
+                            I[2].y,
+                            I[2].z
                         ),
                         body.GetWorldOrigin(),
                         0.05f,
@@ -8601,10 +8409,7 @@ object Physics_AF {
                 v1.set(trm.verts[trm.edges[abs(silEdges[i])].v[INTSIGNBITSET(silEdges[i])]])
                 v2.set(trm.verts[trm.edges[abs(silEdges[i])].v[INTSIGNBITNOTSET(silEdges[i])]])
                 Game_local.gameRenderWorld!!.DebugArrow(
-                    colorRed,
-                    origin.plus(v1.times(axis)),
-                    origin.plus(v2.times(axis)),
-                    1
+                    colorRed, origin.plus(v1.times(axis)), origin.plus(v2.times(axis)), 1
                 )
                 i++
             }
@@ -8662,8 +8467,8 @@ object Physics_AF {
             lcp = idLCP.AllocSymmetric()
             current = AFPState_s() //memset( &current, 0, sizeof( current ) );
             current.atRest = -1
-            current.lastTimeStep = UsercmdGen.USERCMD_MSEC.toFloat()
-            // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias
+            current.lastTimeStep =
+                UsercmdGen.USERCMD_MSEC.toFloat() // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias
             saved = AFPState_s()
             saved.set(current)
             linearFriction = 0.005f

@@ -575,8 +575,7 @@ class idPolynomial {
                 return i
             }
             g.set(d / b)
-            g2.set(g * g)
-            //s.set((((g2 - f * 2.0f / b) * degree - g2) * (degree - 1)).Sqrt())
+            g2.set(g * g) //s.set((((g2 - f * 2.0f / b) * degree - g2) * (degree - 1)).Sqrt())
             s.set(((degree.toFloat() - 1) * (degree.toFloat() * (g2 - 2.0f * f / b) - g2)).Sqrt())
             gps.set(g + s)
             gms.set(g - s)

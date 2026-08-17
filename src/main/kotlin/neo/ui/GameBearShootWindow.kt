@@ -49,7 +49,7 @@ object GameBearShootWindow {
      * BSEntity
      ****************************************************************************
      */
-    class BSEntity(//
+    class BSEntity( //
         var game: idGameBearShootWindow
     ) {
         val entColor: idVec4 = idVec4()
@@ -158,15 +158,7 @@ object GameBearShootWindow {
         fun Draw(dc: idDeviceContext) {
             if (visible) {
                 dc.DrawMaterialRotated(
-                    position.x,
-                    position.y,
-                    width,
-                    height,
-                    material,
-                    entColor,
-                    1.0f,
-                    1.0f,
-                    DEG2RAD(rotation)
+                    position.x, position.y, width, height, material, entColor, 1.0f, 1.0f, DEG2RAD(rotation)
                 )
             }
         }
@@ -310,8 +302,7 @@ object GameBearShootWindow {
                 if (0 == event.evValue2) {
                     return ret
                 }
-                if (key == K_MOUSE1) {
-                    // Mouse was clicked
+                if (key == K_MOUSE1) { // Mouse was clicked
                 } else {
                     return ret
                 }
@@ -332,9 +323,7 @@ object GameBearShootWindow {
         }
 
         override fun GetWinVarByName(
-            _name: String?,
-            winLookup: Boolean /*= false*/,
-            owner: Array<drawWin_t?>? /*= NULL*/
+            _name: String?, winLookup: Boolean /*= false*/, owner: Array<drawWin_t?>? /*= NULL*/
         ): idWinVar? {
             var retVar: idWinVar? = null
             if (Icmp(_name!!, "gamerunning") == 0) {
@@ -457,8 +446,7 @@ object GameBearShootWindow {
                         collision = true
                     }
                 }
-                if (collision) {
-                    // balloons pop and bear tumbles to ground
+                if (collision) { // balloons pop and bear tumbles to ground
                     helicopter!!.SetMaterial("game/bearshoot/helicopter_broken")
                     helicopter!!.velocity.y = 230.0f
                     goal!!.velocity.y = 230.0f

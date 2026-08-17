@@ -290,14 +290,14 @@ class StaticList {
          ================
          */
         fun IndexOf(obj: T): Int {                    // returns the index for the pointer to an element in the list
-//    int index;
-//
-//	index = objptr - list;
-//
-//	assert( index >= 0 );
-//	assert( index < num );
-//
-//	return index;
+            //    int index;
+            //
+            //	index = objptr - list;
+            //
+            //	assert( index >= 0 );
+            //	assert( index < num );
+            //
+            //	return index;
             return FindIndex(obj)
         }
 
@@ -338,9 +338,7 @@ class StaticList {
         fun Remove(obj: T): Boolean {                            // remove the element
             val index: Int
             index = FindIndex(obj)
-            return if (index >= 0) {
-                RemoveIndex(index)
-            } else false
+            return index >= 0 && RemoveIndex(index)
         }
 
         //public		void				Swap( idStaticList<T,size> &other );				// swap the contents of the lists

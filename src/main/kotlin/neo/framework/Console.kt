@@ -180,16 +180,10 @@ class Console {
                 i++
             }
             CmdSystem.cmdSystem.AddCommand(
-                "clear",
-                Con_Clear_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "clears the console"
+                "clear", Con_Clear_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "clears the console"
             )
             CmdSystem.cmdSystem.AddCommand(
-                "conDump",
-                Con_Dump_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "dumps the console text to a file"
+                "conDump", Con_Dump_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "dumps the console text to a file"
             )
         }
 
@@ -215,14 +209,12 @@ class Console {
 
         @Throws(idException::class)
         override fun ProcessEvent(event: sysEvent_s, forceAccept: Boolean): Boolean {
-            var consoleKey: Boolean
-            // FIX: Added shift+esc as an additional console-open trigger (dhewm3 feature)
+            var consoleKey: Boolean // FIX: Added shift+esc as an additional console-open trigger (dhewm3 feature)
             consoleKey =
-                event.evType == sysEventType_t.SE_KEY && (event.evValue == win_input.Sys_GetConsoleKey(false).code
-                        || event.evValue == win_input.Sys_GetConsoleKey(true).code
-                        || (event.evValue == KeyInput.K_ESCAPE && idKeyInput.IsDown(KeyInput.K_SHIFT)))
-            if (ID_CONSOLE_LOCK) {
-                // If the console's not already down, and we have it turned off, check for ctrl+alt
+                event.evType == sysEventType_t.SE_KEY && (event.evValue == win_input.Sys_GetConsoleKey(false).code || event.evValue == win_input.Sys_GetConsoleKey(
+                    true
+                ).code || (event.evValue == KeyInput.K_ESCAPE && idKeyInput.IsDown(KeyInput.K_SHIFT)))
+            if (ID_CONSOLE_LOCK) { // If the console's not already down, and we have it turned off, check for ctrl+alt
                 if (!keyCatching && !Common.com_allowConsole.GetBool()) {
                     if (!idKeyInput.IsDown(KeyInput.K_CTRL) || !idKeyInput.IsDown(KeyInput.K_ALT)) {
                         consoleKey = false
@@ -231,8 +223,7 @@ class Console {
             }
 
             // we always catch the console key event
-            if (!forceAccept && consoleKey) {
-                // ignore up events
+            if (!forceAccept && consoleKey) { // ignore up events
                 if (event.evValue2 == 0) {
                     return true
                 }
@@ -244,10 +235,9 @@ class Console {
                     CVarSystem.cvarSystem.SetCVarBool("ui_chat", false)
                 } else {
                     consoleField.Clear()
-                    keyCatching = true
-                    // FIX: shift+esc should open at 0.5f (same as normal open); only plain shift opens at 0.2f
-                    if (idKeyInput.IsDown(KeyInput.K_SHIFT) && event.evValue != KeyInput.K_ESCAPE) {
-                        // if the shift key is down, don't open the console as much
+                    keyCatching =
+                        true // FIX: shift+esc should open at 0.5f (same as normal open); only plain shift opens at 0.2f
+                    if (idKeyInput.IsDown(KeyInput.K_SHIFT) && event.evValue != KeyInput.K_ESCAPE) { // if the shift key is down, don't open the console as much
                         // (except when shift+esc was used — that should open at full 0.5)
                         SetDisplayFraction(0.2f)
                     } else {
@@ -264,8 +254,7 @@ class Console {
             }
 
             // handle key and character events
-            if (event.evType == sysEventType_t.SE_CHAR) {
-                // never send the console key as a character
+            if (event.evType == sysEventType_t.SE_CHAR) { // never send the console key as a character
                 if (event.evValue != win_input.Sys_GetConsoleKey(false).code && event.evValue != win_input.Sys_GetConsoleKey(
                         true
                     ).code
@@ -274,8 +263,7 @@ class Console {
                 }
                 return true
             }
-            if (event.evType == sysEventType_t.SE_KEY) {
-                // ignore up key events
+            if (event.evType == sysEventType_t.SE_KEY) { // ignore up key events
                 if (event.evValue2 == 0) {
                     return true
                 }
@@ -321,9 +309,7 @@ class Console {
             var color: Int
             var txt_p = 0
             color = idStr.ColorIndex(Str.C_COLOR_CYAN)
-            while (txt_p < txt.length
-                && txt[txt_p].also { c = it.code } != Char(0)
-            ) {
+            while (txt_p < txt.length && txt[txt_p].also { c = it.code } != Char(0)) {
                 if (idStr.IsColor(txt.substring(txt_p))) {
                     val colorChar: Char = txt[txt_p + 1]
                     color = if (colorChar.code == Str.C_COLOR_DEFAULT) {
@@ -338,8 +324,7 @@ class Console {
 
                 // if we are about to print a new word, check to see
                 // if we should wrap to the new line
-                if (c > ' '.code && (x == 0 || text[y * LINE_WIDTH + x - 1] <= ' '.code)) {
-                    // count word length
+                if (c > ' '.code && (x == 0 || text[y * LINE_WIDTH + x - 1] <= ' '.code)) { // count word length
                     // FIX: Added missing break — without it, word wrapping never triggers
                     l = 0
                     while (l < LINE_WIDTH) {
@@ -396,11 +381,9 @@ class Console {
             if (charSetShader == null) {
                 return
             }
-            if (forceFullScreen) {
-                // if we are forced full screen because of a disconnect,
+            if (forceFullScreen) { // if we are forced full screen because of a disconnect,
                 // we want the console closed when we go back to a session state
-                Close()
-                // we are however catching keyboard input
+                Close() // we are however catching keyboard input
                 keyCatching = true
             }
             Scroll()
@@ -409,8 +392,7 @@ class Console {
                 DrawSolidConsole(1.0f)
             } else if (displayFrac != 0.0f) {
                 DrawSolidConsole(displayFrac)
-            } else {
-                // only draw the notify lines if the developer cvar is set,
+            } else { // only draw the notify lines if the developer cvar is set,
                 // or we are a debug build
                 if (!con_noPrint.GetBool()) {
                     DrawNotify()
@@ -518,8 +500,7 @@ class Console {
          */
         override fun SaveHistory() {
             val f: idFile = FileSystem_h.fileSystem.OpenFileWrite("consolehistory.dat") ?: return
-            for (i in 0 until COMMAND_HISTORY) {
-                // make sure the history is in the right order
+            for (i in 0 until COMMAND_HISTORY) { // make sure the history is in the right order
                 val line = (nextHistoryLine + i) % COMMAND_HISTORY
                 val s = idStr(ctos(historyEditLines[line].GetBuffer()))
                 if (!s.IsEmpty()) {
@@ -586,8 +567,8 @@ class Console {
                     historyEditLines[nextHistoryLine % COMMAND_HISTORY].SetBuffer(ctos(consoleField.GetBuffer()))
                     nextHistoryLine++
                 }
-                historyLine = nextHistoryLine
-                // clear the next line from old garbage, else the oldest history entry turns up when pressing DOWN
+                historyLine =
+                    nextHistoryLine // clear the next line from old garbage, else the oldest history entry turns up when pressing DOWN
                 historyEditLines[nextHistoryLine % COMMAND_HISTORY].Clear()
                 consoleField.Clear()
                 consoleField.SetWidthInChars(LINE_WIDTH)
@@ -603,18 +584,14 @@ class Console {
             }
 
             // command history (ctrl-p ctrl-n for unix style)
-            if (key == KeyInput.K_UPARROW
-                || (key == 'p'.code || key == 'P'.code) && idKeyInput.IsDown(KeyInput.K_CTRL)
-            ) {
+            if (key == KeyInput.K_UPARROW || (key == 'p'.code || key == 'P'.code) && idKeyInput.IsDown(KeyInput.K_CTRL)) {
                 if (nextHistoryLine - historyLine < COMMAND_HISTORY && historyLine > 0) {
                     historyLine--
                 }
                 consoleField.SetBuffer(ctos(historyEditLines[historyLine % COMMAND_HISTORY].GetBuffer()))
                 return
             }
-            if (key == KeyInput.K_DOWNARROW
-                || (key == 'n'.code || key == 'N'.code) && idKeyInput.IsDown(KeyInput.K_CTRL)
-            ) {
+            if (key == KeyInput.K_DOWNARROW || (key == 'n'.code || key == 'N'.code) && idKeyInput.IsDown(KeyInput.K_CTRL)) {
                 if (historyLine == nextHistoryLine) {
                     return
                 }
@@ -723,8 +700,7 @@ class Console {
                     RenderSystem.renderSystem.SetColor4(.8f, .2f, .2f, .45f)
                     RenderSystem.renderSystem.DrawStretchPic(
                         (2 * RenderSystem.SMALLCHAR_WIDTH + consoleField.GetAutoCompleteLength() * RenderSystem.SMALLCHAR_WIDTH).toFloat(),
-                        (
-                                y + 2).toFloat(),
+                        (y + 2).toFloat(),
                         (autoCompleteLength * RenderSystem.SMALLCHAR_WIDTH).toFloat(),
                         (RenderSystem.SMALLCHAR_HEIGHT - 2).toFloat(),
                         0.0f,
@@ -737,10 +713,7 @@ class Console {
             }
             RenderSystem.renderSystem.SetColor(idStr.ColorForIndex(Str.C_COLOR_CYAN))
             RenderSystem.renderSystem.DrawSmallChar(
-                1 * RenderSystem.SMALLCHAR_WIDTH,
-                y,
-                ']'.code,
-                localConsole.charSetShader
+                1 * RenderSystem.SMALLCHAR_WIDTH, y, ']'.code, localConsole.charSetShader
             )
             consoleField.Draw(
                 2 * RenderSystem.SMALLCHAR_WIDTH,
@@ -780,8 +753,7 @@ class Console {
                     i++
                     continue
                 }
-                text_p = i % TOTAL_LINES * LINE_WIDTH
-                //		text_p = text + (i % TOTAL_LINES)*LINE_WIDTH;
+                text_p = i % TOTAL_LINES * LINE_WIDTH //		text_p = text + (i % TOTAL_LINES)*LINE_WIDTH;
                 x = 0
                 while (x < LINE_WIDTH) {
                     if (text[text_p + x].toInt() and 0xff == ' '.code) {
@@ -849,15 +821,7 @@ class Console {
             }
             RenderSystem.renderSystem.SetColor(colorCyan)
             RenderSystem.renderSystem.DrawStretchPic(
-                0.0f,
-                y,
-                RenderSystem.SCREEN_WIDTH.toFloat(),
-                2.0f,
-                0.0f,
-                0.0f,
-                0.0f,
-                0.0f,
-                whiteShader
+                0.0f, y, RenderSystem.SCREEN_WIDTH.toFloat(), 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, whiteShader
             )
             RenderSystem.renderSystem.SetColor(colorWhite)
 
@@ -882,16 +846,12 @@ class Console {
             y = (lines - RenderSystem.SMALLCHAR_HEIGHT * 3).toFloat()
 
             // draw from the bottom up
-            if (display != current) {
-                // draw arrows to show the buffer is backscrolled
+            if (display != current) { // draw arrows to show the buffer is backscrolled
                 RenderSystem.renderSystem.SetColor(idStr.ColorForIndex(Str.C_COLOR_CYAN))
                 x = 0
                 while (x < LINE_WIDTH) {
                     RenderSystem.renderSystem.DrawSmallChar(
-                        (x + 1) * RenderSystem.SMALLCHAR_WIDTH,
-                        idMath.FtoiFast(y),
-                        '^'.code,
-                        localConsole.charSetShader
+                        (x + 1) * RenderSystem.SMALLCHAR_WIDTH, idMath.FtoiFast(y), '^'.code, localConsole.charSetShader
                     )
                     x += 4
                 }
@@ -909,8 +869,7 @@ class Console {
                 if (row < 0) {
                     break
                 }
-                if (current - row >= TOTAL_LINES) {
-                    // past scrollback wrap point
+                if (current - row >= TOTAL_LINES) { // past scrollback wrap point
                     i++
                     y -= RenderSystem.SMALLCHAR_HEIGHT.toFloat()
                     row--
@@ -955,8 +914,7 @@ class Console {
         private fun Scroll() {
             if (lastKeyEvent == -1 || lastKeyEvent + 200 > EventLoop.eventLoop.Milliseconds()) {
                 return
-            }
-            // console scrolling
+            } // console scrolling
             if (idKeyInput.IsDown(KeyInput.K_PGUP)) {
                 PageUp()
                 nextKeyEvent = CONSOLE_REPEAT
@@ -1101,18 +1059,11 @@ class Console {
      ==================
      */
         fun SCR_DrawTextLeftAlign(y: FloatArray, fmt: String, vararg text: Any) {
-            val string = arrayOf<String>("") //new char[MAX_STRING_CHARS];
-            //	va_list argptr;
-//	va_start( argptr, text );
-            idStr.vsnPrintf(string, MAX_STRING_CHARS, fmt, *text)
-            //	va_end( argptr );
+            val string =
+                arrayOf<String>("") //new char[MAX_STRING_CHARS]; //	va_list argptr; //	va_start( argptr, text );
+            idStr.vsnPrintf(string, MAX_STRING_CHARS, fmt, *text) //	va_end( argptr );
             RenderSystem.renderSystem.DrawSmallStringExt(
-                0,
-                (y[0] + 2).toInt(),
-                string[0].toCharArray(),
-                colorWhite,
-                true,
-                localConsole.charSetShader
+                0, (y[0] + 2).toInt(), string[0].toCharArray(), colorWhite, true, localConsole.charSetShader
             )
             y[0] = y[0] + RenderSystem.SMALLCHAR_HEIGHT + 4
         }
@@ -1123,11 +1074,9 @@ class Console {
          ==================
          */
         fun SCR_DrawTextRightAlign(y: FloatArray, fmt: String, vararg text: Any) {
-            val string = arrayOf<String>("") //new char[MAX_STRING_CHARS];
-            //	va_list argptr;
-//	va_start( argptr, text );
-            val i: Int = idStr.vsnPrintf(string, MAX_STRING_CHARS, fmt, *text)
-            //	va_end( argptr );
+            val string =
+                arrayOf<String>("") //new char[MAX_STRING_CHARS]; //	va_list argptr; //	va_start( argptr, text );
+            val i: Int = idStr.vsnPrintf(string, MAX_STRING_CHARS, fmt, *text) //	va_end( argptr );
             RenderSystem.renderSystem.DrawSmallStringExt(
                 635 - i * RenderSystem.SMALLCHAR_WIDTH,
                 (y[0] + 2).toInt(),
@@ -1139,8 +1088,7 @@ class Console {
             y[0] = y[0] + RenderSystem.SMALLCHAR_HEIGHT + 4
         }
 
-        fun SCR_DrawFPS(y: Float): Float {
-            // don't use serverTime, because that will be drifting to
+        fun SCR_DrawFPS(y: Float): Float { // don't use serverTime, because that will be drifting to
             // correct for internet lag changes, timescales, timedemos, etc
             val t = win_shared.Sys_Milliseconds().toDouble()
             val frameTime = (t - previous).toFloat()
@@ -1148,8 +1096,7 @@ class Console {
 
             previousTimes[index % FPS_FRAMES] = frameTime
             index++
-            if (index > FPS_FRAMES) {
-                // average multiple frames together to smooth changes out a bit
+            if (index > FPS_FRAMES) { // average multiple frames together to smooth changes out a bit
                 var total = 0.0f
                 var minTime = 10000.0f
                 var maxTime = 0.0f
@@ -1169,12 +1116,7 @@ class Console {
                 var s = Str.va("%.2ffps", fps)
                 var w = s.length * RenderSystem.BIGCHAR_WIDTH
                 RenderSystem.renderSystem.DrawBigStringExt(
-                    635 - w,
-                    idMath.FtoiFast(y) + 2,
-                    s,
-                    colorWhite,
-                    true,
-                    localConsole.charSetShader
+                    635 - w, idMath.FtoiFast(y) + 2, s, colorWhite, true, localConsole.charSetShader
                 )
 
                 if (Common.com_showFPS.GetInteger() > 1) {
@@ -1182,12 +1124,7 @@ class Console {
                     s = Str.va("avg %.2fms min %.2f max %.2f", total * (1.0f / FPS_FRAMES), minTime, maxTime)
                     w = s.length * RenderSystem.SMALLCHAR_WIDTH
                     RenderSystem.renderSystem.DrawSmallStringExt(
-                        635 - w,
-                        idMath.FtoiFast(y2) + 2,
-                        s.toCharArray(),
-                        colorWhite,
-                        true,
-                        localConsole.charSetShader
+                        635 - w, idMath.FtoiFast(y2) + 2, s.toCharArray(), colorWhite, true, localConsole.charSetShader
                     )
                 }
             }
@@ -1199,17 +1136,16 @@ class Console {
          SCR_DrawMemoryUsage
          ==================
          */
-        fun SCR_DrawMemoryUsage(y: Float): Float {
-            //memoryStats_t[] allocs = new memoryStats_t[1], frees = new memoryStats_t[1];
+        fun SCR_DrawMemoryUsage(y: Float): Float { //memoryStats_t[] allocs = new memoryStats_t[1], frees = new memoryStats_t[1];
             val yy = floatArrayOf(y)
 
-//        Mem_GetStats(allocs);
-//        SCR_DrawTextRightAlign(yy, "total allocated memory: %4d, %4dkB", allocs[0].num, allocs[0].totalSize >> 10);
-//
-//        Mem_GetFrameStats(allocs, frees);
-//        SCR_DrawTextRightAlign(yy, "frame alloc: %4d, %4dkB  frame free: %4d, %4dkB", allocs[0].num, allocs[0].totalSize >> 10, frees[0].num, frees[0].totalSize >> 10);
-//
-//        Mem_ClearFrameStats();
+            //        Mem_GetStats(allocs);
+            //        SCR_DrawTextRightAlign(yy, "total allocated memory: %4d, %4dkB", allocs[0].num, allocs[0].totalSize >> 10);
+            //
+            //        Mem_GetFrameStats(allocs, frees);
+            //        SCR_DrawTextRightAlign(yy, "frame alloc: %4d, %4dkB  frame free: %4d, %4dkB", allocs[0].num, allocs[0].totalSize >> 10, frees[0].num, frees[0].totalSize >> 10);
+            //
+            //        Mem_ClearFrameStats();
             return yy[0]
         }
 
@@ -1228,14 +1164,10 @@ class Console {
             if (idAsyncNetwork.server.IsActive()) {
                 SCR_DrawTextRightAlign(yy, "server delay = %d msec", idAsyncNetwork.server.GetDelay())
                 SCR_DrawTextRightAlign(
-                    yy,
-                    "total outgoing rate = %d KB/s",
-                    idAsyncNetwork.server.GetOutgoingRate() shr 10
+                    yy, "total outgoing rate = %d KB/s", idAsyncNetwork.server.GetOutgoingRate() shr 10
                 )
                 SCR_DrawTextRightAlign(
-                    yy,
-                    "total incoming rate = %d KB/s",
-                    idAsyncNetwork.server.GetIncomingRate() shr 10
+                    yy, "total incoming rate = %d KB/s", idAsyncNetwork.server.GetIncomingRate() shr 10
                 )
                 i = 0
                 while (i < AsyncNetwork.MAX_ASYNC_CLIENTS) {

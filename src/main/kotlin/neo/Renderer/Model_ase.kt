@@ -368,14 +368,12 @@ object Model_ase {
                 "*BITMAP" -> {
                     val qpath: idStr
                     val matname: idStr
-                    ASE_GetToken(false)
-                    // remove the quotes
+                    ASE_GetToken(false) // remove the quotes
                     val s: Int = ase!!.token!!.substring(1).indexOf('\"')
                     if (s > 0) {
                         ase!!.token = ase!!.token!!.substring(0, s + 1)
                     }
-                    matname = idStr(ase!!.token!!.substring(1))
-                    // convert the 3DSMax material pathname to a qpath
+                    matname = idStr(ase!!.token!!.substring(1)) // convert the 3DSMax material pathname to a qpath
                     matname.BackSlashesToSlashes()
                     qpath = idStr(fileSystem.OSPathToRelativePath(matname.toString()))
                     Copynz(ase!!.currentMaterial!!.name, qpath.toString(), ase!!.currentMaterial!!.name.size)
@@ -621,8 +619,8 @@ object Model_ase {
                 v = ase!!.token
                 ASE_GetToken(false)
                 w = ase!!.token
-                pMesh.tvertexes!![ase!!.currentVertex].x = u!!.toFloat()
-                // our OpenGL second texture axis is inverted from MAX's sense
+                pMesh.tvertexes!![ase!!.currentVertex].x =
+                    u!!.toFloat() // our OpenGL second texture axis is inverted from MAX's sense
                 pMesh.tvertexes!![ase!!.currentVertex].y = 1.0f - v!!.toFloat()
                 ase!!.currentVertex++
                 if (ase!!.currentVertex > pMesh.numTVertexes) {
@@ -794,8 +792,7 @@ object Model_ase {
                     }
 
                     "*MESH_VERTEX_LIST" -> {
-                        pMesh!!.vertexes =
-                            idVec3.generateArray(pMesh.numVertexes)
+                        pMesh!!.vertexes = idVec3.generateArray(pMesh.numVertexes)
                         ase!!.currentVertex = 0
                         VERBOSE((".....parsing MESH_VERTEX_LIST\n"))
                         ASE_ParseBracedBlock(ASE_KeyMESH_VERTEX_LIST.instance)

@@ -130,8 +130,7 @@ val SILEDGE_HASH_SIZE: Int = 1024
  if the vertexes have different texcoords.
 
  ==============================================================================
- */
-// this shouldn't change anything, but previously renderbumped models seem to need it
+ */ // this shouldn't change anything, but previously renderbumped models seem to need it
 val USE_INVA: Boolean = true
 private val ID_DEBUG_MEMORY: Boolean = false
 
@@ -235,8 +234,7 @@ fun R_ShutdownTriSurfData() {
  R_PurgeTriSurfData
  ===============
  */
-fun R_PurgeTriSurfData(frame: frameData_t?) {
-    // free deferred triangle surfaces
+fun R_PurgeTriSurfData(frame: frameData_t?) { // free deferred triangle surfaces
     R_FreeDeferredTriSurfs(frame)
 }
 
@@ -301,12 +299,10 @@ fun R_TriSurfMemory(tri: Array<srfTriangles_s?>?): Int {
  ==============
  */
 fun R_FreeStaticTriSurfVertexCaches(tri: srfTriangles_s) {
-    if (tri.ambientSurface == null) {
-        // this is a real model surface
+    if (tri.ambientSurface == null) { // this is a real model surface
         VertexCache.vertexCache.Free(tri.ambientCache)
         tri.ambientCache = null
-    } else {
-        // this is a light interaction surface that references
+    } else { // this is a light interaction surface that references
         // a different ambient model surface
         VertexCache.vertexCache.Free(tri.lightingCache)
         tri.lightingCache = null
@@ -315,8 +311,7 @@ fun R_FreeStaticTriSurfVertexCaches(tri: srfTriangles_s) {
         VertexCache.vertexCache.Free(tri.indexCache)
         tri.indexCache = null
     }
-    if ((tri.shadowCache != null) && (tri.shadowVertexes != null || tri.verts != null)) {
-        // if we don't have tri.shadowVertexes, these are a reference to a
+    if ((tri.shadowCache != null) && (tri.shadowVertexes != null || tri.verts != null)) { // if we don't have tri.shadowVertexes, these are a reference to a
         // shadowCache on the original surface, which a vertex program
         // will take care of making unique for each light
         VertexCache.vertexCache.Free(tri.shadowCache)
@@ -351,8 +346,7 @@ fun R_ReallyFreeStaticTriSurf(tri: srfTriangles_s?) {
 fun R_CheckStaticTriSurfMemory(tri: srfTriangles_s?) {
     if (null == tri) {
         return
-    }
-    // Block/dynamic allocator memory checks not applicable — JVM manages memory
+    } // Block/dynamic allocator memory checks not applicable — JVM manages memory
 }
 
 /*
@@ -392,15 +386,14 @@ fun R_FreeStaticTriSurf(tri: srfTriangles_s?) {
         Common.common.Error("R_FreeStaticTriSurf: freed a freed triangle")
     }
     frame = frameData
-    if (frame == null) {
-        // command line utility, or rendering in editor preview mode ( force )
+    if (frame == null) { // command line utility, or rendering in editor preview mode ( force )
         R_ReallyFreeStaticTriSurf(tri)
     } else {
         if (ID_DEBUG_MEMORY) {
             R_CheckStaticTriSurfMemory(tri)
         }
         tri.nextDeferredFree = null
-        if (frame!!.lastDeferredFreeTriSurf != null) {
+        if (frame.lastDeferredFreeTriSurf != null) {
             frame.lastDeferredFreeTriSurf!!.nextDeferredFree = tri
         } else {
             frame.firstDeferredFreeTriSurf = tri
@@ -434,7 +427,7 @@ fun R_CopyStaticTriSurf(tri: srfTriangles_s): srfTriangles_s {
     newTri.numVerts = tri.numVerts
     newTri.numIndexes = tri.numIndexes
     for (i in 0 until tri.numVerts) {
-        newTri.verts!![i] = idDrawVert((tri.verts!![i])!!)
+        newTri.verts!![i] = idDrawVert((tri.verts!![i]))
     }
     System.arraycopy(tri.indexes, 0, newTri.indexes, 0, tri.numIndexes)
     return newTri
@@ -476,8 +469,7 @@ fun R_AllocStaticTriSurfShadowVerts(tri: srfTriangles_s, numVerts: Int) {
  =================
  */
 fun R_AllocStaticTriSurfPlanes(tri: srfTriangles_s, numIndexes: Int) {
-    tri.facePlanes =
-        idPlane.generateArray(numIndexes / 3) as Array<idPlane?>
+    tri.facePlanes = idPlane.generateArray(numIndexes / 3) as Array<idPlane?>
 }
 
 /*
@@ -513,7 +505,7 @@ fun R_ResizeStaticTriSurfIndexes(tri: srfTriangles_s, numIndexes: Int) {
  */
 fun R_ResizeStaticTriSurfShadowVerts(tri: srfTriangles_s, numVerts: Int) {
     if (USE_TRI_DATA_ALLOCATOR) {
-        tri.shadowVertexes = Resize(tri.shadowVertexes, numVerts)!! as Array<shadowCache_s>?
+        tri.shadowVertexes = Resize(tri.shadowVertexes, numVerts) as Array<shadowCache_s>?
     } else {
         assert((false))
     }
@@ -599,8 +591,7 @@ fun R_RangeCheckIndexes(tri: srfTriangles_s) {
     }
 
     // this should not be possible unless there are unused verts
-    if (tri.numVerts > tri.numIndexes) {
-        // FIXME: find the causes of these
+    if (tri.numVerts > tri.numIndexes) { // FIXME: find the causes of these
         // common.Printf( "R_RangeCheckIndexes: tri.numVerts > tri.numIndexes\n" );
     }
 }
@@ -629,7 +620,7 @@ fun R_CreateSilRemap(tri: srfTriangles_s): IntArray {
     var v1: idDrawVert?
     var v2: idDrawVert?
     remap = IntArray(tri.numVerts)
-    if (!r_useSilRemap!!.GetBool()) {
+    if (!r_useSilRemap.GetBool()) {
         i = 0
         while (i < tri.numVerts) {
             remap[i] = i
@@ -646,14 +637,11 @@ fun R_CreateSilRemap(tri: srfTriangles_s): IntArray {
         v1 = tri.verts!![i]
 
         // see if there is an earlier vert that it can map to
-        hashKey = hash.GenerateKey(v1!!.xyz)
+        hashKey = hash.GenerateKey(v1.xyz)
         j = hash.First(hashKey)
         while (j >= 0) {
             v2 = tri.verts!![j]
-            if ((v2!!.xyz[0] == v1.xyz[0]
-                        ) && (v2.xyz[1] == v1.xyz[1]
-                        ) && (v2.xyz[2] == v1.xyz[2])
-            ) {
+            if ((v2.xyz[0] == v1.xyz[0]) && (v2.xyz[1] == v1.xyz[1]) && (v2.xyz[2] == v1.xyz[2])) {
                 c_removed++
                 remap[i] = j
                 break
@@ -749,11 +737,7 @@ fun R_DeriveFacePlanes(tri: srfTriangles_s) {
     planes = tri.facePlanes
     if (true) {
         SIMDProcessor!!.DeriveTriPlanes(
-            planes as Array<idPlane>,
-            tri.verts as Array<idDrawVert>,
-            tri.numVerts,
-            tri.indexes!!,
-            tri.numIndexes
+            planes as Array<idPlane>, tri.verts as Array<idDrawVert>, tri.numVerts, tri.indexes!!, tri.numIndexes
         )
     }
     tri.facePlanesCalculated = true
@@ -774,7 +758,7 @@ fun R_CreateVertexNormals(tri: srfTriangles_s) {
     var plane: idPlane?
     i = 0
     while (i < tri.numVerts) {
-        tri.verts!![i]!!.normal.Zero()
+        tri.verts!![i].normal.Zero()
         i++
     }
     if (null == tri.facePlanes || !tri.facePlanesCalculated) {
@@ -790,7 +774,7 @@ fun R_CreateVertexNormals(tri: srfTriangles_s) {
         j = 0
         while (j < 3) {
             val index: Int = tri.silIndexes!![i + j]
-            tri.verts!![index]!!.normal.plusAssign(plane!!.Normal())
+            tri.verts!![index].normal.plusAssign(plane!!.Normal())
             j++
         }
         i += 3
@@ -800,8 +784,8 @@ fun R_CreateVertexNormals(tri: srfTriangles_s) {
     // normalize and replicate from silIndexes to all indexes
     i = 0
     while (i < tri.numIndexes) {
-        tri.verts!![tri.indexes!![i]]!!.normal.set(tri.verts!![tri.silIndexes!![i]]!!.normal)
-        tri.verts!![tri.indexes!![i]]!!.normal.Normalize()
+        tri.verts!![tri.indexes!![i]].normal.set(tri.verts!![tri.silIndexes!![i]].normal)
+        tri.verts!![tri.indexes!![i]].normal.Normalize()
         i++
     }
 }
@@ -814,24 +798,20 @@ fun R_DefineEdge(v1: Int, v2: Int, planeNum: Int) {
     if (v1 == v2) {
         return
     }
-    hashKey = silEdgeHash.GenerateKey(v1, v2)
-    // search for a matching other side
+    hashKey = silEdgeHash.GenerateKey(v1, v2) // search for a matching other side
     i = silEdgeHash.First(hashKey)
     while (i >= 0 && i < MAX_SIL_EDGES) {
         if (silEdges!![i].v1 == v1 && silEdges!![i].v2 == v2) {
             c_duplicatedEdges++
-            i = silEdgeHash.Next(i)
-            // allow it to still create a new edge
+            i = silEdgeHash.Next(i) // allow it to still create a new edge
             continue
         }
         if (silEdges!![i].v2 == v1 && silEdges!![i].v1 == v2) {
             if (silEdges!![i].p2 != numPlanes) {
                 c_tripledEdges++
-                i = silEdgeHash.Next(i)
-                // allow it to still create a new edge
+                i = silEdgeHash.Next(i) // allow it to still create a new edge
                 continue
-            }
-            // this is a matching back side
+            } // this is a matching back side
             silEdges!![i].p2 = planeNum
             return
         }
@@ -881,9 +861,7 @@ fun R_IdentifySilEdges(tri: srfTriangles_s, omitCoplanarEdges: Boolean) {
     }
     if (c_duplicatedEdges != 0 || c_tripledEdges != 0) {
         Common.common.DWarning(
-            "%d duplicated edge directions, %d tripled edges",
-            c_duplicatedEdges,
-            c_tripledEdges
+            "%d duplicated edge directions, %d tripled edges", c_duplicatedEdges, c_tripledEdges
         )
     }
 
@@ -914,22 +892,21 @@ fun R_IdentifySilEdges(tri: srfTriangles_s, omitCoplanarEdges: Boolean) {
             i1 = tri.silIndexes!![base + 0]
             i2 = tri.silIndexes!![base + 1]
             i3 = tri.silIndexes!![base + 2]
-            plane.FromPoints(tri.verts!![i1]!!.xyz, tri.verts!![i2]!!.xyz, tri.verts!![i3]!!.xyz)
+            plane.FromPoints(tri.verts!![i1].xyz, tri.verts!![i2].xyz, tri.verts!![i3].xyz)
 
             // check to see if points of second triangle are not coplanar
             base = silEdges!![i].p2 * 3
             j = 0
             while (j < 3) {
                 i1 = tri.silIndexes!![base + j]
-                d = plane.Distance(tri.verts!![i1]!!.xyz)
+                d = plane.Distance(tri.verts!![i1].xyz)
                 if (d != 0.0f) {        // even a small epsilon causes problems
                     break
                 }
                 j++
             }
-            if (j == 3) {
-                // we can cull this sil edge
-//				memmove( &silEdges[i], &silEdges[i+1], (numSilEdges-i-1) * sizeof( silEdges[i] ) );
+            if (j == 3) { // we can cull this sil edge
+                //				memmove( &silEdges[i], &silEdges[i+1], (numSilEdges-i-1) * sizeof( silEdges[i] ) );
                 for (k in i until numSilEdges - 1) {
                     silEdges!![k] = silEdge_t(silEdges!![k + 1])
                 }
@@ -940,9 +917,8 @@ fun R_IdentifySilEdges(tri: srfTriangles_s, omitCoplanarEdges: Boolean) {
             i++
         }
         if (c_coplanarCulled != 0) { //TODO:should it be >0?
-            c_coplanarSilEdges += c_coplanarCulled
-            //			common.Printf( "%i of %i sil edges coplanar culled\n", c_coplanarCulled,
-//				c_coplanarCulled + numSilEdges );
+            c_coplanarSilEdges += c_coplanarCulled //			common.Printf( "%i of %i sil edges coplanar culled\n", c_coplanarCulled,
+            //				c_coplanarCulled + numSilEdges );
         }
     }
     c_totalSilEdges += numSilEdges
@@ -992,9 +968,9 @@ fun R_FaceNegativePolarity(tri: srfTriangles_s, firstIndex: Int): Boolean {
     a = tri.verts!![tri.indexes!![firstIndex + 0]]
     b = tri.verts!![tri.indexes!![firstIndex + 1]]
     c = tri.verts!![tri.indexes!![firstIndex + 2]]
-    d0[3] = b!!.st[0] - a!!.st[0]
+    d0[3] = b.st[0] - a.st[0]
     d0[4] = b.st[1] - a.st[1]
-    d1[3] = c!!.st[0] - a.st[0]
+    d1[3] = c.st[0] - a.st[0]
     d1[4] = c.st[1] - a.st[1]
     area = d0[3] * d1[4] - d0[4] * d1[3]
     return !(area >= 0)
@@ -1026,12 +1002,12 @@ fun R_DeriveFaceTangents(tri: srfTriangles_s, faceTangents: Array<faceTangents_t
         a = tri.verts!![tri.indexes!![i + 0]]
         b = tri.verts!![tri.indexes!![i + 1]]
         c = tri.verts!![tri.indexes!![i + 2]]
-        d0[0] = b!!.xyz[0] - a!!.xyz[0]
+        d0[0] = b.xyz[0] - a.xyz[0]
         d0[1] = b.xyz[1] - a.xyz[1]
         d0[2] = b.xyz[2] - a.xyz[2]
         d0[3] = b.st[0] - a.st[0]
         d0[4] = b.st[1] - a.st[1]
-        d1[0] = c!!.xyz[0] - a.xyz[0]
+        d1[0] = c.xyz[0] - a.xyz[0]
         d1[1] = c.xyz[1] - a.xyz[1]
         d1[2] = c.xyz[2] - a.xyz[2]
         d1[3] = c.st[0] - a.st[0]
@@ -1077,18 +1053,14 @@ fun R_DeriveFaceTangents(tri: srfTriangles_s, faceTangents: Array<faceTangents_t
         } else {
             temp.set(
                 idVec3(
-                    (d0[0] * d1[4] - d0[4] * d1[0]),
-                    (d0[1] * d1[4] - d0[4] * d1[1]),
-                    (d0[2] * d1[4] - d0[4] * d1[2])
+                    (d0[0] * d1[4] - d0[4] * d1[0]), (d0[1] * d1[4] - d0[4] * d1[1]), (d0[2] * d1[4] - d0[4] * d1[2])
                 )
             )
             temp.Normalize()
             ft.tangents[0].set(temp)
             temp.set(
                 idVec3(
-                    (d0[3] * d1[0] - d0[0] * d1[3]),
-                    (d0[3] * d1[1] - d0[1] * d1[3]),
-                    (d0[3] * d1[2] - d0[2] * d1[3])
+                    (d0[3] * d1[0] - d0[0] * d1[3]), (d0[3] * d1[1] - d0[1] * d1[3]), (d0[3] * d1[2] - d0[2] * d1[3])
                 )
             )
             temp.Normalize()
@@ -1161,19 +1133,16 @@ fun R_DuplicateMirroredVertexes(tri: srfTriangles_s) {
     while (i < tri.numVerts) {
         j = tVerts[i]!!.negativeRemap
         if (j != 0) {
-            tri.verts!![j] = idDrawVert((tri.verts!![i])!!)
+            tri.verts!![j] = idDrawVert((tri.verts!![i]))
             tri.mirroredVerts!![numMirror] = i
             numMirror++
         }
         i++
     }
-    tri.numVerts = totalVerts
-    // change the indexes
+    tri.numVerts = totalVerts // change the indexes
     i = 0
     while (i < tri.numIndexes) {
-        if ((tVerts[tri.indexes!![i]]!!.negativeRemap != 0
-                    && R_FaceNegativePolarity(tri, 3 * (i / 3)))
-        ) {
+        if ((tVerts[tri.indexes!![i]]!!.negativeRemap != 0 && R_FaceNegativePolarity(tri, 3 * (i / 3)))) {
             tri.indexes!![i] = tVerts[tri.indexes!![i]]!!.negativeRemap
         }
         i++
@@ -1193,8 +1162,8 @@ fun R_DeriveTangentsWithoutNormals(tri: srfTriangles_s) {
     // clear the tangents
     i = 0
     while (i < tri.numVerts) {
-        tri.verts!![i]!!.tangents[0].Zero()
-        tri.verts!![i]!!.tangents[1].Zero()
+        tri.verts!![i].tangents[0].Zero()
+        tri.verts!![i].tangents[1].Zero()
         i++
     }
 
@@ -1209,32 +1178,32 @@ fun R_DeriveTangentsWithoutNormals(tri: srfTriangles_s) {
             DEBUG_R_DeriveTangentsWithoutNormals++
             vert = tri.verts!![tri.indexes!![i + j]]
 
-//                System.out.println("--" + System.identityHashCode(vert.tangents[0])
-//                        + "--" + i + j
-//                        + "--" + tri.indexes[i + j]);
-            vert!!.tangents[0].plusAssign(ft.tangents[0])
+            //                System.out.println("--" + System.identityHashCode(vert.tangents[0])
+            //                        + "--" + i + j
+            //                        + "--" + tri.indexes[i + j]);
+            vert.tangents[0].plusAssign(ft.tangents[0])
             vert.tangents[1].plusAssign(ft.tangents[1])
             j++
         }
         i += 3
     }
 
-//if (false){
-//	// sum up both sides of the mirrored verts
-//	// so the S vectors exactly mirror, and the T vectors are equal
-//	for ( i = 0 ; i < tri.numMirroredVerts ; i++ ) {
-//		idDrawVert	v1, v2;
-//
-//		v1 = tri.verts[ tri.numVerts - tri.numMirroredVerts + i ];
-//		v2 = tri.verts[ tri.mirroredVerts[i] ];
-//
-//		v1.tangents[0] -= v2.tangents[0];
-//		v1.tangents[1] += v2.tangents[1];
-//
-//		v2.tangents[0] = vec3_origin - v1.tangents[0];
-//		v2.tangents[1] = v1.tangents[1];
-//	}
-//}
+    //if (false){
+    //	// sum up both sides of the mirrored verts
+    //	// so the S vectors exactly mirror, and the T vectors are equal
+    //	for ( i = 0 ; i < tri.numMirroredVerts ; i++ ) {
+    //		idDrawVert	v1, v2;
+    //
+    //		v1 = tri.verts[ tri.numVerts - tri.numMirroredVerts + i ];
+    //		v2 = tri.verts[ tri.mirroredVerts[i] ];
+    //
+    //		v1.tangents[0] -= v2.tangents[0];
+    //		v1.tangents[1] += v2.tangents[1];
+    //
+    //		v2.tangents[0] = vec3_origin - v1.tangents[0];
+    //		v2.tangents[1] = v1.tangents[1];
+    //	}
+    //}
     // project the summed vectors onto the normal plane
     // and normalize.  The tangent vectors will not necessarily
     // be orthogonal to each other, but they will be orthogonal
@@ -1245,7 +1214,7 @@ fun R_DeriveTangentsWithoutNormals(tri: srfTriangles_s) {
         j = 0
         while (j < 2) {
             var d: Float
-            d = vert!!.tangents[j].times(vert.normal)
+            d = vert.tangents[j].times(vert.normal)
             vert.tangents[j] = vert.tangents[j].minus(vert.normal.times(d))
             vert.tangents[j].Normalize()
             j++
@@ -1298,12 +1267,12 @@ fun R_BuildDominantTris(tri: srfTriangles_s) {
             a = tri.verts!![i1]
             b = tri.verts!![i2]
             c = tri.verts!![i3]
-            d0[0] = b!!.xyz[0] - a!!.xyz[0]
+            d0[0] = b.xyz[0] - a.xyz[0]
             d0[1] = b.xyz[1] - a.xyz[1]
             d0[2] = b.xyz[2] - a.xyz[2]
             d0[3] = b.st[0] - a.st[0]
             d0[4] = b.st[1] - a.st[1]
-            d1[0] = c!!.xyz[0] - a.xyz[0]
+            d1[0] = c.xyz[0] - a.xyz[0]
             d1[1] = c.xyz[1] - a.xyz[1]
             d1[2] = c.xyz[2] - a.xyz[2]
             d1[3] = c.st[0] - a.st[0]
@@ -1377,9 +1346,7 @@ fun R_DeriveUnsmoothedTangents(tri: srfTriangles_s) {
     }
     if (true) {
         SIMDProcessor!!.DeriveUnsmoothedTangents(
-            tri.verts as Array<idDrawVert>,
-            tri.dominantTris as Array<dominantTri_s>,
-            tri.numVerts
+            tri.verts as Array<idDrawVert>, tri.dominantTris as Array<dominantTri_s>, tri.numVerts
         )
     }
     tri.tangentsCalculated = true
@@ -1414,11 +1381,7 @@ fun R_DeriveTangents(tri: srfTriangles_s, allocFacePlanes: Boolean = true) {
         planes = idPlane.generateArray(tri.numIndexes / 3) as Array<idPlane?>
     }
     SIMDProcessor!!.DeriveTangents(
-        planes as Array<idPlane>,
-        tri.verts as Array<idDrawVert>,
-        tri.numVerts,
-        tri.indexes!!,
-        tri.numIndexes
+        planes as Array<idPlane>, tri.verts as Array<idDrawVert>, tri.numVerts, tri.indexes!!, tri.numIndexes
     )
 
     run({
@@ -1428,14 +1391,14 @@ fun R_DeriveTangents(tri: srfTriangles_s, allocFacePlanes: Boolean = true) {
         // add the normal of a duplicated vertex to the normal of the first vertex with the same XYZ
         i = 0
         while (i < tri.numDupVerts) {
-            verts!![dupVerts!![i * 2 + 0]].normal.plusAssign(verts[dupVerts[i * 2 + 1]]!!.normal)
+            verts!![dupVerts!![i * 2 + 0]].normal.plusAssign(verts[dupVerts[i * 2 + 1]].normal)
             i++
         }
 
         // copy vertex normals to duplicated vertices
         i = 0
         while (i < tri.numDupVerts) {
-            verts!![dupVerts!![i * 2 + 1]]!!.normal.set(verts[dupVerts[i * 2 + 0]]!!.normal)
+            verts!![dupVerts!![i * 2 + 1]].normal.set(verts[dupVerts[i * 2 + 0]].normal)
             i++
         }
     })
@@ -1473,10 +1436,10 @@ fun R_RemoveDuplicatedTriangles(tri: srfTriangles_s) {
             j = i + 3
             while (j < tri.numIndexes) {
                 if ((tri.silIndexes!![j] == a) && (tri.silIndexes!![j + 1] == b) && (tri.silIndexes!![j + 2] == c)) {
-                    c_removed++
-                    //					memmove( tri.indexes + j, tri.indexes + j + 3, ( tri.numIndexes - j - 3 ) * sizeof( tri.indexes[0] ) );
-                    System.arraycopy(tri.indexes, j + 3, tri.indexes, j, tri.numIndexes - j - 3)
-                    //					memmove( tri.silIndexes + j, tri.silIndexes + j + 3, ( tri.numIndexes - j - 3 ) * sizeof( tri.silIndexes[0] ) );
+                    c_removed++ //					memmove( tri.indexes + j, tri.indexes + j + 3, ( tri.numIndexes - j - 3 ) * sizeof( tri.indexes[0] ) );
+                    System.arraycopy(
+                        tri.indexes, j + 3, tri.indexes, j, tri.numIndexes - j - 3
+                    ) //					memmove( tri.silIndexes + j, tri.silIndexes + j + 3, ( tri.numIndexes - j - 3 ) * sizeof( tri.silIndexes[0] ) );
                     System.arraycopy(tri.silIndexes, j + 3, tri.silIndexes, j, tri.numIndexes - j - 3)
                     tri.numIndexes -= 3
                     j -= 3
@@ -1514,11 +1477,9 @@ fun R_RemoveDegenerateTriangles(tri: srfTriangles_s) {
         b = tri.silIndexes!![i + 1]
         c = tri.silIndexes!![i + 2]
         if ((a == b) || (a == c) || (b == c)) {
-            c_removed++
-            //			memmove( tri.indexes + i, tri.indexes + i + 3, ( tri.numIndexes - i - 3 ) * sizeof( tri.indexes[0] ) );
+            c_removed++ //			memmove( tri.indexes + i, tri.indexes + i + 3, ( tri.numIndexes - i - 3 ) * sizeof( tri.indexes[0] ) );
             System.arraycopy(tri.indexes, i + 3, tri.indexes, i, tri.numIndexes - i - 3)
-            if (tri.silIndexes != null) {
-//				memmove( tri.silIndexes + i, tri.silIndexes + i + 3, ( tri.numIndexes - i - 3 ) * sizeof( tri.silIndexes[0] ) );
+            if (tri.silIndexes != null) { //				memmove( tri.silIndexes + i, tri.silIndexes + i + 3, ( tri.numIndexes - i - 3 ) * sizeof( tri.silIndexes[0] ) );
                 System.arraycopy(tri.silIndexes, i + 3, tri.silIndexes, i, tri.numIndexes - i - 3)
             }
             tri.numIndexes -= 3
@@ -1549,13 +1510,12 @@ fun R_TestDegenerateTextureSpace(tri: srfTriangles_s) {
         val a: idDrawVert = tri.verts!![tri.indexes!![i + 0]]
         val b: idDrawVert = tri.verts!![tri.indexes!![i + 1]]
         val c: idDrawVert = tri.verts!![tri.indexes!![i + 2]]
-        if ((a!!.st == b!!.st) || (b.st == c!!.st) || (c.st == a.st)) {
+        if ((a.st == b.st) || (b.st == c.st) || (c.st == a.st)) {
             c_degenerate++
         }
         i += 3
     }
-    if (c_degenerate != 0) {
-//		common.Printf( "%d triangles with a degenerate texture space\n", c_degenerate );
+    if (c_degenerate != 0) { //		common.Printf( "%d triangles with a degenerate texture space\n", c_degenerate );
     }
 }
 
@@ -1659,7 +1619,7 @@ fun R_MergeSurfaceList(surfaces: Array<srfTriangles_s>, numSurfaces: Int): srfTr
         var k = 0
         var tv: Int = totalVerts
         while (k < tri.numVerts) {
-            newTri.verts!![tv] = idDrawVert((tri.verts!![k])!!)
+            newTri.verts!![tv] = idDrawVert((tri.verts!![k]))
             k++
             tv++
         }
@@ -1684,8 +1644,7 @@ fun R_MergeSurfaceList(surfaces: Array<srfTriangles_s>, numSurfaces: Int): srfTr
  silIndexes are used instead of indexes, because duplicated
  triangles could have different texture coordinates.
  =================
- */
-/*
+ *//*
  =================
  R_MergeTriangles
 
@@ -1719,7 +1678,7 @@ fun R_ReverseTriangles(tri: srfTriangles_s) {
     // but if it has explicit normals, this will keep it on the correct side
     i = 0
     while (i < tri.numVerts) {
-        tri.verts!![i]!!.normal.set(vec3_origin.minus(tri.verts!![i]!!.normal))
+        tri.verts!![i].normal.set(vec3_origin.minus(tri.verts!![i].normal))
         i++
     }
 
@@ -1735,20 +1694,17 @@ fun R_ReverseTriangles(tri: srfTriangles_s) {
 }
 
 fun R_CleanupTriangles(
-    tri: srfTriangles_s,
-    createNormals: Boolean,
-    identifySilEdges: Boolean,
-    useUnsmoothedTangents: Boolean
+    tri: srfTriangles_s, createNormals: Boolean, identifySilEdges: Boolean, useUnsmoothedTangents: Boolean
 ) {
     DBG_R_CleanupTriangles++
     R_RangeCheckIndexes(tri)
     R_CreateSilIndexes(tri)
 
-//	R_RemoveDuplicatedTriangles( tri );	// this may remove valid overlapped transparent triangles
+    //	R_RemoveDuplicatedTriangles( tri );	// this may remove valid overlapped transparent triangles
     R_RemoveDegenerateTriangles(tri)
     R_TestDegenerateTextureSpace(tri)
 
-//	R_RemoveUnusedVerts( tri );
+    //	R_RemoveUnusedVerts( tri );
     if (identifySilEdges) {
         R_IdentifySilEdges(tri, true) // assume it is non-deformable, and omit coplanar edges
     }
@@ -1757,7 +1713,7 @@ fun R_CleanupTriangles(
     R_DuplicateMirroredVertexes(tri)
 
     // optimize the index order (not working?)
-//	R_OrderIndexes( tri.numIndexes, tri.indexes );
+    //	R_OrderIndexes( tri.numIndexes, tri.indexes );
     R_CreateDupVerts(tri)
     R_BoundTriSurf(tri)
     if (useUnsmoothedTangents) {
@@ -1777,19 +1733,14 @@ fun R_CleanupTriangles(
  ===================
  */
 fun R_BuildDeformInfo(
-    numVerts: Int,
-    verts: idDrawVert?,
-    numIndexes: Int,
-    indexes: IntArray,
-    useUnsmoothedTangents: Boolean
+    numVerts: Int, verts: idDrawVert?, numIndexes: Int, indexes: IntArray, useUnsmoothedTangents: Boolean
 ): deformInfo_s {
     val deform: deformInfo_s
     val tri: srfTriangles_s
     var i: Int
     tri = srfTriangles_s()
     tri.numVerts = numVerts
-    R_AllocStaticTriSurfVerts(tri, tri.numVerts)
-    // deep copy - C++ memcpy copies bytes, Kotlin must copy objects
+    R_AllocStaticTriSurfVerts(tri, tri.numVerts) // deep copy - C++ memcpy copies bytes, Kotlin must copy objects
     SIMDProcessor!!.Memcpy(tri.verts as Array<idDrawVert>, verts as Array<idDrawVert>, tri.numVerts)
     tri.numIndexes = numIndexes
     R_AllocStaticTriSurfIndexes(tri, tri.numIndexes)
@@ -1803,10 +1754,10 @@ fun R_BuildDeformInfo(
     R_RangeCheckIndexes(tri)
     R_CreateSilIndexes(tri)
 
-// should we order the indexes here?
-//	R_RemoveDuplicatedTriangles( &tri );
-//	R_RemoveDegenerateTriangles( &tri );
-//	R_RemoveUnusedVerts( &tri );
+    // should we order the indexes here?
+    //	R_RemoveDuplicatedTriangles( &tri );
+    //	R_RemoveDegenerateTriangles( &tri );
+    //	R_RemoveUnusedVerts( &tri );
     R_IdentifySilEdges(tri, false) // we cannot remove coplanar edges, because
     // they can deform to silhouettes
     R_DuplicateMirroredVertexes(tri) // split mirror points into multiple points
@@ -1837,19 +1788,14 @@ fun R_BuildDeformInfo(
 }
 
 fun R_BuildDeformInfo(
-    numVerts: Int,
-    verts: Array<idDrawVert>?,
-    numIndexes: Int,
-    indexes: idList<Int>,
-    useUnsmoothedTangents: Boolean
+    numVerts: Int, verts: Array<idDrawVert>?, numIndexes: Int, indexes: idList<Int>, useUnsmoothedTangents: Boolean
 ): deformInfo_s {
     val deform: deformInfo_s
     val tri: srfTriangles_s
     var i: Int
     tri = srfTriangles_s()
     tri.numVerts = numVerts
-    R_AllocStaticTriSurfVerts(tri, tri.numVerts)
-    // deep copy - C++ memcpy copies bytes, Kotlin must copy objects
+    R_AllocStaticTriSurfVerts(tri, tri.numVerts) // deep copy - C++ memcpy copies bytes, Kotlin must copy objects
     SIMDProcessor!!.Memcpy(tri.verts as Array<idDrawVert>, verts as Array<idDrawVert>, tri.numVerts)
 
     tri.numIndexes = numIndexes
@@ -1865,9 +1811,9 @@ fun R_BuildDeformInfo(
     R_CreateSilIndexes(tri)
 
     // should we order the indexes here?
-//	R_RemoveDuplicatedTriangles( &tri );
-//	R_RemoveDegenerateTriangles( &tri );
-//	R_RemoveUnusedVerts( &tri );
+    //	R_RemoveDuplicatedTriangles( &tri );
+    //	R_RemoveDegenerateTriangles( &tri );
+    //	R_RemoveUnusedVerts( &tri );
     R_IdentifySilEdges(tri, false) // we cannot remove coplanar edges, because
     //                                              // they can deform to silhouettes
     R_DuplicateMirroredVertexes(tri) // split mirror points into multiple points
@@ -1970,8 +1916,7 @@ private fun Resize(indexes: IntArray?, numIndexes: Int): IntArray? {
  */
 @Deprecated("")
 class R_ShowTriSurfMemory_f private constructor() : cmdFunction_t() {
-    override fun run(args: CmdArgs.idCmdArgs?) {
-        // Block/dynamic allocator stats not applicable — JVM manages memory
+    override fun run(args: CmdArgs.idCmdArgs?) { // Block/dynamic allocator stats not applicable — JVM manages memory
     }
 
     companion object {

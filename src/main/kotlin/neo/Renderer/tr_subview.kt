@@ -92,7 +92,7 @@ object tr_subview {
         v1 = tri.verts!![tri.indexes!![0]]
         v2 = tri.verts!![tri.indexes!![1]]
         v3 = tri.verts!![tri.indexes!![2]]
-        plane.FromPoints(v1!!.xyz, v2!!.xyz, v3!!.xyz)
+        plane.FromPoints(v1.xyz, v2.xyz, v3.xyz)
     }
 
     /*
@@ -128,8 +128,7 @@ object tr_subview {
         while (i < tri.numVerts) {
             var pointFlags: Int
             tr_main.R_TransformModelToClip(
-                tri.verts!![i]!!.xyz, drawSurf.space!!.modelViewMatrix,
-                tr.viewDef!!.projectionMatrix, eye, clip
+                tri.verts!![i].xyz, drawSurf.space!!.modelViewMatrix, tr.viewDef!!.projectionMatrix, eye, clip
             )
             pointFlags = 0
             j = 0
@@ -160,15 +159,14 @@ object tr_subview {
             var dot: Float
             val d1 = idVec3()
             val d2 = idVec3()
-            val v1: idVec3 = tri.verts!![tri.indexes!![i]]!!.xyz
-            val v2: idVec3 = tri.verts!![tri.indexes!![i + 1]]!!.xyz
-            val v3: idVec3 = tri.verts!![tri.indexes!![i + 2]]!!.xyz
+            val v1: idVec3 = tri.verts!![tri.indexes!![i]].xyz
+            val v2: idVec3 = tri.verts!![tri.indexes!![i + 1]].xyz
+            val v3: idVec3 = tri.verts!![tri.indexes!![i + 2]].xyz
 
             // this is a hack, because R_GlobalPointToLocal doesn't work with the non-normalized
             // axis that we get from the gui view transform.  It doesn't hurt anything, because
             // we know that all gui generated surfaces are front facing
-            if (tr.guiRecursionLevel == 0) {
-                // we don't care that it isn't normalized,
+            if (tr.guiRecursionLevel == 0) { // we don't care that it isn't normalized,
                 // all we want is the sign
                 d1.set(v2.minus(v1))
                 d2.set(v3.minus(v1))
@@ -242,22 +240,13 @@ object tr_subview {
         // set the mirrored origin and axis
         R_MirrorPoint(tr.viewDef!!.renderView.vieworg, surface, camera, parms.renderView.vieworg)
         R_MirrorVector(
-            tr.viewDef!!.renderView.viewaxis[0],
-            surface,
-            camera,
-            parms.renderView.viewaxis[0]
+            tr.viewDef!!.renderView.viewaxis[0], surface, camera, parms.renderView.viewaxis[0]
         )
         R_MirrorVector(
-            tr.viewDef!!.renderView.viewaxis[1],
-            surface,
-            camera,
-            parms.renderView.viewaxis[1]
+            tr.viewDef!!.renderView.viewaxis[1], surface, camera, parms.renderView.viewaxis[1]
         )
         R_MirrorVector(
-            tr.viewDef!!.renderView.viewaxis[2],
-            surface,
-            camera,
-            parms.renderView.viewaxis[2]
+            tr.viewDef!!.renderView.viewaxis[2], surface, camera, parms.renderView.viewaxis[2]
         )
 
         // make the view origin 16 units away from the center of the surface
@@ -332,7 +321,7 @@ object tr_subview {
 
         // copy this rendering to the image
         stage.dynamicFrameCount = tr.frameCount
-        if (null == stage.image!![0]) {
+        if (null == stage.image[0]) {
             stage.image[0] = Image.globalImages.scratchImage
         }
         tr.CaptureRenderToImage(stage.image[0]!!.imgName.toString())
@@ -378,7 +367,7 @@ object tr_subview {
 
         // copy this rendering to the image
         stage.dynamicFrameCount = tr.frameCount
-        stage.image!![0] = Image.globalImages.scratchImage
+        stage.image[0] = Image.globalImages.scratchImage
         tr.CaptureRenderToImage(stage.image[0]!!.imgName.toString())
         tr.UnCrop()
     }
@@ -422,7 +411,7 @@ object tr_subview {
 
         // copy this rendering to the image
         stage.dynamicFrameCount = tr.frameCount
-        stage.image!![0] = Image.globalImages.scratchImage2
+        stage.image[0] = Image.globalImages.scratchImage2
         tr.CaptureRenderToImage(stage.image[0]!!.imgName.toString())
         tr.UnCrop()
     }
@@ -438,7 +427,7 @@ object tr_subview {
         val shader: idMaterial
 
         // for testing the performance hit
-        if (r_skipSubviews!!.GetBool()) {
+        if (r_skipSubviews.GetBool()) {
             return false
         }
         if (R_PreciseCullSurface(drawSurf, ndcBounds)) {
@@ -450,10 +439,7 @@ object tr_subview {
         // already seeing through
         parms = tr.viewDef
         while (parms != null) {
-            if ((parms.subviewSurface != null
-                        ) && (parms.subviewSurface!!.geo === drawSurf.geo
-                        ) && (parms.subviewSurface!!.space!!.entityDef === drawSurf.space!!.entityDef)
-            ) {
+            if ((parms.subviewSurface != null) && (parms.subviewSurface!!.geo === drawSurf.geo) && (parms.subviewSurface!!.space!!.entityDef === drawSurf.space!!.entityDef)) {
                 break
             }
             parms = parms.superView
@@ -474,14 +460,12 @@ object tr_subview {
         scissor.Expand()
         scissor.Intersect(tr.viewDef!!.scissor)
 
-        if (scissor.IsEmpty()) {
-            // cropped out
+        if (scissor.IsEmpty()) { // cropped out
             return false
         }
 
         // DG: r_lockSurfaces needs special treatment
-        if (r_lockSurfaces.GetBool() && tr.viewDef == tr.primaryView) {
-            // we need the scissor for the "real" viewDef (actual camera position etc)
+        if (r_lockSurfaces.GetBool() && tr.viewDef == tr.primaryView) { // we need the scissor for the "real" viewDef (actual camera position etc)
             // so mirrors don't "float around" when looking around with r_lockSurfaces enabled
             // So do the same calculation as before, but with real viewDef (but don't replace
             // calculation above, so the whole mirror or whatever is skipped if not visible in
@@ -494,11 +478,10 @@ object tr_subview {
             scissor.x1 = v2.x1 + ((v2.x2 - v2.x1 + 1) * 0.5f * (ndcBounds[0, 0] + 1.0f)).toInt()
             scissor.y1 = v2.y1 + ((v2.y2 - v2.y1 + 1) * 0.5f * (ndcBounds[0, 1] + 1.0f)).toInt()
             scissor.x2 = v2.x1 + ((v2.x2 - v2.x1 + 1) * 0.5f * (ndcBounds[1, 0] + 1.0f)).toInt()
-            scissor.y2 = v2.y1 + ((v2.y2 - v2.y1 + 1) * 0.5f * (ndcBounds[1, 1] + 1.0f)).toInt()
-            // nudge a bit for safety
+            scissor.y2 =
+                v2.y1 + ((v2.y2 - v2.y1 + 1) * 0.5f * (ndcBounds[1, 1] + 1.0f)).toInt() // nudge a bit for safety
             scissor.Expand()
-            scissor.Intersect(tr.viewDef!!.scissor)
-            // TBH I'm not 100% happy with how this is handled - you won't get reliable information
+            scissor.Intersect(tr.viewDef!!.scissor) // TBH I'm not 100% happy with how this is handled - you won't get reliable information
             // on what's rendered in a mirror this way. Intersecting with the orig. scissor looks "best".
             // For handling this "properly" we'd need the whole "locked viewDef vs real viewDef" thing
             // for every subview (instead of just once for the primaryView) which would be a lot of
@@ -514,15 +497,11 @@ object tr_subview {
                 when (stage!!.texture.dynamic) {
                     dynamicidImage_t.DI_REMOTE_RENDER -> R_RemoteRender(drawSurf, stage.texture)
                     dynamicidImage_t.DI_MIRROR_RENDER -> R_MirrorRender(
-                        drawSurf,
-                        (stage.texture),
-                        scissor
+                        drawSurf, (stage.texture), scissor
                     )
 
                     dynamicidImage_t.DI_XRAY_RENDER -> R_XrayRender(
-                        drawSurf,
-                        (stage.texture),
-                        scissor
+                        drawSurf, (stage.texture), scissor
                     )
 
                     else -> {} // DI_STATIC, DI_SCRATCH, DI_CUBE_RENDER: no subview action
@@ -567,7 +546,7 @@ object tr_subview {
         var shader: idMaterial?
 
         // for testing the performance hit
-        if (r_skipSubviews!!.GetBool()) {
+        if (r_skipSubviews.GetBool()) {
             return false
         }
         subviews = false

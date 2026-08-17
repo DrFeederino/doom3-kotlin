@@ -246,7 +246,7 @@ object Winvar {
         //copy constructor
         internal constructor(other: idWinStr) {
             super.set(other)
-            data.set(other.data!!)
+            data.set(other.data)
         }
 
         override fun Init(_name: String?, win: idWindow?) {
@@ -284,7 +284,7 @@ object Winvar {
         open fun set(other: idStr): idStr {
             data.set(other)
             if (guiDict != null) {
-                guiDict!!.Set(GetName(), data!!)
+                guiDict!!.Set(GetName(), data)
             }
             return data
         }
@@ -297,29 +297,29 @@ object Winvar {
 
         //public	operator const char *() {
         open fun oCastChar(): CharArray {
-            return data!!.c_str()
+            return data.c_str()
         }
 
         //	public operator const idStr &() {
         fun LengthWithoutColors(): Int {
             if (guiDict != null && name != null && !name!!.isEmpty()) {
-                data!!.set(guiDict!!.GetString(GetName()))
+                data.set(guiDict!!.GetString(GetName()))
             }
-            return data!!.LengthWithoutColors()
+            return data.LengthWithoutColors()
         }
 
         open fun Length(): Int {
             if (guiDict != null && name != null && !name!!.isEmpty()) {
-                data!!.set(guiDict!!.GetString(GetName()))
+                data.set(guiDict!!.GetString(GetName()))
             }
-            return data!!.Length()
+            return data.Length()
         }
 
         fun RemoveColors() {
             if (guiDict != null && name != null && !name!!.isEmpty()) {
-                data!!.set(guiDict!!.GetString(GetName()))
+                data.set(guiDict!!.GetString(GetName()))
             }
-            data!!.RemoveColors()
+            data.RemoveColors()
         }
 
         override fun c_str(): String? {
@@ -327,28 +327,28 @@ object Winvar {
         }
 
         override fun Set(`val`: String?) {
-            data!!.set(`val`)
+            data.set(`val`)
             if (guiDict != null) {
-                guiDict!!.Set(GetName(), data!!)
+                guiDict!!.Set(GetName(), data)
             }
         }
 
         override fun Update() {
             val s = GetName()
             if (guiDict != null && !s.isEmpty()) {
-                data!!.set(guiDict!!.GetString(s))
+                data.set(guiDict!!.GetString(s))
             }
         }
 
         override fun  /*size_t*/Size(): Int {
             val sz = super.Size()
-            return sz + data!!.Allocated()
+            return sz + data.Allocated()
         }
 
         // SaveGames
         override fun WriteToSaveGame(savefile: idFile) {
             savefile.WriteBool(eval)
-            val len = data!!.Length()
+            val len = data.Length()
             savefile.WriteInt(len)
             if (len > 0) {
                 savefile.WriteStringData(data.toString(), len)
@@ -359,14 +359,14 @@ object Winvar {
             eval = savefile.ReadBool()
             val len: Int = savefile.ReadInt()
             if (len > 0) {
-                data!!.Fill(' ', len)
+                data.Fill(' ', len)
                 savefile.Read(data, len)
             }
         }
 
         // return wether string is emtpy
         override fun x(): Float {
-            return if (data!!.IsEmpty()) 0.0f else 1.0f
+            return if (data.IsEmpty()) 0.0f else 1.0f
         }
     }
 
@@ -762,10 +762,7 @@ object Winvar {
         }
 
         constructor(
-            x: Float,
-            y: Float,
-            z: Float,
-            w: Float
+            x: Float, y: Float, z: Float, w: Float
         ) : this() {
             data.set(idVec4(x, y, z, w))
         }
@@ -1003,10 +1000,10 @@ object Winvar {
             data.set(other.data)
             mat = other.mat
             if (mat != null) {
-                if (data!!.IsEmpty()) {
+                if (data.IsEmpty()) {
                     mat!![0] = null
                 } else {
-                    mat!![0] = DeclManager.declManager.FindMaterial(data!!)
+                    mat!![0] = DeclManager.declManager.FindMaterial(data)
                 }
             }
         }
@@ -1015,34 +1012,34 @@ object Winvar {
         override fun Init(_name: String?, win: idWindow?) {
             super.Init(_name, win)
             if (guiDict != null) {
-                data!!.set(guiDict!!.GetString(GetName()))
+                data.set(guiDict!!.GetString(GetName()))
             }
         }
 
         override fun set(other: idStr): idStr {
             data.set(other)
             if (guiDict != null) {
-                guiDict!!.Set(GetName(), data!!)
+                guiDict!!.Set(GetName(), data)
             }
             if (mat != null) {
-                if (data!!.IsEmpty()) {
+                if (data.IsEmpty()) {
                     mat!![0] = null
                 } else {
-                    mat!![0] = DeclManager.declManager.FindMaterial(data!!)
+                    mat!![0] = DeclManager.declManager.FindMaterial(data)
                 }
             }
             return data
         }
 
         override fun oCastChar(): CharArray {
-            return data!!.c_str()
+            return data.c_str()
         }
 
         override fun Length(): Int {
             if (guiDict != null) {
-                data!!.set(guiDict!!.GetString(GetName()))
+                data.set(guiDict!!.GetString(GetName()))
             }
-            return data!!.Length()
+            return data.Length()
         }
 
         override fun c_str(): String {
@@ -1050,15 +1047,15 @@ object Winvar {
         }
 
         override fun Set(`val`: String?) {
-            data!!.set(`val`)
+            data.set(`val`)
             if (guiDict != null) {
-                guiDict!!.Set(GetName(), data!!)
+                guiDict!!.Set(GetName(), data)
             }
             if (mat != null) {
-                if (data!!.IsEmpty()) {
+                if (data.IsEmpty()) {
                     mat!![0] = null
                 } else {
-                    mat!![0] = DeclManager.declManager.FindMaterial(data!!)
+                    mat!![0] = DeclManager.declManager.FindMaterial(data)
                 }
             }
         }
@@ -1066,12 +1063,12 @@ object Winvar {
         override fun Update() {
             val s = GetName()
             if (guiDict != null && s[0] != '\u0000') {
-                data!!.set(guiDict!!.GetString(s))
+                data.set(guiDict!!.GetString(s))
                 if (mat != null) {
-                    if (data!!.IsEmpty()) {
+                    if (data.IsEmpty()) {
                         mat!![0] = null
                     } else {
-                        mat!![0] = DeclManager.declManager.FindMaterial(data!!)
+                        mat!![0] = DeclManager.declManager.FindMaterial(data)
                     }
                 }
             }
@@ -1079,7 +1076,7 @@ object Winvar {
 
         override fun  /*size_t*/Size(): Int {
             val sz = super.Size()
-            return sz + data!!.Allocated()
+            return sz + data.Allocated()
         }
 
         fun SetMaterialPtr(m: Array<idMaterial?>) {
@@ -1088,7 +1085,7 @@ object Winvar {
 
         override fun WriteToSaveGame(savefile: idFile) {
             savefile.WriteBool(eval)
-            val len = data!!.Length()
+            val len = data.Length()
             savefile.WriteInt(len)
             if (len > 0) {
                 savefile.WriteStringData(data.toString(), len)
@@ -1099,12 +1096,12 @@ object Winvar {
             eval = savefile.ReadBool()
             val len: Int = savefile.ReadInt()
             if (len > 0) {
-                data!!.Fill(' ', len)
+                data.Fill(' ', len)
                 savefile.Read(data, len)
             }
             if (mat != null) {
                 if (len > 0) {
-                    mat!![0] = DeclManager.declManager.FindMaterial(data!!)
+                    mat!![0] = DeclManager.declManager.FindMaterial(data)
                 } else {
                     mat!![0] = null
                 }

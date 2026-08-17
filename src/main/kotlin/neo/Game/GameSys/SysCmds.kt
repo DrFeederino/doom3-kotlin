@@ -211,10 +211,8 @@ object SysCmds {
                         ((debugLines[i].color shr 2) and 1).toFloat(),
                         1.0f
                     )
-                    Game_local.gameRenderWorld!!.DebugLine(color, debugLines[i].start, debugLines[i].end)
-                    //
-                    if (debugLines[i].arrow) {
-                        // draw a nice arrow
+                    Game_local.gameRenderWorld!!.DebugLine(color, debugLines[i].start, debugLines[i].end) //
+                    if (debugLines[i].arrow) { // draw a nice arrow
                         forward.set(debugLines[i].end.minus(debugLines[i].start))
                         l = forward.Normalize() * 0.2f
                         forward.NormalVectors(right, up)
@@ -364,8 +362,7 @@ object SysCmds {
      ===================
      */
     class Cmd_ReloadScript_f private constructor() : cmdFunction_t() {
-        override fun run(args: CmdArgs.idCmdArgs?) {
-            // shutdown the map because entities may point to script objects
+        override fun run(args: CmdArgs.idCmdArgs?) { // shutdown the map because entities may point to script objects
             Game_local.gameLocal.MapShutdown()
 
             // recompile the scripts
@@ -422,8 +419,7 @@ object SysCmds {
             text = String.format("void %s() {%s;}\n", funcname, script)
             if (Game_local.gameLocal.program.CompileText("console", text, true)) {
                 func = Game_local.gameLocal.program.FindFunction(funcname)
-                if (func != null) {
-                    // set all the entity names in case the user named one in the script that wasn't referenced in the default script
+                if (func != null) { // set all the entity names in case the user named one in the script that wasn't referenced in the default script
                     ent = Game_local.gameLocal.spawnedEntities.Next()
                     while (ent != null) {
                         Game_local.gameLocal.program.SetEntity(ent.name.toString(), ent)
@@ -593,8 +589,7 @@ object SysCmds {
             if (idStr.Icmp(name, "invis") == 0) {
                 player.GivePowerUp(Player.INVISIBILITY, SEC2MS(30.0f))
                 return
-            }
-            // D3XP powerups
+            } // D3XP powerups
             if (isD3XP) {
                 if (idStr.Icmp(name, "invulnerability") == 0) {
                     val duration = if (args.Argc() > 2) args.Argv(2).toIntOrNull() ?: 30000 else 30000
@@ -1349,14 +1344,14 @@ object SysCmds {
                 }
                 ent = ent.spawnNode.Next()
             }
-            if (lastLight != null) {
-                // find map file entity
+            if (lastLight != null) { // find map file entity
                 mapEnt = mapFile.FindEntity(lastLight.name.toString())
                 if (removeFromMap && mapEnt != null) {
                     mapFile.RemoveEntity(mapEnt)
                 }
-                Game_local.gameLocal.Printf("Removing light %d\n", lastLight.GetLightDefHandle())
-                // C++: delete lastLight — handled by garbage collection in Kotlin
+                Game_local.gameLocal.Printf(
+                    "Removing light %d\n", lastLight.GetLightDefHandle()
+                ) // C++: delete lastLight — handled by garbage collection in Kotlin
             } else {
                 Game_local.gameLocal.Printf("No lights to clear.\n")
             }
@@ -1425,8 +1420,7 @@ object SysCmds {
             }
 
             // delete the testModel if active
-            if (Game_local.gameLocal.testFx != null) {
-                // C++: delete gameLocal.testFx — handled by garbage collection in Kotlin
+            if (Game_local.gameLocal.testFx != null) { // C++: delete gameLocal.testFx — handled by garbage collection in Kotlin
                 Game_local.gameLocal.testFx = null
             }
             if (args!!.Argc() < 2) {
@@ -1437,8 +1431,7 @@ object SysCmds {
             dict.Set("origin", offset.ToString())
             dict.Set("test", "1")
             dict.Set("fx", name)
-            Game_local.gameLocal.testFx =
-                Game_local.gameLocal.SpawnEntityType(idEntityFx.Type, dict) as idEntityFx
+            Game_local.gameLocal.testFx = Game_local.gameLocal.SpawnEntityType(idEntityFx.Type, dict) as idEntityFx
         }
 
         companion object {
@@ -1770,8 +1763,7 @@ object SysCmds {
      ==================
      */
     class Cmd_ReloadAnims_f private constructor() : cmdFunction_t() {
-        override fun run(args: CmdArgs.idCmdArgs?) {
-            // don't allow reloading anims when cheats are disabled,
+        override fun run(args: CmdArgs.idCmdArgs?) { // don't allow reloading anims when cheats are disabled,
             // but if we're not in the game, it's ok
             if (Game_local.gameLocal.GetLocalPlayer() != null && !Game_local.gameLocal.CheatsOk(false)) {
                 return
@@ -2035,8 +2027,8 @@ object SysCmds {
             }
 
             // find map file entity
-            mapEnt = mapFile.FindEntity(s.name.toString())
-            // create new map file entity if there isn't one for this articulated figure
+            mapEnt =
+                mapFile.FindEntity(s.name.toString()) // create new map file entity if there isn't one for this articulated figure
             if (null == mapEnt) {
                 mapEnt = idMapEntity()
                 mapFile.AddEntity(mapEnt)
@@ -2052,12 +2044,10 @@ object SysCmds {
                 mapEnt.epairs.Set("classname", s.GetEntityDefName())
                 mapEnt.epairs.Set("name", s.name)
             }
-            if (s is idMoveable) {
-                // save the moveable state
+            if (s is idMoveable) { // save the moveable state
                 mapEnt.epairs.Set("origin", s.GetPhysics().GetOrigin().ToString(8))
                 mapEnt.epairs.Set("rotation", s.GetPhysics().GetAxis().ToString(8))
-            } else if (s is idAFEntity_Generic || s is idAFEntity_WithAttachedHead) {
-                // save the articulated figure state
+            } else if (s is idAFEntity_Generic || s is idAFEntity_WithAttachedHead) { // save the articulated figure state
                 dict.Clear()
                 (s as idAFEntity_Base).SaveState(dict)
                 mapEnt.epairs.Copy(dict)
@@ -2159,8 +2149,8 @@ object SysCmds {
                 }
 
                 // find map file entity
-                mapEnt = mapFile.FindEntity(m.name)
-                // create new map file entity if there isn't one for this articulated figure
+                mapEnt =
+                    mapFile.FindEntity(m.name) // create new map file entity if there isn't one for this articulated figure
                 if (null == mapEnt) {
                     mapEnt = idMapEntity()
                     mapFile.AddEntity(mapEnt)
@@ -2175,8 +2165,7 @@ object SysCmds {
                     m.name.set(name)
                     mapEnt.epairs.Set("classname", m.GetEntityDefName())
                     mapEnt.epairs.Set("name", m.name)
-                }
-                // save the moveable state
+                } // save the moveable state
                 mapEnt.epairs.Set("origin", m.GetPhysics().GetOrigin().ToString(8))
                 mapEnt.epairs.Set("rotation", m.GetPhysics().GetAxis().ToString(8))
                 e++
@@ -2242,8 +2231,8 @@ object SysCmds {
                 af.SaveState(dict)
 
                 // find map file entity
-                mapEnt = mapFile.FindEntity(af.name.toString())
-                // create new map file entity if there isn't one for this articulated figure
+                mapEnt =
+                    mapFile.FindEntity(af.name.toString()) // create new map file entity if there isn't one for this articulated figure
                 if (null == mapEnt) {
                     mapEnt = idMapEntity()
                     mapFile.AddEntity(mapEnt)
@@ -2258,8 +2247,7 @@ object SysCmds {
                     af.name.set(name)
                     mapEnt.epairs.Set("classname", af.GetEntityDefName())
                     mapEnt.epairs.Set("name", af.name)
-                }
-                // save the articulated figure state
+                } // save the articulated figure state
                 mapEnt.epairs.Copy(dict)
                 e++
             }
@@ -2379,8 +2367,8 @@ object SysCmds {
                 light.SaveState(dict)
 
                 // find map file entity
-                mapEnt = mapFile.FindEntity(light.name.toString())
-                // create new map file entity if there isn't one for this light
+                mapEnt =
+                    mapFile.FindEntity(light.name.toString()) // create new map file entity if there isn't one for this light
                 if (null == mapEnt) {
                     mapEnt = idMapEntity()
                     mapFile.AddEntity(mapEnt)
@@ -2395,8 +2383,7 @@ object SysCmds {
                     light.name.set(name)
                     mapEnt.epairs.Set("classname", light.GetEntityDefName())
                     mapEnt.epairs.Set("name", light.name)
-                }
-                // save the light state
+                } // save the light state
                 mapEnt.epairs.Copy(dict)
                 e++
             }
@@ -2443,20 +2430,19 @@ object SysCmds {
                     e++
                     continue
                 }
-                strModel = idStr(ent!!.spawnArgs.GetString("model"))
+                strModel = idStr(ent.spawnArgs.GetString("model"))
                 if (strModel.Length() != 0 && strModel.Find(".prt") > 0) {
                     dict.Clear()
                     dict.Set("model", ent.spawnArgs.GetString("model"))
                     dict.SetVector("origin", ent.GetPhysics().GetOrigin())
 
                     // find map file entity
-                    mapEnt = mapFile.FindEntity(ent.name.toString())
-                    // create new map file entity if there isn't one for this entity
+                    mapEnt =
+                        mapFile.FindEntity(ent.name.toString()) // create new map file entity if there isn't one for this entity
                     if (null == mapEnt) {
                         e++
                         continue
-                    }
-                    // save the particle state
+                    } // save the particle state
                     mapEnt.epairs.Copy(dict)
                 }
                 e++
@@ -2617,8 +2603,7 @@ object SysCmds {
                 }
             }
             if (parser.ExpectTokenString("view") && parser.Parse1DMatrix(3, origin) && parser.Parse1DMatrix(
-                    9,
-                    axis
+                    9, axis
                 ) && parser.ExpectTokenString("comments") && parser.ReadToken(token)
             ) {
                 player.hud!!.SetStateString("viewcomments", token.toString())
@@ -2681,12 +2666,10 @@ object SysCmds {
                 if (Game_local.gameLocal.lastGUI >= guiSurfaces._val) {
                     newEnt = true
                 }
-            } else {
-                // no actual gui surfaces on this ent, so skip it
+            } else { // no actual gui surfaces on this ent, so skip it
                 newEnt = true
             }
-            if (newEnt == true) {
-                // go ahead and skip to the next entity with a gui...
+            if (newEnt == true) { // go ahead and skip to the next entity with a gui...
                 ent = if (ent == null) {
                     Game_local.gameLocal.spawnedEntities.Next()
                 } else {

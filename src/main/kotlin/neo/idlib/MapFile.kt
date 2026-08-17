@@ -60,12 +60,10 @@ object MapFile {
         n[1] = if (abs(normal[1]) < 1e-6f) 0.0f else normal[1]
         n[2] = if (abs(normal[2]) < 1e-6f) 0.0f else normal[2]
         RotY = -atan2(n[2], idMath.Sqrt(n[1] * n[1] + n[0] * n[0]))
-        RotZ = atan2(n[1], n[0])
-        // rotate (0,1,0) and (0,0,1) to compute texS and texT
+        RotZ = atan2(n[1], n[0]) // rotate (0,1,0) and (0,0,1) to compute texS and texT
         texS[0] = -sin(RotZ)
         texS[1] = cos(RotZ)
-        texS[2] = 0.0f
-        // the texT vector is along -Z ( T texture coorinates axis )
+        texS[2] = 0.0f // the texT vector is along -Z ( T texture coorinates axis )
         texT[0] = (-sin(RotY) * cos(RotZ))
         texT[1] = (-sin(RotY) * sin(RotZ))
         texT[2] = -cos(RotY)
@@ -170,9 +168,7 @@ object MapFile {
             i = 0
             while (i < epairs.GetNumKeyVals()) {
                 fp.WriteFloatString(
-                    "  \"%s\" \"%s\"\n",
-                    epairs.GetKeyVal(i)!!.GetKey(),
-                    epairs.GetKeyVal(i)!!.GetValue()
+                    "  \"%s\" \"%s\"\n", epairs.GetKeyVal(i)!!.GetKey(), epairs.GetKeyVal(i)!!.GetValue()
                 )
                 i++
             }
@@ -182,16 +178,16 @@ object MapFile {
             while (i < GetNumSides()) {
                 side = GetSide(i)
                 fp.WriteFloatString(
-                    "  ( %f %f %f %f ) ",
-                    side.plane[0],
-                    side.plane[1],
-                    side.plane[2],
-                    side.plane[3]
+                    "  ( %f %f %f %f ) ", side.plane[0], side.plane[1], side.plane[2], side.plane[3]
                 )
                 fp.WriteFloatString(
                     "( ( %f %f %f ) ( %f %f %f ) ) \"%s\" 0 0 0\n",
-                    side.texMat[0][0], side.texMat[0][1], side.texMat[0][2],
-                    side.texMat[1][0], side.texMat[1][1], side.texMat[1][2],
+                    side.texMat[0][0],
+                    side.texMat[0][1],
+                    side.texMat[0][2],
+                    side.texMat[1][0],
+                    side.texMat[1][1],
+                    side.texMat[1][2],
                     side.material
                 )
                 i++
@@ -255,12 +251,10 @@ object MapFile {
                     }
 
                     // here we may have to jump over brush epairs ( only used in editor )
-                    do {
-                        // if token is a brace
+                    do { // if token is a brace
                         if (token.toString() == "(") {
                             break
-                        }
-                        // the token should be a key string for a key/value pair
+                        } // the token should be a key string for a key/value pair
                         if (token.type != Token.TT_STRING) {
                             src.Error("idMapBrush::Parse: unexpected %s, expected ( or epair key string", token)
                             sides.DeleteContents(true)
@@ -290,11 +284,10 @@ object MapFile {
                             sides.DeleteContents(true)
                             return null
                         }
-                    } else {
-                        // read the three point plane definition
-                        if (!src.Parse1DMatrix(3, planepts[0])
-                            || !src.Parse1DMatrix(3, planepts[1])
-                            || !src.Parse1DMatrix(3, planepts[2])
+                    } else { // read the three point plane definition
+                        if (!src.Parse1DMatrix(3, planepts[0]) || !src.Parse1DMatrix(
+                                3, planepts[1]
+                            ) || !src.Parse1DMatrix(3, planepts[2])
                         ) {
                             src.Error("idMapBrush::Parse: unable to read brush side plane definition")
                             sides.DeleteContents(true)
@@ -367,9 +360,9 @@ object MapFile {
                     sides.Append(side)
 
                     // read the three point plane definition
-                    if (!src.Parse1DMatrix(3, planepts[0])
-                        || !src.Parse1DMatrix(3, planepts[1])
-                        || !src.Parse1DMatrix(3, planepts[2])
+                    if (!src.Parse1DMatrix(3, planepts[0]) || !src.Parse1DMatrix(
+                            3, planepts[1]
+                        ) || !src.Parse1DMatrix(3, planepts[2])
                     ) {
                         src.Error("idMapBrush::ParseQ3: unable to read brush side plane definition")
                         sides.DeleteContents(true)
@@ -678,9 +671,9 @@ object MapFile {
                             return null
                         }
 
-//                    vert = patch.oGet(i * patch.GetWidth() + j);
+                        //                    vert = patch.oGet(i * patch.GetWidth() + j);
 
-//                    vert = patch.oGet(i * patch.GetWidth() + j);
+                        //                    vert = patch.oGet(i * patch.GetWidth() + j);
                         vert = patch.verts.set(i * patch.GetWidth() + j, idDrawVert())
                         vert.xyz[0] = v[0] - origin[0]
                         vert.xyz[1] = v[1] - origin[1]
@@ -736,9 +729,7 @@ object MapFile {
             i = 0
             while (i < epairs.GetNumKeyVals()) {
                 fp.WriteFloatString(
-                    "\"%s\" \"%s\"\n",
-                    epairs.GetKeyVal(i)!!.GetKey(),
-                    epairs.GetKeyVal(i)!!.GetValue()
+                    "\"%s\" \"%s\"\n", epairs.GetKeyVal(i)!!.GetKey(), epairs.GetKeyVal(i)!!.GetValue()
                 )
                 i++
             }
@@ -826,8 +817,7 @@ object MapFile {
                     if (token.toString() == "}") {
                         break
                     }
-                    if (token.toString() == "{") {
-                        // parse a brush or patch
+                    if (token.toString() == "{") { // parse a brush or patch
                         if (!src.ReadToken(token)) {
                             src.Error("idMapEntity::Parse: unexpected EOF")
                             return null
@@ -839,10 +829,7 @@ object MapFile {
                         // if is it a brush: brush, brushDef, brushDef2, brushDef3
                         if (token.Icmpn("brush", 5) == 0) {
                             mapBrush = idMapBrush.Parse(
-                                src,
-                                origin,
-                                0 == token.Icmp("brushDef2") || 0 == token.Icmp("brushDef3"),
-                                version
+                                src, origin, 0 == token.Icmp("brushDef2") || 0 == token.Icmp("brushDef3"), version
                             )
                             if (null == mapBrush) {
                                 return null
@@ -878,12 +865,13 @@ object MapFile {
                         value.StripTrailingWhitespace()
                         key.StripTrailingWhitespace()
                         mapEnt.epairs.Set(key, value)
-                        if (0 == idStr.Icmp(key, "origin")) {
-                            // scanf into doubles, then assign, so it is idVec size independent
+                        if (0 == idStr.Icmp(
+                                key, "origin"
+                            )
+                        ) { // scanf into doubles, then assign, so it is idVec size independent
                             v3 = 0.0f
                             v2 = v3
-                            v1 = v2
-                            //                        sscanf(value, "%lf %lf %lf",  & v1,  & v2,  & v3);
+                            v1 = v2 //                        sscanf(value, "%lf %lf %lf",  & v1,  & v2,  & v3);
                             val values: Array<String> = value.toString().split(Pattern.compile("\\s+")).toTypedArray()
                             v1 = values[0].toFloat()
                             origin.x = v1
@@ -892,8 +880,7 @@ object MapFile {
                             v3 = values[2].toFloat()
                             origin.z = v3
                         } else if (0 == idStr.Icmp(key, "classname") && 0 == idStr.Icmp(
-                                value,
-                                "worldspawn"
+                                value, "worldspawn"
                             )
                         ) {
                             worldent = true
@@ -930,11 +917,8 @@ object MapFile {
 
         @Throws(idException::class)
         fun Parse(
-            filename: String,
-            ignoreRegion: Boolean = false /*= false*/,
-            osPath: Boolean = false /*= false*/
-        ): Boolean {
-            // no string concatenation for epairs and allow path names for materials
+            filename: String, ignoreRegion: Boolean = false /*= false*/, osPath: Boolean = false /*= false*/
+        ): Boolean { // no string concatenation for epairs and allow path names for materials
             val src =
                 idLexer(Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_NOSTRINGESCAPECHARS or Lexer.LEXFL_ALLOWPATHNAMES)
             val token = idToken()
@@ -947,17 +931,14 @@ object MapFile {
             name.StripFileExtension()
             fullName = name
             hasPrimitiveData = false
-            if (!ignoreRegion) {
-                // try loading a .reg file first
+            if (!ignoreRegion) { // try loading a .reg file first
                 fullName.SetFileExtension("reg")
                 src.LoadFile(fullName.toString(), osPath)
             }
-            if (!src.IsLoaded()) {
-                // now try a .map file
+            if (!src.IsLoaded()) { // now try a .map file
                 fullName.SetFileExtension("map")
                 src.LoadFile(fullName.toString(), osPath)
-                if (!src.IsLoaded()) {
-                    // didn't get anything at all
+                if (!src.IsLoaded()) { // didn't get anything at all
                     return false
                 }
             }
@@ -1023,8 +1004,7 @@ object MapFile {
                         mapEnt = entities[i]
                         if (null == mapEnt.epairs.FindKey("name")) {
                             mapEnt.epairs.Set(
-                                "name",
-                                Str.va("%s%d", mapEnt.epairs.GetString("classname", "forcedName"), i)
+                                "name", Str.va("%s%d", mapEnt.epairs.GetString("classname", "forcedName"), i)
                             )
                         }
                         i++
@@ -1113,8 +1093,7 @@ object MapFile {
 
         // returns true if the file on disk changed
         fun NeedsReload(): Boolean {
-            if (name.Length() != 0) {
-//		ID_TIME_T time = (ID_TIME_T)-1;
+            if (name.Length() != 0) { //		ID_TIME_T time = (ID_TIME_T)-1;
                 val time = longArrayOf(Long.MAX_VALUE)
                 if (idLib.fileSystem.ReadFile(name.toString(), null, time) > 0) {
                     return time[0] > fileTime
@@ -1145,8 +1124,7 @@ object MapFile {
         }
 
         fun RemoveEntity(mapEnt: idMapEntity) {
-            entities.Remove(mapEnt)
-            //	delete mapEnt;
+            entities.Remove(mapEnt) //	delete mapEnt;
         }
 
         @Throws(idException::class)
@@ -1154,8 +1132,7 @@ object MapFile {
             var i = 0
             while (i < entities.Num()) {
                 val ent = entities[i]
-                if (idStr.Icmp(ent.epairs.GetString("classname"), classname) == 0) {
-//			delete entities[i];
+                if (idStr.Icmp(ent.epairs.GetString("classname"), classname) == 0) { //			delete entities[i];
                     entities.RemoveIndex(i)
                     i--
                 }

@@ -113,12 +113,8 @@ object win_glimp {
             val rgbaBuffers = ArrayList<Triple<Int, Int, ByteBuffer>>()
 
             for (entry in entries) {
-                try {
-                    // Check for PNG magic bytes
-                    if (entry.dataSize >= 8 &&
-                        icoData[entry.dataOffset] == 0x89.toByte() &&
-                        icoData[entry.dataOffset + 1] == 0x50.toByte()
-                    ) {
+                try { // Check for PNG magic bytes
+                    if (entry.dataSize >= 8 && icoData[entry.dataOffset] == 0x89.toByte() && icoData[entry.dataOffset + 1] == 0x50.toByte()) {
                         val img = ImageIO.read(
                             ByteArrayInputStream(icoData, entry.dataOffset, entry.dataSize)
                         ) ?: continue
@@ -173,8 +169,7 @@ object win_glimp {
                     val xorRowSize = ((w * biBitCount + 31) / 32) * 4
                     val pixelDataStart = ico.position()
 
-                    for (y in 0 until h) {
-                        // Row 0 in file = bottom row of image, so map to pixels[(h-1-y)*w..]
+                    for (y in 0 until h) { // Row 0 in file = bottom row of image, so map to pixels[(h-1-y)*w..]
                         ico.position(pixelDataStart + y * xorRowSize)
                         val destY = h - 1 - y
                         for (x in 0 until w) {
@@ -318,14 +313,7 @@ object win_glimp {
 
         val msaaStr = if (msaa > 0) "${msaa}x MSAA" else "no MSAA"
         common.Printf(
-            "Got %d stencil bits, %d depth bits, color bits: r%d g%d b%d a%d and %s\n",
-            s,
-            d,
-            r,
-            g,
-            b,
-            a,
-            msaaStr
+            "Got %d stencil bits, %d depth bits, color bits: r%d g%d b%d a%d and %s\n", s, d, r, g, b, a, msaaStr
         )
 
         glConfig.colorBits = r + g + b
@@ -373,8 +361,7 @@ object win_glimp {
     fun GLimp_Init(parms: glimpParms_t): Boolean {
         common.Printf("Initializing OpenGL subsystem\n")
 
-        if (!glfwInit())
-            throw IllegalStateException("Unable to initialize GLFW")
+        if (!glfwInit()) throw IllegalStateException("Unable to initialize GLFW")
 
         var colorbits = 24
         var depthbits = 24
@@ -388,8 +375,7 @@ object win_glimp {
         }
 
         for (i in 0 until 16) {
-            if (i % 4 == 0 && i != 0) {
-                // one pass, reduce
+            if (i % 4 == 0 && i != 0) { // one pass, reduce
                 when (i / 4) {
                     2 -> if (colorbits == 24) colorbits = 16
                     1 -> {
@@ -405,18 +391,15 @@ object win_glimp {
             var tdepthbits = depthbits
             var tstencilbits = stencilbits
 
-            if (i % 4 == 3) {
-                // reduce colorbits
+            if (i % 4 == 3) { // reduce colorbits
                 if (tcolorbits == 24) tcolorbits = 16
             }
 
-            if (i % 4 == 2) {
-                // reduce depthbits
+            if (i % 4 == 2) { // reduce depthbits
                 if (tdepthbits == 24) tdepthbits = 16 else if (tdepthbits == 16) tdepthbits = 8
             }
 
-            if (i % 4 == 1) {
-                // reduce stencilbits
+            if (i % 4 == 1) { // reduce stencilbits
                 tstencilbits = if (tstencilbits == 24) 16 else if (tstencilbits == 16) 8 else 0
             }
 
@@ -445,7 +428,11 @@ object win_glimp {
                 val msaaReqStr = if (multisamples > 0) "${multisamples}x MSAA" else "no MSAA"
                 common.Printf(
                     "Requested %d color bits per chan, %d alpha %d depth, %d stencil and %s\n",
-                    channelcolorbits, talphabits, tdepthbits, tstencilbits, msaaReqStr
+                    channelcolorbits,
+                    talphabits,
+                    tdepthbits,
+                    tstencilbits,
+                    msaaReqStr
                 )
 
                 parms.multiSamples = multisamples
@@ -455,7 +442,10 @@ object win_glimp {
 
                 common.Warning(
                     "Couldn't set GL mode %d/%d/%d with %dx MSAA\n",
-                    channelcolorbits, tdepthbits, tstencilbits, multisamples
+                    channelcolorbits,
+                    tdepthbits,
+                    tstencilbits,
+                    multisamples
                 )
 
                 if (multisamples > 1) {
@@ -513,9 +503,7 @@ object win_glimp {
         try {
             val gammaRamp = GLFWGammaRamp.create()
             gammaRamp.size(red.size)
-            gammaRamp.red(ShortBuffer.wrap(red))
-                .green(ShortBuffer.wrap(green))
-                .blue(ShortBuffer.wrap(blue))
+            gammaRamp.red(ShortBuffer.wrap(red)).green(ShortBuffer.wrap(green)).blue(ShortBuffer.wrap(blue))
             glfwSetGammaRamp(monitor, gammaRamp)
         } catch (e: Exception) {
             common.Warning("Couldn't set gamma ramp: %s", e.message ?: "unknown error")
@@ -529,8 +517,7 @@ object win_glimp {
         }
 
         return shortArray
-    }
-    /*
+    }/*
      ===================
      GLimp_Shutdown
 
@@ -591,12 +578,10 @@ object win_glimp {
 
     fun GLimp_EnableLogging(enable: Boolean) { //TODO:activate this function. EDIT:make sure it works.
         var enable = enable
-        try {
-            // return if we're already active
-            if (isEnabled && enable) {
-                // decrement log counter and stop if it has reached 0
-                r_logFile!!.SetInteger(r_logFile!!.GetInteger() - 1)
-                if (r_logFile!!.GetInteger() != 0) {
+        try { // return if we're already active
+            if (isEnabled && enable) { // decrement log counter and stop if it has reached 0
+                r_logFile.SetInteger(r_logFile.GetInteger() - 1)
+                if (r_logFile.GetInteger() != 0) {
                     return
                 }
                 idLib.common.Printf("closing logfile '%s' after %d frames.\n", ospath, initialFrames)
@@ -611,13 +596,12 @@ object win_glimp {
             }
             isEnabled = enable
             if (enable) {
-                if (tr.logFile == null) {
-//			struct tm		*newtime;
-//			ID_TIME_T			aclock;
+                if (tr.logFile == null) { //			struct tm		*newtime;
+                    //			ID_TIME_T			aclock;
                     var qpath = ""
                     var i: Int
                     val path: String
-                    initialFrames = r_logFile!!.GetInteger()
+                    initialFrames = r_logFile.GetInteger()
 
                     // scan for an unused filename
                     i = 0
@@ -633,14 +617,13 @@ object win_glimp {
                     tr.logFile = FileChannel.open(Paths.get(ospath.toString()), FileSystem_h.fopenOptions("wt"))
 
                     // write the time out to the top of the file
-//			time( &aclock );
-//			newtime = localtime( &aclock );
+                    //			time( &aclock );
+                    //			newtime = localtime( &aclock );
                     tr.logFile!!.write(atobb(String.format("// %s", Date())))
                     tr.logFile!!.write(
                         atobb(
                             String.format(
-                                "// %s\n\n",
-                                idLib.cvarSystem.GetCVarString("si_version")
+                                "// %s\n\n", idLib.cvarSystem.GetCVarString("si_version")
                             )
                         )
                     )
@@ -689,23 +672,11 @@ object win_glimp {
                 return false
             }
             glfwSetWindowMonitor(
-                window,
-                monitor,
-                0,
-                0,
-                parms.width,
-                parms.height,
-                refreshRate
+                window, monitor, 0, 0, parms.width, parms.height, refreshRate
             )
         } else if (glConfig.isFullscreen) {
             glfwSetWindowMonitor(
-                window,
-                MemoryUtil.NULL,
-                windowedX,
-                windowedY,
-                parms.width,
-                parms.height,
-                GLFW_DONT_CARE
+                window, MemoryUtil.NULL, windowedX, windowedY, parms.width, parms.height, GLFW_DONT_CARE
             )
         } else {
             glfwSetWindowSize(window, parms.width, parms.height)

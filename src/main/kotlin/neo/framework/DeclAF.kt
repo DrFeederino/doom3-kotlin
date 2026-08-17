@@ -55,11 +55,7 @@ class DeclAF {
 
     abstract class getJointTransform_t {
         abstract fun run(
-            model: Any,
-            frame: Array<idJointMat>,
-            jointName: idStr,
-            origin: idVec3,
-            axis: idMat3
+            model: Any, frame: Array<idJointMat>, jointName: idStr, origin: idVec3, axis: idMat3
         ): Boolean
     }
 
@@ -126,10 +122,7 @@ class DeclAF {
 
         @Throws(idException::class)
         fun Finish(
-            fileName: String,
-            GetJointTransform: getJointTransform_t,
-            frame: Array<idJointMat>,
-            model: Any
+            fileName: String, GetJointTransform: getJointTransform_t, frame: Array<idJointMat>, model: Any
         ): Boolean {
             val axis = idMat3()
             val start = idVec3()
@@ -294,8 +287,8 @@ class DeclAF {
             inertiaScale.set(idMat3.getMat3_identity())
             linearFriction = file.defaultLinearFriction
             angularFriction = file.defaultAngularFriction
-            contactFriction = file.defaultContactFriction
-            // FIX: copy integer value, not the CInt reference — otherwise body.contents and
+            contactFriction =
+                file.defaultContactFriction // FIX: copy integer value, not the CInt reference — otherwise body.contents and
             // file.contents would alias the same CInt object, corrupting file state on ParseContents
             contents._val = file.contents._val
             clipMask._val = file.clipMask._val
@@ -488,8 +481,7 @@ class DeclAF {
                         src.Error("two constraints with the same name \"%s\"", constraints[i].name)
                     }
                     j++
-                }
-                // check if there are two valid bodies set
+                } // check if there are two valid bodies set
                 if (constraints[i].body1.IsEmpty()) {
                     src.Error("no valid body1 specified for constraint '%s'", constraints[i].name)
                 }
@@ -537,9 +529,7 @@ class DeclAF {
         }
 
         @Throws(idException::class)  /*virtual */   fun Finish(
-            GetJointTransform: getJointTransform_t,
-            frame: Array<idJointMat>,
-            model: Any
+            GetJointTransform: getJointTransform_t, frame: Array<idJointMat>, model: Any
         ) {
             var i: Int
             val name = GetName()
@@ -636,9 +626,7 @@ class DeclAF {
             }
             i = 0
             while (i < constraints.Num()) {
-                if (constraints[i].body1.Icmp(name) == 0
-                    || constraints[i].body2.Icmp(name) == 0
-                ) {
+                if (constraints[i].body1.Icmp(name) == 0 || constraints[i].body2.Icmp(name) == 0) {
                     constraints.RemoveIndex(i)
                     i--
                 }
@@ -707,9 +695,7 @@ class DeclAF {
             body = idDeclAF_Body()
             bodies.Append(body)
             body.SetDefault(this)
-            if (!src.ExpectTokenType(Token.TT_STRING, 0, token)
-                || !src.ExpectTokenString("{")
-            ) {
+            if (!src.ExpectTokenType(Token.TT_STRING, 0, token) || !src.ExpectTokenString("{")) {
                 return false
             }
             body.name.set(token)
@@ -724,41 +710,33 @@ class DeclAF {
                     }
                     if (0 == token.Icmp("box")) {
                         body.modelType = traceModel_t.TRM_BOX
-                        if (!src.ExpectTokenString("(")
-                            || !body.v1.Parse(src)
-                            || !src.ExpectTokenString(",")
-                            || !body.v2.Parse(src)
-                            || !src.ExpectTokenString(")")
+                        if (!src.ExpectTokenString("(") || !body.v1.Parse(src) || !src.ExpectTokenString(",") || !body.v2.Parse(
+                                src
+                            ) || !src.ExpectTokenString(")")
                         ) {
                             return false
                         }
                     } else if (0 == token.Icmp("octahedron")) {
                         body.modelType = traceModel_t.TRM_OCTAHEDRON
-                        if (!src.ExpectTokenString("(")
-                            || !body.v1.Parse(src)
-                            || !src.ExpectTokenString(",")
-                            || !body.v2.Parse(src)
-                            || !src.ExpectTokenString(")")
+                        if (!src.ExpectTokenString("(") || !body.v1.Parse(src) || !src.ExpectTokenString(",") || !body.v2.Parse(
+                                src
+                            ) || !src.ExpectTokenString(")")
                         ) {
                             return false
                         }
                     } else if (0 == token.Icmp("dodecahedron")) {
                         body.modelType = traceModel_t.TRM_DODECAHEDRON
-                        if (!src.ExpectTokenString("(")
-                            || !body.v1.Parse(src)
-                            || !src.ExpectTokenString(",")
-                            || !body.v2.Parse(src)
-                            || !src.ExpectTokenString(")")
+                        if (!src.ExpectTokenString("(") || !body.v1.Parse(src) || !src.ExpectTokenString(",") || !body.v2.Parse(
+                                src
+                            ) || !src.ExpectTokenString(")")
                         ) {
                             return false
                         }
                     } else if (0 == token.Icmp("cylinder")) {
                         body.modelType = traceModel_t.TRM_CYLINDER
-                        if (!src.ExpectTokenString("(")
-                            || !body.v1.Parse(src)
-                            || !src.ExpectTokenString(",")
-                            || !body.v2.Parse(src)
-                            || !src.ExpectTokenString(",")
+                        if (!src.ExpectTokenString("(") || !body.v1.Parse(src) || !src.ExpectTokenString(",") || !body.v2.Parse(
+                                src
+                            ) || !src.ExpectTokenString(",")
                         ) {
                             return false
                         }
@@ -768,11 +746,9 @@ class DeclAF {
                         }
                     } else if (0 == token.Icmp("cone")) {
                         body.modelType = traceModel_t.TRM_CONE
-                        if (!src.ExpectTokenString("(")
-                            || !body.v1.Parse(src)
-                            || !src.ExpectTokenString(",")
-                            || !body.v2.Parse(src)
-                            || !src.ExpectTokenString(",")
+                        if (!src.ExpectTokenString("(") || !body.v1.Parse(src) || !src.ExpectTokenString(",") || !body.v2.Parse(
+                                src
+                            ) || !src.ExpectTokenString(",")
                         ) {
                             return false
                         }
@@ -782,11 +758,9 @@ class DeclAF {
                         }
                     } else if (0 == token.Icmp("bone")) {
                         body.modelType = traceModel_t.TRM_BONE
-                        if (!src.ExpectTokenString("(")
-                            || !body.v1.Parse(src)
-                            || !src.ExpectTokenString(",")
-                            || !body.v2.Parse(src)
-                            || !src.ExpectTokenString(",")
+                        if (!src.ExpectTokenString("(") || !body.v1.Parse(src) || !src.ExpectTokenString(",") || !body.v2.Parse(
+                                src
+                            ) || !src.ExpectTokenString(",")
                         ) {
                             return false
                         }
@@ -876,9 +850,7 @@ class DeclAF {
             constraint = idDeclAF_Constraint()
             constraints.Append(constraint)
             constraint.SetDefault(this)
-            if (!src.ExpectTokenType(Token.TT_STRING, 0, token)
-                || !src.ExpectTokenString("{")
-            ) {
+            if (!src.ExpectTokenType(Token.TT_STRING, 0, token) || !src.ExpectTokenString("{")) {
                 return false
             }
             constraint.type = declAFConstraintType_t.DECLAF_CONSTRAINT_FIXED
@@ -907,9 +879,7 @@ class DeclAF {
             constraint = idDeclAF_Constraint()
             constraints.Append(constraint)
             constraint.SetDefault(this)
-            if (!src.ExpectTokenType(Token.TT_STRING, 0, token)
-                || !src.ExpectTokenString("{")
-            ) {
+            if (!src.ExpectTokenType(Token.TT_STRING, 0, token) || !src.ExpectTokenString("{")) {
                 return false
             }
             constraint.type = declAFConstraintType_t.DECLAF_CONSTRAINT_BALLANDSOCKETJOINT
@@ -930,22 +900,16 @@ class DeclAF {
                         return false
                     }
                 } else if (0 == token.Icmp("conelimit")) {
-                    if (!constraint.limitAxis.Parse(src)
-                        || !src.ExpectTokenString(",")
-                    ) {
+                    if (!constraint.limitAxis.Parse(src) || !src.ExpectTokenString(",")) {
                         return false
                     }
                     constraint.limitAngles[0] = src.ParseFloat()
-                    if (!src.ExpectTokenString(",")
-                        || !constraint.shaft[0].Parse(src)
-                    ) {
+                    if (!src.ExpectTokenString(",") || !constraint.shaft[0].Parse(src)) {
                         return false
                     }
                     constraint.limit = idDeclAF_Constraint.LIMIT_CONE
                 } else if (0 == token.Icmp("pyramidlimit")) {
-                    if (!constraint.limitAxis.Parse(src)
-                        || !src.ExpectTokenString(",")
-                    ) {
+                    if (!constraint.limitAxis.Parse(src) || !src.ExpectTokenString(",")) {
                         return false
                     }
                     constraint.limitAngles[0] = src.ParseFloat()
@@ -957,9 +921,7 @@ class DeclAF {
                         return false
                     }
                     constraint.limitAngles[2] = src.ParseFloat()
-                    if (!src.ExpectTokenString(",")
-                        || !constraint.shaft[0].Parse(src)
-                    ) {
+                    if (!src.ExpectTokenString(",") || !constraint.shaft[0].Parse(src)) {
                         return false
                     }
                     constraint.limit = idDeclAF_Constraint.LIMIT_PYRAMID
@@ -982,9 +944,7 @@ class DeclAF {
             constraint = idDeclAF_Constraint()
             constraints.Append(constraint)
             constraint.SetDefault(this)
-            if (!src.ExpectTokenType(Token.TT_STRING, 0, token)
-                || !src.ExpectTokenString("{")
-            ) {
+            if (!src.ExpectTokenType(Token.TT_STRING, 0, token) || !src.ExpectTokenString("{")) {
                 return false
             }
             constraint.type = declAFConstraintType_t.DECLAF_CONSTRAINT_UNIVERSALJOINT
@@ -1006,24 +966,17 @@ class DeclAF {
                         return false
                     }
                 } else if (0 == token.Icmp("shafts")) {
-                    if (!constraint.shaft[0].Parse(src)
-                        || !src.ExpectTokenString(",")
-                        || !constraint.shaft[1].Parse(src)
-                    ) {
+                    if (!constraint.shaft[0].Parse(src) || !src.ExpectTokenString(",") || !constraint.shaft[1].Parse(src)) {
                         return false
                     }
                 } else if (0 == token.Icmp("conelimit")) {
-                    if (!constraint.limitAxis.Parse(src)
-                        || !src.ExpectTokenString(",")
-                    ) {
+                    if (!constraint.limitAxis.Parse(src) || !src.ExpectTokenString(",")) {
                         return false
                     }
                     constraint.limitAngles[0] = src.ParseFloat()
                     constraint.limit = idDeclAF_Constraint.LIMIT_CONE
                 } else if (0 == token.Icmp("pyramidlimit")) {
-                    if (!constraint.limitAxis.Parse(src)
-                        || !src.ExpectTokenString(",")
-                    ) {
+                    if (!constraint.limitAxis.Parse(src) || !src.ExpectTokenString(",")) {
                         return false
                     }
                     constraint.limitAngles[0] = src.ParseFloat()
@@ -1055,9 +1008,7 @@ class DeclAF {
             constraint = idDeclAF_Constraint()
             constraints.Append(constraint)
             constraint.SetDefault(this)
-            if (!src.ExpectTokenType(Token.TT_STRING, 0, token)
-                || !src.ExpectTokenString("{")
-            ) {
+            if (!src.ExpectTokenType(Token.TT_STRING, 0, token) || !src.ExpectTokenString("{")) {
                 return false
             }
             constraint.type = declAFConstraintType_t.DECLAF_CONSTRAINT_HINGE
@@ -1111,9 +1062,7 @@ class DeclAF {
             constraint = idDeclAF_Constraint()
             constraints.Append(constraint)
             constraint.SetDefault(this)
-            if (!src.ExpectTokenType(Token.TT_STRING, 0, token)
-                || !src.ExpectTokenString("{")
-            ) {
+            if (!src.ExpectTokenType(Token.TT_STRING, 0, token) || !src.ExpectTokenString("{")) {
                 return false
             }
             constraint.type = declAFConstraintType_t.DECLAF_CONSTRAINT_SLIDER
@@ -1150,9 +1099,7 @@ class DeclAF {
             constraint = idDeclAF_Constraint()
             constraints.Append(constraint)
             constraint.SetDefault(this)
-            if (!src.ExpectTokenType(Token.TT_STRING, 0, token)
-                || !src.ExpectTokenString("{")
-            ) {
+            if (!src.ExpectTokenType(Token.TT_STRING, 0, token) || !src.ExpectTokenString("{")) {
                 return false
             }
             constraint.type = declAFConstraintType_t.DECLAF_CONSTRAINT_SPRING
@@ -1341,8 +1288,7 @@ class DeclAF {
             }
             f.WriteFloatString("\torigin ")
             body.origin.Write(f)
-            f.WriteFloatString("\n")
-            // FIX: use structural equality (!=) not referential (!==); !== is always true since
+            f.WriteFloatString("\n") // FIX: use structural equality (!=) not referential (!==); !== is always true since
             // body.angles and ang_zero are always distinct objects, causing angles to be written even when zero
             if (body.angles != ang_zero) {
                 f.WriteFloatString("\tangles ( %f, %f, %f )\n", body.angles.pitch, body.angles.yaw, body.angles.roll)
@@ -1352,22 +1298,26 @@ class DeclAF {
                 val ic = body.inertiaScale
                 f.WriteFloatString(
                     "\tinertiaScale (%f %f %f %f %f %f %f %f %f)\n",
-                    ic[0][0], ic[0][1], ic[0][2],
-                    ic[1][0], ic[1][1], ic[1][2],
-                    ic[2][0], ic[2][1], ic[2][2]
+                    ic[0][0],
+                    ic[0][1],
+                    ic[0][2],
+                    ic[1][0],
+                    ic[1][1],
+                    ic[1][2],
+                    ic[2][0],
+                    ic[2][1],
+                    ic[2][2]
                 )
             }
             if (body.linearFriction != -1.0f) {
                 f.WriteFloatString(
-                    "\tfriction %f, %f, %f\n",
-                    body.linearFriction,
-                    body.angularFriction,
-                    body.contactFriction
+                    "\tfriction %f, %f, %f\n", body.linearFriction, body.angularFriction, body.contactFriction
                 )
             }
             f.WriteFloatString("\tcontents %s\n", ContentsToString(body.contents._val, str))
-            f.WriteFloatString("\tclipMask %s\n", ContentsToString(body.clipMask._val, str))
-            // FIX: Boolean is not a Number in Kotlin/JVM — FS_WriteFloatString casts %d args
+            f.WriteFloatString(
+                "\tclipMask %s\n", ContentsToString(body.clipMask._val, str)
+            ) // FIX: Boolean is not a Number in Kotlin/JVM — FS_WriteFloatString casts %d args
             // via (arg as Number).toLong(), which throws ClassCastException for Boolean.
             // C++ implicitly promotes bool to int for variadic args; Kotlin needs explicit conversion.
             f.WriteFloatString("\tselfCollision %d\n", if (body.selfCollision) 1 else 0)

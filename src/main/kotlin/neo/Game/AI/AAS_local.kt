@@ -423,8 +423,7 @@ class AAS_local {
                 // add new areas to the queue
                 reach = area.reach
                 while (reach != null) {
-                    if ((reach.travelType and travelFlags) != 0) {
-                        // if the area the reachability leads to hasn't been visited yet and the area bounds touch the search bounds
+                    if ((reach.travelType and travelFlags) != 0) { // if the area the reachability leads to hasn't been visited yet and the area bounds touch the search bounds
                         if (0 == areasVisited[reach.toAreaNum.toInt()].toInt() && bounds.IntersectsBounds(
                                 file!!.GetArea(
                                     reach.toAreaNum.toInt()
@@ -589,7 +588,7 @@ class AAS_local {
             if (handle >= 0 && handle < obstacleList.Num()) {
                 SetObstacleState(obstacleList[handle], false)
 
-//		delete obstacleList[handle];
+                //		delete obstacleList[handle];
                 obstacleList.RemoveIndex(handle)
             }
         }
@@ -645,8 +644,7 @@ class AAS_local {
             var goalClusterNum: Int
             var portalNum: Int
             var i: Int
-            var clusterAreaNum: Int
-            /*unsigned short*/
+            var clusterAreaNum: Int/*unsigned short*/
             var t: Int
             var bestTime: Int
             var portal: aasPortal_s
@@ -680,16 +678,14 @@ class AAS_local {
             goalClusterNum = file!!.GetArea(goalAreaNum).cluster.toInt()
 
             // if the source area is a cluster portal, read directly from the portal cache
-            if (clusterNum < 0) {
-                // if the goal area is a portal
-                if (goalClusterNum < 0) {
-                    // just assume the goal area is part of the front cluster
+            if (clusterNum < 0) { // if the goal area is a portal
+                if (goalClusterNum < 0) { // just assume the goal area is part of the front cluster
                     portal = file!!.GetPortal(-goalClusterNum)
                     goalClusterNum = portal.clusters[0].toInt()
-                }
-                // get the portal routing cache
-                portalCache = GetPortalRoutingCache(goalClusterNum, goalAreaNum, travelFlags)
-                // FIX: mask with 0xFF to prevent byte sign extension (C++ uses unsigned char)
+                } // get the portal routing cache
+                portalCache = GetPortalRoutingCache(
+                    goalClusterNum, goalAreaNum, travelFlags
+                ) // FIX: mask with 0xFF to prevent byte sign extension (C++ uses unsigned char)
                 reach[0] = GetAreaReachability(areaNum, portalCache.reachabilities[-clusterNum].toInt() and 0xFF)
                 travelTime._val = (portalCache.travelTimes[-clusterNum] + AreaTravelTime(
                     areaNum, origin, reach[0]!!.start
@@ -711,7 +707,7 @@ class AAS_local {
             if (clusterNum > 0 && goalClusterNum > 0 && clusterNum == goalClusterNum) {
                 clusterCache = GetAreaRoutingCache(clusterNum, goalAreaNum, travelFlags)
                 clusterAreaNum = ClusterAreaNum(clusterNum, areaNum)
-                if (clusterCache!!.travelTimes[clusterAreaNum] != 0) {
+                if (clusterCache.travelTimes[clusterAreaNum] != 0) {
                     bestReach =
                         GetAreaReachability(areaNum, clusterCache.reachabilities[clusterAreaNum].toInt() and 0xFF)
                     bestTime =
@@ -726,19 +722,15 @@ class AAS_local {
             goalClusterNum = file!!.GetArea(goalAreaNum).cluster.toInt()
 
             // if the goal area is a portal
-            if (goalClusterNum < 0) {
-                // just assume the goal area is part of the front cluster
+            if (goalClusterNum < 0) { // just assume the goal area is part of the front cluster
                 portal = file!!.GetPortal(-goalClusterNum)
                 goalClusterNum = portal.clusters[0].toInt()
-            }
-            // get the portal routing cache
+            } // get the portal routing cache
             portalCache = GetPortalRoutingCache(goalClusterNum, goalAreaNum, travelFlags)
 
             // the cluster the area is in
-            cluster = file!!.GetCluster(clusterNum)
-            // current area inside the current cluster
-            clusterAreaNum = ClusterAreaNum(clusterNum, areaNum)
-            // if the area is not a reachable area
+            cluster = file!!.GetCluster(clusterNum) // current area inside the current cluster
+            clusterAreaNum = ClusterAreaNum(clusterNum, areaNum) // if the area is not a reachable area
             if (clusterAreaNum >= cluster.numReachableAreas) {
                 return false
             }
@@ -753,20 +745,18 @@ class AAS_local {
                     i++
                     continue
                 }
-                portal = file!!.GetPortal(portalNum)
-                // get the cache of the portal area
-                areaCache = GetAreaRoutingCache(clusterNum, portal.areaNum.toInt(), travelFlags)
-                // if the portal is not reachable from this area
-                if (0 == areaCache!!.travelTimes[clusterAreaNum]) {
+                portal = file!!.GetPortal(portalNum) // get the cache of the portal area
+                areaCache = GetAreaRoutingCache(
+                    clusterNum, portal.areaNum.toInt(), travelFlags
+                ) // if the portal is not reachable from this area
+                if (0 == areaCache.travelTimes[clusterAreaNum]) {
                     i++
                     continue
                 }
                 r = GetAreaReachability(areaNum, areaCache.reachabilities[clusterAreaNum].toInt() and 0xFF)
-                if (clusterCache != null) {
-                    // if the next reachability from the portal leads back into the cluster
+                if (clusterCache != null) { // if the next reachability from the portal leads back into the cluster
                     nextr = GetAreaReachability(
-                        portal.areaNum.toInt(),
-                        portalCache.reachabilities[portalNum].toInt() and 0xFF
+                        portal.areaNum.toInt(), portalCache.reachabilities[portalNum].toInt() and 0xFF
                     )
                     if (file!!.GetArea(nextr!!.toAreaNum.toInt()).cluster < 0 || file!!.GetArea(nextr.toAreaNum.toInt()).cluster.toInt() == clusterNum) {
                         i++
@@ -776,8 +766,8 @@ class AAS_local {
 
                 // the total travel time is the travel time from the portal area to the goal area
                 // plus the travel time from the source area towards the portal area
-                t = portalCache.travelTimes[portalNum] + areaCache.travelTimes[clusterAreaNum]
-                // NOTE:	Should add the exact travel time through the portal area.
+                t =
+                    portalCache.travelTimes[portalNum] + areaCache.travelTimes[clusterAreaNum] // NOTE:	Should add the exact travel time through the portal area.
                 //			However we add the largest travel time through the portal area.
                 //			We cannot directly calculate the exact travel time through the portal area
                 //			because the reachability used to travel into the portal area is not known.
@@ -842,8 +832,7 @@ class AAS_local {
                 }
 
                 // no need to check through the first area
-                if (areaNum != curAreaNum) {
-                    // only optimize a limited distance ahead
+                if (areaNum != curAreaNum) { // only optimize a limited distance ahead
                     if (reach[0]!!.start.minus(origin).LengthSqr() > Square(maxWalkPathDistance)) {
                         if (SUBSAMPLE_WALK_PATH != 0) {
                             path.moveGoal.set(
@@ -1317,8 +1306,7 @@ class AAS_local {
             var k: Int
             val badTravelFlags: Int
             var nextAreaNum: Int
-            var bestAreaNum: Int
-            /*unsigned short*/
+            var bestAreaNum: Int/*unsigned short*/
             var t: Int
             var bestTravelTime: Int
             var updateListStart: idRoutingUpdate?
@@ -1406,16 +1394,13 @@ class AAS_local {
                         continue
                     }
                     t = (curUpdate.tmpTravelTime + AreaTravelTime(
-                        curUpdate.areaNum,
-                        curUpdate.start,
-                        reach.start
+                        curUpdate.areaNum, curUpdate.start, reach.start
                     ) + reach.travelTime)
 
                     // project target origin onto movement vector through the area
                     v1.set(reach.end - curUpdate.start)
                     v1.Normalize()
-                    v2.set(target.minus(curUpdate.start))
-                    // FIX: C++ uses dot product (v2 * v1) * v1, not element-wise multiply
+                    v2.set(target.minus(curUpdate.start)) // FIX: C++ uses dot product (v2 * v1) * v1, not element-wise multiply
                     p.set(curUpdate.start + v1 * (v2 * v1))
 
                     // get the point on the path closest to the target
@@ -1473,8 +1458,7 @@ class AAS_local {
                     nextUpdate.start.set(reach.end)
 
                     // if we are not allowed to fly
-                    if ((badTravelFlags and AASFile.TFL_FLY) != 0) {
-                        // avoid areas near ledges
+                    if ((badTravelFlags and AASFile.TFL_FLY) != 0) { // avoid areas near ledges
                         if ((file!!.GetArea(nextAreaNum).flags and AASFile.AREA_LEDGE) != 0) {
                             nextUpdate.tmpTravelTime += AAS_routing.LEDGE_TRAVELTIME_PANALTY
                         }
@@ -1496,8 +1480,7 @@ class AAS_local {
 
                         // add travel time through the area
                         t += AreaTravelTime(reach.toAreaNum.toInt(), reach.end, nextArea.center)
-                        if (0 == bestTravelTime || t < bestTravelTime) {
-                            // if the area is not visible to the target
+                        if (0 == bestTravelTime || t < bestTravelTime) { // if the area is not visible to the target
                             if (callback.TestArea(this, reach.toAreaNum.toInt())) {
                                 bestTravelTime = t
                                 bestAreaNum = reach.toAreaNum.toInt()
@@ -1636,14 +1619,13 @@ class AAS_local {
                 }
 
                 // if this area is a portal
-                if (file!!.GetArea(n).cluster < 0) {
-                    // set the maximum travel time through this portal
+                if (file!!.GetArea(n).cluster < 0) { // set the maximum travel time through this portal
                     file!!.SetPortalMaxTravelTime(-file!!.GetArea(n).cluster.toInt(), maxt)
                 }
                 n++
             }
 
-//	assert( ( (unsigned int) bytePtr - (unsigned int) areaTravelTimes ) <= numAreaTravelTimes * sizeof( unsigned short ) );
+            //	assert( ( (unsigned int) bytePtr - (unsigned int) areaTravelTimes ) <= numAreaTravelTimes * sizeof( unsigned short ) );
         }
 
         /*
@@ -1651,8 +1633,7 @@ class AAS_local {
          idAASLocal::DeleteAreaTravelTimes
          ============
          */
-        private fun DeleteAreaTravelTimes() {
-//            Mem_Free(areaTravelTimes);
+        private fun DeleteAreaTravelTimes() { //            Mem_Free(areaTravelTimes);
             areaTravelTimes = null
             numAreaTravelTimes = 0
         }
@@ -1669,8 +1650,7 @@ class AAS_local {
             while (i < file!!.GetNumClusters()) {
                 areaCacheIndexSize += file!!.GetCluster(i).numReachableAreas
                 i++
-            }
-            // FIX: Was Array(GetNumClusters) { Array(totalSize) { idRoutingCache(...) } } which:
+            } // FIX: Was Array(GetNumClusters) { Array(totalSize) { idRoutingCache(...) } } which:
             //   (a) gave every cluster the total areaCacheIndexSize instead of per-cluster numReachableAreas
             //   (b) initialized with live idRoutingCache objects instead of null (C++ Mem_ClearedAlloc zeroes all pointers)
             //   (c) read portalCacheIndexSize before it was assigned (still 0 at this point)
@@ -1745,17 +1725,13 @@ class AAS_local {
             }
             DeletePortalCache()
 
-//            Mem_Free(areaCacheIndex);
+            //            Mem_Free(areaCacheIndex);
             areaCacheIndex = null
-            areaCacheIndexSize = 0
-            //            Mem_Free(portalCacheIndex);
+            areaCacheIndexSize = 0 //            Mem_Free(portalCacheIndex);
             portalCacheIndex = null
-            portalCacheIndexSize = 0
-            //            Mem_Free(areaUpdate);
-            areaUpdate = null
-            //            Mem_Free(portalUpdate);
-            portalUpdate = null
-            //            Mem_Free(goalAreaTravelTimes);
+            portalCacheIndexSize = 0 //            Mem_Free(areaUpdate);
+            areaUpdate = null //            Mem_Free(portalUpdate);
+            portalUpdate = null //            Mem_Free(goalAreaTravelTimes);
             goalAreaTravelTimes = null
             cacheListEnd = null
             cacheListStart = cacheListEnd
@@ -1780,12 +1756,10 @@ class AAS_local {
             cache = cacheListStart
             while (cache != null) {
                 if (cache.type == AAS_routing.CACHETYPE_AREA) {
-                    numAreaCache++
-                    //			totalAreaCacheMemory += sizeof( idRoutingCache ) + cache.size * (sizeof( unsigned short ) + sizeof( byte ));
+                    numAreaCache++ //			totalAreaCacheMemory += sizeof( idRoutingCache ) + cache.size * (sizeof( unsigned short ) + sizeof( byte ));
                     totalAreaCacheMemory += cache.size
                 } else {
-                    numPortalCache++
-                    //			totalPortalCacheMemory += sizeof( idRoutingCache ) + cache.size * (sizeof( unsigned short ) + sizeof( byte ));
+                    numPortalCache++ //			totalPortalCacheMemory += sizeof( idRoutingCache ) + cache.size * (sizeof( unsigned short ) + sizeof( byte ));
                     totalPortalCacheMemory += cache.size
                 }
                 cache = cache.time_next
@@ -1887,7 +1861,7 @@ class AAS_local {
                 portalCacheIndex!![cache.areaNum] = cache.next
             }
 
-//	delete cache;
+            //	delete cache;
         }
 
         /*
@@ -2002,8 +1976,7 @@ class AAS_local {
                     }
 
                     // get the cluster number of the area
-                    cluster = nextArea.cluster.toInt()
-                    // don't leave the cluster, however do flood into cluster portals
+                    cluster = nextArea.cluster.toInt() // don't leave the cluster, however do flood into cluster portals
                     if (cluster > 0 && cluster != areaCache.cluster) {
                         reach = reach.rev_next
                         i++
@@ -2034,8 +2007,7 @@ class AAS_local {
                         nextUpdate.areaTravelTimes = reach.areaTravelTimes!!
 
                         // if we are not allowed to fly
-                        if ((badTravelFlags and AASFile.TFL_FLY) != 0) {
-                            // avoid areas near ledges
+                        if ((badTravelFlags and AASFile.TFL_FLY) != 0) { // avoid areas near ledges
                             if ((file!!.GetArea(nextAreaNum).flags and AASFile.AREA_LEDGE) != 0) {
                                 nextUpdate.tmpTravelTime += AAS_routing.LEDGE_TRAVELTIME_PANALTY
                             }
@@ -2069,18 +2041,16 @@ class AAS_local {
             val clusterCache: idRoutingCache?
 
             // number of the area in the cluster
-            clusterAreaNum = ClusterAreaNum(clusterNum, areaNum)
-            // pointer to the cache for the area in the cluster
-            clusterCache = areaCacheIndex!![clusterNum][clusterAreaNum]
-            // check if cache without undesired travel flags already exists
+            clusterAreaNum = ClusterAreaNum(clusterNum, areaNum) // pointer to the cache for the area in the cluster
+            clusterCache =
+                areaCacheIndex!![clusterNum][clusterAreaNum] // check if cache without undesired travel flags already exists
             cache = clusterCache
             while (cache != null) {
                 if (cache.travelFlags == travelFlags) {
                     break
                 }
                 cache = cache.next
-            }
-            // if no cache found
+            } // if no cache found
             if (null == cache) {
                 cache = idRoutingCache(file!!.GetCluster(clusterNum).numReachableAreas)
                 cache.type = AAS_routing.CACHETYPE_AREA
@@ -2131,15 +2101,13 @@ class AAS_local {
 
             // while there are updates in the current list
             while (updateListStart != null) {
-                curUpdate = updateListStart
-                // remove the current update from the list
+                curUpdate = updateListStart // remove the current update from the list
                 if (curUpdate.next != null) {
                     curUpdate.next!!.prev = null
                 } else {
                     updateListEnd = null
                 }
-                updateListStart = curUpdate.next
-                // current update is removed from the list
+                updateListStart = curUpdate.next // current update is removed from the list
                 curUpdate.isInList = false
                 cluster = file!!.GetCluster(curUpdate.cluster)
                 cache = GetAreaRoutingCache(curUpdate.cluster, curUpdate.areaNum, portalCache.travelFlags)
@@ -2155,7 +2123,7 @@ class AAS_local {
                         i++
                         continue
                     }
-                    t = cache!!.travelTimes[clusterAreaNum]
+                    t = cache.travelTimes[clusterAreaNum]
                     if (t == 0) {
                         i++
                         continue
@@ -2172,8 +2140,8 @@ class AAS_local {
                         } else {
                             nextUpdate.cluster = portal.clusters[0].toInt()
                         }
-                        nextUpdate.areaNum = portal.areaNum.toInt()
-                        // add travel time through the actual portal area for the next update
+                        nextUpdate.areaNum =
+                            portal.areaNum.toInt() // add travel time through the actual portal area for the next update
                         nextUpdate.tmpTravelTime = t + portal.maxAreaTravelTime
                         if (!nextUpdate.isInList) {
                             nextUpdate.next = null
@@ -2207,8 +2175,7 @@ class AAS_local {
                     break
                 }
                 cache = cache.next
-            }
-            // if no cache found
+            } // if no cache found
             if (null == cache) {
                 cache = idRoutingCache(file!!.GetNumPortals())
                 cache.type = AAS_routing.CACHETYPE_PORTAL
@@ -2236,11 +2203,9 @@ class AAS_local {
         private fun RemoveRoutingCacheUsingArea(areaNum: Int) {
             val clusterNum: Int
             clusterNum = file!!.GetArea(areaNum).cluster.toInt()
-            if (clusterNum > 0) {
-                // remove all the cache in the cluster the area is in
+            if (clusterNum > 0) { // remove all the cache in the cluster the area is in
                 DeleteClusterCache(clusterNum)
-            } else {
-                // if this is a portal remove all cache in both the front and back cluster
+            } else { // if this is a portal remove all cache in both the front and back cluster
                 DeleteClusterCache(file!!.GetPortal(-clusterNum).clusters[0].toInt())
                 DeleteClusterCache(file!!.GetPortal(-clusterNum).clusters[1].toInt())
             }
@@ -2286,8 +2251,7 @@ class AAS_local {
             var node: aasNode_s?
             var foundClusterPortal = false
             while (nodeNum != 0) {
-                if (nodeNum < 0) {
-                    // if this area is a cluster portal
+                if (nodeNum < 0) { // if this area is a cluster portal
                     if ((file!!.GetArea(-nodeNum).contents and areaContents) != 0) {
                         if (disabled) {
                             DisableArea(-nodeNum)
@@ -2680,9 +2644,7 @@ class AAS_local {
                 Game_local.gameRenderWorld!!.DrawText(
                     Str.va("%d", edgeNum),
                     (file!!.GetVertex(edge.vertexNum[0]) + file!!.GetVertex(edge.vertexNum[1])) * 0.5f + idVec3(
-                        0.0f,
-                        0.0f,
-                        4.0f
+                        0.0f, 0.0f, 4.0f
                     ),
                     0.1f,
                     colorRed,
@@ -2761,8 +2723,7 @@ class AAS_local {
                 Game_local.gameLocal.Printf("\n")
                 lastAreaNum = areaNum
             }
-            if (org != origin) {
-                // FIX: C++ creates a copy; Kotlin reference would corrupt the shared settings
+            if (org != origin) { // FIX: C++ creates a copy; Kotlin reference would corrupt the shared settings
                 val bnds = idBounds(file!!.GetSettings().boundingBoxes[0])
                 bnds[1].z = bnds[0].z
                 Game_local.gameRenderWorld!!.DebugBounds(colorYellow, bnds, org)
@@ -2865,10 +2826,7 @@ class AAS_local {
                 origin, DefaultSearchBounds(), AASFile.AREA_REACHABLE_WALK or AASFile.AREA_REACHABLE_FLY
             )
             areaCenter.set(AreaCenter(toAreaNum))
-            if (player.GetPhysics().GetAbsBounds().Expand(8.0f).ContainsPoint(areaCenter)) {
-                return false
-            }
-            return if (WalkPathToGoal(
+            return !player.GetPhysics().GetAbsBounds().Expand(8.0f).ContainsPoint(areaCenter) && if (WalkPathToGoal(
                     path, areaNum, origin, toAreaNum, areaCenter, AASFile.TFL_WALK or AASFile.TFL_AIR
                 )
             ) {

@@ -62,7 +62,6 @@ import neo.ui.UserInterface.idUserInterface
 import neo.ui.UserInterface.uiManager
 import org.lwjgl.opengl.ARBFragmentProgram
 import org.lwjgl.opengl.ARBVertexProgram
-import java.nio.*
 import java.util.*
 
 /*
@@ -371,10 +370,7 @@ object Material {
         var stayTime: Int = 0 // msec for no change
 
         companion object {
-            val SIZE: Int = (Integer.SIZE
-                    + Integer.SIZE
-                    + (java.lang.Float.SIZE * 4)
-                    + (java.lang.Float.SIZE * 4))
+            val SIZE: Int = (Integer.SIZE + Integer.SIZE + (java.lang.Float.SIZE * 4) + (java.lang.Float.SIZE * 4))
         }
     }
 
@@ -393,8 +389,7 @@ object Material {
         }
 
         companion object {
-            val SIZE: Int = (CPP_class.ENUM_SIZE
-                    + (Integer.SIZE * 3))
+            val SIZE: Int = (CPP_class.ENUM_SIZE + (Integer.SIZE * 3))
         }
     }
 
@@ -428,11 +423,11 @@ object Material {
 
         private constructor(texture: textureStage_t) {
             cinematic[0] = texture.cinematic[0] //pointer
-            image!![0] = texture.image[0] //pointer
+            image[0] = texture.image[0] //pointer
             texgen = texture.texgen
             hasMatrix = texture.hasMatrix
-            System.arraycopy(texture.matrix[0], 0, matrix[0], 0, matrix[0]!!.size)
-            System.arraycopy(texture.matrix[1], 0, matrix[1], 0, matrix[1]!!.size)
+            System.arraycopy(texture.matrix[0], 0, matrix[0], 0, matrix[0].size)
+            System.arraycopy(texture.matrix[1], 0, matrix[1], 0, matrix[1].size)
             dynamic = texture.dynamic
             width = texture.width
             height = texture.height
@@ -441,13 +436,9 @@ object Material {
 
         companion object {
             val SIZE: Int = (CPP_class.POINTER_SIZE //idCinematic
-                    + idImage.SIZE
-                    + CPP_class.ENUM_SIZE //texgen_t
-                    + CPP_class.BOOL_SIZE
-                    + (Integer.SIZE * 2 * 3)
-                    + CPP_class.ENUM_SIZE //dynamicidImage_t
-                    + (Integer.SIZE * 2)
-                    + Integer.SIZE)
+                    + idImage.SIZE + CPP_class.ENUM_SIZE //texgen_t
+                    + CPP_class.BOOL_SIZE + (Integer.SIZE * 2 * 3) + CPP_class.ENUM_SIZE //dynamicidImage_t
+                    + (Integer.SIZE * 2) + Integer.SIZE)
         }
     }
 
@@ -461,13 +452,9 @@ object Material {
         var vertexProgram: Int = 0
 
         companion object {
-            val SIZE: Int = (Integer.SIZE
-                    + Integer.SIZE
-                    + (Integer.SIZE * MAX_VERTEX_PARMS * 4)
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + (idImage.SIZE * MAX_FRAGMENT_IMAGES) //TODO:pointer
-                    + idMegaTexture.SIZE)
+            val SIZE: Int =
+                (Integer.SIZE + Integer.SIZE + (Integer.SIZE * MAX_VERTEX_PARMS * 4) + Integer.SIZE + Integer.SIZE + (idImage.SIZE * MAX_FRAGMENT_IMAGES) //TODO:pointer
+                        + idMegaTexture.SIZE)
         }
     }
 
@@ -497,18 +484,9 @@ object Material {
         }
 
         companion object {
-            val SIZE: Int = (Integer.SIZE
-                    + CPP_class.POINTER_SIZE //stageLighting_t
-                    + Integer.SIZE
-                    + colorStage_t.SIZE
-                    + Integer.SIZE
-                    + CPP_class.BOOL_SIZE
-                    + Integer.SIZE
-                    + textureStage_t.SIZE
-                    + CPP_class.POINTER_SIZE //stageVertexColor_t
-                    + CPP_class.BOOL_SIZE
-                    + java.lang.Float.SIZE
-                    + CPP_class.POINTER_SIZE) //newShaderStage_t
+            val SIZE: Int = (Integer.SIZE + CPP_class.POINTER_SIZE //stageLighting_t
+                    + Integer.SIZE + colorStage_t.SIZE + Integer.SIZE + CPP_class.BOOL_SIZE + Integer.SIZE + textureStage_t.SIZE + CPP_class.POINTER_SIZE //stageVertexColor_t
+                    + CPP_class.BOOL_SIZE + java.lang.Float.SIZE + CPP_class.POINTER_SIZE) //newShaderStage_t
         }
     }
 
@@ -542,12 +520,8 @@ object Material {
         }
 
         companion object {
-            val SIZE: Int = ((CPP_class.BOOL_SIZE * MAX_EXPRESSION_REGISTERS)
-                    + (java.lang.Float.SIZE * MAX_EXPRESSION_REGISTERS)
-                    + (expOp_t.SIZE * MAX_EXPRESSION_OPS)
-                    + (shaderStage_t.SIZE * MAX_SHADER_STAGES)
-                    + CPP_class.BOOL_SIZE
-                    + CPP_class.BOOL_SIZE)
+            val SIZE: Int =
+                ((CPP_class.BOOL_SIZE * MAX_EXPRESSION_REGISTERS) + (java.lang.Float.SIZE * MAX_EXPRESSION_REGISTERS) + (expOp_t.SIZE * MAX_EXPRESSION_OPS) + (shaderStage_t.SIZE * MAX_SHADER_STAGES) + CPP_class.BOOL_SIZE + CPP_class.BOOL_SIZE)
         }
     }
 
@@ -565,7 +539,7 @@ object Material {
         private var decalInfo: decalInfo_t = decalInfo_t()
         private var deform: deform_t? = null
         private var deformDecl: idDecl? = null // for surface emitted particle deforms and tables
-        private var desc: idStr = idStr()// description
+        private var desc: idStr = idStr() // description
         private var editorAlpha: Float = 0.0f
         private var editorImage: idImage? = null // image used for non-shaded preview
 
@@ -586,7 +560,7 @@ object Material {
         private var numOps: Int = 0
         private var numRegisters: Int = 0 //
         private var numStages: Int = 0
-        private var ops: Array<expOp_t?>? = null// evaluate to make expressionRegisters
+        private var ops: Array<expOp_t?>? = null // evaluate to make expressionRegisters
         private var pd: mtrParsingData_s? = null // only used during parsing
         private var polygonOffset: Float = 0.0f
         private var portalSky: Boolean = false
@@ -596,7 +570,7 @@ object Material {
         private var sort: Float = 0.0f // lower numbered shaders draw before higher numbered
         private var spectrum: Int = 0 // for invisible writing, used for both lights and surfaces
         private var suppressInSubview: Boolean = false
-        private var surfaceArea: Float// only for listSurfaceAreas
+        private var surfaceArea: Float // only for listSurfaceAreas
         private var surfaceFlags: Int = 0 // surface flags
         private var unsmoothedTangents: Boolean = false
 
@@ -613,21 +587,15 @@ object Material {
             surfaceArea = 0.0f
         }
 
-        override fun SetDefaultText(): Boolean {
-            // if there exists an image with the same name
+        override fun SetDefaultText(): Boolean { // if there exists an image with the same name
             if (true) { //fileSystem->ReadFile( GetName(), NULL ) != -1 ) {
                 val generated = StringBuffer(2048)
                 snPrintf(
-                    generated, generated.capacity(),
-                    ("material %s // IMPLICITLY GENERATED\n"
-                            + "{\n"
-                            + "{\n"
-                            + "blend blend\n"
-                            + "colored\n"
-                            + "map \"%s\"\n"
-                            + "clamp\n"
-                            + "}\n"
-                            + "}\n"), GetName(), GetName()
+                    generated,
+                    generated.capacity(),
+                    ("material %s // IMPLICITLY GENERATED\n" + "{\n" + "{\n" + "blend blend\n" + "colored\n" + "map \"%s\"\n" + "clamp\n" + "}\n" + "}\n"),
+                    GetName(),
+                    GetName()
                 )
                 SetText(generated.toString())
                 return true
@@ -637,12 +605,7 @@ object Material {
         }
 
         override fun DefaultDefinition(): String {
-            return ("{\n"
-                    + "\t" + "{\n"
-                    + "\t\t" + "blend\tblend\n"
-                    + "\t\t" + "map\t\t_default\n"
-                    + "\t" + "}\n"
-                    + "}")
+            return ("{\n" + "\t" + "{\n" + "\t\t" + "blend\tblend\n" + "\t\t" + "map\t\t_default\n" + "\t" + "}\n" + "}")
         }
 
         override fun Parse(text: String, textLength: Int): Boolean {
@@ -692,22 +655,13 @@ object Material {
             }
 
             // automatically determine coverage if not explicitly set
-            if (coverage == materialCoverage_t.MC_BAD) {
-                // automatically set MC_TRANSLUCENT if we don't have any interaction stages and
+            if (coverage == materialCoverage_t.MC_BAD) { // automatically set MC_TRANSLUCENT if we don't have any interaction stages and
                 // the first stage is blended and not an alpha test mask or a subview
-                if (0 == numStages) {
-                    // non-visible
+                if (0 == numStages) { // non-visible
                     coverage = materialCoverage_t.MC_TRANSLUCENT
-                } else if (numStages != numAmbientStages) {
-                    // we have an interaction draw
+                } else if (numStages != numAmbientStages) { // we have an interaction draw
                     coverage = materialCoverage_t.MC_OPAQUE
-                } else if (((pd!!.parseStages[0]!!.drawStateBits and GLS_DSTBLEND_BITS) != GLS_DSTBLEND_ZERO
-                            ) || ((pd!!.parseStages[0]!!.drawStateBits and GLS_SRCBLEND_BITS) == GLS_SRCBLEND_DST_COLOR
-                            ) || ((pd!!.parseStages[0]!!.drawStateBits and GLS_SRCBLEND_BITS) == GLS_SRCBLEND_ONE_MINUS_DST_COLOR
-                            ) || ((pd!!.parseStages[0]!!.drawStateBits and GLS_SRCBLEND_BITS) == GLS_SRCBLEND_DST_ALPHA
-                            ) || ((pd!!.parseStages[0]!!.drawStateBits and GLS_SRCBLEND_BITS) == GLS_SRCBLEND_ONE_MINUS_DST_ALPHA)
-                ) {
-                    // blended with the destination
+                } else if (((pd!!.parseStages[0]!!.drawStateBits and GLS_DSTBLEND_BITS) != GLS_DSTBLEND_ZERO) || ((pd!!.parseStages[0]!!.drawStateBits and GLS_SRCBLEND_BITS) == GLS_SRCBLEND_DST_COLOR) || ((pd!!.parseStages[0]!!.drawStateBits and GLS_SRCBLEND_BITS) == GLS_SRCBLEND_ONE_MINUS_DST_COLOR) || ((pd!!.parseStages[0]!!.drawStateBits and GLS_SRCBLEND_BITS) == GLS_SRCBLEND_DST_ALPHA) || ((pd!!.parseStages[0]!!.drawStateBits and GLS_SRCBLEND_BITS) == GLS_SRCBLEND_ONE_MINUS_DST_ALPHA)) { // blended with the destination
                     coverage = materialCoverage_t.MC_TRANSLUCENT
                 } else {
                     coverage = materialCoverage_t.MC_OPAQUE
@@ -717,8 +671,7 @@ object Material {
             // translucent automatically implies noshadows
             if (coverage == materialCoverage_t.MC_TRANSLUCENT) {
                 SetMaterialFlag(MF_NOSHADOWS)
-            } else {
-                // mark the contents as opaque
+            } else { // mark the contents as opaque
                 contentFlags = contentFlags or CONTENTS_OPAQUE
             }
 
@@ -745,7 +698,7 @@ object Material {
             i = 0
             while (i < numStages) {
                 val pStage: shaderStage_t? = pd!!.parseStages[i]
-                if (pStage!!.texture.image!![0] === Image.globalImages.currentRenderImage) {
+                if (pStage!!.texture.image[0] === Image.globalImages.currentRenderImage) {
                     if (sort != SS_PORTAL_SKY.toFloat()) {
                         sort = SS_POST_PROCESS.toFloat()
                         coverage = materialCoverage_t.MC_TRANSLUCENT
@@ -771,26 +724,20 @@ object Material {
             i = 0
             while (i < numStages) {
                 val pStage: shaderStage_t? = pd!!.parseStages[i]
-                if (sort == SS_POST_PROCESS.toFloat()) {
-                    // post-process effects fill the depth buffer as they draw, so only the
+                if (sort == SS_POST_PROCESS.toFloat()) { // post-process effects fill the depth buffer as they draw, so only the
                     // topmost post-process effect is rendered
                     pStage!!.drawStateBits = pStage.drawStateBits or GLS_DEPTHFUNC_LESS
-                } else if (coverage == materialCoverage_t.MC_TRANSLUCENT || pStage!!.ignoreAlphaTest) {
-                    // translucent surfaces can extend past the exactly marked depth buffer
-                    pStage!!.drawStateBits =
-                        pStage.drawStateBits or (GLS_DEPTHFUNC_LESS or GLS_DEPTHMASK)
-                } else {
-                    // opaque and perforated surfaces must exactly match the depth buffer,
+                } else if (coverage == materialCoverage_t.MC_TRANSLUCENT || pStage!!.ignoreAlphaTest) { // translucent surfaces can extend past the exactly marked depth buffer
+                    pStage!!.drawStateBits = pStage.drawStateBits or (GLS_DEPTHFUNC_LESS or GLS_DEPTHMASK)
+                } else { // opaque and perforated surfaces must exactly match the depth buffer,
                     // which gets alpha test correct
-                    pStage.drawStateBits =
-                        pStage.drawStateBits or (GLS_DEPTHFUNC_EQUAL or GLS_DEPTHMASK)
+                    pStage.drawStateBits = pStage.drawStateBits or (GLS_DEPTHFUNC_EQUAL or GLS_DEPTHMASK)
                 }
                 i++
             }
 
             // determine if this surface will accept overlays / decals
-            if (pd!!.forceOverlays) {
-                // explicitly flaged in material definition
+            if (pd!!.forceOverlays) { // explicitly flaged in material definition
                 allowOverlays = true
             } else {
                 if (!IsDrawn()) {
@@ -851,8 +798,7 @@ object Material {
 
         override fun FreeData() {
             var i: Int
-            if (stages != null) {
-                // delete any idCinematic textures
+            if (stages != null) { // delete any idCinematic textures
                 i = 0
                 while (i < numStages) {
                     if (stages!![i]!!.texture.cinematic[0] != null) {
@@ -889,8 +835,10 @@ object Material {
                 val op: expOp_t? = ops!![i]
                 if (op!!.opType == expOpType_t.OP_TYPE_TABLE) {
                     Common.common.Printf(
-                        "%d = %s[ %d ]\n", op.c, DeclManager.declManager.DeclByIndex(declType_t.DECL_TABLE, op.a)!!
-                            .GetName(), op.b
+                        "%d = %s[ %d ]\n",
+                        op.c,
+                        DeclManager.declManager.DeclByIndex(declType_t.DECL_TABLE, op.a)!!.GetName(),
+                        op.b
                     )
                 } else {
                     Common.common.Printf("%d = %d %s %d\n", op.c, op.a, op.opType.toString(), op.b)
@@ -912,7 +860,7 @@ object Material {
             if (numStages == 0) {
                 return "_scratch"
             }
-            val image: idImage? = stages!![0]!!.texture.image!![0]
+            val image: idImage? = stages!![0]!!.texture.image[0]
             if (image != null) {
                 return image.imgName.toString()
             }
@@ -928,7 +876,7 @@ object Material {
                         }
                     }
                 } else if (stages!![i]!!.texture.image != null) {
-                    stages!![i]!!.texture.image!![0]!!.Reload(false, force)
+                    stages!![i]!!.texture.image[0]!!.Reload(false, force)
                 }
             }
         }
@@ -1037,8 +985,7 @@ object Material {
 
         // returns true if this material takes precedence over other in coplanar cases
         fun HasHigherDmapPriority(other: idMaterial): Boolean {
-            return ((IsDrawn() && !other.IsDrawn())
-                    || (Coverage()!!.ordinal < other.Coverage()!!.ordinal))
+            return ((IsDrawn() && !other.IsDrawn()) || (Coverage().ordinal < other.Coverage().ordinal))
         }
 
         // returns a idUserInterface if it has a global gui, or NULL if no gui
@@ -1051,8 +998,7 @@ object Material {
         // special effects from being combined into a single surface
         // guis, merging sprites or other effects, mirrors and remote views are always discrete
         fun IsDiscrete(): Boolean {
-            return ((entityGui != 0) || (gui != null) || (deform != deform_t.DFRM_NONE) || (sort.toInt() == SS_SUBVIEW
-                    ) || ((surfaceFlags and SURF_DISCRETE) != 0))
+            return ((entityGui != 0) || (gui != null) || (deform != deform_t.DFRM_NONE) || (sort.toInt() == SS_SUBVIEW) || ((surfaceFlags and SURF_DISCRETE) != 0))
         }
 
         // Normally, dmap chops each surface by every BSP boundary, then reoptimizes.
@@ -1087,8 +1033,9 @@ object Material {
         // implicitly no-shadows lights (ambients, fogs, etc) will never cast shadows
         // but individual light entities can also override this value
         fun LightCastsShadows(): Boolean {
-            return (TestMaterialFlag(MF_FORCESHADOWS)
-                    || (!fogLight && !ambientLight && !blendLight && !TestMaterialFlag(MF_NOSHADOWS)))
+            return (TestMaterialFlag(MF_FORCESHADOWS) || (!fogLight && !ambientLight && !blendLight && !TestMaterialFlag(
+                MF_NOSHADOWS
+            )))
         }
 
         // fog lights, blend lights, ambient lights, etc will all have to have interaction
@@ -1271,26 +1218,24 @@ object Material {
             }
 
             // if we don't have an editorImageName, use the first stage image
-            if (0 == editorImageName!!.Length()) {
-                // _D3XP :: First check for a diffuse image, then use the first
+            if (0 == editorImageName.Length()) { // _D3XP :: First check for a diffuse image, then use the first
                 if (numStages != 0 && stages != null) {
                     var i: Int
                     i = 0
                     while (i < numStages) {
                         if (stages!![i]!!.lighting == stageLighting_t.SL_DIFFUSE) {
-                            editorImage = stages!![i]!!.texture.image!![0]
+                            editorImage = stages!![i]!!.texture.image[0]
                             break
                         }
                         i++
                     }
                     if (null == editorImage) {
-                        editorImage = stages!![0]!!.texture.image!![0]
+                        editorImage = stages!![0]!!.texture.image[0]
                     }
                 } else {
                     editorImage = Image.globalImages.defaultImage
                 }
-            } else {
-                // look for an explicit one
+            } else { // look for an explicit one
                 editorImage = Image.globalImages.ImageFromFile(
                     editorImageName.toString(),
                     textureFilter_t.TF_DEFAULT,
@@ -1306,13 +1251,13 @@ object Material {
         }
 
         fun GetImageWidth(): Int {
-            assert((GetStage(0) != null && GetStage(0)!!.texture.image!![0] != null))
-            return GetStage(0)!!.texture.image!![0]!!.uploadWidth._val
+            assert((GetStage(0) != null && GetStage(0)!!.texture.image[0] != null))
+            return GetStage(0)!!.texture.image[0]!!.uploadWidth._val
         }
 
         fun GetImageHeight(): Int {
-            assert((GetStage(0) != null && GetStage(0)!!.texture.image!![0] != null))
-            return GetStage(0)!!.texture.image!![0]!!.uploadHeight._val
+            assert((GetStage(0) != null && GetStage(0)!!.texture.image[0] != null))
+            return GetStage(0)!!.texture.image[0]!!.uploadHeight._val
         }
 
         fun SetGui(_gui: String?) {
@@ -1328,7 +1273,7 @@ object Material {
          */
         fun SetImageClassifications(tag: Int) {
             for (i in 0 until numStages) {
-                val image: idImage? = stages!![i]!!.texture.image!![0]
+                val image: idImage? = stages!![i]!!.texture.image[0]
                 if (image != null) {
                     image.SetClassification(tag)
                 }
@@ -1348,15 +1293,15 @@ object Material {
          then all expressions are evaluated, leaving the material registers
          set to their apropriate values.
          ===============
-         */
-        // regs should point to a float array large enough to hold GetNumRegisters() floats
+         */ // regs should point to a float array large enough to hold GetNumRegisters() floats
         fun EvaluateRegisters(
-            regs: FloatArray, shaderParms: FloatArray /*[MAX_ENTITY_SHADER_PARMS]*/,
-            view: viewDef_s, soundEmitter: idSoundEmitter? /*= NULL*/
+            regs: FloatArray,
+            shaderParms: FloatArray /*[MAX_ENTITY_SHADER_PARMS]*/,
+            view: viewDef_s,
+            soundEmitter: idSoundEmitter? /*= NULL*/
         ) {
             var i: Int
-            var b: Int
-            /*expOp_t*/
+            var b: Int/*expOp_t*/
             var op: Int
 
             // copy the material constants
@@ -1394,11 +1339,9 @@ object Material {
                 when (ops!![op]!!.opType) {
                     expOpType_t.OP_TYPE_ADD -> regs[ops!![op]!!.c] = regs[ops!![op]!!.a] + regs[ops!![op]!!.b]
 
-                    expOpType_t.OP_TYPE_SUBTRACT -> regs[ops!![op]!!.c] =
-                        regs[ops!![op]!!.a] - regs[ops!![op]!!.b]
+                    expOpType_t.OP_TYPE_SUBTRACT -> regs[ops!![op]!!.c] = regs[ops!![op]!!.a] - regs[ops!![op]!!.b]
 
-                    expOpType_t.OP_TYPE_MULTIPLY -> regs[ops!![op]!!.c] =
-                        regs[ops!![op]!!.a] * regs[ops!![op]!!.b]
+                    expOpType_t.OP_TYPE_MULTIPLY -> regs[ops!![op]!!.c] = regs[ops!![op]!!.a] * regs[ops!![op]!!.b]
 
                     expOpType_t.OP_TYPE_DIVIDE -> regs[ops!![op]!!.c] = regs[ops!![op]!!.a] / regs[ops!![op]!!.b]
 
@@ -1410,8 +1353,7 @@ object Material {
 
                     expOpType_t.OP_TYPE_TABLE -> {
                         val table: idDeclTable? = (DeclManager.declManager.DeclByIndex(
-                            declType_t.DECL_TABLE,
-                            ops!![op]!!.a
+                            declType_t.DECL_TABLE, ops!![op]!!.a
                         )) as idDeclTable?
                         regs[ops!![op]!!.c] = table!!.TableLookup(regs[ops!![op]!!.b])
                     }
@@ -1422,35 +1364,29 @@ object Material {
                         regs[ops!![op]!!.c] = 0.0f
                     }
 
-                    expOpType_t.OP_TYPE_GT -> regs[ops!![op]!!.c] = (if (regs[ops!![op]!!.a] > regs[ops!![op]!!.b]
-                    ) 1 else 0).toFloat()
+                    expOpType_t.OP_TYPE_GT -> regs[ops!![op]!!.c] =
+                        (if (regs[ops!![op]!!.a] > regs[ops!![op]!!.b]) 1 else 0).toFloat()
 
                     expOpType_t.OP_TYPE_GE -> regs[ops!![op]!!.c] =
-                        (if (regs[ops!![op]!!.a] >= regs[ops!![op]!!.b]
-                        ) 1 else 0).toFloat()
+                        (if (regs[ops!![op]!!.a] >= regs[ops!![op]!!.b]) 1 else 0).toFloat()
 
-                    expOpType_t.OP_TYPE_LT -> regs[ops!![op]!!.c] = (if (regs[ops!![op]!!.a] < regs[ops!![op]!!.b]
-                    ) 1 else 0).toFloat()
+                    expOpType_t.OP_TYPE_LT -> regs[ops!![op]!!.c] =
+                        (if (regs[ops!![op]!!.a] < regs[ops!![op]!!.b]) 1 else 0).toFloat()
 
                     expOpType_t.OP_TYPE_LE -> regs[ops!![op]!!.c] =
-                        (if (regs[ops!![op]!!.a] <= regs[ops!![op]!!.b]
-                        ) 1 else 0).toFloat()
+                        (if (regs[ops!![op]!!.a] <= regs[ops!![op]!!.b]) 1 else 0).toFloat()
 
                     expOpType_t.OP_TYPE_EQ -> regs[ops!![op]!!.c] =
-                        (if (regs[ops!![op]!!.a] == regs[ops!![op]!!.b]
-                        ) 1 else 0).toFloat()
+                        (if (regs[ops!![op]!!.a] == regs[ops!![op]!!.b]) 1 else 0).toFloat()
 
                     expOpType_t.OP_TYPE_NE -> regs[ops!![op]!!.c] =
-                        (if (regs[ops!![op]!!.a] != regs[ops!![op]!!.b]
-                        ) 1 else 0).toFloat()
+                        (if (regs[ops!![op]!!.a] != regs[ops!![op]!!.b]) 1 else 0).toFloat()
 
                     expOpType_t.OP_TYPE_AND -> regs[ops!![op]!!.c] =
-                        (if ((regs[ops!![op]!!.a] != 0.0f && regs[ops!![op]!!.b] != 0.0f)
-                        ) 1 else 0).toFloat()
+                        (if ((regs[ops!![op]!!.a] != 0.0f && regs[ops!![op]!!.b] != 0.0f)) 1 else 0).toFloat()
 
                     expOpType_t.OP_TYPE_OR -> regs[ops!![op]!!.c] =
-                        (if ((regs[ops!![op]!!.a] != 0.0f || regs[ops!![op]!!.b] != 0.0f)
-                        ) 1 else 0).toFloat()
+                        (if ((regs[ops!![op]!!.a] != 0.0f || regs[ops!![op]!!.b] != 0.0f)) 1 else 0).toFloat()
 
                     else -> Common.common.FatalError("R_EvaluateExpression: bad opcode")
                 }
@@ -1463,7 +1399,7 @@ object Material {
         // will return a pointer to an internal table, and EvaluateRegisters will not need
         // to be called.  If NULL is returned, EvaluateRegisters must be used.
         fun ConstantRegisters(): FloatArray? {
-            if (!r_useConstantMaterials!!.GetBool()) {
+            if (!r_useConstantMaterials.GetBool()) {
                 return null
             }
             return constantRegisters
@@ -1481,7 +1417,7 @@ object Material {
             refCount++
             for (i in 0 until numStages) {
                 val s: shaderStage_t? = stages!![i]
-                if (s!!.texture.image!![0] != null) {
+                if (s!!.texture.image[0] != null) {
                     s.texture.image[0]!!.AddReference()
                 }
             }
@@ -1736,7 +1672,7 @@ object Material {
                         }
 
                         31 -> { // renderbump
-                            src.ParseRestOfLine((renderBump)!!)
+                            src.ParseRestOfLine((renderBump))
                         }
 
                         32 -> { // diffusemap
@@ -1790,8 +1726,7 @@ object Material {
                     continue
                 }
 
-                if (token.equals("{")) {
-                    // create the new stage
+                if (token.equals("{")) { // create the new stage
                     ParseStage(src, trpDefault)
                     continue
                 }
@@ -1912,8 +1847,7 @@ object Material {
                 stage!!.drawStateBits = GLS_SRCBLEND_DST_COLOR or GLS_DSTBLEND_ZERO
                 return
             }
-            if (0 == token.Icmp("none")) {
-                // none is used when defining an alpha mask that doesn't draw
+            if (0 == token.Icmp("none")) { // none is used when defining an alpha mask that doesn't draw
                 stage!!.drawStateBits = GLS_SRCBLEND_ZERO or GLS_DSTBLEND_ONE
                 return
             }
@@ -2171,8 +2105,7 @@ object Material {
                             // coordinates had better be in the 0 to 1 range
                             if (!src.ReadToken(token)) {
                                 Common.common.Warning(
-                                    "missing parameter for 'videoMap' keyword in material '%s'",
-                                    GetName()
+                                    "missing parameter for 'videoMap' keyword in material '%s'", GetName()
                                 )
                                 continue
                             }
@@ -2193,8 +2126,7 @@ object Material {
                         11 -> { // soundmap
                             if (!src.ReadToken(token)) {
                                 Common.common.Warning(
-                                    "missing parameter for 'soundmap' keyword in material '%s'",
-                                    GetName()
+                                    "missing parameter for 'soundmap' keyword in material '%s'", GetName()
                                 )
                                 continue
                             }
@@ -2360,9 +2292,7 @@ object Material {
                             // in cycles
                             a = ParseExpression(src)
                             table = DeclManager.declManager.FindType(
-                                declType_t.DECL_TABLE,
-                                "sinTable",
-                                false
+                                declType_t.DECL_TABLE, "sinTable", false
                             ) as idDeclTable?
                             if (null == table) {
                                 Common.common.Warning("no sinTable for rotate defined")
@@ -2371,9 +2301,7 @@ object Material {
                             }
                             sinReg = EmitOp(table.Index(), a, expOpType_t.OP_TYPE_TABLE)
                             table = DeclManager.declManager.FindType(
-                                declType_t.DECL_TABLE,
-                                "cosTable",
-                                false
+                                declType_t.DECL_TABLE, "cosTable", false
                             ) as idDeclTable?
                             if (null == table) {
                                 Common.common.Warning("no cosTable for rotate defined")
@@ -2495,8 +2423,7 @@ object Material {
                                 newStage.vertexProgram =
                                     draw_arb2.R_FindARBProgram(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, token.toString())
                                 newStage.fragmentProgram = draw_arb2.R_FindARBProgram(
-                                    ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB,
-                                    token.toString()
+                                    ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB, token.toString()
                                 )
                             }
                         }
@@ -2504,8 +2431,7 @@ object Material {
                         51 -> { // fragmentProgram
                             if (src.ReadTokenOnLine(token)) {
                                 newStage.fragmentProgram = draw_arb2.R_FindARBProgram(
-                                    ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB,
-                                    token.toString()
+                                    ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB, token.toString()
                                 )
                             }
                         }
@@ -2526,12 +2452,10 @@ object Material {
                                     continue
                                 }
                                 newStage.vertexProgram = draw_arb2.R_FindARBProgram(
-                                    ARBVertexProgram.GL_VERTEX_PROGRAM_ARB,
-                                    "megaTexture.vfp"
+                                    ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, "megaTexture.vfp"
                                 )
                                 newStage.fragmentProgram = draw_arb2.R_FindARBProgram(
-                                    ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB,
-                                    "megaTexture.vfp"
+                                    ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB, "megaTexture.vfp"
                                 )
                             }
                         }
@@ -2553,8 +2477,7 @@ object Material {
             }
 
             // if we are using newStage, allocate a copy of it
-            if (newStage.fragmentProgram != 0 || newStage.vertexProgram != 0) {
-///		ss.newStage = (newShaderStage_t )Mem_Alloc( sizeof( newStage ) );
+            if (newStage.fragmentProgram != 0 || newStage.vertexProgram != 0) { ///		ss.newStage = (newShaderStage_t )Mem_Alloc( sizeof( newStage ) );
                 ss.newStage = newStage
             }
 
@@ -2573,13 +2496,13 @@ object Material {
 
             // now load the image with all the parms we parsed
             if (strLen(imageName) > 0) {
-                ts.image!![0] = Image.globalImages.ImageFromFile(ctos(imageName), tf, allowPicmip, trp, td, cubeMap)
+                ts.image[0] = Image.globalImages.ImageFromFile(ctos(imageName), tf, allowPicmip, trp, td, cubeMap)
                 if (null == ts.image[0]) {
                     ts.image[0] = Image.globalImages.defaultImage
                 }
             } else if (ts.cinematic[0] == null && ts.dynamic == dynamicidImage_t.DI_STATIC && ss.newStage == null) {
                 Common.common.Warning("material '%s' had stage with no image", GetName())
-                ts.image!![0] = Image.globalImages.defaultImage
+                ts.image[0] = Image.globalImages.defaultImage
             }
         }
 
@@ -2658,8 +2581,7 @@ object Material {
             SetMaterialFlag(MF_DEFAULTED)
         }
 
-        private fun ParseDecalInfo(src: idLexer) {
-//	idToken token;
+        private fun ParseDecalInfo(src: idLexer) { //	idToken token;
             decalInfo.stayTime = (src.ParseFloat() * 1000).toInt()
             decalInfo.fadeTime = (src.ParseFloat() * 1000).toInt()
             val start = FloatArray(4)
@@ -2682,8 +2604,7 @@ object Material {
         private fun CheckSurfaceParm(token: idToken): Boolean {
             for (i in 0 until numInfoParms) {
                 if (0 == token.Icmp(infoParms[i].name)) {
-                    if ((infoParms[i].surfaceFlags and SURF_TYPE_MASK) != 0) {
-                        // ensure we only have one surface type set
+                    if ((infoParms[i].surfaceFlags and SURF_TYPE_MASK) != 0) { // ensure we only have one surface type set
                         surfaceFlags = surfaceFlags and SURF_TYPE_MASK.inv()
                     }
                     surfaceFlags = surfaceFlags or infoParms[i].surfaceFlags
@@ -2770,7 +2691,7 @@ object Material {
                 }
             }
             op = GetExpressionOp()
-            op!!.opType = opType
+            op.opType = opType
             op.a = a
             op.b = b
             op.c = GetExpressionTemporary()
@@ -2932,8 +2853,7 @@ object Material {
             if (TestMaterialFlag(MF_DEFAULTED)) {    // we have a parse error
                 return 0
             }
-            if (!src.ReadToken(token)) {
-                // we won't get EOF in a real file, but we can
+            if (!src.ReadToken(token)) { // we won't get EOF in a real file, but we can
                 // when parsing from generated strings
                 return a
             }
@@ -3046,8 +2966,7 @@ object Material {
         }
 
         private fun MultiplyTextureMatrix(
-            ts: textureStage_t,
-            registers: Array<IntArray> /*[2][3]*/
+            ts: textureStage_t, registers: Array<IntArray> /*[2][3]*/
         ) {    // FIXME: for some reason the const is bad for gcc and Mac
             var old: Array<IntArray> = Array(2, { IntArray(3) })
             if (!ts.hasMatrix) {
@@ -3061,34 +2980,38 @@ object Material {
             // multiply the two maticies
             ts.matrix[0][0] = EmitOp(
                 EmitOp(old[0][0], registers[0][0], expOpType_t.OP_TYPE_MULTIPLY),
-                EmitOp(old[0][1], registers[1][0], expOpType_t.OP_TYPE_MULTIPLY), expOpType_t.OP_TYPE_ADD
+                EmitOp(old[0][1], registers[1][0], expOpType_t.OP_TYPE_MULTIPLY),
+                expOpType_t.OP_TYPE_ADD
             )
             ts.matrix[0][1] = EmitOp(
                 EmitOp(old[0][0], registers[0][1], expOpType_t.OP_TYPE_MULTIPLY),
-                EmitOp(old[0][1], registers[1][1], expOpType_t.OP_TYPE_MULTIPLY), expOpType_t.OP_TYPE_ADD
+                EmitOp(old[0][1], registers[1][1], expOpType_t.OP_TYPE_MULTIPLY),
+                expOpType_t.OP_TYPE_ADD
             )
             ts.matrix[0][2] = EmitOp(
                 EmitOp(
                     EmitOp(old[0][0], registers[0][2], expOpType_t.OP_TYPE_MULTIPLY),
-                    EmitOp(old[0][1], registers[1][2], expOpType_t.OP_TYPE_MULTIPLY), expOpType_t.OP_TYPE_ADD
-                ),
-                old[0][2], expOpType_t.OP_TYPE_ADD
+                    EmitOp(old[0][1], registers[1][2], expOpType_t.OP_TYPE_MULTIPLY),
+                    expOpType_t.OP_TYPE_ADD
+                ), old[0][2], expOpType_t.OP_TYPE_ADD
             )
 
             ts.matrix[1][0] = EmitOp(
                 EmitOp(old[1][0], registers[0][0], expOpType_t.OP_TYPE_MULTIPLY),
-                EmitOp(old[1][1], registers[1][0], expOpType_t.OP_TYPE_MULTIPLY), expOpType_t.OP_TYPE_ADD
+                EmitOp(old[1][1], registers[1][0], expOpType_t.OP_TYPE_MULTIPLY),
+                expOpType_t.OP_TYPE_ADD
             )
             ts.matrix[1][1] = EmitOp(
                 EmitOp(old[1][0], registers[0][1], expOpType_t.OP_TYPE_MULTIPLY),
-                EmitOp(old[1][1], registers[1][1], expOpType_t.OP_TYPE_MULTIPLY), expOpType_t.OP_TYPE_ADD
+                EmitOp(old[1][1], registers[1][1], expOpType_t.OP_TYPE_MULTIPLY),
+                expOpType_t.OP_TYPE_ADD
             )
             ts.matrix[1][2] = EmitOp(
                 EmitOp(
                     EmitOp(old[1][0], registers[0][2], expOpType_t.OP_TYPE_MULTIPLY),
-                    EmitOp(old[1][1], registers[1][2], expOpType_t.OP_TYPE_MULTIPLY), expOpType_t.OP_TYPE_ADD
-                ),
-                old[1][2], expOpType_t.OP_TYPE_ADD
+                    EmitOp(old[1][1], registers[1][2], expOpType_t.OP_TYPE_MULTIPLY),
+                    expOpType_t.OP_TYPE_ADD
+                ), old[1][2], expOpType_t.OP_TYPE_ADD
             )
         }
 
@@ -3113,8 +3036,7 @@ object Material {
                 // find the next bump map
                 j = i + 1
                 while (j < numStages) {
-                    if (pd!!.parseStages[j]!!.lighting == stageLighting_t.SL_BUMP) {
-                        // if the very first stage wasn't a bumpmap,
+                    if (pd!!.parseStages[j]!!.lighting == stageLighting_t.SL_BUMP) { // if the very first stage wasn't a bumpmap,
                         // this bumpmap is part of the first group
                         if (pd!!.parseStages[i]!!.lighting != stageLighting_t.SL_BUMP) {
                             j++
@@ -3215,8 +3137,7 @@ object Material {
             }
 
             // evaluate the registers once, and save them
-            constantRegisters =
-                FloatArray(GetNumRegisters())
+            constantRegisters = FloatArray(GetNumRegisters())
             val shaderParms = FloatArray(MAX_ENTITY_SHADER_PARMS)
             val viewDef = viewDef_s()
             EvaluateRegisters(constantRegisters!!, shaderParms, viewDef, null)
@@ -3249,39 +3170,19 @@ object Material {
         }
 
         companion object {
-            val SIZE: Int = (idStr.SIZE
-                    + idStr.SIZE
-                    + CPP_class.POINTER_SIZE //idImage.SIZE //pointer
-                    + Integer.SIZE
-                    + 1 //boolean
-                    + Integer.SIZE
-                    + java.lang.Float.SIZE
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + decalInfo_t.SIZE
-                    + java.lang.Float.SIZE
-                    + CPP_class.ENUM_SIZE // deform_t.SIZE
-                    + (Integer.SIZE * 4)
-                    + idDecl.SIZE //TODO:what good is a pointer in serialization?
-                    + (Integer.SIZE * MAX_TEXGEN_REGISTERS)
-                    + CPP_class.ENUM_SIZE //materialCoverage_t.SIZE
+            val SIZE: Int = (idStr.SIZE + idStr.SIZE + CPP_class.POINTER_SIZE //idImage.SIZE //pointer
+                    + Integer.SIZE + 1 //boolean
+                    + Integer.SIZE + java.lang.Float.SIZE + Integer.SIZE + Integer.SIZE + Integer.SIZE + decalInfo_t.SIZE + java.lang.Float.SIZE + CPP_class.ENUM_SIZE // deform_t.SIZE
+                    + (Integer.SIZE * 4) + idDecl.SIZE //TODO:what good is a pointer in serialization?
+                    + (Integer.SIZE * MAX_TEXGEN_REGISTERS) + CPP_class.ENUM_SIZE //materialCoverage_t.SIZE
                     + CPP_class.ENUM_SIZE //cullType_t.SIZE
                     + 7 //7 booleans
-                    + Integer.SIZE
-                    + CPP_class.POINTER_SIZE //expOp_t.SIZE//pointer
-                    + Integer.SIZE
+                    + Integer.SIZE + CPP_class.POINTER_SIZE //expOp_t.SIZE//pointer
+                    + Integer.SIZE + java.lang.Float.SIZE //point
                     + java.lang.Float.SIZE //point
-                    + java.lang.Float.SIZE //point
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + CPP_class.POINTER_SIZE //shaderStage_t.SIZE//pointer
-                    + mtrParsingData_s.SIZE
-                    + java.lang.Float.SIZE
-                    + idStr.SIZE
-                    + CPP_class.POINTER_SIZE //idImage.SIZE//pointer
-                    + java.lang.Float.SIZE
-                    + 2 //2 booleans
+                    + Integer.SIZE + Integer.SIZE + CPP_class.POINTER_SIZE //shaderStage_t.SIZE//pointer
+                    + mtrParsingData_s.SIZE + java.lang.Float.SIZE + idStr.SIZE + CPP_class.POINTER_SIZE //idImage.SIZE//pointer
+                    + java.lang.Float.SIZE + 2 //2 booleans
                     + Integer.SIZE)
 
             // HashMap-based keyword dispatch for ParseMaterial() — O(1) lookup instead of O(N) Icmp chain
@@ -3403,16 +3304,10 @@ object Material {
                 infoParm_t("trigger", 0, 0, CONTENTS_TRIGGER),  // used for triggers
                 infoParm_t("aassolid", 0, 0, CONTENTS_AAS_SOLID),  // solid for AAS
                 infoParm_t(
-                    "aasobstacle",
-                    0,
-                    0,
-                    CONTENTS_AAS_OBSTACLE
+                    "aasobstacle", 0, 0, CONTENTS_AAS_OBSTACLE
                 ),  // used to compile an obstacle into AAS that can be enabled/disabled
                 infoParm_t(
-                    "flashlight_trigger",
-                    0,
-                    0,
-                    CONTENTS_FLASHLIGHT_TRIGGER
+                    "flashlight_trigger", 0, 0, CONTENTS_FLASHLIGHT_TRIGGER
                 ),  // used for triggers that are activated by the flashlight
                 infoParm_t("nonsolid", 1, 0, 0),  // clears the solid flag
                 infoParm_t("nullNormal", 0, SURF_NULLNORMAL, 0),  // renderbump will draw as 0x80 0x80 0x80
@@ -3443,10 +3338,7 @@ object Material {
                 infoParm_t("glass", 0, surfTypes_t.SURFTYPE_GLASS, 0),  // glass
                 infoParm_t("plastic", 0, surfTypes_t.SURFTYPE_PLASTIC, 0),  // plastic
                 infoParm_t(
-                    "ricochet",
-                    0,
-                    surfTypes_t.SURFTYPE_RICOCHET,
-                    0
+                    "ricochet", 0, surfTypes_t.SURFTYPE_RICOCHET, 0
                 ),  // behaves like metal but causes a ricochet sound
                 //
                 // unassigned surface types

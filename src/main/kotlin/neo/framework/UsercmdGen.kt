@@ -57,8 +57,11 @@ import neo.sys.win_input.Sys_EndKeyboardInputEvents
 import neo.sys.win_input.Sys_ReturnKeyboardInputEvent
 import neo.sys.win_main
 import neo.sys.win_main.Sys_QueEvent
-import org.lwjgl.glfw.*
 import org.lwjgl.glfw.GLFW.GLFW_RELEASE
+import org.lwjgl.glfw.GLFWCursorPosCallback
+import org.lwjgl.glfw.GLFWKeyCallback
+import org.lwjgl.glfw.GLFWMouseButtonCallback
+import org.lwjgl.glfw.GLFWScrollCallback
 import java.time.Instant
 import java.util.*
 import kotlin.experimental.or
@@ -416,9 +419,7 @@ object UsercmdGen {
             if (my != other.my) {
                 return false
             }
-            return if (impulse != other.impulse) {
-                false
-            } else flags == other.flags
+            return impulse == other.impulse && flags == other.flags
         }
 
         override fun readFrom(file: idFile) {
@@ -608,8 +609,7 @@ object UsercmdGen {
             initialized = false
         }
 
-        override fun Clear() {
-            // clears all key states
+        override fun Clear() { // clears all key states
             Arrays.fill(buttonState, 0) //	memset( buttonState, 0, sizeof( buttonState ) );
             Arrays.fill(keyState, false) //	memset( keyState, false, sizeof( keyState ) );
             inhibitCommands = 0 //false;
@@ -639,8 +639,7 @@ object UsercmdGen {
             if (ticNumber > Common.com_ticNumber + 1) {
                 Common.common.Error("idUsercmdGenLocal::TicCmd ticNumber > com_ticNumber")
             }
-            if (ticNumber <= Common.com_ticNumber - MAX_BUFFERED_USERCMD) {
-                // this can happen when something in the game code hitches badly, allowing the
+            if (ticNumber <= Common.com_ticNumber - MAX_BUFFERED_USERCMD) { // this can happen when something in the game code hitches badly, allowing the
                 // async code to overflow the buffers
                 //common.Printf( "warning: idUsercmdGenLocal::TicCmd ticNumber <= com_ticNumber - MAX_BUFFERED_USERCMD\n" );
             }
@@ -662,18 +661,17 @@ object UsercmdGen {
          Called asyncronously
          ================
          */
-        override fun UsercmdInterrupt() {
-            // dedicated servers won't create usercmds
+        override fun UsercmdInterrupt() { // dedicated servers won't create usercmds
             if (!initialized) {
                 return
             }
 
-//            Display.processMessages();
+            //            Display.processMessages();
             // init the usercmd for com_ticNumber+1
             InitCurrent()
 
             // process the system mouse events
-//            Mouse();
+            //            Mouse();
 
             // process the system keyboard events
             //Keyboard()
@@ -715,8 +713,9 @@ object UsercmdGen {
             } else ""
         }
 
-        override fun MouseState(x: IntArray, y: IntArray, button: IntArray, down: BooleanArray) {
-            // FIX: x/y assignments were commented out, but C++ sets all four output parameters
+        override fun MouseState(
+            x: IntArray, y: IntArray, button: IntArray, down: BooleanArray
+        ) { // FIX: x/y assignments were commented out, but C++ sets all four output parameters
             x[0] = continuousMouseX.toInt()
             y[0] = continuousMouseY.toInt()
             button[0] = mouseButton
@@ -762,14 +761,14 @@ object UsercmdGen {
             InitCurrent()
 
             // process the system mouse events
-//            Mouse();
+            //            Mouse();
 
             // process the system keyboard events
-//            Keyboard();
+            //            Keyboard();
 
-//            // process the system joystick events
-//            Joystick();
-//TODO:enable our input devices.
+            //            // process the system joystick events
+            //            Joystick();
+            //TODO:enable our input devices.
 
             // create the usercmd
             MakeCurrent()
@@ -783,8 +782,7 @@ object UsercmdGen {
 
          creates the current command for this frame
          ================
-         */
-        // DG: allow always run in SP as well
+         */ // DG: allow always run in SP as well
         private fun AlwaysRunAllowed(): Boolean {
             return in_allowAlwaysRunInSP.GetBool() || idAsyncNetwork.IsActive()
         }
@@ -792,12 +790,10 @@ object UsercmdGen {
         private fun MakeCurrent() {
             val oldAngles = idVec3(viewangles)
             var i: Int
-            if (!Inhibited()) {
-                // update toggled key states
+            if (!Inhibited()) { // update toggled key states
                 toggled_crouch.SetKeyState(ButtonState(usercmdButton_t.UB_DOWN), in_toggleCrouch.GetBool())
                 toggled_run.SetKeyState(
-                    ButtonState(usercmdButton_t.UB_SPEED),
-                    in_toggleRun.GetBool() && AlwaysRunAllowed()
+                    ButtonState(usercmdButton_t.UB_SPEED), in_toggleRun.GetBool() && AlwaysRunAllowed()
                 )
                 toggled_zoom.SetKeyState(ButtonState(usercmdButton_t.UB_ZOOM), in_toggleZoom.GetBool())
 
@@ -848,8 +844,7 @@ object UsercmdGen {
             cmd = usercmd_t() //memset( &cmd, 0, sizeof( cmd ) );
             cmd.flags = flags.toByte()
             cmd.impulse = impulse.toByte()
-            cmd.buttons =
-                cmd.buttons or (if (in_alwaysRun.GetBool() && AlwaysRunAllowed()) BUTTON_RUN else 0).toByte()
+            cmd.buttons = cmd.buttons or (if (in_alwaysRun.GetBool() && AlwaysRunAllowed()) BUTTON_RUN else 0).toByte()
             cmd.buttons = cmd.buttons or (if (in_freeLook.GetBool()) BUTTON_MLOOK else 0).toByte()
         }
 
@@ -880,18 +875,15 @@ object UsercmdGen {
             }
             if (0 == ButtonState(usercmdButton_t.UB_STRAFE)) {
                 viewangles.minusAssign(
-                    YAW,
-                    speed * in_yawSpeed.GetFloat() * ButtonState(usercmdButton_t.UB_RIGHT)
+                    YAW, speed * in_yawSpeed.GetFloat() * ButtonState(usercmdButton_t.UB_RIGHT)
                 )
                 viewangles.plusAssign(YAW, speed * in_yawSpeed.GetFloat() * ButtonState(usercmdButton_t.UB_LEFT))
             }
             viewangles.minusAssign(
-                PITCH,
-                speed * in_pitchSpeed.GetFloat() * ButtonState(usercmdButton_t.UB_LOOKUP)
+                PITCH, speed * in_pitchSpeed.GetFloat() * ButtonState(usercmdButton_t.UB_LOOKUP)
             )
             viewangles.plusAssign(
-                PITCH,
-                speed * in_pitchSpeed.GetFloat() * ButtonState(usercmdButton_t.UB_LOOKDOWN)
+                PITCH, speed * in_pitchSpeed.GetFloat() * ButtonState(usercmdButton_t.UB_LOOKDOWN)
             )
         }
 
@@ -933,12 +925,10 @@ object UsercmdGen {
             }
             if (0 == ButtonState(usercmdButton_t.UB_STRAFE)) {
                 viewangles.plusAssign(
-                    YAW,
-                    anglespeed * in_yawSpeed.GetFloat() * joystickAxis[joystickAxis_t.AXIS_LEFT_X.ordinal]
+                    YAW, anglespeed * in_yawSpeed.GetFloat() * joystickAxis[joystickAxis_t.AXIS_LEFT_X.ordinal]
                 )
                 viewangles.plusAssign(
-                    PITCH,
-                    anglespeed * in_pitchSpeed.GetFloat() * joystickAxis[joystickAxis_t.AXIS_LEFT_Y.ordinal]
+                    PITCH, anglespeed * in_pitchSpeed.GetFloat() * joystickAxis[joystickAxis_t.AXIS_LEFT_Y.ordinal]
                 )
             } else {
                 cmd.rightmove =
@@ -996,8 +986,7 @@ object UsercmdGen {
             strafeMx /= smooth.toFloat()
             strafeMy /= smooth.toFloat()
             historyCounter++
-            if (abs(mx) > 1000 || abs(my) > 1000) {
-                // DG: dhewm3 no longer zeroes the delta — high DPI mice can produce large deltas
+            if (abs(mx) > 1000 || abs(my) > 1000) { // DG: dhewm3 no longer zeroes the delta — high DPI mice can produce large deltas
                 if (!ridiculousDeltaWarningShown) {
                     ridiculousDeltaWarningShown = true
                     win_main.Sys_DebugPrintf("idUsercmdGenLocal.MouseMove: Detected ridiculous mouse delta (expected with High DPI mice, though!).\n")
@@ -1007,13 +996,7 @@ object UsercmdGen {
             my *= sensitivity.GetFloat()
             if (m_showMouseRate.GetBool()) {
                 win_main.Sys_DebugPrintf(
-                    "[%3d %3d  = %5.1f %5.1f = %5.1f %5.1f] ",
-                    mouseDx,
-                    mouseDy,
-                    mx,
-                    my,
-                    strafeMx,
-                    strafeMy
+                    "[%3d %3d  = %5.1f %5.1f = %5.1f %5.1f] ", mouseDx, mouseDy, mx, my, strafeMx, strafeMy
                 )
             }
             mouseDx = 0.0
@@ -1021,11 +1004,9 @@ object UsercmdGen {
             if (0.0f == strafeMx && 0.0f == strafeMy) {
                 return
             }
-            if (ButtonState(usercmdButton_t.UB_STRAFE) != 0 || 0 == cmd.buttons.toInt() and BUTTON_MLOOK) {
-                // add mouse X/Y movement to cmd
+            if (ButtonState(usercmdButton_t.UB_STRAFE) != 0 || 0 == cmd.buttons.toInt() and BUTTON_MLOOK) { // add mouse X/Y movement to cmd
                 strafeMx *= m_strafeScale.GetFloat()
-                strafeMy *= m_strafeScale.GetFloat()
-                // clamp as a vector, instead of separate floats
+                strafeMy *= m_strafeScale.GetFloat() // clamp as a vector, instead of separate floats
                 val len = sqrt((strafeMx * strafeMx + strafeMy * strafeMy).toFloat()).toFloat()
                 if (len > 127) {
                     strafeMx = strafeMx * 127 / len
@@ -1075,8 +1056,7 @@ object UsercmdGen {
             }
 
             // check the scoreboard button
-            if (ButtonState(usercmdButton_t.UB_SHOWSCORES) != 0 || ButtonState(usercmdButton_t.UB_IMPULSE19) != 0) {
-                // the button is toggled in SP mode as well but without effect
+            if (ButtonState(usercmdButton_t.UB_SHOWSCORES) != 0 || ButtonState(usercmdButton_t.UB_IMPULSE19) != 0) { // the button is toggled in SP mode as well but without effect
                 cmd.buttons = cmd.buttons or BUTTON_SCORES.toByte()
             }
 
@@ -1097,8 +1077,7 @@ object UsercmdGen {
          Handles async mouse/keyboard button actions
          ===================
          */
-        private fun Key(keyNum: Int, down: Boolean) {
-            // Sanity check, sometimes we get double message :(
+        private fun Key(keyNum: Int, down: Boolean) { // Sanity check, sometimes we get double message :(
             if (keyState[keyNum] == down) {
                 return
             }
@@ -1115,8 +1094,7 @@ object UsercmdGen {
                     }
                 }
             } else {
-                buttonState[action]--
-                // we might have one held down across an app active transition
+                buttonState[action]-- // we might have one held down across an app active transition
                 if (buttonState[action] < 0) {
                     buttonState[action] = 0
                 }
@@ -1148,8 +1126,8 @@ object UsercmdGen {
                 val dwTimeStamp = Instant.now().toEpochMilli()
 
                 // mouse wheel actions are impulses, without a specific up / down
-                val key = if (yoffset < 0) KeyInput.K_MWHEELDOWN else KeyInput.K_MWHEELUP
-                // FIX: C++ uses abs(value) before the loop; without it, negative scroll never fires
+                val key =
+                    if (yoffset < 0) KeyInput.K_MWHEELDOWN else KeyInput.K_MWHEELUP // FIX: C++ uses abs(value) before the loop; without it, negative scroll never fires
                 var wheelValue = abs(yoffset.toInt())
                 while (wheelValue-- > 0) {
                     Key(key, true)
@@ -1164,8 +1142,7 @@ object UsercmdGen {
 
         inner class MouseButtonCallback : GLFWMouseButtonCallback() {
             override fun invoke(window: Long, button: Int, action: Int, mods: Int) {
-                val dwTimeStamp = Instant.now().toEpochMilli()
-                //
+                val dwTimeStamp = Instant.now().toEpochMilli() //
                 // Study each of the buffer elements and process them.
                 //
                 if (button != -1) {
@@ -1181,8 +1158,7 @@ object UsercmdGen {
 
         inner class KeyboardCallback : GLFWKeyCallback() {
             override fun invoke(window: Long, key: Int, scancode: Int, action: Int, mods: Int) {
-                val ch = intArrayOf(0)
-                // Study each of the buffer elements and process them.
+                val ch = intArrayOf(0) // Study each of the buffer elements and process them.
                 if (Sys_ReturnKeyboardInputEvent(ch, action, key, scancode, mods) != 0) {
                     Key(ch[0], action != GLFW_RELEASE)
                 }

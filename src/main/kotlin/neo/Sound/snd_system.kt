@@ -57,8 +57,7 @@ class snd_system {
         var stereo = false
     }
 
-    class idSoundSystemLocal
-        : idSoundSystem() {
+    class idSoundSystemLocal : idSoundSystem() {
         companion object {
             val s_clipVolumes: idCVar = idCVar("s_clipVolumes", "1", CVarSystem.CVAR_SOUND or CVarSystem.CVAR_BOOL, "")
             val s_constantAmplitude: idCVar =
@@ -108,10 +107,7 @@ class snd_system {
 
             //
             val s_libOpenAL: idCVar = idCVar(
-                "s_libOpenAL",
-                "openal32.dll",
-                CVarSystem.CVAR_SOUND or CVarSystem.CVAR_ARCHIVE,
-                "OpenAL DLL name/path"
+                "s_libOpenAL", "openal32.dll", CVarSystem.CVAR_SOUND or CVarSystem.CVAR_ARCHIVE, "OpenAL DLL name/path"
             )
             val s_maxSoundsPerShader: idCVar = idCVar(
                 "s_maxSoundsPerShader",
@@ -138,10 +134,7 @@ class snd_system {
             //
             var s_noSound: idCVar
             val s_numberOfSpeakers: idCVar = idCVar(
-                "s_numberOfSpeakers",
-                "2",
-                CVarSystem.CVAR_SOUND or CVarSystem.CVAR_ARCHIVE,
-                "number of speakers"
+                "s_numberOfSpeakers", "2", CVarSystem.CVAR_SOUND or CVarSystem.CVAR_ARCHIVE, "number of speakers"
             )
             val s_playDefaultSound: idCVar = idCVar(
                 "s_playDefaultSound",
@@ -174,10 +167,7 @@ class snd_system {
                 "Configure OpenAL's output-limiter. 0: Disable, 1: Enable, -1: Let OpenAL decide (default)"
             )
             val s_realTimeDecoding: idCVar = idCVar(
-                "s_realTimeDecoding",
-                "1",
-                CVarSystem.CVAR_SOUND or CVarSystem.CVAR_BOOL or CVarSystem.CVAR_INIT,
-                ""
+                "s_realTimeDecoding", "1", CVarSystem.CVAR_SOUND or CVarSystem.CVAR_BOOL or CVarSystem.CVAR_INIT, ""
             )
             val s_scaleDownAndClamp: idCVar = idCVar(
                 "s_scaleDownAndClamp",
@@ -289,17 +279,11 @@ class snd_system {
             init {
                 if (ID_DEDICATED) {
                     s_noSound = idCVar(
-                        "s_noSound",
-                        "1",
-                        CVarSystem.CVAR_SOUND or CVarSystem.CVAR_BOOL or CVarSystem.CVAR_ROM,
-                        ""
+                        "s_noSound", "1", CVarSystem.CVAR_SOUND or CVarSystem.CVAR_BOOL or CVarSystem.CVAR_ROM, ""
                     )
                 } else {
                     s_noSound = idCVar(
-                        "s_noSound",
-                        "0",
-                        CVarSystem.CVAR_SOUND or CVarSystem.CVAR_BOOL or CVarSystem.CVAR_NOCHEAT,
-                        ""
+                        "s_noSound", "0", CVarSystem.CVAR_SOUND or CVarSystem.CVAR_BOOL or CVarSystem.CVAR_NOCHEAT, ""
                     )
                 }
             }
@@ -420,12 +404,11 @@ class snd_system {
                     if (alEnumerateAllAvailable) {
                         val devs = ALC10.alcGetString(0, EnumerateAllExt.ALC_ALL_DEVICES_SPECIFIER)
                         if (devs != null) {
-                            var found = false
-                            // LWJGL returns all devices as a single null-separated string, double-null terminated
+                            var found =
+                                false // LWJGL returns all devices as a single null-separated string, double-null terminated
                             // alcGetString with ALC_ALL_DEVICES_SPECIFIER returns individual device names
                             // We need to use the list variant
-                            val deviceList =
-                                ALC10.alcGetString(0, EnumerateAllExt.ALC_ALL_DEVICES_SPECIFIER)
+                            val deviceList = ALC10.alcGetString(0, EnumerateAllExt.ALC_ALL_DEVICES_SPECIFIER)
                             if (deviceList != null) {
                                 Common.common.Printf("OpenAL: found device '%s'", deviceList)
                                 if (deviceName != null && deviceList.equals(deviceName, ignoreCase = true)) {
@@ -434,8 +417,7 @@ class snd_system {
                                 } else {
                                     Common.common.Printf("\n")
                                 }
-                            }
-                            // Note: LWJGL's alcGetString returns only the first device for this specifier.
+                            } // Note: LWJGL's alcGetString returns only the first device for this specifier.
                             // For full enumeration, use ALC11.alcGetString or iterate manually.
                             // This matches dhewm3 behavior for the common single-device case.
                             if (deviceName != null && !found) {
@@ -458,8 +440,7 @@ class snd_system {
                     if (openalDevice == 0L) {
                         Common.common.Printf("OpenAL: failed to open default device, disabling sound\n")
                         openalContext = 0
-                    } else {
-                        // dhewm3: check for HRTF, disconnect, output-limiter extensions
+                    } else { // dhewm3: check for HRTF, disconnect, output-limiter extensions
                         alHRTFavailable = ALC10.alcIsExtensionPresent(openalDevice, "ALC_SOFT_HRTF")
                         alIsDisconnectAvailable = ALC10.alcIsExtensionPresent(openalDevice, "ALC_EXT_disconnect")
                         if (alHRTFavailable) {
@@ -519,8 +500,7 @@ class snd_system {
                             handle = AL10.alGenSources()
                             if (AL10.alGetError() != AL10.AL_NO_ERROR) {
                                 break
-                            } else {
-                                // store in source array
+                            } else { // store in source array
                                 openalSources[openalSourceCount] = openalSource_t()
                                 openalSources[openalSourceCount].handle = handle
                                 openalSources[openalSourceCount].startTime = 0
@@ -550,16 +530,10 @@ class snd_system {
                 }
             }
             CmdSystem.cmdSystem.AddCommand(
-                "listSounds",
-                ListSounds_f.INSTANCE,
-                CmdSystem.CMD_FL_SOUND,
-                "lists all sounds"
+                "listSounds", ListSounds_f.INSTANCE, CmdSystem.CMD_FL_SOUND, "lists all sounds"
             )
             CmdSystem.cmdSystem.AddCommand(
-                "listSoundDecoders",
-                ListSoundDecoders_f.INSTANCE,
-                CmdSystem.CMD_FL_SOUND,
-                "list active sound decoders"
+                "listSoundDecoders", ListSoundDecoders_f.INSTANCE, CmdSystem.CMD_FL_SOUND, "list active sound decoders"
             )
             CmdSystem.cmdSystem.AddCommand(
                 "reloadSounds",
@@ -575,10 +549,7 @@ class snd_system {
                 ArgCompletion_SoundName.getInstance()
             )
             CmdSystem.cmdSystem.AddCommand(
-                "s_restart",
-                SoundSystemRestart_f.INSTANCE,
-                CmdSystem.CMD_FL_SOUND,
-                "restarts the sound system"
+                "s_restart", SoundSystemRestart_f.INSTANCE, CmdSystem.CMD_FL_SOUND, "restarts the sound system"
             )
         }
 
@@ -599,8 +570,7 @@ class snd_system {
                 openalSourceCount = openalSources.size
             }
             for (i in 0 until openalSourceCount) {
-                val source = openalSources[i]
-                // stop source
+                val source = openalSources[i] // stop source
                 AL10.alSourceStop(source.handle)
                 AL10.alSourcei(source.handle, AL10.AL_BUFFER, 0)
                 AL10.alDeleteSources(source.handle)
@@ -639,8 +609,7 @@ class snd_system {
             return true
         }
 
-        override fun InitHW(): Boolean {
-            // FIX: dhewm3 validates numSpeakers and checks openalContext before proceeding
+        override fun InitHW(): Boolean { // FIX: dhewm3 validates numSpeakers and checks openalContext before proceeding
             var numSpeakers = s_numberOfSpeakers.GetInteger()
             if (numSpeakers != 2 && numSpeakers != 6) {
                 Common.common.Warning("invalid value for s_numberOfSpeakers. Use either 2 or 6")
@@ -711,8 +680,7 @@ class snd_system {
             if (s_alOutputLimiter.IsModified() || s_alHRTF.IsModified()) {
                 val modifiedCvar = if (s_alOutputLimiter.IsModified()) "s_alOutputLimiter" else "s_alHRTF"
                 Common.common.Printf(
-                    "%s is modified, trying to reset OpenAL device to apply that change\n",
-                    modifiedCvar
+                    "%s is modified, trying to reset OpenAL device to apply that change\n", modifiedCvar
                 )
                 return ResetALDevice()
             }
@@ -758,8 +726,7 @@ class snd_system {
          idSoundSystemLocal::AsyncUpdate
          called from async sound thread when com_asyncSound == 1 ( Windows )
          ===================
-         */
-        // async loop, called at 60Hz
+         */ // async loop, called at 60Hz
         override fun AsyncUpdate(time: Int): Int {
             if (!isInitialized || shutdown) {
                 return 0
@@ -828,8 +795,7 @@ class snd_system {
          Called from async sound thread when com_asyncSound is 3 or 1.
          Also called from main thread if com_asyncSound == 0.
          ===================
-         */
-        // async loop, when the sound driver uses a write strategy
+         */ // async loop, when the sound driver uses a write strategy
         override fun AsyncUpdateWrite(inTime: Int): Int {
             if (!isInitialized || shutdown) {
                 return 0
@@ -867,8 +833,7 @@ class snd_system {
          idSoundSystemLocal::AsyncMix
          Mac OSX version. The system uses it's own thread and an IOProc callback
          ===================
-         */
-        // direct mixing called from the sound driver thread for OSes that support it
+         */ // direct mixing called from the sound driver thread for OSes that support it
         override fun AsyncMix(soundTime: Int, mixBuffer: FloatArray): Int {
             val inTime: Int
             val numSpeakers: Int
@@ -939,14 +904,13 @@ class snd_system {
                         while (x < xsize) {
                             graph!![(127 - y) * 256 + offset + x] = color
                             x++
-                        }
-                        // #if 0
+                        } // #if 0
                         // if ( y == 80 ) {
                         // color = 0xff00ffff;
                         // } else if ( y == 112 ) {
                         // color = 0xff0000ff;
                         // }
-// #endif
+                        // #endif
                         if (y > meter) {
                             break
                         }
@@ -1120,8 +1084,7 @@ class snd_system {
 
          specifying NULL will cause silence to be played
          ===================
-         */
-        // specifying NULL will cause silence to be played
+         */ // specifying NULL will cause silence to be played
         override fun SetPlayingSoundWorld(soundWorld: idSoundWorld?) {
             currentSoundWorld = soundWorld as idSoundWorldLocal?
         }
@@ -1177,8 +1140,7 @@ class snd_system {
         fun GetCurrent44kHzTime(): Int {
             return if (isInitialized) {
                 CurrentSoundTime
-            } else {
-                // NOTE: this would overflow 31bits within about 1h20 ( not that important since we get a snd_audio_hw right away pbly )
+            } else { // NOTE: this would overflow 31bits within about 1h20 ( not that important since we get a snd_audio_hw right away pbly )
                 //return ( ( Sys_Milliseconds()*441 ) / 10 ) * 4;
                 idMath.FtoiFast(win_shared.Sys_Milliseconds() * 176.4f)
             }
@@ -1208,8 +1170,7 @@ class snd_system {
             var out: FloatArray
             val out_p = 2
             var `in`: FloatArray
-            val in_p = 2
-            // TODO: port to OpenAL
+            val in_p = 2 // TODO: port to OpenAL
             assert(false)
             if (0 == fxList.Num()) {
                 for (i in 0..5) {
@@ -1342,10 +1303,8 @@ class snd_system {
             } else if (iOldestSingle != -1) {
                 index = iOldestSingle
             }
-            return if (index != -1) {
-                // stop the channel that is being ripped off
-                if (openalSources[index].chan != null) {
-                    // stop the channel only when not looping
+            return if (index != -1) { // stop the channel that is being ripped off
+                if (openalSources[index].chan != null) { // stop the channel only when not looping
                     if (!openalSources[index].looping) {
                         openalSources[index].chan!!.Stop()
                     } else {
@@ -1375,8 +1334,7 @@ class snd_system {
                 if (openalSources[i].handle == handle) {
                     if (openalSources[i].chan != null) {
                         openalSources[i].chan!!.openalSource = 0
-                    }
-                    // Initialize structure
+                    } // Initialize structure
                     openalSources[i].startTime = 0
                     openalSources[i].chan = null
                     openalSources[i].inUse = false
@@ -1447,9 +1405,14 @@ class snd_system {
                 val format = if (info.wFormatTag == snd_local.WAVE_FORMAT_TAG_OGG) "OGG" else "WAV"
                 val defaulted = if (sample.defaultSound) "(DEFAULTED)" else if (sample.purged) "(PURGED)" else ""
                 Common.common.Printf(
-                    "%s %dkHz %6dms %5dkB %4s %s%s\n", stereo, sample.objectInfo.nSamplesPerSec / 1000,
+                    "%s %dkHz %6dms %5dkB %4s %s%s\n",
+                    stereo,
+                    sample.objectInfo.nSamplesPerSec / 1000,
                     soundSystemLocal.SamplesToMilliseconds(sample.LengthIn44kHzSamples()),
-                    sample.objectMemSize shr 10, format, sample.name, defaulted
+                    sample.objectMemSize shr 10,
+                    format,
+                    sample.name,
+                    defaulted
                 )
                 if (!sample.purged) {
                     totalSamples += sample.objectSize
@@ -1465,10 +1428,9 @@ class snd_system {
             }
             Common.common.Printf("%8d total sounds\n", totalSounds)
             Common.common.Printf("%8d total samples loaded\n", totalSamples)
-            Common.common.Printf("%8d kB total system memory used\n", totalMemory shr 10)
-            //#if ID_OPENAL
-//	common.Printf( "%8d kB total OpenAL audio memory used\n", ( alGetInteger( alGetEnumValue( "AL_EAX_RAM_SIZE" ) ) - alGetInteger( alGetEnumValue( "AL_EAX_RAM_FREE" ) ) ) >> 10 );
-//#endif
+            Common.common.Printf("%8d kB total system memory used\n", totalMemory shr 10) //#if ID_OPENAL
+            //	common.Printf( "%8d kB total OpenAL audio memory used\n", ( alGetInteger( alGetEnumValue( "AL_EAX_RAM_SIZE" ) ) - alGetInteger( alGetEnumValue( "AL_EAX_RAM_FREE" ) ) ) >> 10 );
+            //#endif
         }
 
         companion object {

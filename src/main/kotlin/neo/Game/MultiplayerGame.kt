@@ -282,8 +282,7 @@ object MultiplayerGame {
         // resets everything and prepares for a match
         fun Reset() {
             Clear()
-            assert(null == scoreBoard && null == spectateGui && null == guiChat && null == mainGui && null == mapList)
-            // D3XP CTF: use CTF scoreboard if flag-based gametype
+            assert(null == scoreBoard && null == spectateGui && null == guiChat && null == mainGui && null == mapList) // D3XP CTF: use CTF scoreboard if flag-based gametype
             scoreBoard = if (IsGametypeFlagBased()) {
                 UserInterface.uiManager.FindGui("guis/ctfscoreboard.gui", true, false, true)
             } else {
@@ -293,8 +292,9 @@ object MultiplayerGame {
             guiChat = UserInterface.uiManager.FindGui("guis/chat.gui", true, false, true)
             mainGui = UserInterface.uiManager.FindGui("guis/mpmain.gui", true, false, true)
             mapList = UserInterface.uiManager.AllocListGUI()
-            mapList!!.Config(mainGui!!, "mapList")
-            // set this GUI so that our Draw function is still called when it becomes the active/fullscreen GUI
+            mapList!!.Config(
+                mainGui!!, "mapList"
+            ) // set this GUI so that our Draw function is still called when it becomes the active/fullscreen GUI
             mainGui!!.SetStateBool("gameDraw", true)
             mainGui!!.SetKeyBindingNames()
             mainGui!!.SetStateInt("com_machineSpec", CVarSystem.cvarSystem.GetCVarInteger("com_machineSpec"))
@@ -364,13 +364,11 @@ object MultiplayerGame {
                 }
 
                 gameState_t.NEXTGAME -> {
-                    if (nextState == gameState_t.INACTIVE) {
-                        // game rotation, new map, gametype etc.
+                    if (nextState == gameState_t.INACTIVE) { // game rotation, new map, gametype etc.
                         if (Game_local.gameLocal.NextMap()) {
                             CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "serverMapRestart\n")
                             return
-                        }
-                        // D3XP CTF: make sure flags are returned before warmup
+                        } // D3XP CTF: make sure flags are returned before warmup
                         if (IsGametypeFlagBased()) {
                             val flag0 = GetTeamFlag(0)
                             if (flag0 != null) flag0.Return()
@@ -380,8 +378,7 @@ object MultiplayerGame {
                         NewState(gameState_t.WARMUP)
                         if (Game_local.gameLocal.gameType == gameType_t.GAME_TOURNEY) {
                             CycleTourneyPlayers()
-                        }
-                        // put everyone back in from endgame spectate
+                        } // put everyone back in from endgame spectate
                         i = 0
                         while (i < Game_local.gameLocal.numClients) {
                             val ent = Game_local.gameLocal.entities[i]
@@ -423,8 +420,7 @@ object MultiplayerGame {
                     warmupText.set(Str.va("Match starts in %d", timeLeft))
                 }
 
-                gameState_t.GAMEON -> {
-                    // D3XP CTF: totally different logic branch
+                gameState_t.GAMEON -> { // D3XP CTF: totally different logic branch
                     if (IsGametypeFlagBased()) {
                         if (PointLimitHit()) {
                             val team = WinningTeam()
@@ -442,12 +438,10 @@ object MultiplayerGame {
                         }
                     } else {
                         player = FragLimitHit()
-                        if (player != null) {
-                            // delay between detecting frag limit and ending game. let the death anims play
+                        if (player != null) { // delay between detecting frag limit and ending game. let the death anims play
                             if (0 == fragLimitTimeout) {
                                 Common.common.DPrintf(
-                                    "enter FragLimit timeout, player %d is leader\n",
-                                    player.entityNumber
+                                    "enter FragLimit timeout, player %d is leader\n", player.entityNumber
                                 )
                                 fragLimitTimeout = Game_local.gameLocal.time + FRAGLIMIT_DELAY
                             }
@@ -456,8 +450,7 @@ object MultiplayerGame {
                                 PrintMessageEvent(-1, msg_evt_t.MSG_FRAGLIMIT, player.entityNumber)
                             }
                         } else {
-                            if (fragLimitTimeout != 0) {
-                                // frag limit was hit and cancelled. means the two teams got even during FRAGLIMIT_DELAY
+                            if (fragLimitTimeout != 0) { // frag limit was hit and cancelled. means the two teams got even during FRAGLIMIT_DELAY
                                 // enter sudden death, the next frag leader will win
                                 SuddenRespawn()
                                 PrintMessageEvent(-1, msg_evt_t.MSG_HOLYSHIT)
@@ -476,8 +469,7 @@ object MultiplayerGame {
                     } // end else (non-CTF GAMEON)
                 }
 
-                gameState_t.SUDDENDEATH -> {
-                    // D3XP CTF: check point limit in sudden death
+                gameState_t.SUDDENDEATH -> { // D3XP CTF: check point limit in sudden death
                     if (IsGametypeFlagBased()) {
                         val team = WinningTeam()
                         if (team != -1) {
@@ -489,8 +481,7 @@ object MultiplayerGame {
                         if (player != null) {
                             if (0 == fragLimitTimeout) {
                                 Common.common.DPrintf(
-                                    "enter sudden death FragLeader timeout, player %d is leader\n",
-                                    player.entityNumber
+                                    "enter sudden death FragLeader timeout, player %d is leader\n", player.entityNumber
                                 )
                                 fragLimitTimeout = Game_local.gameLocal.time + FRAGLIMIT_DELAY
                             }
@@ -536,11 +527,9 @@ object MultiplayerGame {
                 }
             }
             UpdatePlayerRanks()
-            UpdateHud(viewPlayer, player.hud)
-            // use the hud of the local player
+            UpdateHud(viewPlayer, player.hud) // use the hud of the local player
             viewPlayer.playerView.RenderPlayerView(player.hud!!)
-            if (currentMenu != 0) {
-// if (false){
+            if (currentMenu != 0) { // if (false){
                 // // uncomment this if you want to track when players are in a menu
                 // if ( !bCurrentMenuMsg ) {
                 // idBitMsg	outMsg;
@@ -552,7 +541,7 @@ object MultiplayerGame {
                 // networkSystem.ClientSendReliableMessage( outMsg );
                 // bCurrentMenuMsg = true;
                 // }
-// }
+                // }
                 if (player.wantSpectate) {
                     mainGui!!.SetStateString("spectext", Common.common.GetLanguageDict().GetString("#str_04249"))
                 } else {
@@ -565,8 +554,7 @@ object MultiplayerGame {
                 } else {
                     msgmodeGui!!.Redraw(Game_local.gameLocal.time)
                 }
-            } else {
-// if (false){
+            } else { // if (false){
                 // // uncomment this if you want to track when players are in a menu
                 // if ( bCurrentMenuMsg ) {
                 // idBitMsg	outMsg;
@@ -578,7 +566,7 @@ object MultiplayerGame {
                 // networkSystem.ClientSendReliableMessage( outMsg );
                 // bCurrentMenuMsg = false;
                 // }
-// }
+                // }
                 if (player.spectating) {
                     val spectatetext = arrayOf("", "")
                     var ispecline = 0
@@ -613,8 +601,7 @@ object MultiplayerGame {
                     spectateGui!!.SetStateString("spectatetext1", spectatetext[1])
                     if (vote != vote_flags_t.VOTE_NONE) {
                         spectateGui!!.SetStateString(
-                            "vote",
-                            Str.va("%s (y: %d n: %d)", voteString, yesVotes.toInt(), noVotes.toInt())
+                            "vote", Str.va("%s (y: %d n: %d)", voteString, yesVotes.toInt(), noVotes.toInt())
                         )
                     } else {
                         spectateGui!!.SetStateString("vote", "")
@@ -641,8 +628,7 @@ object MultiplayerGame {
                 if (Game_local.gameLocal.gameType == gameType_t.GAME_LASTMAN) {
                     playerState[dead.entityNumber].fragCount--
                 } else if (IsGametypeTeamBased()) {  // D3XP: includes CTF
-                    if (killer === dead || killer.team == dead.team) {
-                        // suicide or teamkill
+                    if (killer === dead || killer.team == dead.team) { // suicide or teamkill
                         TeamScore(killer.entityNumber, killer.team, -1)
                     } else {
                         TeamScore(killer.entityNumber, killer.team, +1)
@@ -668,12 +654,9 @@ object MultiplayerGame {
         }
 
         fun AddChatLine(fmt: String, vararg objects: Any?) { //id_attribute((format(printf,2,3)));
-            val temp: idStr
-            //            va_list argptr;
-//
-//            va_start(argptr, fmt);
-//            vsprintf(temp, fmt, argptr);
-//            va_end(argptr);
+            val temp: idStr //            va_list argptr; // //            va_start(argptr, fmt);
+            //            vsprintf(temp, fmt, argptr);
+            //            va_end(argptr);
             temp = idStr(String.format(fmt, *objects))
             Game_local.gameLocal.Printf("%s\n", temp.toString())
             chatHistory[chatHistoryIndex % NUM_CHAT_NOTIFY].line = temp
@@ -690,14 +673,11 @@ object MultiplayerGame {
             var i: Int
             val mainGui = mainGui!!
             mainGui.SetStateInt(
-                "readyon",
-                if (gameState == gameState_t.WARMUP) 1 else 0
+                "readyon", if (gameState == gameState_t.WARMUP) 1 else 0
             )
             mainGui.SetStateInt(
-                "readyoff",
-                if (gameState != gameState_t.WARMUP) 1 else 0
-            )
-            //	idStr strReady = cvarSystem.GetCVarString( "ui_ready" );
+                "readyoff", if (gameState != gameState_t.WARMUP) 1 else 0
+            ) //	idStr strReady = cvarSystem.GetCVarString( "ui_ready" );
             var strReady = CVarSystem.cvarSystem.GetCVarString("ui_ready")
             strReady = if (strReady.equals("ready", ignoreCase = true)) {
                 Common.common.GetLanguageDict().GetString("#str_04248")
@@ -710,21 +690,19 @@ object MultiplayerGame {
             if (IsGametypeTeamBased()) {
                 val p = Game_local.gameLocal.GetClientByNum(Game_local.gameLocal.localClientNum)!!
                 mainGui.SetStateInt("team", p.team)
-            }
-            // setup vote
+            } // setup vote
             mainGui.SetStateInt("voteon", if (vote != vote_flags_t.VOTE_NONE && !voted) 1 else 0)
-            mainGui.SetStateInt("voteoff", if (vote != vote_flags_t.VOTE_NONE && !voted) 0 else 1)
-            // last man hack
-            mainGui.SetStateInt("isLastMan", if (Game_local.gameLocal.gameType == gameType_t.GAME_LASTMAN) 1 else 0)
-            // send the current serverinfo values
+            mainGui.SetStateInt("voteoff", if (vote != vote_flags_t.VOTE_NONE && !voted) 0 else 1) // last man hack
+            mainGui.SetStateInt(
+                "isLastMan", if (Game_local.gameLocal.gameType == gameType_t.GAME_LASTMAN) 1 else 0
+            ) // send the current serverinfo values
             i = 0
             while (i < Game_local.gameLocal.serverInfo.GetNumKeyVals()) {
                 val keyval = Game_local.gameLocal.serverInfo.GetKeyVal(i)!!
                 mainGui.SetStateString(keyval.GetKey().toString(), keyval.GetValue().toString())
                 i++
             }
-            mainGui.StateChanged(Game_local.gameLocal.time)
-            // DG: dhewm3 removed platform-specific driver_prompt — always 0
+            mainGui.StateChanged(Game_local.gameLocal.time) // DG: dhewm3 removed platform-specific driver_prompt — always 0
             mainGui.SetStateString("driver_prompt", "0")
         }
 
@@ -741,8 +719,7 @@ object MultiplayerGame {
             } else {
                 currentMenu = if (nextMenu >= 2) {
                     nextMenu
-                } else {
-                    // for default and explicit
+                } else { // for default and explicit
                     1
                 }
                 CVarSystem.cvarSystem.SetCVarBool("ui_chat", true)
@@ -799,8 +776,7 @@ object MultiplayerGame {
                 val numDecls = DeclManager.declManager.GetNumDecls(declType_t.DECL_MAPDEF)
                 for (mi in 0 until numDecls) {
                     val mapDef = DeclManager.declManager.DeclByIndex(
-                        declType_t.DECL_MAPDEF,
-                        mi
+                        declType_t.DECL_MAPDEF, mi
                     ) as? DeclEntityDef.idDeclEntityDef
                     if (mapDef != null && idStr.Icmp(mapDef.GetName(), map) == 0 && mapDef.dict.GetBool(gametype)) {
                         var k = 0
@@ -823,8 +799,7 @@ object MultiplayerGame {
                 mainGui.SetStateString("chattext", "")
                 mainGui.Activate(true, Game_local.gameLocal.time)
                 return mainGui
-            } else if (currentMenu == 2) {
-                // the setup is done in MessageMode
+            } else if (currentMenu == 2) { // the setup is done in MessageMode
                 msgmodeGui!!.Activate(true, Game_local.gameLocal.time)
                 CVarSystem.cvarSystem.SetCVarBool("ui_chat", true)
                 return msgmodeGui
@@ -873,8 +848,7 @@ object MultiplayerGame {
                     }
                     if (oldSpec != CVarSystem.cvarSystem.GetCVarInteger("com_machineSpec")) {
                         currentGui!!.SetStateInt(
-                            "com_machineSpec",
-                            CVarSystem.cvarSystem.GetCVarInteger("com_machineSpec")
+                            "com_machineSpec", CVarSystem.cvarSystem.GetCVarInteger("com_machineSpec")
                         )
                         currentGui.StateChanged(Game_local.gameLocal.realClientTime)
                         CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "execMachineSpec\n")
@@ -924,8 +898,7 @@ object MultiplayerGame {
                         )
                     } else {
                         CmdSystem.cmdSystem.BufferCommandText(
-                            cmdExecution_t.CMD_EXEC_NOW,
-                            Str.va("say \"%s\"", currentGui.State().GetString("chattext"))
+                            cmdExecution_t.CMD_EXEC_NOW, Str.va("say \"%s\"", currentGui.State().GetString("chattext"))
                         )
                     }
                     currentGui.SetStateString("chattext", "")
@@ -944,8 +917,7 @@ object MultiplayerGame {
                     DisableMenu()
                     return null
                 } else if (0 == idStr.Icmp(cmd, "callVote")) {
-                    val voteIndex: vote_flags_t =
-                        vote_flags_t.entries[mainGui!!.State().GetInt("voteIndex")]
+                    val voteIndex: vote_flags_t = vote_flags_t.entries[mainGui!!.State().GetInt("voteIndex")]
                     if (voteIndex == vote_flags_t.VOTE_MAP) {
                         val mapNum = mapList!!.GetSelection(null, 0)
                         if (mapNum >= 0) {
@@ -959,13 +931,13 @@ object MultiplayerGame {
                         if (voteIndex == vote_flags_t.VOTE_KICK) {
                             vote_clientNum = kickVoteMap[voteValue.toInt()]
                             ClientCallVote(voteIndex, Str.va("%d", vote_clientNum))
-                        } else if (voteIndex == vote_flags_t.VOTE_GAMETYPE) {
-                            // D3XP CTF: send the actual gametype index via gameTypeVoteMap
+                        } else if (voteIndex == vote_flags_t.VOTE_GAMETYPE) { // D3XP CTF: send the actual gametype index via gameTypeVoteMap
                             var found = false
                             var j = 0
                             while (SysCvar.si_gameTypeArgs[j] != null) {
-                                if (gameTypeVoteMap[voteValue.toInt()] != null &&
-                                    idStr.Icmp(gameTypeVoteMap[voteValue.toInt()]!!, SysCvar.si_gameTypeArgs[j]!!) == 0
+                                if (gameTypeVoteMap[voteValue.toInt()] != null && idStr.Icmp(
+                                        gameTypeVoteMap[voteValue.toInt()]!!, SysCvar.si_gameTypeArgs[j]!!
+                                    ) == 0
                                 ) {
                                     ClientCallVote(voteIndex, Str.va("%d", j))
                                     found = true
@@ -995,8 +967,7 @@ object MultiplayerGame {
                         val key = args.Argv(icmd++)
                         val bind = args.Argv(icmd++)
                         CmdSystem.cmdSystem.BufferCommandText(
-                            cmdExecution_t.CMD_EXEC_NOW,
-                            Str.va("bindunbindtwo \"%s\" \"%s\"", key, bind)
+                            cmdExecution_t.CMD_EXEC_NOW, Str.va("bindunbindtwo \"%s\" \"%s\"", key, bind)
                         )
                         mainGui!!.SetKeyBindingNames()
                     }
@@ -1005,8 +976,7 @@ object MultiplayerGame {
                     if (args.Argc() - icmd >= 1) {
                         val bind = args.Argv(icmd++)
                         CmdSystem.cmdSystem.BufferCommandText(
-                            cmdExecution_t.CMD_EXEC_NOW,
-                            Str.va("unbind \"%s\"", bind)
+                            cmdExecution_t.CMD_EXEC_NOW, Str.va("unbind \"%s\"", bind)
                         )
                         mainGui!!.SetKeyBindingNames()
                     }
@@ -1014,14 +984,11 @@ object MultiplayerGame {
                 } else if (0 == idStr.Icmp(cmd, "MAPScan")) {
                     val gametype = Game_local.gameLocal.serverInfo.GetString("si_gameType")
                     if (gametype == null || gametype.isEmpty() || idStr.Icmp(
-                            gametype,
-                            "singleplayer"
+                            gametype, "singleplayer"
                         ) == 0
-                    ) {
-//                        gametype = "Deathmatch";
+                    ) { //                        gametype = "Deathmatch";
                         Game_local.gameLocal.serverInfo.Set(
-                            "si_gameType",
-                            "Deathmatch"
+                            "si_gameType", "Deathmatch"
                         ) //TODO:double check that this actually works.
                     }
                     var i: Int
@@ -1034,8 +1001,7 @@ object MultiplayerGame {
                     i = 0
                     while (i < num) {
                         dict = FileSystem_h.fileSystem.GetMapDecl(i)
-                        if (dict != null) {
-                            // any MP gametype supported
+                        if (dict != null) { // any MP gametype supported
                             var isMP = false
                             var igt = gameType_t.GAME_SP.ordinal + 1
                             while (SysCvar.si_gameTypeArgs[igt] != null) {
@@ -1058,15 +1024,13 @@ object MultiplayerGame {
                             }
                         }
                         i++
-                    }
-                    // set the current level shot
+                    } // set the current level shot
                     SetMapShot()
                     return "continue"
                 } else if (0 == idStr.Icmp(cmd, "click_maplist")) {
                     SetMapShot()
                     return "continue"
-                } else if (cmd.startsWith("sound")) {
-                    // pass that back to the core, will know what to do with it
+                } else if (cmd.startsWith("sound")) { // pass that back to the core, will know what to do with it
                     return _menuCommand
                 }
                 Common.common.Printf("idMultiplayerGame::HandleGuiCommands: '%s'	unknown\n", cmd)
@@ -1074,8 +1038,7 @@ object MultiplayerGame {
             return "continue"
         }
 
-        fun SetMenuSkin() {
-            // skins
+        fun SetMenuSkin() { // skins
             var str = CVarSystem.cvarSystem.GetCVarString("mod_validSkins")
             val uiSkin = CVarSystem.cvarSystem.GetCVarString("ui_skin")
             var skin: String?
@@ -1112,15 +1075,11 @@ object MultiplayerGame {
 
                 // clamp all values to min/max possible value that we can send over
                 value = idMath.ClampInt(
-                    MP_PLAYER_MINFRAGS,
-                    MP_PLAYER_MAXFRAGS,
-                    playerState[i].fragCount
+                    MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[i].fragCount
                 )
                 msg.WriteBits(value, ASYNC_PLAYER_FRAG_BITS())
                 value = idMath.ClampInt(
-                    MP_PLAYER_MINFRAGS,
-                    MP_PLAYER_MAXFRAGS,
-                    playerState[i].teamFragCount
+                    MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[i].teamFragCount
                 )
                 msg.WriteBits(value, ASYNC_PLAYER_FRAG_BITS())
                 value = idMath.ClampInt(0, MP_PLAYER_MAXWINS, playerState[i].wins)
@@ -1129,8 +1088,7 @@ object MultiplayerGame {
                 msg.WriteBits(value, ASYNC_PLAYER_PING_BITS)
                 msg.WriteBits((playerState[i].ingame).toInt(), 1)
                 i++
-            }
-            // D3XP CTF: write team points and flag carriers
+            } // D3XP CTF: write team points and flag carriers
             if (isD3XP) {
                 msg.WriteShort(teamPoints[0])
                 msg.WriteShort(teamPoints[1])
@@ -1145,12 +1103,10 @@ object MultiplayerGame {
             newState = gameState_t.entries.toTypedArray()[msg.ReadByte()]
             if (newState != gameState) {
                 Game_local.gameLocal.DPrintf(
-                    "%s . %s\n",
-                    GameStateStrings[gameState.ordinal],
-                    GameStateStrings[newState.ordinal]
+                    "%s . %s\n", GameStateStrings[gameState.ordinal], GameStateStrings[newState.ordinal]
                 )
-                gameState = newState
-                // these could be gathered in a BGNewState() kind of thing, as we have to do them in NewState as well
+                gameState =
+                    newState // these could be gathered in a BGNewState() kind of thing, as we have to do them in NewState as well
                 if (gameState == gameState_t.GAMEON) {
                     matchStartedTime = Game_local.gameLocal.time
                     CVarSystem.cvarSystem.SetCVarString("ui_ready", "Not Ready")
@@ -1168,8 +1124,7 @@ object MultiplayerGame {
                 playerState[i].ping = msg.ReadBits(ASYNC_PLAYER_PING_BITS)
                 playerState[i].ingame = msg.ReadBits(1) != 0
                 i++
-            }
-            // D3XP CTF: read team points and flag carriers
+            } // D3XP CTF: read team points and flag carriers
             if (isD3XP) {
                 teamPoints[0] = msg.ReadShort()
                 teamPoints[1] = msg.ReadShort()
@@ -1204,9 +1159,7 @@ object MultiplayerGame {
                     outMsg.WriteByte(Game_local.GAME_RELIABLE_MESSAGE_SOUND_INDEX.toByte())
                     outMsg.WriteLong(
                         Game_local.gameLocal.ServerRemapDecl(
-                            to,
-                            declType_t.DECL_SOUND,
-                            shaderDecl.Index()
+                            to, declType_t.DECL_SOUND, shaderDecl.Index()
                         )
                     )
                 } else {
@@ -1444,9 +1397,7 @@ object MultiplayerGame {
             // sanity checks - setup the vote
             if (vote != vote_flags_t.VOTE_NONE) {
                 Game_local.gameLocal.ServerSendChatMessage(
-                    clientNum,
-                    "server",
-                    Common.common.GetLanguageDict().GetString("#str_04273")
+                    clientNum, "server", Common.common.GetLanguageDict().GetString("#str_04273")
                 )
                 Common.common.DPrintf("client %d: called vote while voting already in progress - ignored\n", clientNum)
                 return
@@ -1466,30 +1417,23 @@ object MultiplayerGame {
                     vote_timeLimit = value.toLong(10)
                     if (vote_timeLimit == Game_local.gameLocal.serverInfo.GetInt("si_timeLimit").toLong()) {
                         Game_local.gameLocal.ServerSendChatMessage(
-                            clientNum,
-                            "server",
-                            Common.common.GetLanguageDict().GetString("#str_04270")
+                            clientNum, "server", Common.common.GetLanguageDict().GetString("#str_04270")
                         )
                         Common.common.DPrintf("client %d: already at the voted Time Limit\n", clientNum)
                         return
                     }
                     if (vote_timeLimit < SysCvar.si_timeLimit.GetMinValue() || vote_timeLimit > SysCvar.si_timeLimit.GetMaxValue()) {
                         Game_local.gameLocal.ServerSendChatMessage(
-                            clientNum,
-                            "server",
-                            Common.common.GetLanguageDict().GetString("#str_04269")
+                            clientNum, "server", Common.common.GetLanguageDict().GetString("#str_04269")
                         )
                         Common.common.DPrintf(
-                            "client %d: timelimit value out of range for vote: %s\n",
-                            clientNum,
-                            value
+                            "client %d: timelimit value out of range for vote: %s\n", clientNum, value
                         )
                         return
                     }
                     ServerStartVote(clientNum, voteIndex, value)
                     ClientStartVote(
-                        clientNum,
-                        Str.va(Common.common.GetLanguageDict().GetString("#str_04268"), vote_timeLimit)
+                        clientNum, Str.va(Common.common.GetLanguageDict().GetString("#str_04268"), vote_timeLimit)
                     )
                 }
 
@@ -1497,30 +1441,23 @@ object MultiplayerGame {
                     vote_fragLimit = value.toLong(10)
                     if (vote_fragLimit == Game_local.gameLocal.serverInfo.GetInt("si_fragLimit").toLong()) {
                         Game_local.gameLocal.ServerSendChatMessage(
-                            clientNum,
-                            "server",
-                            Common.common.GetLanguageDict().GetString("#str_04267")
+                            clientNum, "server", Common.common.GetLanguageDict().GetString("#str_04267")
                         )
                         Common.common.DPrintf("client %d: already at the voted Frag Limit\n", clientNum)
                         return
                     }
                     if (vote_fragLimit < SysCvar.si_fragLimit.GetMinValue() || vote_fragLimit > SysCvar.si_fragLimit.GetMaxValue()) {
                         Game_local.gameLocal.ServerSendChatMessage(
-                            clientNum,
-                            "server",
-                            Common.common.GetLanguageDict().GetString("#str_04266")
+                            clientNum, "server", Common.common.GetLanguageDict().GetString("#str_04266")
                         )
                         Common.common.DPrintf(
-                            "client %d: fraglimit value out of range for vote: %s\n",
-                            clientNum,
-                            value
+                            "client %d: fraglimit value out of range for vote: %s\n", clientNum, value
                         )
                         return
                     }
                     ServerStartVote(clientNum, voteIndex, value)
                     ClientStartVote(
-                        clientNum,
-                        Str.va(
+                        clientNum, Str.va(
                             Common.common.GetLanguageDict().GetString("#str_04303"),
                             if (Game_local.gameLocal.gameType == gameType_t.GAME_LASTMAN) Common.common.GetLanguageDict()
                                 .GetString("#str_04264") else Common.common.GetLanguageDict().GetString("#str_04265"),
@@ -1530,21 +1467,17 @@ object MultiplayerGame {
                 }
 
                 vote_flags_t.VOTE_GAMETYPE -> {
-                    vote_gameTypeIndex = value.toLong(10)
-                    // D3XP: use si_gameTypeArgs lookup instead of hardcoded switch (supports CTF)
+                    vote_gameTypeIndex =
+                        value.toLong(10) // D3XP: use si_gameTypeArgs lookup instead of hardcoded switch (supports CTF)
                     assert(vote_gameTypeIndex > 0 && vote_gameTypeIndex < gameType_t.entries.size)
                     value = SysCvar.si_gameTypeArgs[vote_gameTypeIndex.toInt()]!!
-                    if (
-                        idStr.Icmp(
-                            value,
-                            Game_local.gameLocal.serverInfo.GetString("si_gameType")
+                    if (idStr.Icmp(
+                            value, Game_local.gameLocal.serverInfo.GetString("si_gameType")
                         ) == 0
 
                     ) {
                         Game_local.gameLocal.ServerSendChatMessage(
-                            clientNum,
-                            "server",
-                            Common.common.GetLanguageDict().GetString("#str_04259")
+                            clientNum, "server", Common.common.GetLanguageDict().GetString("#str_04259")
                         )
                         Common.common.DPrintf("client %d: already at the voted Game Type\n", clientNum)
                         return
@@ -1557,17 +1490,14 @@ object MultiplayerGame {
                     vote_clientNum = value.toLong(10)
                     if (vote_clientNum == Game_local.gameLocal.localClientNum.toLong()) {
                         Game_local.gameLocal.ServerSendChatMessage(
-                            clientNum,
-                            "server",
-                            Common.common.GetLanguageDict().GetString("#str_04257")
+                            clientNum, "server", Common.common.GetLanguageDict().GetString("#str_04257")
                         )
                         Common.common.DPrintf("client %d: called kick for the server host\n", clientNum)
                         return
                     }
                     ServerStartVote(clientNum, voteIndex, Str.va("%d", vote_clientNum))
                     ClientStartVote(
-                        clientNum,
-                        Str.va(
+                        clientNum, Str.va(
                             Common.common.GetLanguageDict().GetString("#str_04302"),
                             vote_clientNum,
                             Game_local.gameLocal.userInfo[vote_clientNum.toInt()].GetString("ui_name")
@@ -1578,9 +1508,7 @@ object MultiplayerGame {
                 vote_flags_t.VOTE_MAP -> {
                     if (FindText(Game_local.gameLocal.serverInfo.GetString("si_map"), value) != -1) {
                         Game_local.gameLocal.ServerSendChatMessage(
-                            clientNum,
-                            "server",
-                            Str.va(Common.common.GetLanguageDict().GetString("#str_04295"), value)
+                            clientNum, "server", Str.va(Common.common.GetLanguageDict().GetString("#str_04295"), value)
                         )
                         Common.common.DPrintf("client %d: already running the voted map: %s\n", clientNum, value)
                         return
@@ -1592,9 +1520,7 @@ object MultiplayerGame {
                     i = 0
                     while (i < num) {
                         dict = FileSystem_h.fileSystem.GetMapDecl(i)
-                        if (dict != null &&
-                            idStr.Icmp(dict.GetString("path"), value) == 0
-                        ) {
+                        if (dict != null && idStr.Icmp(dict.GetString("path"), value) == 0) {
                             haveMap = true
                             break
                         }
@@ -1602,17 +1528,14 @@ object MultiplayerGame {
                     }
                     if (!haveMap) {
                         Game_local.gameLocal.ServerSendChatMessage(
-                            clientNum,
-                            "server",
-                            Str.va(Common.common.GetLanguageDict().GetString("#str_04296"), value)
+                            clientNum, "server", Str.va(Common.common.GetLanguageDict().GetString("#str_04296"), value)
                         )
                         Common.common.Printf("client %d: map not found: %s\n", clientNum, value)
                         return
                     }
                     ServerStartVote(clientNum, voteIndex, value)
                     ClientStartVote(
-                        clientNum,
-                        Str.va(
+                        clientNum, Str.va(
                             Common.common.GetLanguageDict().GetString("#str_04256"),
                             Common.common.GetLanguageDict()
                                 .GetString(if (dict != null) dict.GetString("name") else value)
@@ -1657,8 +1580,7 @@ object MultiplayerGame {
             )
             Game_local.gameSoundWorld!!.PlayShaderDirectly(GlobalSoundStrings[(snd_evt_t.SND_VOTE).ordinal])
             voted = clientNum == Game_local.gameLocal.localClientNum
-            if (Game_local.gameLocal.isClient) {
-                // the the vote value to something so the vote line is displayed
+            if (Game_local.gameLocal.isClient) { // the the vote value to something so the vote line is displayed
                 vote = vote_flags_t.VOTE_RESTART
                 yesVotes = 1f
                 noVotes = 0f
@@ -1674,8 +1596,8 @@ object MultiplayerGame {
             noVotes = 0f
             vote = voteIndex
             this.voteValue.set(voteValue)
-            voteTimeOut = Game_local.gameLocal.time + 20000
-            // mark players allowed to vote - only current ingame players, players joining during vote will be ignored
+            voteTimeOut =
+                Game_local.gameLocal.time + 20000 // mark players allowed to vote - only current ingame players, players joining during vote will be ignored
             i = 0
             while (i < Game_local.gameLocal.numClients) {
                 if (Game_local.gameLocal.entities[i] != null && Game_local.gameLocal.entities[i] is idPlayer) {
@@ -1699,8 +1621,7 @@ object MultiplayerGame {
                 outMsg.WriteByte(noCount.toByte())
                 NetworkSystem.networkSystem.ServerSendReliableMessage(-1, outMsg)
             }
-            if (vote == vote_flags_t.VOTE_NONE) {
-                // clients coming in late don't get the vote start and are not allowed to vote
+            if (vote == vote_flags_t.VOTE_NONE) { // clients coming in late don't get the vote start and are not allowed to vote
                 return
             }
             when (status) {
@@ -1753,23 +1674,17 @@ object MultiplayerGame {
             // sanity
             if (vote == vote_flags_t.VOTE_NONE) {
                 Game_local.gameLocal.ServerSendChatMessage(
-                    clientNum,
-                    "server",
-                    Common.common.GetLanguageDict().GetString("#str_04275")
+                    clientNum, "server", Common.common.GetLanguageDict().GetString("#str_04275")
                 )
                 Common.common.DPrintf("client %d: cast vote while no vote in progress\n", clientNum)
                 return
             }
             if (playerState[clientNum].vote != playerVote_t.PLAYER_VOTE_WAIT) {
                 Game_local.gameLocal.ServerSendChatMessage(
-                    clientNum,
-                    "server",
-                    Common.common.GetLanguageDict().GetString("#str_04274")
+                    clientNum, "server", Common.common.GetLanguageDict().GetString("#str_04274")
                 )
                 Common.common.DPrintf(
-                    "client %d: cast vote - vote %d != PLAYER_VOTE_WAIT\n",
-                    clientNum,
-                    playerState[clientNum].vote
+                    "client %d: cast vote - vote %d != PLAYER_VOTE_WAIT\n", clientNum, playerState[clientNum].vote
                 )
                 return
             }
@@ -1818,8 +1733,7 @@ object MultiplayerGame {
                 }
 
                 vote_flags_t.VOTE_KICK -> CmdSystem.cmdSystem.BufferCommandText(
-                    cmdExecution_t.CMD_EXEC_NOW,
-                    Str.va("kick %s", voteValue)
+                    cmdExecution_t.CMD_EXEC_NOW, Str.va("kick %s", voteValue)
                 )
 
                 vote_flags_t.VOTE_MAP -> {
@@ -1837,8 +1751,7 @@ object MultiplayerGame {
                 }
 
                 vote_flags_t.VOTE_NEXTMAP -> CmdSystem.cmdSystem.BufferCommandText(
-                    cmdExecution_t.CMD_EXEC_APPEND,
-                    "serverNextMap\n"
+                    cmdExecution_t.CMD_EXEC_APPEND, "serverNextMap\n"
                 )
 
                 else -> {}
@@ -1891,22 +1804,18 @@ object MultiplayerGame {
                 NewState(gameState_t.WARMUP)
                 nextState = gameState_t.INACTIVE
                 nextStateSwitch = 0
-            }
-            // D3XP CTF: reset team points and HUD
+            } // D3XP CTF: reset team points and HUD
             teamPoints[0] = 0
             teamPoints[1] = 0
-            ClearHUDStatus()
-            // D3XP CTF: use IsGametypeTeamBased to include CTF in balance check
+            ClearHUDStatus() // D3XP CTF: use IsGametypeTeamBased to include CTF in balance check
             if (SysCvar.g_balanceTDM.GetBool() && lastGameType != gameType_t.GAME_TDM && lastGameType != gameType_t.GAME_CTF && IsGametypeTeamBased()) {
                 clientNum = 0
                 while (clientNum < Game_local.gameLocal.numClients) {
                     if (Game_local.gameLocal.entities[clientNum] != null && Game_local.gameLocal.entities[clientNum] is idPlayer) {
-                        if ((Game_local.gameLocal.entities[clientNum] as idPlayer).BalanceTDM()) {
-                            // core is in charge of syncing down userinfo changes
+                        if ((Game_local.gameLocal.entities[clientNum] as idPlayer).BalanceTDM()) { // core is in charge of syncing down userinfo changes
                             // it will also call back game through SetUserInfo with the current info for update
                             CmdSystem.cmdSystem.BufferCommandText(
-                                cmdExecution_t.CMD_EXEC_NOW,
-                                Str.va("updateUI %d\n", clientNum)
+                                cmdExecution_t.CMD_EXEC_NOW, Str.va("updateUI %d\n", clientNum)
                             )
                         }
                     }
@@ -1924,8 +1833,7 @@ object MultiplayerGame {
             assert(!Game_local.gameLocal.isClient)
             if (!Game_local.gameLocal.isClient && newteam >= 0 && IsInGame(clientNum)) {
                 PrintMessageEvent(-1, msg_evt_t.MSG_JOINTEAM, clientNum, newteam)
-            }
-            // assign the right teamFragCount
+            } // assign the right teamFragCount
             i = 0
             while (i < Game_local.gameLocal.numClients) {
                 if (i == clientNum) {
@@ -1933,32 +1841,27 @@ object MultiplayerGame {
                     continue
                 }
                 ent = Game_local.gameLocal.entities[i]
-                if (ent != null && ent is idPlayer && (ent as idPlayer).team == newteam) {
+                if (ent != null && ent is idPlayer && ent.team == newteam) {
                     playerState[clientNum].teamFragCount = playerState[i].teamFragCount
                     break
                 }
                 i++
             }
-            if (i == Game_local.gameLocal.numClients) {
-                // alone on this team
+            if (i == Game_local.gameLocal.numClients) { // alone on this team
                 playerState[clientNum].teamFragCount = 0
-            }
-            // D3XP CTF: also kill during sudden death in flag-based games
-            if ((gameState == gameState_t.GAMEON || (IsGametypeFlagBased() && gameState == gameState_t.SUDDENDEATH)) && oldteam != -1) {
-                // when changing teams during game, kill and respawn
+            } // D3XP CTF: also kill during sudden death in flag-based games
+            if ((gameState == gameState_t.GAMEON || (IsGametypeFlagBased() && gameState == gameState_t.SUDDENDEATH)) && oldteam != -1) { // when changing teams during game, kill and respawn
                 val p = Game_local.gameLocal.entities[clientNum] as idPlayer
                 if (p.IsInTeleport()) {
                     p.ServerSendEvent(idPlayer.EVENT_ABORT_TELEPORTER, null, false, -1)
                     p.SetPrivateCameraView(null)
                 }
-                p.Kill(true, true)
-                // D3XP CTF: drop flag when switching teams
+                p.Kill(true, true) // D3XP CTF: drop flag when switching teams
                 if (IsGametypeFlagBased()) {
                     p.DropFlag()
                 }
                 CheckAbortGame()
-            } else if (IsGametypeFlagBased() && oldteam != -1) {
-                // D3XP CTF: drop flag even outside GAMEON if switching teams
+            } else if (IsGametypeFlagBased() && oldteam != -1) { // D3XP CTF: drop flag even outside GAMEON if switching teams
                 val p = Game_local.gameLocal.entities[clientNum] as idPlayer
                 p.DropFlag()
             }
@@ -1986,26 +1889,21 @@ object MultiplayerGame {
                 if (p.spectating) {
                     prefix = "spectating"
                     send_to =
-                        if (team || !g_spectatorChat.GetBool() && (gameState == gameState_t.GAMEON || gameState == gameState_t.SUDDENDEATH)) {
-                            // to specs
+                        if (team || !g_spectatorChat.GetBool() && (gameState == gameState_t.GAMEON || gameState == gameState_t.SUDDENDEATH)) { // to specs
                             1
-                        } else {
-                            // to all
+                        } else { // to all
                             0
                         }
                 } else if (team) {
-                    prefix = "team"
-                    // to team
+                    prefix = "team" // to team
                     send_to = 2
-                } else {
-                    // to all
+                } else { // to all
                     send_to = 0
                 }
             } else {
                 p = null
                 send_to = 0
-            }
-            // put the message together
+            } // put the message together
             outMsg.Init(msgBuf, msgBuf.capacity())
             outMsg.WriteByte(Game_local.GAME_RELIABLE_MESSAGE_CHAT.toByte())
             prefixed_name = if (prefix != null && prefix.isNotEmpty()) {
@@ -2029,7 +1927,7 @@ object MultiplayerGame {
                         i++
                         continue
                     }
-                    if (send_to == 1 && (ent as idPlayer).spectating) {
+                    if (send_to == 1 && ent.spectating) {
                         if (sound != null) {
                             PlayGlobalSound(i, snd_evt_t.SND_COUNT, sound)
                         }
@@ -2038,7 +1936,7 @@ object MultiplayerGame {
                         } else {
                             NetworkSystem.networkSystem.ServerSendReliableMessage(i, outMsg)
                         }
-                    } else if (send_to == 2 && (ent as idPlayer).team == p!!.team) {
+                    } else if (send_to == 2 && ent.team == p!!.team) {
                         if (sound != null) {
                             PlayGlobalSound(i, snd_evt_t.SND_COUNT, sound)
                         }
@@ -2085,11 +1983,7 @@ object MultiplayerGame {
             text_key = String.format("txt_%s", snd_key.Right(snd_key.Length() - 4).toString())
             if (team || gameState == gameState_t.COUNTDOWN || gameState == gameState_t.GAMEREVIEW) {
                 ProcessChatMessage(
-                    clientNum,
-                    team,
-                    name,
-                    spawnArgs.GetString(text_key),
-                    spawnArgs.GetString(snd_key.toString())
+                    clientNum, team, name, spawnArgs.GetString(text_key), spawnArgs.GetString(snd_key.toString())
                 )
             } else {
                 p.StartSound(snd_key.toString(), gameSoundChannel_t.SND_CHANNEL_ANY, 0, true)
@@ -2124,17 +2018,15 @@ object MultiplayerGame {
             while (SysCvar.ui_skinArgs[i] != null) {
                 DeclManager.declManager.FindSkin(SysCvar.ui_skinArgs[i]!!, false)
                 i++
-            }
-            // MP game sounds
+            } // MP game sounds
             i = 0
             while (i < snd_evt_t.SND_COUNT.ordinal) {
                 f = FileSystem_h.fileSystem.OpenFileRead(GlobalSoundStrings[i])
                 if (f != null) {
-                    FileSystem_h.fileSystem.CloseFile(f!!)
+                    FileSystem_h.fileSystem.CloseFile(f)
                 }
                 i++
-            }
-            // MP guis. just make sure we hit all of them
+            } // MP guis. just make sure we hit all of them
             i = 0
             while (i < MPGuis.size) {
                 UserInterface.uiManager.FindGui(MPGuis[i], true)
@@ -2177,17 +2069,14 @@ object MultiplayerGame {
             val spectating: Boolean
             assert(Game_local.gameLocal.isClient || Game_local.gameLocal.localClientNum == 0)
             spectating = idStr.Icmp(CVarSystem.cvarSystem.GetCVarString("ui_spectate"), "Spectate") == 0
-            if (spectating) {
-                // always allow toggling to play
+            if (spectating) { // always allow toggling to play
                 CVarSystem.cvarSystem.SetCVarString("ui_spectate", "Play")
-            } else {
-                // only allow toggling to spectate if spectators are enabled.
+            } else { // only allow toggling to spectate if spectators are enabled.
                 if (Game_local.gameLocal.serverInfo.GetBool("si_spectators")) {
                     CVarSystem.cvarSystem.SetCVarString("ui_spectate", "Spectate")
                 } else {
                     Game_local.gameLocal.mpGame.AddChatLine(
-                        "%s",
-                        Common.common.GetLanguageDict().GetString("#str_06747")
+                        "%s", Common.common.GetLanguageDict().GetString("#str_06747")
                     )
                 }
             }
@@ -2223,12 +2112,9 @@ object MultiplayerGame {
             assert(!Game_local.gameLocal.isClient)
             if (!playerState[clientNum].ingame) {
                 playerState[clientNum].ingame = true
-                if (Game_local.gameLocal.isMultiplayer) {
-                    // can't use PrintMessageEvent as clients don't know the nickname yet
+                if (Game_local.gameLocal.isMultiplayer) { // can't use PrintMessageEvent as clients don't know the nickname yet
                     Game_local.gameLocal.ServerSendChatMessage(
-                        -1,
-                        Common.common.GetLanguageDict().GetString("#str_02047"),
-                        Str.va(
+                        -1, Common.common.GetLanguageDict().GetString("#str_02047"), Str.va(
                             Common.common.GetLanguageDict().GetString("#str_07177"),
                             Game_local.gameLocal.userInfo[clientNum].GetString("ui_name")
                         )
@@ -2256,19 +2142,17 @@ object MultiplayerGame {
             var ent: idEntity?
             outMsg.Init(msgBuf, Game_local.MAX_GAME_MESSAGE_SIZE)
             outMsg.BeginWriting()
-            outMsg.WriteByte(Game_local.GAME_RELIABLE_MESSAGE_STARTSTATE.toByte())
-            // send the game state and start time
+            outMsg.WriteByte(Game_local.GAME_RELIABLE_MESSAGE_STARTSTATE.toByte()) // send the game state and start time
             outMsg.WriteByte(gameState.ordinal.toByte())
             outMsg.WriteLong(matchStartedTime)
-            outMsg.WriteShort(startFragLimit.toShort())
-            // send the powerup states and the spectate states
+            outMsg.WriteShort(startFragLimit.toShort()) // send the powerup states and the spectate states
             i = 0
             while (i < Game_local.gameLocal.numClients) {
                 ent = Game_local.gameLocal.entities[i]
                 if (i != clientNum && ent != null && ent is idPlayer) {
                     outMsg.WriteShort(i.toShort())
-                    outMsg.WriteShort((ent as idPlayer).inventory.powerups.toShort())
-                    outMsg.WriteBits(((ent as idPlayer).spectating).toInt(), 1)
+                    outMsg.WriteShort(ent.inventory.powerups.toShort())
+                    outMsg.WriteBits((ent.spectating).toInt(), 1)
                 }
                 i++
             }
@@ -2318,12 +2202,11 @@ object MultiplayerGame {
             warmupEndTime = msg.ReadLong()
         }
 
-        fun ServerClientConnect(clientNum: Int) {
-//	memset( &playerState[ clientNum ], 0, sizeof( playerState[ clientNum ] ) );
-            playerState[clientNum] = mpPlayerState_s()
-            //            for (int i = clientNum; i < playerState.length; i++) {
-//                playerState[i] = new mpPlayerState_s();
-//            }
+        fun ServerClientConnect(clientNum: Int) { //	memset( &playerState[ clientNum ], 0, sizeof( playerState[ clientNum ] ) );
+            playerState[clientNum] =
+                mpPlayerState_s() //            for (int i = clientNum; i < playerState.length; i++) {
+            //                playerState[i] = new mpPlayerState_s();
+            //            }
         }
 
         fun PlayerStats(clientNum: Int, data: Array<String>, len: Int) {
@@ -2339,7 +2222,7 @@ object MultiplayerGame {
             // find which team this player is on
             ent = Game_local.gameLocal.entities[clientNum]
             team = if (ent != null && ent is idPlayer) {
-                (ent as idPlayer).team
+                ent.team
             } else {
                 return
             }
@@ -2362,7 +2245,7 @@ object MultiplayerGame {
             var ent: idEntity?
             var player: idPlayer?
 
-//	memset( players, 0, sizeof( players ) );
+            //	memset( players, 0, sizeof( players ) );
             numRankedPlayers = 0
             i = 0
             while (i < Game_local.gameLocal.numClients) {
@@ -2391,15 +2274,12 @@ object MultiplayerGame {
                     var insert = false
                     if (IsGametypeTeamBased()) {  // D3XP: includes CTF
                         if (player.team != players[j]!!.team) {
-                            if (playerState[i].teamFragCount > playerState[players[j]!!.entityNumber].teamFragCount) {
-                                // team scores
+                            if (playerState[i].teamFragCount > playerState[players[j]!!.entityNumber].teamFragCount) { // team scores
                                 insert = true
-                            } else if (playerState[i].teamFragCount == playerState[players[j]!!.entityNumber].teamFragCount && player.team < players[j]!!.team) {
-                                // at equal scores, sort by team number
+                            } else if (playerState[i].teamFragCount == playerState[players[j]!!.entityNumber].teamFragCount && player.team < players[j]!!.team) { // at equal scores, sort by team number
                                 insert = true
                             }
-                        } else if (playerState[i].fragCount > playerState[players[j]!!.entityNumber].fragCount) {
-                            // in the same team, sort by frag count
+                        } else if (playerState[i].fragCount > playerState[players[j]!!.entityNumber].fragCount) { // in the same team, sort by frag count
                             insert = true
                         }
                     } else {
@@ -2423,7 +2303,7 @@ object MultiplayerGame {
                 i++
             }
 
-//	memcpy( rankedPlayers, players, sizeof( players ) );
+            //	memcpy( rankedPlayers, players, sizeof( players ) );
             System.arraycopy(players, 0, rankedPlayers, 0, players.size)
         }
 
@@ -2442,8 +2322,8 @@ object MultiplayerGame {
 
             scoreBoard.SetStateString(
                 "scoretext",
-                if (Game_local.gameLocal.gameType == gameType_t.GAME_LASTMAN)
-                    Common.common.GetLanguageDict().GetString("#str_04242")
+                if (Game_local.gameLocal.gameType == gameType_t.GAME_LASTMAN) Common.common.GetLanguageDict()
+                    .GetString("#str_04242")
                 else Common.common.GetLanguageDict().GetString("#str_04243")
             )
 
@@ -2454,37 +2334,34 @@ object MultiplayerGame {
             if (gameState != gameState_t.WARMUP) {
                 i = 0
                 while (i < numRankedPlayers) {
-                    val p = rankedPlayers[i]!!
+                    val p = rankedPlayers[i]
                     val curTeam = if (p.team == 0) "red" else "blue"
                     assert(p.team <= 1)
                     ilines[p.team]++
 
                     // Update flag carrier display line
-                    if (player_blue_flag == p.entityNumber)
-                        scoreBoard.SetStateInt("player_blue_flag", ilines[p.team])
-                    if (p.team == 1 && player_red_flag == p.entityNumber)
-                        scoreBoard.SetStateInt("player_red_flag", ilines[p.team])
+                    if (player_blue_flag == p.entityNumber) scoreBoard.SetStateInt("player_blue_flag", ilines[p.team])
+                    if (p.team == 1 && player_red_flag == p.entityNumber) scoreBoard.SetStateInt(
+                        "player_red_flag", ilines[p.team]
+                    )
 
                     scoreBoard.SetStateString(
-                        Str.va("player%d_%s", ilines[p.team], curTeam),
-                        p.GetUserInfo().GetString("ui_name")
+                        Str.va("player%d_%s", ilines[p.team], curTeam), p.GetUserInfo().GetString("ui_name")
                     )
 
                     if (IsGametypeTeamBased()) {
                         value = idMath.ClampInt(
-                            MP_PLAYER_MINFRAGS,
-                            MP_PLAYER_MAXFRAGS,
-                            playerState[rankedPlayers[i]!!.entityNumber].fragCount
+                            MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[rankedPlayers[i].entityNumber].fragCount
                         )
                         scoreBoard.SetStateInt(Str.va("player%d_%s_score", ilines[p.team], curTeam), value)
                         scoreBoard.SetStateString(Str.va("player%d_%s_tscore", ilines[p.team], curTeam), "")
                     }
 
-                    value = idMath.ClampInt(0, MP_PLAYER_MAXWINS, playerState[rankedPlayers[i]!!.entityNumber].wins)
+                    value = idMath.ClampInt(0, MP_PLAYER_MAXWINS, playerState[rankedPlayers[i].entityNumber].wins)
                     scoreBoard.SetStateInt(Str.va("player%d_%s_wins", ilines[p.team], curTeam), value)
                     scoreBoard.SetStateInt(
                         Str.va("player%d_%s_ping", ilines[p.team], curTeam),
-                        playerState[rankedPlayers[i]!!.entityNumber].ping
+                        playerState[rankedPlayers[i].entityNumber].ping
                     )
                     i++
                 }
@@ -2526,11 +2403,10 @@ object MultiplayerGame {
                         Common.common.GetLanguageDict().GetString("#str_04245")
                     )
                 } else {
-                    if (!p.spectating)
-                        scoreBoard.SetStateString(
-                            Str.va("player%d_%s", ilines[p.team], curTeam),
-                            Game_local.gameLocal.userInfo[i].GetString("ui_name")
-                        )
+                    if (!p.spectating) scoreBoard.SetStateString(
+                        Str.va("player%d_%s", ilines[p.team], curTeam),
+                        Game_local.gameLocal.userInfo[i].GetString("ui_name")
+                    )
                     if (gameState == gameState_t.WARMUP) {
                         if (p.spectating) {
                             scoreBoard.SetStateString(
@@ -2567,17 +2443,13 @@ object MultiplayerGame {
                 if (captureLimit > MP_CTF_MAXPOINTS) captureLimit = MP_CTF_MAXPOINTS
                 val timeLimit = Game_local.gameLocal.serverInfo.GetInt("si_timeLimit")
                 scoreBoard.SetStateString(
-                    "gameinfo_red",
-                    if (captureLimit != 0) Str.va(
-                        Common.common.GetLanguageDict().GetString("#str_11108"),
-                        captureLimit
+                    "gameinfo_red", if (captureLimit != 0) Str.va(
+                        Common.common.GetLanguageDict().GetString("#str_11108"), captureLimit
                     ) else ""
                 )
                 scoreBoard.SetStateString(
-                    "gameinfo_blue",
-                    if (timeLimit != 0) Str.va(
-                        Common.common.GetLanguageDict().GetString("#str_11109"),
-                        timeLimit
+                    "gameinfo_blue", if (timeLimit != 0) Str.va(
+                        Common.common.GetLanguageDict().GetString("#str_11109"), timeLimit
                     ) else ""
                 )
             }
@@ -2613,14 +2485,11 @@ object MultiplayerGame {
                     // ranked player
                     iline++
                     scoreBoard.SetStateString(
-                        Str.va("player%d", iline),
-                        rankedPlayers[i].GetUserInfo().GetString("ui_name")
+                        Str.va("player%d", iline), rankedPlayers[i].GetUserInfo().GetString("ui_name")
                     )
                     if (IsGametypeTeamBased()) {  // D3XP: includes CTF (in UpdateScoreboard)
                         value = idMath.ClampInt(
-                            MP_PLAYER_MINFRAGS,
-                            MP_PLAYER_MAXFRAGS,
-                            playerState[rankedPlayers[i].entityNumber].fragCount
+                            MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[rankedPlayers[i].entityNumber].fragCount
                         )
                         scoreBoard.SetStateInt(Str.va("player%d_tdm_score", iline), value)
                         value = idMath.ClampInt(
@@ -2632,29 +2501,22 @@ object MultiplayerGame {
                         scoreBoard.SetStateString(Str.va("player%d_score", iline), "")
                     } else {
                         value = idMath.ClampInt(
-                            MP_PLAYER_MINFRAGS,
-                            MP_PLAYER_MAXFRAGS,
-                            playerState[rankedPlayers[i].entityNumber].fragCount
+                            MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[rankedPlayers[i].entityNumber].fragCount
                         )
                         scoreBoard.SetStateInt(Str.va("player%d_score", iline), value)
                         scoreBoard.SetStateString(Str.va("player%d_tdm_tscore", iline), "")
                         scoreBoard.SetStateString(Str.va("player%d_tdm_score", iline), "")
                     }
                     value = idMath.ClampInt(
-                        0,
-                        MP_PLAYER_MAXWINS,
-                        playerState[rankedPlayers[i].entityNumber].wins
+                        0, MP_PLAYER_MAXWINS, playerState[rankedPlayers[i].entityNumber].wins
                     )
                     scoreBoard.SetStateInt(Str.va("player%d_wins", iline), value)
                     scoreBoard.SetStateInt(
-                        Str.va("player%d_ping", iline),
-                        playerState[rankedPlayers[i].entityNumber].ping
-                    )
-                    // set the color band
+                        Str.va("player%d_ping", iline), playerState[rankedPlayers[i].entityNumber].ping
+                    ) // set the color band
                     scoreBoard.SetStateInt(Str.va("rank%d", iline), 1)
                     UpdateRankColor(scoreBoard, "rank%d_color%d", iline, rankedPlayers[i].colorBar)
-                    if (rankedPlayers[i] === player) {
-                        // highlight who we are
+                    if (rankedPlayers[i] === player) { // highlight who we are
                         scoreBoard.SetStateInt("rank_self", iline)
                     }
                     i++
@@ -2673,8 +2535,7 @@ object MultiplayerGame {
                         i++
                         continue
                     }
-                    if (gameState != gameState_t.WARMUP) {
-                        // check he's not covered by ranks already
+                    if (gameState != gameState_t.WARMUP) { // check he's not covered by ranks already
                         j = 0
                         while (j < numRankedPlayers) {
                             if (ent == rankedPlayers[j]) {
@@ -2701,27 +2562,22 @@ object MultiplayerGame {
                     iline++
                     if (!playerState[i].ingame) {
                         scoreBoard.SetStateString(
-                            Str.va("player%d", iline),
-                            Common.common.GetLanguageDict().GetString("#str_04244")
+                            Str.va("player%d", iline), Common.common.GetLanguageDict().GetString("#str_04244")
                         )
                         scoreBoard.SetStateString(
-                            Str.va("player%d_score", iline),
-                            Common.common.GetLanguageDict().GetString("#str_04245")
-                        )
-                        // no color band
+                            Str.va("player%d_score", iline), Common.common.GetLanguageDict().GetString("#str_04245")
+                        ) // no color band
                         scoreBoard.SetStateInt(Str.va("rank%d", iline), 0)
                     } else {
                         scoreBoard.SetStateString(
-                            Str.va("player%d", iline),
-                            Game_local.gameLocal.userInfo[i].GetString("ui_name")
+                            Str.va("player%d", iline), Game_local.gameLocal.userInfo[i].GetString("ui_name")
                         )
                         if (gameState == gameState_t.WARMUP) {
                             if (p.spectating) {
                                 scoreBoard.SetStateString(
                                     Str.va("player%d_score", iline),
                                     Common.common.GetLanguageDict().GetString("#str_04246")
-                                )
-                                // no color band
+                                ) // no color band
                                 scoreBoard.SetStateInt(Str.va("rank%d", iline), 0)
                             } else {
                                 scoreBoard.SetStateString(
@@ -2729,8 +2585,7 @@ object MultiplayerGame {
                                     if (p.IsReady()) Common.common.GetLanguageDict()
                                         .GetString("#str_04247") else Common.common.GetLanguageDict()
                                         .GetString("#str_04248")
-                                )
-                                // set the color band
+                                ) // set the color band
                                 scoreBoard.SetStateInt(Str.va("rank%d", iline), 1)
                                 UpdateRankColor(scoreBoard, "rank%d_color%d", iline, p.colorBar)
                             }
@@ -2739,16 +2594,14 @@ object MultiplayerGame {
                                 scoreBoard.SetStateString(
                                     Str.va("player%d_score", iline),
                                     Common.common.GetLanguageDict().GetString("#str_06736")
-                                )
-                                // set the color band
+                                ) // set the color band
                                 scoreBoard.SetStateInt(Str.va("rank%d", iline), 1)
                                 UpdateRankColor(scoreBoard, "rank%d_color%d", iline, p.colorBar)
                             } else {
                                 scoreBoard.SetStateString(
                                     Str.va("player%d_score", iline),
                                     Common.common.GetLanguageDict().GetString("#str_04246")
-                                )
-                                // no color band
+                                ) // no color band
                                 scoreBoard.SetStateInt(Str.va("rank%d", iline), 0)
                             }
                         }
@@ -2757,8 +2610,7 @@ object MultiplayerGame {
                     scoreBoard.SetStateString(Str.va("player%d_tdm_score", iline), "")
                     scoreBoard.SetStateString(Str.va("player%d_wins", iline), "")
                     scoreBoard.SetStateInt(Str.va("player%d_ping", iline), playerState[i].ping)
-                    if (i == player.entityNumber) {
-                        // highlight who we are
+                    if (i == player.entityNumber) { // highlight who we are
                         scoreBoard.SetStateInt("rank_self", iline)
                     }
                     i++
@@ -2841,8 +2693,7 @@ object MultiplayerGame {
                 scoreBoard.SetStateInt(Str.va("rank%d", i + 1), 0)
                 player.hud!!.SetStateInt("rank_self", 0)
                 i++
-            }
-            // D3XP CTF: clear flag status on HUD
+            } // D3XP CTF: clear flag status on HUD
             ClearHUDStatus()
         }
 
@@ -2888,8 +2739,7 @@ object MultiplayerGame {
                 hud.SetStateString("vote", Str.va("%s (y: %d n: %d)", voteString, yesVotes.toInt(), noVotes.toInt()))
             } else {
                 hud.SetStateString("vote", "")
-            }
-            // D3XP CTF: set self_team on HUD
+            } // D3XP CTF: set self_team on HUD
             if (IsGametypeFlagBased()) {
                 hud.SetStateInt("self_team", player.team)
             } else {
@@ -2901,13 +2751,11 @@ object MultiplayerGame {
                 while (i < numRankedPlayers) {
                     if (IsGametypeTeamBased()) {  // D3XP: includes CTF
                         hud.SetStateInt(
-                            Str.va("player%d_score", i + 1),
-                            playerState[rankedPlayers[i].entityNumber].teamFragCount
+                            Str.va("player%d_score", i + 1), playerState[rankedPlayers[i].entityNumber].teamFragCount
                         )
                     } else {
                         hud.SetStateInt(
-                            Str.va("player%d_score", i + 1),
-                            playerState[rankedPlayers[i].entityNumber].fragCount
+                            Str.va("player%d_score", i + 1), playerState[rankedPlayers[i].entityNumber].fragCount
                         )
                     }
                     hud.SetStateInt(Str.va("rank%d", i + 1), 1)
@@ -2917,8 +2765,7 @@ object MultiplayerGame {
                     }
                     i++
                 }
-            }
-            // D3XP: use MAX_CLIENTS instead of 5
+            } // D3XP: use MAX_CLIENTS instead of 5
             i = if (gameState == gameState_t.GAMEON) numRankedPlayers else 0
             while (i < Game_local.MAX_CLIENTS) {
                 hud.SetStateString(Str.va("player%d", i + 1), "")
@@ -2962,8 +2809,7 @@ object MultiplayerGame {
                 }
                 i++
             }
-            if (0 == numVoters) {
-                // abort
+            if (0 == numVoters) { // abort
                 vote = vote_flags_t.VOTE_NONE
                 ClientUpdateVote(vote_result_t.VOTE_ABORTED, yesVotes.toInt(), noVotes.toInt())
                 return
@@ -2998,8 +2844,7 @@ object MultiplayerGame {
             }
             i = 0
             while (i < Game_local.gameLocal.numClients) {
-                if (Game_local.gameLocal.gameType == gameType_t.GAME_TOURNEY && i != currentTourneyPlayer[0] && i != currentTourneyPlayer[1]
-                ) {
+                if (Game_local.gameLocal.gameType == gameType_t.GAME_TOURNEY && i != currentTourneyPlayer[0] && i != currentTourneyPlayer[1]) {
                     i++
                     continue
                 }
@@ -3025,8 +2870,7 @@ object MultiplayerGame {
          if there is no FragLeader(), the game is tied and we return NULL
          ================
          */
-        private fun FragLimitHit(): idPlayer? {
-            // D3XP CTF: flag-based games use point limit, not frag limit
+        private fun FragLimitHit(): idPlayer? { // D3XP CTF: flag-based games use point limit, not frag limit
             if (IsGametypeFlagBased()) return null
             var i: Int
             var fragLimit = Game_local.gameLocal.serverInfo.GetInt("si_fragLimit")
@@ -3038,8 +2882,7 @@ object MultiplayerGame {
             if (fragLimit <= 0) {
                 fragLimit = MP_PLAYER_MAXFRAGS
             }
-            if (Game_local.gameLocal.gameType == gameType_t.GAME_LASTMAN) {
-                // we have a leader, check if any other players have frags left
+            if (Game_local.gameLocal.gameType == gameType_t.GAME_LASTMAN) { // we have a leader, check if any other players have frags left
                 assert(!leader.lastManOver)
                 i = 0
                 while (i < Game_local.gameLocal.numClients) {
@@ -3060,8 +2903,7 @@ object MultiplayerGame {
                         return null
                     }
                     i++
-                }
-                // there is a leader, his score may even be negative, but no one else has frags left or is !lastManOver
+                } // there is a leader, his score may even be negative, but no one else has frags left or is !lastManOver
                 return leader
             } else if (Game_local.gameLocal.gameType == gameType_t.GAME_TDM) {
                 if (playerState[leader.entityNumber].teamFragCount >= fragLimit) {
@@ -3098,21 +2940,19 @@ object MultiplayerGame {
                     i++
                     continue
                 }
-                if (!CanPlay(ent as idPlayer)) {
+                if (!CanPlay(ent)) {
                     i++
                     continue
                 }
-                if (Game_local.gameLocal.gameType == gameType_t.GAME_TOURNEY && ent.entityNumber != currentTourneyPlayer[0] && ent.entityNumber != currentTourneyPlayer[1]
-                ) {
+                if (Game_local.gameLocal.gameType == gameType_t.GAME_TOURNEY && ent.entityNumber != currentTourneyPlayer[0] && ent.entityNumber != currentTourneyPlayer[1]) {
                     i++
                     continue
                 }
-                if ((ent as idPlayer).lastManOver) {
+                if (ent.lastManOver) {
                     i++
                     continue
                 }
-                val fragc =
-                    if (IsGametypeTeamBased()) playerState[i].teamFragCount else playerState[i].fragCount
+                val fragc = if (IsGametypeTeamBased()) playerState[i].teamFragCount else playerState[i].fragCount
                 if (fragc > high) {
                     high = fragc
                 }
@@ -3132,8 +2972,7 @@ object MultiplayerGame {
                     i++
                     continue
                 }
-                if (Game_local.gameLocal.gameType == gameType_t.GAME_TOURNEY && ent.entityNumber != currentTourneyPlayer[0] && ent.entityNumber != currentTourneyPlayer[1]
-                ) {
+                if (Game_local.gameLocal.gameType == gameType_t.GAME_TOURNEY && ent.entityNumber != currentTourneyPlayer[0] && ent.entityNumber != currentTourneyPlayer[1]) {
                     i++
                     continue
                 }
@@ -3155,16 +2994,14 @@ object MultiplayerGame {
                 }
                 i++
             }
-            return if (!IsGametypeTeamBased()) {
-                // more than one player at the highest frags
+            return if (!IsGametypeTeamBased()) { // more than one player at the highest frags
                 if (count > 1) {
                     null
                 } else {
                     leader
                 }
             } else {
-                if (teamLead[0] && teamLead[1]) {
-                    // even game in team play
+                if (teamLead[0] && teamLead[1]) { // even game in team play
                     null
                 } else leader
             }
@@ -3172,14 +3009,11 @@ object MultiplayerGame {
 
         fun TimeLimitHit(): Boolean {
             val timeLimit = Game_local.gameLocal.serverInfo.GetInt("si_timeLimit")
-            return if (timeLimit != 0) {
-                Game_local.gameLocal.time >= matchStartedTime + timeLimit * 60000
-            } else false
+            return timeLimit != 0 && Game_local.gameLocal.time >= matchStartedTime + timeLimit * 60000
         }
 
         private fun NewState(
-            news: gameState_t,
-            player: idPlayer? = null /*= NULL */
+            news: gameState_t, player: idPlayer? = null /*= NULL */
         ) {
             val outMsg = idBitMsg()
             var msgBuf = ByteBuffer.allocate(Game_local.MAX_GAME_MESSAGE_SIZE)
@@ -3187,9 +3021,7 @@ object MultiplayerGame {
             assert(news != gameState)
             assert(!Game_local.gameLocal.isClient)
             Game_local.gameLocal.DPrintf(
-                "%s . %s\n",
-                GameStateStrings[gameState.ordinal],
-                GameStateStrings[(news).ordinal]
+                "%s . %s\n", GameStateStrings[gameState.ordinal], GameStateStrings[(news).ordinal]
             )
             when (news) {
                 gameState_t.GAMEON -> {
@@ -3200,8 +3032,7 @@ object MultiplayerGame {
                     NetworkSystem.networkSystem.ServerSendReliableMessage(-1, outMsg)
                     PlayGlobalSound(-1, snd_evt_t.SND_FIGHT)
                     matchStartedTime = Game_local.gameLocal.time
-                    fragLimitTimeout = 0
-                    // D3XP CTF: reset team points and HUD
+                    fragLimitTimeout = 0 // D3XP CTF: reset team points and HUD
                     teamPoints[0] = 0
                     teamPoints[1] = 0
                     ClearHUDStatus()
@@ -3214,8 +3045,7 @@ object MultiplayerGame {
                         }
                         val p = ent
                         p.SetLeader(false) // don't carry the flag from previous games
-                        if (Game_local.gameLocal.gameType == gameType_t.GAME_TOURNEY && currentTourneyPlayer[0] != i && currentTourneyPlayer[1] != i
-                        ) {
+                        if (Game_local.gameLocal.gameType == gameType_t.GAME_TOURNEY && currentTourneyPlayer[0] != i && currentTourneyPlayer[1] != i) {
                             p.ServerSpectate(true)
                             p.tourneyRank++
                         } else {
@@ -3241,8 +3071,7 @@ object MultiplayerGame {
 
                 gameState_t.GAMEREVIEW -> {
                     SetFlagMsg(false)  // D3XP CTF: suppress flag messages during review
-                    nextState =
-                        gameState_t.INACTIVE // used to abort a game. cancel out any upcoming state change
+                    nextState = gameState_t.INACTIVE // used to abort a game. cancel out any upcoming state change
                     // set all players not ready and spectating
                     i = 0
                     while (i < Game_local.gameLocal.numClients) {
@@ -3294,8 +3123,7 @@ object MultiplayerGame {
         }
 
         private fun UpdateWinsLosses(winner: idPlayer?) {
-            if (winner != null) {
-                // run back through and update win/loss count
+            if (winner != null) { // run back through and update win/loss count
                 for (i in 0 until Game_local.gameLocal.numClients) {
                     val ent = Game_local.gameLocal.entities[i]
                     if (null == ent || ent !is idPlayer) {
@@ -3332,8 +3160,7 @@ object MultiplayerGame {
                         }
                     }
                 }
-            } else if (IsGametypeFlagBased()) {
-                // D3XP CTF: no specific winner player, but check winning team
+            } else if (IsGametypeFlagBased()) { // D3XP CTF: no specific winner player, but check winning team
                 val winteam = WinningTeam()
                 if (winteam != -1) {
                     for (i in 0 until Game_local.gameLocal.numClients) {
@@ -3355,8 +3182,7 @@ object MultiplayerGame {
          idMultiplayerGame::FillTourneySlots
          NOTE: called each frame during warmup to keep the tourney slots filled
          ================
-         */
-        // fill any empty tourney slots based on the current tourney ranks
+         */ // fill any empty tourney slots based on the current tourney ranks
         private fun FillTourneySlots() {
             var i: Int
             var j: Int
@@ -3390,8 +3216,7 @@ object MultiplayerGame {
                         j++
                         continue
                     }
-                    if (p.tourneyRank >= rankmax) {
-                        // when ranks are equal, use time in game
+                    if (p.tourneyRank >= rankmax) { // when ranks are equal, use time in game
                         if (p.tourneyRank == rankmax) {
                             assert(rankmaxindex >= 0)
                             if (p.spawnedTime > (Game_local.gameLocal.entities[rankmaxindex] as idPlayer).spawnedTime) {
@@ -3414,16 +3239,14 @@ object MultiplayerGame {
             var ent: idEntity?
             var player: idPlayer
             currentTourneyPlayer[0] = -1
-            currentTourneyPlayer[1] = -1
-            // if any, winner from last round will play again
+            currentTourneyPlayer[1] = -1 // if any, winner from last round will play again
             if (lastWinner != -1) {
                 val ent2 = Game_local.gameLocal.entities[lastWinner]
                 if (ent2 != null && ent2 is idPlayer) {
                     currentTourneyPlayer[0] = lastWinner
                 }
             }
-            FillTourneySlots()
-            // force selected players in/out of the game and update the ranks
+            FillTourneySlots() // force selected players in/out of the game and update the ranks
             i = 0
             while (i < Game_local.gameLocal.numClients) {
                 if (currentTourneyPlayer[0] == i || currentTourneyPlayer[1] == i) {
@@ -3448,8 +3271,7 @@ object MultiplayerGame {
          but we need a real wait list to be synced down to clients for GUI
          ignore current players, ignore wantSpectate
          ================
-         */
-        // walk through the tourneyRank to build a wait list for the clients
+         */ // walk through the tourneyRank to build a wait list for the clients
         private fun UpdateTourneyLine() {
             var i: Int
             var j: Int
@@ -3504,8 +3326,7 @@ object MultiplayerGame {
             if (gameState == gameState_t.COUNTDOWN) {
                 ms = warmupEndTime - Game_local.gameLocal.realClientTime
                 s = ms / 1000 + 1
-                if (ms <= 0) {
-//                    strcpy(buff, "WMP --");
+                if (ms <= 0) { //                    strcpy(buff, "WMP --");
                     buff = "WMP --"
                 } else {
                     buff = String.format("WMP %d", s)
@@ -3545,8 +3366,7 @@ object MultiplayerGame {
             three = false
             two = three
             one = two
-            playerState =
-                Array(playerState.size) { mpPlayerState_s() }
+            playerState = Array(playerState.size) { mpPlayerState_s() }
             lastWinner = -1
             currentMenu = 0
             bCurrentMenuMsg = false
@@ -3561,8 +3381,7 @@ object MultiplayerGame {
                 UserInterface.uiManager.FreeListGUI(mapList!!)
                 mapList = null
             }
-            fragLimitTimeout = 0
-            //	memset( &switchThrottle, 0, sizeof( switchThrottle ) );
+            fragLimitTimeout = 0 //	memset( &switchThrottle, 0, sizeof( switchThrottle ) );
             switchThrottle = IntArray(switchThrottle.size)
             voiceChatThrottle = 0
             i = 0
@@ -3616,13 +3435,10 @@ object MultiplayerGame {
                     i = chatHistoryIndex - chatHistorySize
                     while (i < chatHistoryIndex) {
                         guiChat.SetStateString(
-                            Str.va("chat%d", j),
-                            chatHistory[i % NUM_CHAT_NOTIFY].line.toString()
-                        )
-                        // don't set alpha above 4, the gui only knows that
+                            Str.va("chat%d", j), chatHistory[i % NUM_CHAT_NOTIFY].line.toString()
+                        ) // don't set alpha above 4, the gui only knows that
                         guiChat.SetStateInt(
-                            Str.va("alpha%d", j),
-                            Min(4, chatHistory[i % NUM_CHAT_NOTIFY].fade.toInt())
+                            Str.va("alpha%d", j), Min(4, chatHistory[i % NUM_CHAT_NOTIFY].fade.toInt())
                         )
                         j++
                         i++
@@ -3647,11 +3463,9 @@ object MultiplayerGame {
                 if (null == ent || ent !is idPlayer) {
                     continue
                 }
-                val p = ent
-                // once we hit sudden death, nobody respawns till game has ended
+                val p = ent // once we hit sudden death, nobody respawns till game has ended
                 if (WantRespawn(p) || p === spectator) {
-                    if (gameState == gameState_t.SUDDENDEATH && Game_local.gameLocal.gameType != gameType_t.GAME_LASTMAN) {
-                        // respawn rules while sudden death are different
+                    if (gameState == gameState_t.SUDDENDEATH && Game_local.gameLocal.gameType != gameType_t.GAME_LASTMAN) { // respawn rules while sudden death are different
                         // sudden death may trigger while a player is dead, so there are still cases where we need to respawn
                         // don't do any respawns while we are in end game delay though
                         if (0 == fragLimitTimeout) {
@@ -3662,15 +3476,13 @@ object MultiplayerGame {
                                     )
                                 }
                                 p.ServerSpectate(false)
-                            } else if (!p.IsLeader()) {
-                                // sudden death is rolling, this player is not a leader, have him spectate
+                            } else if (!p.IsLeader()) { // sudden death is rolling, this player is not a leader, have him spectate
                                 p.ServerSpectate(true)
                                 CheckAbortGame()
                             }
                         }
                     } else {
-                        if (Game_local.gameLocal.gameType == gameType_t.GAME_DM
-                            || IsGametypeTeamBased()  // D3XP: includes CTF
+                        if (Game_local.gameLocal.gameType == gameType_t.GAME_DM || IsGametypeTeamBased()  // D3XP: includes CTF
                         ) {
                             if (gameState == gameState_t.WARMUP || gameState == gameState_t.COUNTDOWN || gameState == gameState_t.GAMEON) {
                                 p.ServerSpectate(false)
@@ -3680,8 +3492,7 @@ object MultiplayerGame {
                                 if (gameState == gameState_t.WARMUP || gameState == gameState_t.COUNTDOWN || gameState == gameState_t.GAMEON) {
                                     p.ServerSpectate(false)
                                 }
-                            } else if (gameState == gameState_t.WARMUP) {
-                                // make sure empty tourney slots get filled first
+                            } else if (gameState == gameState_t.WARMUP) { // make sure empty tourney slots get filled first
                                 FillTourneySlots()
                                 if (i == currentTourneyPlayer[0] || i == currentTourneyPlayer[1]) {
                                     p.ServerSpectate(false)
@@ -3691,23 +3502,21 @@ object MultiplayerGame {
                             if (gameState == gameState_t.WARMUP || gameState == gameState_t.COUNTDOWN) {
                                 p.ServerSpectate(false)
                             } else if (gameState == gameState_t.GAMEON || gameState == gameState_t.SUDDENDEATH) {
-                                if (gameState == gameState_t.GAMEON && playerState[i].fragCount > 0 && p.lastManPresent
-                                ) {
+                                if (gameState == gameState_t.GAMEON && playerState[i].fragCount > 0 && p.lastManPresent) {
                                     assert(!p.lastManOver)
                                     p.ServerSpectate(false)
                                 } else if (p.lastManPlayAgain && p.lastManPresent) {
                                     assert(gameState == gameState_t.SUDDENDEATH)
                                     p.ServerSpectate(false)
-                                } else {
-                                    // if a fragLimitTimeout was engaged, do NOT mark lastManOver as that could mean
+                                } else { // if a fragLimitTimeout was engaged, do NOT mark lastManOver as that could mean
                                     // everyone ends up spectator and game is stalled with no end
                                     // if the frag limit delay is engaged and cancels out before expiring, LMN players are
                                     // respawned to play the tie again ( through SuddenRespawn and lastManPlayAgain )
                                     if (0 == fragLimitTimeout && !p.lastManOver) {
-                                        Common.common.DPrintf("client %d has lost all last man lives\n", i)
-                                        // end of the game for this guy, send him to spectators
-                                        p.lastManOver = true
-                                        // clients don't have access to lastManOver
+                                        Common.common.DPrintf(
+                                            "client %d has lost all last man lives\n", i
+                                        ) // end of the game for this guy, send him to spectators
+                                        p.lastManOver = true // clients don't have access to lastManOver
                                         // so set the fragCount to something silly ( used in scoreboard and player ranking )
                                         playerState[i].fragCount = LASTMAN_NOLIVES
                                         p.ServerSpectate(true)
@@ -3732,8 +3541,7 @@ object MultiplayerGame {
                                                 }
                                                 j++
                                             }
-                                            if (j == Game_local.gameLocal.numClients) {
-                                                //Everyone is dead so don't allow this player to spectate
+                                            if (j == Game_local.gameLocal.numClients) { //Everyone is dead so don't allow this player to spectate
                                                 //so the match will end
                                                 p.ServerSpectate(false)
                                             }
@@ -3744,8 +3552,7 @@ object MultiplayerGame {
                         }
                     }
                 } else if (p.wantSpectate && !p.spectating) {
-                    playerState[i].fragCount =
-                        0 // whenever you willingly go spectate during game, your score resets
+                    playerState[i].fragCount = 0 // whenever you willingly go spectate during game, your score resets
                     p.ServerSpectate(true)
                     UpdateTourneyLine()
                     CheckAbortGame()
@@ -3770,18 +3577,15 @@ object MultiplayerGame {
         // when clients disconnect or join spectate during game, check if we need to end the game
         private fun CheckAbortGame() {
             var i: Int
-            if (Game_local.gameLocal.gameType == gameType_t.GAME_TOURNEY && gameState == gameState_t.WARMUP) {
-                // if a tourney player joined spectators, let someone else have his spot
+            if (Game_local.gameLocal.gameType == gameType_t.GAME_TOURNEY && gameState == gameState_t.WARMUP) { // if a tourney player joined spectators, let someone else have his spot
                 i = 0
                 while (i < 2) {
-                    if (Game_local.gameLocal.entities[currentTourneyPlayer[i]] == null || (Game_local.gameLocal.entities[currentTourneyPlayer[i]] as idPlayer).spectating
-                    ) {
+                    if (Game_local.gameLocal.entities[currentTourneyPlayer[i]] == null || (Game_local.gameLocal.entities[currentTourneyPlayer[i]] as idPlayer).spectating) {
                         currentTourneyPlayer[i] = -1
                     }
                     i++
                 }
-            }
-            // only checks for aborts . game review below
+            } // only checks for aborts . game review below
             if (gameState != gameState_t.COUNTDOWN && gameState != gameState_t.GAMEON && gameState != gameState_t.SUDDENDEATH) {
                 return
             }
@@ -3789,8 +3593,7 @@ object MultiplayerGame {
                 gameType_t.GAME_TOURNEY -> {
                     i = 0
                     while (i < 2) {
-                        if (Game_local.gameLocal.entities[currentTourneyPlayer[i]] == null || (Game_local.gameLocal.entities[currentTourneyPlayer[i]] as idPlayer).spectating
-                        ) {
+                        if (Game_local.gameLocal.entities[currentTourneyPlayer[i]] == null || (Game_local.gameLocal.entities[currentTourneyPlayer[i]] as idPlayer).spectating) {
                             NewState(gameState_t.GAMEREVIEW)
                             return
                         }
@@ -3823,8 +3626,7 @@ object MultiplayerGame {
             }
             msgmodeGui!!.SetStateString("messagemode", if (imode != 0) "1" else "0")
             msgmodeGui!!.SetStateString("chattext", "")
-            nextMenu = 2
-            // let the session know that we want our ingame main menu opened
+            nextMenu = 2 // let the session know that we want our ingame main menu opened
             Game_local.gameLocal.sessionCommand.set("game_startmenu")
         }
 
@@ -3840,8 +3642,7 @@ object MultiplayerGame {
             CVarSystem.cvarSystem.SetCVarBool("ui_chat", false)
         }
 
-        private fun SetMapShot() {
-//            char[] screenshot = new char[MAX_STRING_CHARS];
+        private fun SetMapShot() { //            char[] screenshot = new char[MAX_STRING_CHARS];
             val screenshot = StringBuffer()
             val mapNum = mapList!!.GetSelection(null, 0)
             var dict: idDict? = null
@@ -3849,9 +3650,7 @@ object MultiplayerGame {
                 dict = FileSystem_h.fileSystem.GetMapDecl(mapNum)
             }
             FileSystem_h.fileSystem.FindMapScreenshot(
-                if (dict != null) dict.GetString("path") else "",
-                screenshot,
-                MAX_STRING_CHARS
+                if (dict != null) dict.GetString("path") else "", screenshot, MAX_STRING_CHARS
             )
             mainGui!!.SetStateString("current_levelshot", screenshot.toString())
         }
@@ -3884,8 +3683,7 @@ object MultiplayerGame {
             if (args.Argc() != 2) {
                 Common.common.Printf("clientVoiceChat: bad args\n")
                 return
-            }
-            // throttle
+            } // throttle
             if (Game_local.gameLocal.realClientTime < voiceChatThrottle) {
                 return
             }
@@ -3918,9 +3716,7 @@ object MultiplayerGame {
             while (i < Game_local.gameLocal.numClients) {
                 if (Game_local.gameLocal.entities[i] != null && Game_local.gameLocal.entities[i] is idPlayer) {
                     Common.common.Printf(
-                        "client %d: rank %d\n",
-                        i,
-                        (Game_local.gameLocal.entities[i] as idPlayer).tourneyRank
+                        "client %d: rank %d\n", i, (Game_local.gameLocal.entities[i] as idPlayer).tourneyRank
                     )
                 }
                 i++
@@ -4115,13 +3911,7 @@ object MultiplayerGame {
 
             // handy verbose
             val GameStateStrings: Array<String> = arrayOf( //new String[STATE_COUNT];
-                "INACTIVE",
-                "WARMUP",
-                "COUNTDOWN",
-                "GAMEON",
-                "SUDDENDEATH",
-                "GAMEREVIEW",
-                "NEXTGAME"
+                "INACTIVE", "WARMUP", "COUNTDOWN", "GAMEON", "SUDDENDEATH", "GAMEREVIEW", "NEXTGAME"
             )
 
             // global sounds transmitted by index - 0 .. SND_COUNT
@@ -4136,8 +3926,7 @@ object MultiplayerGame {
                 "sound/feedback/three.wav",
                 "sound/feedback/two.wav",
                 "sound/feedback/one.wav",
-                "sound/feedback/sudden_death.wav",
-                // D3XP CTF sounds
+                "sound/feedback/sudden_death.wav", // D3XP CTF sounds
                 "sound/ctf/flag_capped_yours.wav",
                 "sound/ctf/flag_capped_theirs.wav",
                 "sound/ctf/flag_return.wav",
@@ -4150,25 +3939,16 @@ object MultiplayerGame {
             //
             //
             private val MPGuis: Array<String> = arrayOf(
-                "guis/mphud.gui",
-                "guis/mpmain.gui",
-                "guis/mpmsgmode.gui",
-                "guis/netmenu.gui"
+                "guis/mphud.gui", "guis/mpmain.gui", "guis/mpmsgmode.gui", "guis/netmenu.gui"
             )
             private val ThrottleDelay: IntArray = intArrayOf(
-                8,
-                5,
-                5
+                8, 5, 5
             )
             private val ThrottleVars: Array<String> = arrayOf(
-                "ui_spectate",
-                "ui_ready",
-                "ui_team"
+                "ui_spectate", "ui_ready", "ui_team"
             )
             private val ThrottleVarsInEnglish: Array<String> = arrayOf(
-                "#str_06738",
-                "#str_06737",
-                "#str_01991"
+                "#str_06738", "#str_06737", "#str_01991"
             )
 
             //	private static final char []buff = new char[16];
@@ -4260,8 +4040,7 @@ object MultiplayerGame {
                 if (ent.carryingFlag) {
                     if (flagCarrier != -1) {
                         Game_local.gameLocal.Warning(
-                            "BUG: more than one flag carrier on %s team",
-                            if (team == 0) "red" else "blue"
+                            "BUG: more than one flag carrier on %s team", if (team == 0) "red" else "blue"
                         )
                     }
                     flagCarrier = i
@@ -4325,8 +4104,7 @@ object MultiplayerGame {
             val num = DeclManager.declManager.GetNumDecls(declType_t.DECL_MAPDEF)
             for (i in 0 until num) {
                 val mapDef = DeclManager.declManager.DeclByIndex(
-                    declType_t.DECL_MAPDEF,
-                    i
+                    declType_t.DECL_MAPDEF, i
                 ) as? DeclEntityDef.idDeclEntityDef
                 if (mapDef != null && idStr.Icmp(mapDef.GetName(), map) == 0) {
                     if (mapDef.dict.GetBool(gametype)) return  // current gametype supported
@@ -4356,8 +4134,7 @@ object MultiplayerGame {
             val num = DeclManager.declManager.GetNumDecls(declType_t.DECL_MAPDEF)
             for (i in 0 until num) {
                 val mapDef = DeclManager.declManager.DeclByIndex(
-                    declType_t.DECL_MAPDEF,
-                    i
+                    declType_t.DECL_MAPDEF, i
                 ) as? DeclEntityDef.idDeclEntityDef
                 if (mapDef != null && idStr.Icmp(mapDef.GetName(), map) == 0) {
                     if (mapDef.dict.GetBool(gametype)) return gametype  // current gametype supported
@@ -4370,8 +4147,7 @@ object MultiplayerGame {
                     }
                     return "deathmatch"  // no valid gametype found
                 }
-            }
-            // for testing a new map let it play any gametype
+            } // for testing a new map let it play any gametype
             return gametype
         }
 

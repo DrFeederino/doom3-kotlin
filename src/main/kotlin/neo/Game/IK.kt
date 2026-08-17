@@ -421,8 +421,7 @@ object IK {
          */
         override fun Restore(savefile: idRestoreGame) {
             var i: Int
-            super.Restore(savefile)
-            // FIX: was footModel!! which would NPE when footModel is null (always null after construction)
+            super.Restore(savefile) // FIX: was footModel!! which would NPE when footModel is null (always null after construction)
             footModel = savefile.ReadClipModel()
             numLegs = savefile.ReadInt()
             enabledLegs = savefile.ReadInt()
@@ -834,8 +833,7 @@ object IK {
                     waistOffset.plusAssign(normal * (minWaistAnkleDist - (height - largestAnkleHeight)))
                 }
             }
-            if (oldHeightsValid) {
-                // smoothly adjust height of waist
+            if (oldHeightsValid) { // smoothly adjust height of waist
                 newHeight = (waistOrigin + waistOffset) * normal
                 step = newHeight - oldWaistHeight
                 waistOffset.minusAssign(normal * waistSmoothing * step)
@@ -1023,8 +1021,7 @@ object IK {
                 hipJoints[i] = Model.INVALID_JOINT
                 dirJoints[i] = Model.INVALID_JOINT
                 upperLegLength[i] = 0.0f
-                lowerLegLength[i] = 0.0f
-                // FIX: was = idMat3.getMat3_identity() which assigns shared constant reference
+                lowerLegLength[i] = 0.0f // FIX: was = idMat3.getMat3_identity() which assigns shared constant reference
                 // C++ calls .Identity() in-place
                 upperLegToHipJoint[i].Identity()
                 lowerLegToKneeJoint[i].Identity()

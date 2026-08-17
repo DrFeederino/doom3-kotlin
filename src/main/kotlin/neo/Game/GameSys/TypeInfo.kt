@@ -102,12 +102,7 @@ object TypeInfo {
      ================
      */
     fun IsAllowedToChangedFromSaveGames(
-        varName: String,
-        varType: String?,
-        scope: String,
-        prefix: String,
-        postfix: String?,
-        value: String?
+        varName: String, varType: String?, scope: String, prefix: String, postfix: String?, value: String?
     ): Boolean {
         if (idStr.Icmp(scope, "idAnimator") == 0) {
             if (idStr.Icmp(varName, "forceUpdate") == 0) {
@@ -139,8 +134,7 @@ object TypeInfo {
             }
         } else if (idStr.Icmp(scope, "idPhysics_AF") == 0) {
             return true
-        } else if (idStr.Icmp(scope, "renderEntity_t") == 0) {
-            // These get fixed up when UpdateVisuals is called
+        } else if (idStr.Icmp(scope, "renderEntity_t") == 0) { // These get fixed up when UpdateVisuals is called
             if (idStr.Icmp(varName, "origin") == 0) {
                 return true
             }
@@ -160,12 +154,7 @@ object TypeInfo {
      ================
      */
     fun IsRenderHandleVariable(
-        varName: String,
-        varType: String?,
-        scope: String,
-        prefix: String?,
-        postfix: String?,
-        value: String?
+        varName: String, varType: String?, scope: String, prefix: String?, postfix: String?, value: String?
     ): Boolean {
         if (idStr.Icmp(scope, "idClipModel") == 0) {
             if (idStr.Icmp(varName, "renderModelHandle") == 0) {
@@ -302,8 +291,7 @@ object TypeInfo {
          ================
          idTypeInfoTools::IsSubclassOf
          ================
-         */
-        // FIX: C++ takes `const char *typeName` and reassigns the local pointer.
+         */ // FIX: C++ takes `const char *typeName` and reassigns the local pointer.
         // The old Kotlin code took `typeName: idStr` and mutated it via .set(),
         // which would corrupt the caller's idStr. Changed to use a local String variable.
         fun IsSubclassOf(typeName: String, superType: String): Boolean {
@@ -356,8 +344,7 @@ object TypeInfo {
          ================
          idTypeInfoTools::InitTypeVariables
          ================
-         */
-        // FIX: Was calling itself recursively (infinite recursion).
+         */ // FIX: Was calling itself recursively (infinite recursion).
         // C++ sets Write = InitVariable then calls WriteClass_r.
         fun InitTypeVariables(typePtr: ByteBuffer?, typeName: String?, value: Int) {
             if (typePtr == null || typeName == null) return
@@ -372,8 +359,7 @@ object TypeInfo {
          idTypeInfoTools::WriteGameState
          ================
          */
-        fun WriteGameState(fileName: String?) {
-            // NOTE: Partially implemented — the core type introspection (WriteVariable_r) is
+        fun WriteGameState(fileName: String?) { // NOTE: Partially implemented — the core type introspection (WriteVariable_r) is
             // not fully functional on JVM because there is no raw pointer arithmetic.
             // The overall structure matches C++ for when/if type info becomes available.
             if (fileName == null) return
@@ -390,8 +376,9 @@ object TypeInfo {
             var num = 0
             for (i in 0 until Game_local.gameLocal.num_entities) {
                 val ent = Game_local.gameLocal.entities[i] ?: continue
-                file.WriteFloatString("\nentity %d %s {\n", i, ent.GetClassname())
-                // NOTE: In C++, WriteClass_r gets the raw void* pointer to the entity.
+                file.WriteFloatString(
+                    "\nentity %d %s {\n", i, ent.GetClassname()
+                ) // NOTE: In C++, WriteClass_r gets the raw void* pointer to the entity.
                 // On JVM we cannot do raw memory introspection. This writes the class
                 // structure as known to the NoGameTypeInfo tables (normally empty stubs).
                 // WriteClass_r(... ent ..., ent.GetType()->classname, ...)
@@ -408,8 +395,7 @@ object TypeInfo {
          idTypeInfoTools::CompareGameState
          ================
          */
-        fun CompareGameState(fileName: String?) {
-            // NOTE: Partially implemented — the core type introspection (WriteVariable_r) is
+        fun CompareGameState(fileName: String?) { // NOTE: Partially implemented — the core type introspection (WriteVariable_r) is
             // not fully functional on JVM because there is no raw pointer arithmetic.
             if (fileName == null) return
 
@@ -483,8 +469,7 @@ object TypeInfo {
          ================
          idTypeInfoTools::OutputString
          ================
-         */
-        // FIX: Original Kotlin had off-by-one — `c` was incremented before first use,
+         */ // FIX: Original Kotlin had off-by-one — `c` was incremented before first use,
         // skipping string[0]. C++ does `c = *string++` which reads then advances.
         // Also the `i = 0.also { c = it }` and `for ... c++` pattern was wrong.
         private fun OutputString(string: String?): String {
@@ -577,14 +562,8 @@ object TypeInfo {
          ================
          */
         private fun WriteVariable_r(
-            varPtr: ByteBuffer?,
-            varName: String,
-            varType: String,
-            scope: String,
-            prefix: String,
-            pointerDepth: Int
-        ): Int {
-            // STUB: Cannot implement raw-pointer type introspection on JVM.
+            varPtr: ByteBuffer?, varName: String, varType: String, scope: String, prefix: String, pointerDepth: Int
+        ): Int { // STUB: Cannot implement raw-pointer type introspection on JVM.
             // C++ version casts void* to specific types and reads memory directly.
             // The NoGameTypeInfo tables are empty in release builds, so this is only
             // called when debug type info is available (which it never is in this port).
@@ -598,12 +577,7 @@ object TypeInfo {
          ================
          */
         private fun WriteClass_r(
-            classPtr: ByteBuffer,
-            className: String,
-            classType: String,
-            scope: String,
-            prefix: String,
-            pointerDepth: Int
+            classPtr: ByteBuffer, className: String, classType: String, scope: String, prefix: String, pointerDepth: Int
         ) {
             val classInfo = FindClassInfo(classType) ?: return
 
@@ -614,8 +588,7 @@ object TypeInfo {
             val vars = classInfo.variables ?: return
             var i = 0
             while (vars[i].name != null) {
-                val classVar = vars[i]
-                // C++: void *varPtr = (void *) (((byte *)classPtr) + classVar.offset);
+                val classVar = vars[i] // C++: void *varPtr = (void *) (((byte *)classPtr) + classVar.offset);
                 // On JVM, we set the ByteBuffer position to simulate the offset
                 if (classVar.offset < classPtr.capacity()) {
                     classPtr.position(classVar.offset)
@@ -664,17 +637,14 @@ object TypeInfo {
                 value: String,
                 varPtr: ByteBuffer?,
                 varSize: Int
-            ) {
-                // FIX: C++ `value+i+1` is pointer arithmetic (substring from index i+1).
+            ) { // FIX: C++ `value+i+1` is pointer arithmetic (substring from index i+1).
                 // Old Kotlin had `value + i + 1` which is string concatenation with integers.
                 var i = FindChar(value, '#', 0)
                 while (i >= 0) {
                     val sub = value.substring(i + 1)
-                    if (idStr.Icmpn(sub, "INF", 3) == 0 ||
-                        idStr.Icmpn(sub, "IND", 3) == 0 ||
-                        idStr.Icmpn(sub, "NAN", 3) == 0 ||
-                        idStr.Icmpn(sub, "QNAN", 4) == 0 ||
-                        idStr.Icmpn(sub, "SNAN", 4) == 0
+                    if (idStr.Icmpn(sub, "INF", 3) == 0 || idStr.Icmpn(sub, "IND", 3) == 0 || idStr.Icmpn(
+                            sub, "NAN", 3
+                        ) == 0 || idStr.Icmpn(sub, "QNAN", 4) == 0 || idStr.Icmpn(sub, "SNAN", 4) == 0
                     ) {
                         Common.common.Warning("%s%s::%s%s = \"%s\"", prefix, scope, varName, postfix, value)
                         break
@@ -704,16 +674,13 @@ object TypeInfo {
                 value: String,
                 varPtr: ByteBuffer?,
                 varSize: Int
-            ) {
-                // FIX: Same pointer arithmetic bug as WriteVariable — use substring
+            ) { // FIX: Same pointer arithmetic bug as WriteVariable — use substring
                 var i = FindChar(value, '#', 0)
                 while (i >= 0) {
                     val sub = value.substring(i + 1)
-                    if (idStr.Icmpn(sub, "INF", 3) == 0 ||
-                        idStr.Icmpn(sub, "IND", 3) == 0 ||
-                        idStr.Icmpn(sub, "NAN", 3) == 0 ||
-                        idStr.Icmpn(sub, "QNAN", 4) == 0 ||
-                        idStr.Icmpn(sub, "SNAN", 4) == 0
+                    if (idStr.Icmpn(sub, "INF", 3) == 0 || idStr.Icmpn(sub, "IND", 3) == 0 || idStr.Icmpn(
+                            sub, "NAN", 3
+                        ) == 0 || idStr.Icmpn(sub, "QNAN", 4) == 0 || idStr.Icmpn(sub, "SNAN", 4) == 0
                     ) {
                         Common.common.Warning("%s%s::%s%s = \"%s\"", prefix, scope, varName, postfix, value)
                         break
@@ -753,12 +720,10 @@ object TypeInfo {
                 varPtr: ByteBuffer?,
                 varSize: Int
             ) {
-                if (varPtr != null && varSize > 0) {
-                    // NOTE: skip renderer handles
+                if (varPtr != null && varSize > 0) { // NOTE: skip renderer handles
                     if (IsRenderHandleVariable(varName, varType, scope, prefix, postfix, value)) {
                         return
-                    }
-                    // C++: memset(const_cast<void*>(varPtr), initValue, varSize)
+                    } // C++: memset(const_cast<void*>(varPtr), initValue, varSize)
                     val fillByte = initValue.toByte()
                     val pos = varPtr.position()
                     for (j in 0 until varSize) {
@@ -808,8 +773,7 @@ object TypeInfo {
                     }
 
                     lexer.Warning(
-                        "state diff for %s%s::%s%s\n%s\n%s",
-                        prefix, scope, varName, postfix, token.toString(), value
+                        "state diff for %s%s::%s%s\n%s\n%s", prefix, scope, varName, postfix, token.toString(), value
                     )
                     typeError = true
                 }
@@ -887,8 +851,7 @@ object TypeInfo {
                 name.Replace("/", "_")
                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, Str.va("saveGame test_%s", name))
                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, Str.va("loadGame test_%s", name))
-            } catch (ex: idException) {
-                // an ERR_DROP was thrown
+            } catch (ex: idException) { // an ERR_DROP was thrown
             }
             CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "quit")
         }
@@ -943,8 +906,7 @@ object TypeInfo {
         private class SortTypeInfoByName : cmp_t<Int> {
             override fun compare(a: Int, b: Int): Int {
                 return idStr.Icmp(
-                    NoGameTypeInfo.classTypeInfo[a].typeName!!,
-                    NoGameTypeInfo.classTypeInfo[b].typeName!!
+                    NoGameTypeInfo.classTypeInfo[a].typeName!!, NoGameTypeInfo.classTypeInfo[b].typeName!!
                 )
             }
         }

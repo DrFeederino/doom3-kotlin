@@ -67,8 +67,7 @@ class RenderWindow {
             Render(time)
 
             refdef = renderView_s()
-            refdef!!.vieworg.set(viewOffset.ToVec3())
-            //refdef.vieworg.Set(-128, 0, 0);
+            refdef!!.vieworg.set(viewOffset.ToVec3()) //refdef.vieworg.Set(-128, 0, 0);
             refdef!!.viewaxis.Identity()
             refdef!!.shaderParms[0] = 1.0f
             refdef!!.shaderParms[1] = 1.0f
@@ -91,8 +90,7 @@ class RenderWindow {
             refdef!!.x = rx.toInt()
             refdef!!.y = ry.toInt()
             refdef!!.width = rw.toInt()
-            refdef!!.height = rh.toInt()
-            // DG end
+            refdef!!.height = rh.toInt() // DG end
             refdef!!.fov_x = 90.0f
             refdef!!.fov_y = (2 * atan((drawRect.h / drawRect.w)) * idMath.M_RAD2DEG)
             refdef!!.time = time
@@ -100,9 +98,7 @@ class RenderWindow {
         }
 
         override fun GetWinVarByName(
-            _name: String?,
-            winLookup: Boolean /*= false*/,
-            owner: Array<drawWin_t?>? /*= NULL*/
+            _name: String?, winLookup: Boolean /*= false*/, owner: Array<drawWin_t?>? /*= NULL*/
         ): Winvar.idWinVar? {
             if (Icmp(_name!!, "model") == 0) {
                 return modelName
@@ -203,7 +199,7 @@ class RenderWindow {
                 spawnArgs.Clear()
                 spawnArgs.Set("classname", "func_static")
                 spawnArgs.Set("model", modelName.c_str()!!)
-                spawnArgs.Set("origin", modelOrigin.c_str()!!)
+                spawnArgs.Set("origin", modelOrigin.c_str())
                 gameEdit.ParseSpawnArgsToRenderEntity(spawnArgs, worldEntity!!)
                 if (worldEntity!!.hModel != null) {
                     val v = idVec3(modelRotate.ToVec3())

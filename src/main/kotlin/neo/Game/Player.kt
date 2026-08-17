@@ -558,15 +558,14 @@ object Player {
             deplete_ammount = 0
             nextArmorDepleteTime = 0
 
-//	memset( ammo, 0, sizeof( ammo ) );
+            //	memset( ammo, 0, sizeof( ammo ) );
             Arrays.fill(ammo, 0)
             ClearPowerUps()
 
             // set to -1 so that the gun knows to have a full clip the first time we get it and at the start of the level
-//	memset( clip, -1, sizeof( clip ) );
+            //	memset( clip, -1, sizeof( clip ) );
             Arrays.fill(clip, -1)
-            items.DeleteContents(true)
-            //	memset(pdasViewed, 0, 4 * sizeof( pdasViewed[0] ) );
+            items.DeleteContents(true) //	memset(pdasViewed, 0, 4 * sizeof( pdasViewed[0] ) );
             Arrays.fill(pdasViewed, 0)
             pdas.clear()
             videos.clear()
@@ -596,8 +595,7 @@ object Player {
 
         fun GivePowerUp(player: idPlayer, powerup: Int, msec: Int) {
             var msec = msec
-            if (0 == msec) {
-                // get the duration from the .def files
+            if (0 == msec) { // get the duration from the .def files
                 var def: idDeclEntityDef? = null
                 when (powerup) {
                     BERSERK -> def = gameLocal.FindEntityDef("powerup_berserk", false)
@@ -645,8 +643,7 @@ object Player {
                 i++
             }
 
-            if (isD3XP) {
-                // Save the clip data
+            if (isD3XP) { // Save the clip data
                 i = 0
                 while (i < MAX_WEAPONS()) {
                     dict.SetInt(Str.va("clip%d", i), clip[i])
@@ -756,8 +753,7 @@ object Player {
                 i++
             }
 
-            if (isD3XP) {
-                // Restore the clip data
+            if (isD3XP) { // Restore the clip data
                 i = 0
                 while (i < MAX_WEAPONS()) {
                     clip[i] = dict.GetInt(Str.va("clip%d", i), "-1")
@@ -894,15 +890,13 @@ object Player {
                     armorPulse = true
                 }
             } else if (FindText(statname, "inclip_") == 0) {
-                if (isD3XP) {
-                    // D3XP: weapon index is embedded in the key name (e.g., "inclip_04")
+                if (isD3XP) { // D3XP: weapon index is embedded in the key name (e.g., "inclip_04")
                     val temp = idStr(statname)
                     i = atoi(temp.Mid(7, 2))
                 } else {
                     i = WeaponIndexForAmmoClass(spawnArgs, statname.substring(7))
                 }
-                if (i != -1) {
-                    // set, don't add. not going over the clip size limit.
+                if (i != -1) { // set, don't add. not going over the clip size limit.
                     // D3XP: don't set clip from pickup; clip is managed by GetWeaponDef/UseAmmo
                     if (!isD3XP) {
                         clip[i] = value.toInt()
@@ -935,7 +929,7 @@ object Player {
                         len = value.length - pos
                     }
 
-//                        idStr weaponName( pos, 0, len );
+                    //                        idStr weaponName( pos, 0, len );
                     val weaponName = value.substring(pos, pos + len)
 
                     // find the number of the matching weapon name
@@ -989,19 +983,16 @@ object Player {
             } else if (0 == idStr.Icmp(statname, "item") || 0 == idStr.Icmp(
                     statname, "icon"
                 ) || 0 == idStr.Icmp(statname, "name")
-            ) {
-                // ignore these as they're handled elsewhere
+            ) { // ignore these as they're handled elsewhere
                 return false
-            } else {
-                // unknown item
+            } else { // unknown item
                 gameLocal.Warning("Unknown stat '%s' added to player's inventory", statname)
                 return false
             }
             return true
         }
 
-        fun Drop(spawnArgs: idDict, weapon_classname: Array<String>, weapon_index: Int) {
-            // remove the weapon bit
+        fun Drop(spawnArgs: idDict, weapon_classname: Array<String>, weapon_index: Int) { // remove the weapon bit
             // also remove the ammo associated with the weapon as we pushed it in the item
             var weapon_index = weapon_index
             assert(weapon_index != -1 || weapon_classname[0] != null)
@@ -1121,8 +1112,7 @@ object Player {
         }
 
         fun HasAmmo(type: Int, amount: Int): Int {
-            if (type == 0 || 0 == amount) {
-                // always allow weapons that don't use ammo to fire
+            if (type == 0 || 0 == amount) { // always allow weapons that don't use ammo to fire
                 return -1
             }
 
@@ -1227,8 +1217,7 @@ object Player {
 
             for (i in 0 until AMMO_NUMTYPES) {
                 if (rechargeAmmo[i].ammo > 0) {
-                    if (rechargeAmmo[i].rechargeTime == 0) {
-                        //Initialize the recharge timer.
+                    if (rechargeAmmo[i].rechargeTime == 0) { //Initialize the recharge timer.
                         rechargeAmmo[i].rechargeTime = gameLocal.time
                     }
                     val elapsed = gameLocal.time - rechargeAmmo[i].rechargeTime
@@ -1295,8 +1284,7 @@ object Player {
                 idVec3(1.0f, 0.0f, 0.0f),
                 idVec3(0.0f, 0.8f, 0.1f),
                 idVec3(0.2f, 0.5f, 0.8f),
-                idVec3(1.0f, 0.8f, 0.1f),
-                // D3XP: 3 additional team colors for CTF
+                idVec3(1.0f, 0.8f, 0.1f), // D3XP: 3 additional team colors for CTF
                 idVec3(1.0f, 0.5f, 0.0f),
                 idVec3(0.7f, 0.0f, 1.0f),
                 idVec3(0.5f, 0.5f, 0.5f)
@@ -1726,16 +1714,14 @@ object Player {
          */
         override fun Spawn() {
             super.Spawn()
-            val temp = idStr()
-            //            idBounds bounds;
+            val temp = idStr() //            idBounds bounds;
             if (entityNumber >= Game_local.MAX_CLIENTS) {
                 idGameLocal.Error("entityNum > MAX_CLIENTS for player.  Player may only be spawned with a client.")
             }
 
             // allow thinking during cinematics
             cinematic = true
-            if (gameLocal.isMultiplayer) {
-                // always start in spectating state waiting to be spawned in
+            if (gameLocal.isMultiplayer) { // always start in spectating state waiting to be spawned in
                 // do this before SetClipModel to get the right bounding box
                 spectating = true
             }
@@ -1769,8 +1755,7 @@ object Player {
                         temp.toString(), true, gameLocal.isMultiplayer, gameLocal.isMultiplayer
                     )
                 }
-                if (cursor != null) {
-                    // DG: make it scale to 4:3 so crosshair looks properly round
+                if (cursor != null) { // DG: make it scale to 4:3 so crosshair looks properly round
                     cursor!!.SetStateBool("scaleto43", true)
                     cursor!!.StateChanged(gameLocal.time)
                     cursor!!.Activate(true, gameLocal.time)
@@ -1812,8 +1797,7 @@ object Player {
             if (gameLocal.isMultiplayer) {
                 Init()
                 Hide() // properly hidden if starting as a spectator
-                if (!gameLocal.isClient) {
-                    // set yourself ready to spawn. idMultiplayerGame will decide when/if appropriate and call SpawnFromSpawnSpot
+                if (!gameLocal.isClient) { // set yourself ready to spawn. idMultiplayerGame will decide when/if appropriate and call SpawnFromSpawnSpot
                     SetupWeaponEntity()
                     SpawnFromSpawnSpot()
                     forceRespawn = true
@@ -1827,14 +1811,12 @@ object Player {
             // trigger playtesting item gives, if we didn't get here from a previous level
             // the devmap key will be set on the first devmap, but cleared on any level
             // transitions
-            if (!gameLocal.isMultiplayer && gameLocal.serverInfo.FindKey("devmap") != null) {
-                // fire a trigger with the name "devmap"
+            if (!gameLocal.isMultiplayer && gameLocal.serverInfo.FindKey("devmap") != null) { // fire a trigger with the name "devmap"
                 val ent = gameLocal.FindEntity("devmap")
                 ent?.ActivateTargets(this)
             }
             if (hud != null) {
-                if (!isD3XP) {
-                    // We can spawn with a full soul cube, so we need to make sure the hud knows this
+                if (!isD3XP) { // We can spawn with a full soul cube, so we need to make sure the hud knows this
                     if (weapon_soulcube > 0 && (inventory.weapons and (1 shl weapon_soulcube)) != 0) {
                         val max_souls = inventory.MaxAmmoForAmmoClass(this, "ammo_souls")
                         if (inventory.ammo[idWeapon.GetAmmoNumForName("ammo_souls")] >= max_souls) {
@@ -1842,16 +1824,14 @@ object Player {
                         }
                     }
                 }
-                if (isD3XP) {
-                    // We can spawn with a full bloodstone, so make sure the hud knows
+                if (isD3XP) { // We can spawn with a full bloodstone, so make sure the hud knows
                     if (weapon_bloodstone > 0 && (inventory.weapons and (1 shl weapon_bloodstone)) != 0) {
                         hud!!.HandleNamedEvent("bloodstoneReady")
                     }
                 }
                 hud!!.HandleNamedEvent("itemPickup")
             }
-            if (GetPDA() != null) {
-                // Add any emails from the inventory
+            if (GetPDA() != null) { // Add any emails from the inventory
                 for (i in 0 until inventory.emails.size()) {
                     GetPDA()!!.AddEmail(inventory.emails[i].toString())
                 }
@@ -1903,8 +1883,7 @@ object Player {
                 }
             }
 
-            if (isD3XP) {
-                // Setup the weapon toggle lists
+            if (isD3XP) { // Setup the weapon toggle lists
                 var kv2 = spawnArgs.MatchPrefix("weapontoggle")
                 while (kv2 != null) {
                     val newToggle = WeaponToggle_t()
@@ -1919,8 +1898,7 @@ object Player {
                             break
                         }
                         val index = token.toString().toInt()
-                        newToggle.toggleList.Append(index)
-                        // Skip the comma
+                        newToggle.toggleList.Append(index) // Skip the comma
                         src.ReadToken(token)
                     }
                     weaponToggles.Set(newToggle.name, newToggle)
@@ -2144,7 +2122,7 @@ object Player {
                     enviroSuitLight.GetEntity()!!.Present()
                 }
             }
-            headRenderEnt = if (head?.GetEntity() != null) {
+            headRenderEnt = if (head.GetEntity() != null) {
                 head.GetEntity()!!.GetRenderEntity()
             } else {
                 null
@@ -2166,8 +2144,7 @@ object Player {
                 if (headRenderEnt != null) {
                     headRenderEnt.suppressShadowInViewID = entityNumber + 1
                 }
-            }
-            // never cast shadows from our first-person muzzle flashes
+            } // never cast shadows from our first-person muzzle flashes
             renderEntity!!.suppressShadowInLightID = Weapon.LIGHTID_VIEW_MUZZLE_FLASH + entityNumber
             if (headRenderEnt != null) {
                 headRenderEnt.suppressShadowInLightID = Weapon.LIGHTID_VIEW_MUZZLE_FLASH + entityNumber
@@ -2369,8 +2346,7 @@ object Player {
                 i++
             }
             savefile.WriteInt(currentLoggedAccel)
-            savefile.WriteObject(focusGUIent)
-            // can't save focusUI
+            savefile.WriteObject(focusGUIent) // can't save focusUI
             savefile.WriteObject(focusCharacter)
             savefile.WriteInt(talkCursor)
             savefile.WriteInt(focusTime)
@@ -2606,15 +2582,13 @@ object Player {
                 i++
             }
             currentLoggedAccel = savefile.ReadInt()
-            focusGUIent = savefile.ReadObject() as idEntity?
-            // can't save focusUI
+            focusGUIent = savefile.ReadObject() as idEntity? // can't save focusUI
             focusUI = null
             focusCharacter = savefile.ReadObject() as idAI?
             talkCursor = savefile.ReadInt()
             focusTime = savefile.ReadInt()
             focusVehicle = savefile.ReadObject() as idAFEntity_Vehicle?
-            cursor = savefile.ReadUserInterface()
-            // DG: make it scale to 4:3 so crosshair looks properly round
+            cursor = savefile.ReadUserInterface() // DG: make it scale to 4:3 so crosshair looks properly round
             cursor?.SetStateBool("scaleto43", true)
             cursor?.StateChanged(gameLocal.time)
             oldMouseX = savefile.ReadInt()
@@ -2717,8 +2691,7 @@ object Player {
                 weapon_bloodstone_active1 = SlotForWeapon("weapon_bloodstone_active1")
                 weapon_bloodstone_active2 = SlotForWeapon("weapon_bloodstone_active2")
                 weapon_bloodstone_active3 = SlotForWeapon("weapon_bloodstone_active3")
-                harvest_lock = false
-                // mountedObject = null  // TODO: add when idFuncMountedObject is implemented
+                harvest_lock = false // mountedObject = null  // TODO: add when idFuncMountedObject is implemented
                 if (enviroSuitLight.GetEntity() != null) {
                     enviroSuitLight.GetEntity()!!.PostEventMS(EV_Remove, 0)
                 }
@@ -2926,8 +2899,7 @@ object Player {
             // client needs to setup the animation script object again
             if (gameLocal.isClient) {
                 Init()
-            } else {
-                // choose a random spot and prepare the point of view in case player is left spectating
+            } else { // choose a random spot and prepare the point of view in case player is left spectating
                 assert(spectating)
                 SpawnFromSpawnSpot()
             }
@@ -2967,8 +2939,7 @@ object Player {
         fun SetupWeaponEntity() {
             var w: Int
             var weap: String
-            if (weapon.GetEntity() != null) {
-                // get rid of old weapon
+            if (weapon.GetEntity() != null) { // get rid of old weapon
                 weapon.GetEntity()!!.Clear()
                 currentWeapon = -1
             } else if (!gameLocal.isClient) {
@@ -3084,8 +3055,7 @@ object Player {
                 Show()
             }
             if (gameLocal.isMultiplayer) {
-                if (!spectating) {
-                    // we may be called twice in a row in some situations. avoid a double fx and 'fly to the roof'
+                if (!spectating) { // we may be called twice in a row in some situations. avoid a double fx and 'fly to the roof'
                     if (lastTeleFX < gameLocal.time - 1000) {
                         idEntityFx.StartFx(
                             spawnArgs.GetString("fx_spawn"), spawn_origin, null, this, true
@@ -3136,8 +3106,7 @@ object Player {
                     SysCvar.pm_bboxwidth.GetFloat() * 0.5f,
                     SysCvar.pm_normalheight.GetFloat()
                 )
-            }
-            // the origin of the clip model needs to be set before calling SetClipModel
+            } // the origin of the clip model needs to be set before calling SetClipModel
             // otherwise our physics object's current origin value gets reset to 0
             val newClip: idClipModel
             if (SysCvar.pm_usecylinder.GetBool()) {
@@ -3206,14 +3175,12 @@ object Player {
             }
             modifiedInfo = false
             spec = idStr.Icmp(userInfo.GetString("ui_spectate"), "Spectate") == 0
-            if (gameLocal.serverInfo.GetBool("si_spectators")) {
-                // never let spectators go back to game while sudden death is on
+            if (gameLocal.serverInfo.GetBool("si_spectators")) { // never let spectators go back to game while sudden death is on
                 if (canModify && gameLocal.mpGame.GetGameState() == idMultiplayerGame.gameState_t.SUDDENDEATH && !spec && wantSpectate) {
                     userInfo.Set("ui_spectate", "Spectate")
                     modifiedInfo = modifiedInfo or true
                 } else {
-                    if (spec != wantSpectate && !spec) {
-                        // returning from spectate, set forceRespawn so we don't get stuck in spectate forever
+                    if (spec != wantSpectate && !spec) { // returning from spectate, set forceRespawn so we don't get stuck in spectate forever
                         forceRespawn = true
                     }
                     wantSpectate = spec
@@ -3222,8 +3189,7 @@ object Player {
                 if (canModify && spec) {
                     userInfo.Set("ui_spectate", "Play")
                     modifiedInfo = modifiedInfo or true
-                } else if (spectating) {
-                    // allow player to leaving spectator mode if they were in it when si_spectators got turned off
+                } else if (spectating) { // allow player to leaving spectator mode if they were in it when si_spectators got turned off
                     forceRespawn = true
                 }
                 wantSpectate = false
@@ -3248,8 +3214,7 @@ object Player {
             }
             UpdateSkinSetup(false)
             isChatting = userInfo.GetBool("ui_chat", "0")
-            if (canModify && isChatting && AI_DEAD.underscore()!!) {
-                // if dead, always force chat icon off.
+            if (canModify && isChatting && AI_DEAD.underscore()!!) { // if dead, always force chat icon off.
                 isChatting = false
                 userInfo.SetBool("ui_chat", false)
                 modifiedInfo = modifiedInfo or true
@@ -3424,8 +3389,7 @@ object Player {
         }
 
         // delta view angles to allow movers to rotate the view of the player
-        fun UpdateDeltaViewAngles(angles: idAngles) {
-            // set the delta angle
+        fun UpdateDeltaViewAngles(angles: idAngles) { // set the delta angle
             val delta = idAngles()
             for (i in 0..2) {
                 delta[i] = angles[i] - SHORT2ANGLE(usercmd.angles[i])
@@ -3547,8 +3511,7 @@ object Player {
 
             // always give half damage if hurting self
             if (attacker == this) {
-                if (gameLocal.isMultiplayer) {
-                    // only do this in mp so single player plasma and rocket splash is very dangerous in close quarters
+                if (gameLocal.isMultiplayer) { // only do this in mp so single player plasma and rocket splash is very dangerous in close quarters
                     damage._val = ((damage._val * damageDef.GetFloat("selfDamageScale", "0.5f")).toInt())
                 } else {
                     damage._val = ((damage._val * damageDef.GetFloat("selfDamageScale", "1")).toInt())
@@ -3556,8 +3519,7 @@ object Player {
             }
 
             // check for completely getting out of the damage
-            if (!damageDef.GetBool("noGod")) {
-                // check for godmode
+            if (!damageDef.GetBool("noGod")) { // check for godmode
                 if (godmode) {
                     damage._val = (0)
                 }
@@ -3625,8 +3587,7 @@ object Player {
             damageDefName: String,
             damageScale: Float,
             location: Int
-        ) {
-            // TODO: this seems like another pointer bs, which needs to be handled differently
+        ) { // TODO: this seems like another pointer bs, which needs to be handled differently
             var inflictor = inflictor
             var attacker = attacker
             val kick = idVec3()
@@ -3653,8 +3614,7 @@ object Player {
             if (attacker is idAI) {
                 if (!isD3XP && PowerUpActive(BERSERK)) {
                     return
-                }
-                // don't take damage from monsters during influences
+                } // don't take damage from monsters during influences
                 if (influenceActive != 0) {
                     return
                 }
@@ -3758,8 +3718,7 @@ object Player {
                     isTelefragged = damageDef.dict.GetBool("telefrag")
                     lastDmgTime = gameLocal.time
                     Killed(inflictor, attacker, damage._val, dir, location)
-                } else {
-                    // force a blink
+                } else { // force a blink
                     blink_time = 0
 
                     // let the anim script know we took damage
@@ -3768,10 +3727,8 @@ object Player {
                         lastDmgTime = gameLocal.time
                     }
                 }
-            } else {
-                // don't accumulate impulses
-                if (af.IsLoaded()) {
-                    // clear impacts
+            } else { // don't accumulate impulses
+                if (af.IsLoaded()) { // clear impacts
                     af.Rest()
 
                     // physics is turned off by calling af.Rest()
@@ -3807,11 +3764,9 @@ object Player {
             UpdateVisuals()
             teleportEntity.oSet(destination)
             if (!gameLocal.isClient && !noclip) {
-                if (gameLocal.isMultiplayer) {
-                    // kill anything at the new position or mark for kill depending on immediate or delayed teleport
+                if (gameLocal.isMultiplayer) { // kill anything at the new position or mark for kill depending on immediate or delayed teleport
                     gameLocal.KillBox(this, destination != null)
-                } else {
-                    // kill anything at the new position
+                } else { // kill anything at the new position
                     gameLocal.KillBox(this, true)
                 }
             }
@@ -3867,8 +3822,7 @@ object Player {
                 SysCvar.pm_modelView.SetInteger(0)
                 minRespawnTime = gameLocal.time + RAGDOLL_DEATH_TIME
                 maxRespawnTime = minRespawnTime + MAX_RESPAWN_TIME
-            } else {
-                // don't allow respawn until the death anim is done
+            } else { // don't allow respawn until the death anim is done
                 // g_forcerespawn may force spawning at some later time
                 delay = spawnArgs.GetFloat("respawn_delay")
                 minRespawnTime = (gameLocal.time + SEC2MS(delay))
@@ -3888,8 +3842,7 @@ object Player {
                 LookAtKiller(inflictor!!, attacker!!)
             }
             if (gameLocal.isMultiplayer || SysCvar.g_testDeath.GetBool()) {
-                var killer: idPlayer? = null
-                // no gibbing in MP. Event_Gib will early out in MP
+                var killer: idPlayer? = null // no gibbing in MP. Event_Gib will early out in MP
                 if (attacker is idPlayer) {
                     killer = attacker
                     if (health < -20 || killer.PowerUpActive(BERSERK)) {
@@ -3945,8 +3898,7 @@ object Player {
             val range: Float
             if (null == renderView) {
                 renderView = renderView_s()
-            }
-            //	memset( renderView, 0, sizeof( *renderView ) );
+            } //	memset( renderView, 0, sizeof( *renderView ) );
 
             // copy global shader parms
             i = 0
@@ -3966,8 +3918,7 @@ object Player {
             renderView.viewID = 0
 
             // check if we should be drawing from a camera's POV
-            if (!noclip && (gameLocal.GetCamera() != null || privateCameraView != null)) {
-                // get origin, axis, and fov
+            if (!noclip && (gameLocal.GetCamera() != null || privateCameraView != null)) { // get origin, axis, and fov
                 if (privateCameraView != null) {
                     privateCameraView!!.GetViewParms(renderView)
                 } else {
@@ -3977,8 +3928,7 @@ object Player {
                 if (SysCvar.g_stopTime.GetBool()) {
                     renderView.vieworg.set(firstPersonViewOrigin)
                     renderView.viewaxis.set(firstPersonViewAxis)
-                    if (!SysCvar.pm_thirdPerson.GetBool()) {
-                        // set the viewID to the clientNum + 1, so we can suppress the right player bodies and
+                    if (!SysCvar.pm_thirdPerson.GetBool()) { // set the viewID to the clientNum + 1, so we can suppress the right player bodies and
                         // allow the right player view weapons
                         renderView.viewID = entityNumber + 1
                     }
@@ -4027,8 +3977,7 @@ object Player {
         ===============
         */
         fun CalculateFirstPersonView() {
-            if (SysCvar.pm_modelView.GetInteger() == 1 || SysCvar.pm_modelView.GetInteger() == 2 && health <= 0) {
-                //	Displays the view from the point of view of the "camera" joint in the player model
+            if (SysCvar.pm_modelView.GetInteger() == 1 || SysCvar.pm_modelView.GetInteger() == 2 && health <= 0) { //	Displays the view from the point of view of the "camera" joint in the player model
                 val axis = idMat3()
                 val origin = idVec3()
                 val ang: idAngles = idAngles()
@@ -4041,11 +3990,9 @@ object Player {
                         .plus(physicsObj.GetOrigin()).plus(viewBob)
                 )
                 firstPersonViewAxis.set(axis.times(ang.ToMat3()).times(physicsObj.GetGravityAxis()))
-            } else {
-                // offset for local bobbing and kicks
+            } else { // offset for local bobbing and kicks
                 GetViewPos(firstPersonViewOrigin, firstPersonViewAxis)
-                if (false) {
-                    // shakefrom sound stuff only happens in first person
+                if (false) { // shakefrom sound stuff only happens in first person
                     firstPersonViewAxis.set(firstPersonViewAxis.times(playerView.ShakeAxis()))
                 }
             }
@@ -4080,8 +4027,7 @@ object Player {
          Called when a weapon fires, generates head twitches, etc
          ==================
          */
-        fun WeaponFireFeedback(weaponDef: idDict) {
-            // force a blink
+        fun WeaponFireFeedback(weaponDef: idDict) { // force a blink
             blink_time = 0
 
             // play the fire animation
@@ -4242,8 +4188,7 @@ object Player {
         }
 
         fun OffsetThirdPersonView(angle: Float, range: Float, height: Float, clip: Boolean) {
-            val view = idVec3()
-            //            idVec3 focusAngles;
+            val view = idVec3() //            idVec3 focusAngles;
             val trace = trace_s()
             val focusPoint = idVec3()
             var focusDist: Float
@@ -4270,8 +4215,7 @@ object Player {
             idMath.SinCos(DEG2RAD(angle), sideScale, forwardScale)
             view.minusAssign(renderView!!.viewaxis[0].times(range * forwardScale._val))
             view.plusAssign(renderView!!.viewaxis[1].times(range * sideScale._val))
-            if (clip) {
-                // trace a ray from the origin to the viewpoint to make sure the view isn't
+            if (clip) { // trace a ray from the origin to the viewpoint to make sure the view isn't
                 // in a solid block.  Use an 8 by 8 block to prevent the view from near clipping anything
                 bounds = idBounds(idVec3(-4, -4, -4), idVec3(4, 4, 4))
                 gameLocal.clip.TraceBounds(trace, origin, view, bounds, Game_local.MASK_SOLID, this)
@@ -4413,8 +4357,7 @@ object Player {
                 i++
             }
             arg = item.spawnArgs.MatchPrefix("inv_weapon", null)
-            if (arg != null && hud != null) {
-                // We need to update the weapon hud manually, but not
+            if (arg != null && hud != null) { // We need to update the weapon hud manually, but not
                 // the armor/ammo/health because they are updated every
                 // frame no matter what
                 UpdateHudWeapon(false)
@@ -4478,8 +4421,7 @@ object Player {
             }
 
             // D3XP: Added to support powercells
-            if (isD3XP && item.GetInt("inv_powercell") != 0 && focusUI != null) {
-                // Reset the powercell count
+            if (isD3XP && item.GetInt("inv_powercell") != 0 && focusUI != null) { // Reset the powercell count
                 var powerCellCount = 0
                 for (j in 0 until inventory.items.Num()) {
                     val invItem = inventory.items[j]
@@ -4497,8 +4439,7 @@ object Player {
             inventory.items.Remove(item)
 
             // D3XP: Added to support powercells
-            if (isD3XP && item.GetInt("inv_powercell") != 0 && focusUI != null) {
-                // Reset the powercell count
+            if (isD3XP && item.GetInt("inv_powercell") != 0 && focusUI != null) { // Reset the powercell count
                 var powerCellCount = 0
                 for (j in 0 until inventory.items.Num()) {
                     val invItem = inventory.items[j]
@@ -4507,8 +4448,7 @@ object Player {
                     }
                 }
                 focusUI!!.SetStateInt("powercell_count", powerCellCount)
-            }
-            //	delete item;
+            } //	delete item;
         }
 
         fun GiveInventoryItem(name: String): Boolean {
@@ -4584,8 +4524,7 @@ object Player {
                     if (!objectiveSystemOpen) {
                         TogglePDA()
                     }
-                    objectiveSystem!!.HandleNamedEvent("showPDATip")
-                    //ShowTip( spawnArgs.GetString( "text_infoTitle" ), spawnArgs.GetString( "text_firstPDA" ), true );
+                    objectiveSystem!!.HandleNamedEvent("showPDATip") //ShowTip( spawnArgs.GetString( "text_infoTitle" ), spawnArgs.GetString( "text_firstPDA" ), true );
                 }
                 if (inventory.pdas.size() > 1 && pda.GetNumVideos() > 0 && hud != null) {
                     hud!!.HandleNamedEvent("videoPickup")
@@ -4704,8 +4643,7 @@ object Player {
                             inventory.AddPickupName("#str_00100628", "")
                         }
                         spawnArgs.GetString("skin_invisibility", "", skin)
-                        powerUpSkin = DeclManager.declManager.FindSkin(skin[0]!!)
-                        // remove any decals from the model
+                        powerUpSkin = DeclManager.declManager.FindSkin(skin[0]!!) // remove any decals from the model
                         if (modelDefHandle != -1) {
                             Game_local.gameRenderWorld!!.RemoveDecals(modelDefHandle)
                         }
@@ -4756,10 +4694,8 @@ object Player {
                             }
                         }
 
-                        ENVIROSUIT -> {
-                            // Turn on the envirosuit sound
-                            Game_local.gameSoundWorld?.SetEnviroSuit(true)
-                            // Put the helmet and lights on the player
+                        ENVIROSUIT -> { // Turn on the envirosuit sound
+                            Game_local.gameSoundWorld?.SetEnviroSuit(true) // Put the helmet and lights on the player
                             val lightDef = gameLocal.FindEntityDefDict("envirosuit_light", false)
                             if (lightDef != null) {
                                 val temp = arrayOfNulls<idEntity>(1)
@@ -5043,8 +4979,7 @@ object Player {
                 gameLocal.Printf("Invalid weapon\n")
                 return
             }
-            if (isD3XP) {
-                // D3XP weapon toggle cycling: cycle through a toggle group on repeated impulse
+            if (isD3XP) { // D3XP weapon toggle cycling: cycle through a toggle group on repeated impulse
                 val weaponToggleGetter = arrayOfNulls<WeaponToggle_t>(1)
                 weaponToggles.Get(Str.va("weapontoggle%d", num), weaponToggleGetter)
                 val weaponToggle = weaponToggleGetter[0]
@@ -5119,8 +5054,7 @@ object Player {
             }
             if (!died && !weapon.GetEntity()!!.IsReady() || weapon.GetEntity()!!.IsReloading()) {
                 return
-            }
-            // ammoavailable is how many shots we can fire
+            } // ammoavailable is how many shots we can fire
             // inclip is which amount is in clip right now
             ammoavailable = weapon.GetEntity()!!.AmmoAvailable()
             inclip = weapon.GetEntity()!!.AmmoInClip()
@@ -5156,8 +5090,7 @@ object Player {
                 }
             }
             val item: idEntity?
-            item = if (died) {
-                // ain't gonna throw you no weapon if I'm dead
+            item = if (died) { // ain't gonna throw you no weapon if I'm dead
                 weapon.GetEntity()!!.DropItem(vec3_origin, 0, WEAPON_DROP_TIME, died)
             } else {
                 viewAngles.ToVectors(forward, null, up)
@@ -5165,21 +5098,18 @@ object Player {
             }
             if (null == item) {
                 return
-            }
-            // set the appropriate ammo in the dropped object
+            } // set the appropriate ammo in the dropped object
             val keyval = item.spawnArgs.MatchPrefix("inv_ammo_")
             if (keyval != null) {
                 item.spawnArgs.SetInt(keyval.GetKey().toString(), ammoavailable)
                 val inclipKey = keyval.GetKey()
-                inclipKey.Insert("inclip_", 4)
-                // D3XP: include weapon index in the inclip key
+                inclipKey.Insert("inclip_", 4) // D3XP: include weapon index in the inclip key
                 if (isD3XP) {
                     inclipKey.Insert(Str.va("%.2f", currentWeapon.toFloat()), 11)
                 }
                 item.spawnArgs.SetInt(inclipKey.toString(), inclip)
             }
-            if (!died) {
-                // remove from our local inventory completely
+            if (!died) { // remove from our local inventory completely
                 run {
                     val inv_weapon = arrayOf(item.spawnArgs.GetString("inv_weapon"))
                     inventory.Drop(spawnArgs, inv_weapon, -1)
@@ -5205,13 +5135,11 @@ object Player {
             val player_weapon = player.weapon.GetEntity()
             if (null == player_weapon || !player_weapon.CanDrop() || weaponGone) {
                 return
-            }
-            // steal - we need to effectively force the other player to abandon his weapon
+            } // steal - we need to effectively force the other player to abandon his weapon
             val newweap = player.currentWeapon
             if (newweap == -1) {
                 return
-            }
-            // might be just dropped - check inventory
+            } // might be just dropped - check inventory
             if (0 == player.inventory.weapons and (1 shl newweap)) {
                 return
             }
@@ -5225,20 +5153,16 @@ object Player {
             }
 
             if (isD3XP) {
-                if (ammoavailable != -1 && ammoavailable < 0) {
-                    // see DropWeapon
-                    Common.common.DPrintf("idPlayer::StealWeapon: bad ammo setup\n")
-                    // we still steal the weapon, so let's use the default ammo levels
+                if (ammoavailable != -1 && ammoavailable < 0) { // see DropWeapon
+                    Common.common.DPrintf("idPlayer::StealWeapon: bad ammo setup\n") // we still steal the weapon, so let's use the default ammo levels
                     inclip = -1
                     val decl = gameLocal.FindEntityDef(weapon_classname)!!
                     val keypair = decl.dict.MatchPrefix("inv_ammo_")!!
                     ammoavailable = atoi(keypair.GetValue())
                 }
             } else {
-                if (ammoavailable != -1 && ammoavailable - inclip < 0) {
-                    // see DropWeapon
-                    Common.common.DPrintf("idPlayer::StealWeapon: bad ammo setup\n")
-                    // we still steal the weapon, so let's use the default ammo levels
+                if (ammoavailable != -1 && ammoavailable - inclip < 0) { // see DropWeapon
+                    Common.common.DPrintf("idPlayer::StealWeapon: bad ammo setup\n") // we still steal the weapon, so let's use the default ammo levels
                     inclip = -1
                     val decl = gameLocal.FindEntityDef(weapon_classname)!!
                     val keypair = decl.dict.MatchPrefix("inv_ammo_")!!
@@ -5247,8 +5171,9 @@ object Player {
             }
             player.weapon.GetEntity()!!.WeaponStolen()
             player.inventory.Drop(player.spawnArgs, arrayOf(), newweap)
-            player.SelectWeapon(weapon_fists, false)
-            // in case the robbed player is firing rounds with a continuous fire weapon like the chaingun/plasma etc.
+            player.SelectWeapon(
+                weapon_fists, false
+            ) // in case the robbed player is firing rounds with a continuous fire weapon like the chaingun/plasma etc.
             // this will ensure the firing actually stops
             player.weaponGone = true
 
@@ -5256,8 +5181,7 @@ object Player {
             Give("weapon", weapon_classname)
             val ammo_i = player.inventory.AmmoIndexForWeaponClass(weapon_classname, null)
             idealWeapon = newweap
-            inventory.ammo[ammo_i] += ammoavailable
-            // D3XP: don't set clip directly; it's managed by GetWeaponDef/UseAmmo
+            inventory.ammo[ammo_i] += ammoavailable // D3XP: don't set clip directly; it's managed by GetWeaponDef/UseAmmo
             if (!isD3XP) {
                 inventory.clip[newweap] = inclip
             }
@@ -5277,8 +5201,7 @@ object Player {
                 lastHitToggle = lastHitToggle xor true //1;
             }
             lastHitTime = time
-            if (0 == time) {
-                // level start and inits
+            if (0 == time) { // level start and inits
                 return
             }
             if (gameLocal.isMultiplayer && time - lastSndHitTime > 10) {
@@ -5293,8 +5216,7 @@ object Player {
                     if (gameLocal.entities[MPAim] != null && gameLocal.entities[MPAim] is idPlayer) {
                         aimed = gameLocal.entities[MPAim] as idPlayer?
                     }
-                    assert(aimed != null)
-                    // full highlight, no fade till loosing aim
+                    assert(aimed != null) // full highlight, no fade till loosing aim
                     hud!!.SetStateString("aim_text", gameLocal.userInfo[MPAim].GetString("ui_name"))
                     if (aimed != null) {
                         hud!!.SetStateFloat("aim_color", aimed.colorBarIndex.toFloat())
@@ -5306,8 +5228,7 @@ object Player {
                     if (gameLocal.entities[lastMPAim] != null && gameLocal.entities[lastMPAim] is idPlayer) {
                         aimed = gameLocal.entities[lastMPAim] as idPlayer?
                     }
-                    assert(aimed != null)
-                    // start fading right away
+                    assert(aimed != null) // start fading right away
                     hud!!.SetStateString("aim_text", gameLocal.userInfo[lastMPAim].GetString("ui_name"))
                     if (aimed != null) {
                         hud!!.SetStateFloat("aim_color", aimed.colorBarIndex.toFloat())
@@ -5458,8 +5379,7 @@ object Player {
                 if (pct != zeroVol.toFloat()) {
                     StartSound(
                         "snd_heartbeat", gameSoundChannel_t.SND_CHANNEL_HEART, Sound.SSF_PRIVATE_SOUND, false
-                    )
-                    // modify just this channel to a custom volume
+                    ) // modify just this channel to a custom volume
                     val parms = snd_shader.soundShaderParms_t() //memset( &parms, 0, sizeof( parms ) );
                     parms.volume = pct
                     refSound.referenceSound!!.ModifySound((gameSoundChannel_t.SND_CHANNEL_HEART).ordinal, parms)
@@ -5516,8 +5436,7 @@ object Player {
                 }
                 airTics--
                 if (airTics < 0) {
-                    airTics = 0
-                    // check for damage
+                    airTics = 0 // check for damage
                     val damageDef = gameLocal.FindEntityDefDict("damage_noair", false)
                     val dmgTiming: Int =
                         (1000 * (if (damageDef != null) damageDef.GetFloat("delay", "3.0f").toInt() else 3))
@@ -5622,8 +5541,7 @@ object Player {
                 return true
             }
             if (token.Icmp("stoppdaaudio") == 0) {
-                if (objectiveSystem != null && objectiveSystemOpen && pdaAudio.Length() > 0) {
-                    // idSoundShader *shader = declManager.FindSound( pdaAudio );
+                if (objectiveSystem != null && objectiveSystemOpen && pdaAudio.Length() > 0) { // idSoundShader *shader = declManager.FindSound( pdaAudio );
                     StopAudioLog()
                     StopSound((gameSoundChannel_t.SND_CHANNEL_PDA).ordinal, false)
                 }
@@ -5700,8 +5618,7 @@ object Player {
                 }
 
                 UsercmdGen.IMPULSE_27 -> {
-                    if (isD3XP) {
-                        // Hack so the chainsaw will work in MP
+                    if (isD3XP) { // Hack so the chainsaw will work in MP
                         SelectWeapon(18, false)
                     }
                 }
@@ -5737,8 +5654,7 @@ object Player {
                 msg.WriteBits((spectating).toInt(), 1)
                 ServerSendEvent(EVENT_SPECTATE, msg, false, -1)
             }
-            if (spectating) {
-                // join the spectators
+            if (spectating) { // join the spectators
                 ClearPowerUps()
                 spectator = entityNumber
                 Init()
@@ -5751,8 +5667,7 @@ object Player {
                     hud!!.HandleNamedEvent("aim_clear")
                     MPAimFadeTime = 0
                 }
-            } else {
-                // put everything back together again
+            } else { // put everything back together again
                 currentWeapon = -1 // to make sure the def will be loaded if necessary
                 Show()
                 Event_EnableWeapon()
@@ -5950,7 +5865,7 @@ object Player {
             }
             if (skinname != null && !skinname.isEmpty()) {
                 influenceSkin = DeclManager.declManager.FindSkin(skinname)
-                if (head?.GetEntity() != null) {
+                if (head.GetEntity() != null) {
                     head.GetEntity()!!.GetRenderEntity()!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
                         -MS2SEC(gameLocal.time.toFloat())
                 }
@@ -5967,8 +5882,7 @@ object Player {
                 if (level != 0) {
                     var ent = gameLocal.spawnedEntities.Next()
                     while (ent != null) {
-                        if (ent.IsType(idProjectile.Type)) {
-                            // remove all projectiles
+                        if (ent.IsType(idProjectile.Type)) { // remove all projectiles
                             ent.PostEventMS(EV_Remove, 0)
                         }
                         ent = ent.spawnNode.Next()
@@ -6051,8 +5965,7 @@ object Player {
             val max_stamina: Float
             assert(_hud != null)
             max_stamina = SysCvar.pm_stamina.GetFloat()
-            staminapercentage = if (0.0f == max_stamina) {
-                // stamina disabled, so show full stamina bar
+            staminapercentage = if (0.0f == max_stamina) { // stamina disabled, so show full stamina bar
                 100
             } else {
                 idMath.FtoiFast(100 * stamina / max_stamina)
@@ -6077,8 +5990,7 @@ object Player {
                 _hud.HandleNamedEvent("ammoPulse")
                 inventory.ammoPulse = false
             }
-            if (inventory.weaponPulse) {
-                // We need to update the weapon hud manually, but not
+            if (inventory.weaponPulse) { // We need to update the weapon hud manually, but not
                 // the armor/ammo/health because they are updated every
                 // frame no matter what
                 UpdateHudWeapon()
@@ -6101,16 +6013,15 @@ object Player {
             ammoamount = weapon.GetEntity()!!.AmmoAvailable()
 
             // D3XP: bloodstone hack - hide ammo display when bloodstone is being activated
-            if (isD3XP && (ammoamount < 0 || !weapon.GetEntity()!!.IsReady() || currentWeapon == weapon_bloodstone)) {
-                // show infinite ammo
+            if (isD3XP && (ammoamount < 0 || !weapon.GetEntity()!!
+                    .IsReady() || currentWeapon == weapon_bloodstone)
+            ) { // show infinite ammo
                 _hud.SetStateString("player_ammo", "")
                 _hud.SetStateString("player_totalammo", "")
-            } else if (!isD3XP && (ammoamount < 0 || !weapon.GetEntity()!!.IsReady())) {
-                // show infinite ammo
+            } else if (!isD3XP && (ammoamount < 0 || !weapon.GetEntity()!!.IsReady())) { // show infinite ammo
                 _hud.SetStateString("player_ammo", "")
                 _hud.SetStateString("player_totalammo", "")
-            } else {
-                // show remaining ammo
+            } else { // show remaining ammo
                 // D3XP: ammo in clip is already deducted from inventory, so don't subtract again
                 if (isD3XP) {
                     _hud.SetStateString("player_totalammo", Str.va("%d", ammoamount))
@@ -6214,8 +6125,7 @@ object Player {
             oldFlags = usercmd.flags.toInt()
             oldButtons = usercmd.buttons.toInt()
             usercmd.set(gameLocal.usercmds[entityNumber])
-            if (entityNumber != gameLocal.localClientNum) {
-                // ignore attack button of other clients. that's no good for predictions
+            if (entityNumber != gameLocal.localClientNum) { // ignore attack button of other clients. that's no good for predictions
                 usercmd.buttons = usercmd.buttons and UsercmdGen.BUTTON_ATTACK.inv().toByte()
             }
             buttonMask = buttonMask and usercmd.buttons.toInt()
@@ -6246,8 +6156,7 @@ object Player {
             if (gameLocal.framenum >= smoothedFrame && entityNumber != gameLocal.localClientNum) {
                 val anglesDiff = viewAngles.minus(smoothedAngles)
                 anglesDiff.Normalize180()
-                if (abs(anglesDiff.yaw) < 90 && abs(anglesDiff.pitch) < 90) {
-                    // smoothen by pushing back to the previous angles
+                if (abs(anglesDiff.yaw) < 90 && abs(anglesDiff.pitch) < 90) { // smoothen by pushing back to the previous angles
                     viewAngles.minusAssign(anglesDiff.times(gameLocal.clientSmoothing))
                     viewAngles.Normalize180()
                 }
@@ -6257,8 +6166,7 @@ object Player {
             if (!af.IsActive()) {
                 AdjustBodyAngles()
             }
-            if (!isLagged) {
-                // don't allow client to move when lagged
+            if (!isLagged) { // don't allow client to move when lagged
                 Move()
             }
 
@@ -6289,7 +6197,7 @@ object Player {
                 UpdatePowerUps()
             }
             UpdateDeathSkin(false)
-            headRenderEnt = if (head?.GetEntity() != null) {
+            headRenderEnt = if (head.GetEntity() != null) {
                 head.GetEntity()!!.GetRenderEntity()
             } else {
                 null
@@ -6311,8 +6219,7 @@ object Player {
                 if (headRenderEnt != null) {
                     headRenderEnt.suppressShadowInViewID = entityNumber + 1
                 }
-            }
-            // never cast shadows from our first-person muzzle flashes
+            } // never cast shadows from our first-person muzzle flashes
             renderEntity!!.suppressShadowInLightID = Weapon.LIGHTID_VIEW_MUZZLE_FLASH + entityNumber
             if (headRenderEnt != null) {
                 headRenderEnt.suppressShadowInLightID = Weapon.LIGHTID_VIEW_MUZZLE_FLASH + entityNumber
@@ -6349,8 +6256,7 @@ object Player {
                 playerView.CalculateShake()
             }
 
-            if (isD3XP) {
-                // determine if portal sky is in pvs
+            if (isD3XP) { // determine if portal sky is in pvs
                 val clientPVS = gameLocal.pvs.SetupCurrentPVS(GetPVSAreas(), GetNumPVSAreas())
                 gameLocal.portalSkyActive = gameLocal.pvs.CheckAreasForPortalSky(
                     clientPVS, GetPhysics().GetOrigin()
@@ -6421,13 +6327,11 @@ object Player {
 
             // no msg reading below this
             if (weapon.SetSpawnId(weaponSpawnId)) {
-                if (weapon.GetEntity() != null) {
-                    // maintain ownership locally
+                if (weapon.GetEntity() != null) { // maintain ownership locally
                     weapon.GetEntity()!!.SetOwner(this)
                 }
                 currentWeapon = -1
-            }
-            // if not a local client assume the client has all ammo types
+            } // if not a local client assume the client has all ammo types
             if (entityNumber != gameLocal.localClientNum) {
                 i = 0
                 while (i < AMMO_NUMTYPES) {
@@ -6436,11 +6340,9 @@ object Player {
                 }
             }
             if (oldHealth > 0 && health <= 0) {
-                if (stateHitch) {
-                    // so we just hide and don't show a death skin
+                if (stateHitch) { // so we just hide and don't show a death skin
                     UpdateDeathSkin(true)
-                }
-                // die
+                } // die
                 AI_DEAD.underscore(true)
                 ClearPowerUps()
                 SetAnimState(Anim.ANIMCHANNEL_LEGS, "Legs_Death", 4)
@@ -6458,8 +6360,7 @@ object Player {
                 if (weapon.GetEntity() != null) {
                     weapon.GetEntity()!!.OwnerDied()
                 }
-            } else if (oldHealth <= 0 && health > 0) {
-                // respawn
+            } else if (oldHealth <= 0 && health > 0) { // respawn
                 Init()
                 StopRagdoll()
                 SetPhysics(physicsObj)
@@ -6468,8 +6369,7 @@ object Player {
             } else if (health < oldHealth && health > 0) {
                 if (stateHitch) {
                     lastDmgTime = gameLocal.time
-                } else {
-                    // damage feedback
+                } else { // damage feedback
                     val def = DeclManager.declManager.DeclByIndex(
                         declType_t.DECL_ENTITYDEF, lastDamageDef, false
                     ) as idDeclEntityDef
@@ -6481,8 +6381,7 @@ object Player {
                         Common.common.Warning("NET: no damage def for damage feedback '%d'\n", lastDamageDef)
                     }
                 }
-            } else if (health > oldHealth && PowerUpActive(MEGAHEALTH) && !stateHitch) {
-                // just pulse, for any health raise
+            } else if (health > oldHealth && PowerUpActive(MEGAHEALTH) && !stateHitch) { // just pulse, for any health raise
                 healthPulse = true
             }
 
@@ -6555,9 +6454,7 @@ object Player {
         }
 
         override fun ServerReceiveEvent(event: Int, time: Int, msg: idBitMsg?): Boolean {
-            return if (idEntity_ServerReceiveEvent(event, time, msg)) {
-                true
-            } else when (event) {
+            return idEntity_ServerReceiveEvent(event, time, msg) || when (event) {
                 EVENT_IMPULSE -> {
                     PerformImpulse(msg!!.ReadBits(6))
                     true
@@ -6577,16 +6474,14 @@ object Player {
 
             // smoothen the rendered origin and angles of other clients
             // smooth self origin if snapshots are telling us prediction is off
-            if (gameLocal.isClient && gameLocal.framenum >= smoothedFrame && (entityNumber != gameLocal.localClientNum || selfSmooth)) {
-                // render origin and axis
+            if (gameLocal.isClient && gameLocal.framenum >= smoothedFrame && (entityNumber != gameLocal.localClientNum || selfSmooth)) { // render origin and axis
                 val renderAxis = viewAxis.times(GetPhysics().GetAxis())
                 val renderOrigin = idVec3(GetPhysics().GetOrigin().plus(modelOffset.times(renderAxis)))
 
                 // update the smoothed origin
                 if (!smoothedOriginUpdated) {
                     val originDiff = renderOrigin.ToVec2().minus(smoothedOrigin.ToVec2())
-                    if (originDiff.LengthSqr() < Square(100.0f)) {
-                        // smoothen by pushing back to the previous position
+                    if (originDiff.LengthSqr() < Square(100.0f)) { // smoothen by pushing back to the previous position
                         if (selfSmooth) {
                             assert(entityNumber == gameLocal.localClientNum)
                             renderOrigin.ToVec2_oMinSet(originDiff.times(Game_network.net_clientSelfSmoothing.GetFloat()))
@@ -6617,7 +6512,7 @@ object Player {
             return if (camera != null) {
                 val view = renderView_s()
 
-//		memset( &view, 0, sizeof( view ) );
+                //		memset( &view, 0, sizeof( view ) );
                 camera.GetViewParms(view)
                 origin.set(view.vieworg)
                 axis.set(view.viewaxis)
@@ -6659,11 +6554,8 @@ object Player {
                 }
 
                 EVENT_ADD_DAMAGE_EFFECT -> {
-                    if (spectating) {
-                        // if we're spectating, ignore
-                        // happens if the event and the spectate change are written on the server during the same frame (fraglimit)
-                        true
-                    } else super.ClientReceiveEvent(event, time, msg)
+                    spectating || super.ClientReceiveEvent(event, time, msg) // if we're spectating, ignore
+                    // happens if the event and the spectate change are written on the server during the same frame (fraglimit)
                 }
 
                 EVENT_PICKUPNAME -> {
@@ -6680,8 +6572,7 @@ object Player {
                 else -> {
                     super.ClientReceiveEvent(event, time, msg)
                 }
-            }
-            //            return false;
+            } //            return false;
         }
 
         fun IsReady(): Boolean {
@@ -6716,8 +6607,7 @@ object Player {
                 if (spectate) {
                     SetSpectateOrigin()
                 } else {
-                    if (gameLocal.gameType == gameType_t.GAME_DM) {
-                        // make sure the scores are reset so you can't exploit by spectating and entering the game back
+                    if (gameLocal.gameType == gameType_t.GAME_DM) { // make sure the scores are reset so you can't exploit by spectating and entering the game back
                         // other game types don't matter, as you either can't join back, or it's team scores
                         gameLocal.mpGame.ClearFrags(entityNumber)
                     }
@@ -6766,8 +6656,7 @@ object Player {
                 baseSkinName.set("skins/characters/player/marine_mp")
             }
             skin = DeclManager.declManager.FindSkin(baseSkinName, false)
-            assert(skin != null)
-            // match the skin to a color band for scoreboard
+            assert(skin != null) // match the skin to a color band for scoreboard
             colorBarIndex = if (baseSkinName.Find("red") != -1) {
                 1
             } else if (baseSkinName.Find("green") != -1) {
@@ -6806,8 +6695,7 @@ object Player {
             playerIcon.FreeIcon()
         }
 
-        fun NeedsIcon(): Boolean {
-            // local clients don't render their own icons... they're only info for other clients
+        fun NeedsIcon(): Boolean { // local clients don't render their own icons... they're only info for other clients
             return entityNumber != gameLocal.localClientNum && (isLagged || isChatting)
         }
 
@@ -6870,8 +6758,7 @@ object Player {
             if (hud != null) {
                 if (tipUp) {
                     HideTip()
-                }
-                // may want to track with with a bool as well
+                } // may want to track with with a bool as well
                 // keep from looking up named events so often
                 if (objectiveUp) {
                     HideObjective()
@@ -6937,8 +6824,9 @@ object Player {
             } else {
                 weaponGone = false // if you drop and re-get weap, you may miss the = false above
                 if (weapon.GetEntity()!!.IsHolstered()) {
-                    if (weapon.GetEntity()!!.AmmoAvailable() == 0) {
-                        // weapons can switch automatically if they have no more ammo
+                    if (weapon.GetEntity()!!
+                            .AmmoAvailable() == 0
+                    ) { // weapons can switch automatically if they have no more ammo
                         NextBestWeapon()
                     } else {
                         weapon.GetEntity()!!.Raise()
@@ -7009,8 +6897,7 @@ object Player {
                         focusGUIent!!.UpdateVisuals()
                     }
                 }
-                if (gameLocal.isClient) {
-                    // we predict enough, but don't want to execute commands
+                if (gameLocal.isClient) { // we predict enough, but don't want to execute commands
                     return
                 }
                 if (focusGUIent != null) {
@@ -7026,8 +6913,7 @@ object Player {
                 return
             }
             assert(!spectating)
-            if (gameLocal.isClient) {
-                // clients need to wait till the weapon and it's world model entity
+            if (gameLocal.isClient) { // clients need to wait till the weapon and it's world model entity
                 // are present and synchronized ( weapon.worldModel idEntityPtr to idAnimatedEntity )
                 if (!weapon.GetEntity()!!.IsWorldModelReady()) {
                     return
@@ -7051,8 +6937,7 @@ object Player {
                 StopFiring()
                 weapon.GetEntity()!!.LowerWeapon()
                 dragEntity.Update(this)
-            } else if (ActiveGui() != null) {
-                // gui handling overrides weapon use
+            } else if (ActiveGui() != null) { // gui handling overrides weapon use
                 Weapon_GUI()
             } else if (focusCharacter != null && focusCharacter!!.health > 0) {
                 Weapon_NPC()
@@ -7104,8 +6989,7 @@ object Player {
                     val b = idBounds(vec3_origin).Expand(SysCvar.pm_spectatebbox.GetFloat() * 0.5f)
                     val start = idVec3(player.GetPhysics().GetOrigin())
                     start.plusAssign(2, SysCvar.pm_spectatebbox.GetFloat() * 0.5f)
-                    val t = trace_s()
-                    // assuming spectate bbox is inside stand or crouch box
+                    val t = trace_s() // assuming spectate bbox is inside stand or crouch box
                     gameLocal.clip.TraceBounds(t, start, newOrig, b, Game_local.MASK_PLAYERSOLID, player)
                     newOrig.Lerp(start, newOrig, t.fraction)
                     SetOrigin(newOrig)
@@ -7131,8 +7015,7 @@ object Player {
                 player = gameLocal.GetClientByNum(spectator)
                 assert(
                     player != null // never call here when the current spectator is wrong
-                )
-                // ignore other spectators
+                ) // ignore other spectators
                 while (latchedSpectator != spectator && player!!.spectating) {
                     spectator = gameLocal.GetNextClientNum(spectator)
                     player = gameLocal.GetClientByNum(spectator)
@@ -7152,7 +7035,7 @@ object Player {
         private fun GunTurningOffset(): idAngles {
             val a = idAngles()
 
-//            a.Zero();
+            //            a.Zero();
             if (gameLocal.framenum < NUM_LOGGED_VIEW_ANGLES) {
                 return a
             }
@@ -7346,8 +7229,7 @@ object Player {
                 AI_SOFTLANDING.underscore(true)
                 landChange = -8
                 landTime = gameLocal.time
-            } else if (delta > 3) {
-                // just walk on
+            } else if (delta > 3) { // just walk on
             }
         }
 
@@ -7380,22 +7262,18 @@ object Player {
                 viewBob.Zero()
                 return
             }
-            if (!physicsObj.HasGroundContacts() || influenceActive == INFLUENCE_LEVEL2 || gameLocal.isMultiplayer && spectating) {
-                // airborne
+            if (!physicsObj.HasGroundContacts() || influenceActive == INFLUENCE_LEVEL2 || gameLocal.isMultiplayer && spectating) { // airborne
                 bobCycle = 0
                 bobFoot = 0
                 bobfracsin = 0.0f
-            } else if (0 == usercmd.forwardmove.toInt() && 0 == usercmd.rightmove.toInt() || xyspeed <= MIN_BOB_SPEED) {
-                // start at beginning of cycle again
+            } else if (0 == usercmd.forwardmove.toInt() && 0 == usercmd.rightmove.toInt() || xyspeed <= MIN_BOB_SPEED) { // start at beginning of cycle again
                 bobCycle = 0
                 bobFoot = 0
                 bobfracsin = 0.0f
             } else {
                 bobmove = if (physicsObj.IsCrouching()) {
-                    SysCvar.pm_crouchbob.GetFloat()
-                    // ducked characters never play footsteps
-                } else {
-                    // vary the bobbing based on the speed of the player
+                    SysCvar.pm_crouchbob.GetFloat() // ducked characters never play footsteps
+                } else { // vary the bobbing based on the speed of the player
                     SysCvar.pm_walkbob.GetFloat() * (1.0f - bobFrac) + SysCvar.pm_runbob.GetFloat() * bobFrac
                 }
 
@@ -7479,8 +7357,7 @@ object Player {
         private fun UpdateViewAngles() {
             var i: Int
             idAngles()
-            if (!noclip && (gameLocal.inCinematic || privateCameraView != null || gameLocal.GetCamera() != null || influenceActive == INFLUENCE_LEVEL2 || objectiveSystemOpen)) {
-                // no view changes at all, but we still want to update the deltas or else when
+            if (!noclip && (gameLocal.inCinematic || privateCameraView != null || gameLocal.GetCamera() != null || influenceActive == INFLUENCE_LEVEL2 || objectiveSystemOpen)) { // no view changes at all, but we still want to update the deltas or else when
                 // we get out of this mode, our view will snap to a kind of random angle
                 UpdateDeltaViewAngles(viewAngles)
                 return
@@ -7523,11 +7400,9 @@ object Player {
 
             // clamp the pitch
             if (noclip) {
-                if (viewAngles.pitch > 89.0f) {
-                    // don't let the player look down more than 89 degrees while noclipping
+                if (viewAngles.pitch > 89.0f) { // don't let the player look down more than 89 degrees while noclipping
                     viewAngles.pitch = 89.0f
-                } else if (viewAngles.pitch < -89.0f) {
-                    // don't let the player look up more than 89 degrees while noclipping
+                } else if (viewAngles.pitch < -89.0f) { // don't let the player look up more than 89 degrees while noclipping
                     viewAngles.pitch = -89.0f
                 }
             } else if (isD3XP && mountedObject != null) {
@@ -7548,11 +7423,9 @@ object Player {
                 }
                 viewAngles.pitch = ClampFloat(-varc.toFloat(), varc.toFloat(), viewAngles.pitch)
             } else {
-                if (viewAngles.pitch > SysCvar.pm_maxviewpitch.GetFloat()) {
-                    // don't let the player look down enough to see the shadow of his (non-existant) feet
+                if (viewAngles.pitch > SysCvar.pm_maxviewpitch.GetFloat()) { // don't let the player look down enough to see the shadow of his (non-existant) feet
                     viewAngles.pitch = SysCvar.pm_maxviewpitch.GetFloat()
-                } else if (viewAngles.pitch < SysCvar.pm_minviewpitch.GetFloat()) {
-                    // don't let the player look up more than 89 degrees
+                } else if (viewAngles.pitch < SysCvar.pm_minviewpitch.GetFloat()) { // don't let the player look up more than 89 degrees
                     viewAngles.pitch = SysCvar.pm_minviewpitch.GetFloat()
                 }
             }
@@ -7565,8 +7438,7 @@ object Player {
             loggedViewAngles[gameLocal.framenum and NUM_LOGGED_VIEW_ANGLES - 1].set(viewAngles)
         }
 
-        private fun EvaluateControls() {
-            // check for respawning
+        private fun EvaluateControls() { // check for respawning
             if (health <= 0) {
                 if (gameLocal.time > minRespawnTime && (usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK) != 0) {
                     forceRespawn = true
@@ -7576,8 +7448,7 @@ object Player {
             }
 
             // in MP, idMultiplayerGame decides spawns
-            if (forceRespawn && !gameLocal.isMultiplayer && !SysCvar.g_testDeath.GetBool()) {
-                // in single player, we let the session handle restarting the level or loading a game
+            if (forceRespawn && !gameLocal.isMultiplayer && !SysCvar.g_testDeath.GetBool()) { // in single player, we let the session handle restarting the level or loading a game
                 gameLocal.sessionCommand.set("died")
             }
             if ((usercmd.flags.toInt() and UsercmdGen.UCF_IMPULSE_SEQUENCE) != (oldFlags and UsercmdGen.UCF_IMPULSE_SEQUENCE)) {
@@ -7637,8 +7508,7 @@ object Player {
             physicsObj.SetSpeed(speed, SysCvar.pm_crouchspeed.GetFloat())
         }
 
-        private fun AdjustBodyAngles() {
-//            idMat3 lookAxis;
+        private fun AdjustBodyAngles() { //            idMat3 lookAxis;
             val legsAxis: idMat3
             var blend: Boolean
             val diff: Float
@@ -7855,8 +7725,7 @@ object Player {
             if (EyeHeight() != newEyeOffset) {
                 if (spectating) {
                     SetEyeHeight(newEyeOffset)
-                } else {
-                    // smooth out duck height changes
+                } else { // smooth out duck height changes
                     SetEyeHeight(EyeHeight() * SysCvar.pm_crouchrate.GetFloat() + newEyeOffset * (1.0f - SysCvar.pm_crouchrate.GetFloat()))
                 }
             }
@@ -7882,15 +7751,13 @@ object Player {
                         )
                         vel.ToVec2_NormalizeFast()
                         vel.ToVec2_oMulSet(SysCvar.pm_walkspeed.GetFloat()) //TODO:ToVec2 back ref.
-                    } else {
-                        // give em a push in the direction they're going
+                    } else { // give em a push in the direction they're going
                         vel.timesAssign(1.1f)
                     }
                     physicsObj.SetLinearVelocity(vel)
                 }
             }
-            if (AI_JUMP.underscore()!!) {
-                // bounce the view weapon
+            if (AI_JUMP.underscore()!!) { // bounce the view weapon
                 val acc = loggedAccel[currentLoggedAccel and NUM_LOGGED_ACCELS - 1]
                 currentLoggedAccel++
                 acc.time = gameLocal.time
@@ -8041,8 +7908,7 @@ object Player {
                         weapon.GetEntity()!!.UpdateSkin()
                     }
                 }
-            }
-            // D3XP powerup clear cases
+            } // D3XP powerup clear cases
             if (isD3XP) {
                 when (i) {
                     HELLTIME -> {
@@ -8050,10 +7916,8 @@ object Player {
                     }
 
                     ENVIROSUIT -> {
-                        hudPowerup = -1
-                        // Turn off the envirosuit sound
-                        Game_local.gameSoundWorld?.SetEnviroSuit(false)
-                        // Take off the helmet and lights
+                        hudPowerup = -1 // Turn off the envirosuit sound
+                        Game_local.gameSoundWorld?.SetEnviroSuit(false) // Take off the helmet and lights
                         if (enviroSuitLight.IsValid()) {
                             enviroSuitLight.GetEntity()!!.PostEventMS(EV_Remove, 0)
                         }
@@ -8224,25 +8088,23 @@ object Player {
                     i++
                     continue
                 }
-                if (ent.spawnArgs.GetBool("inv_item")) {
-                    // don't allow guis on pickup items focus
+                if (ent.spawnArgs.GetBool("inv_item")) { // don't allow guis on pickup items focus
                     i++
                     continue
                 }
                 pt = Game_local.gameRenderWorld!!.GuiTrace(ent.GetModelDefHandle(), start, end)
-                if (pt.x != -1.0f) {
-                    // we have a hit
+                if (pt.x != -1.0f) { // we have a hit
                     val focusGUIrenderEntity = ent.GetRenderEntity()
                     if (focusGUIrenderEntity == null) {
                         i++
                         continue
                     }
                     ui = if (pt.guiId == 1) {
-                        focusGUIrenderEntity!!.gui[0]
+                        focusGUIrenderEntity.gui[0]
                     } else if (pt.guiId == 2) {
-                        focusGUIrenderEntity!!.gui[1]
+                        focusGUIrenderEntity.gui[1]
                     } else {
-                        focusGUIrenderEntity!!.gui[2]
+                        focusGUIrenderEntity.gui[2]
                     }
                     if (ui == null) {
                         i++
@@ -8251,8 +8113,7 @@ object Player {
                     ClearFocus()
                     focusGUIent = ent
                     focusUI = ui
-                    if (oldFocus !== ent) {
-                        // new activation
+                    if (oldFocus !== ent) { // new activation
                         // going to see if we have anything in inventory a gui might be interested in
                         // need to enumerate inventory items
                         focusUI!!.SetStateInt("inv_count", inventory.items.Num())
@@ -8323,15 +8184,13 @@ object Player {
                 i++
             }
             if (focusGUIent != null && focusUI != null) {
-                if (oldFocus == null || oldFocus != focusGUIent) {
-                    // DG: tell the old UI it isn't focused anymore
+                if (oldFocus == null || oldFocus != focusGUIent) { // DG: tell the old UI it isn't focused anymore
                     if (oldFocus != null && oldUI != null) {
                         command = oldUI.Activate(false, gameLocal.time)
                     }
                     command = focusUI!!.Activate(true, gameLocal.time)
                     HandleGuiCommands(focusGUIent, command)
-                    StartSound("snd_guienter", gameSoundChannel_t.SND_CHANNEL_ANY, 0, false)
-                    // HideTip();
+                    StartSound("snd_guienter", gameSoundChannel_t.SND_CHANNEL_ANY, 0, false) // HideTip();
                     // HideObjective();
                 }
             } else if (oldFocus != null && oldUI != null) {
@@ -8345,8 +8204,7 @@ object Player {
             if (oldChar !== focusCharacter && hud != null) {
                 if (focusCharacter != null) {
                     hud!!.SetStateString("npc", focusCharacter!!.spawnArgs.GetString("npc_name", "Joe")!!)
-                    hud!!.HandleNamedEvent("showNPC")
-                    // HideTip();
+                    hud!!.HandleNamedEvent("showNPC") // HideTip();
                     // HideObjective();
                 } else {
                     hud!!.SetStateString("npc", "")
@@ -8431,18 +8289,15 @@ object Player {
                 }
 
                 var index = inventory.pdas.size() - j
-                if (j == 0) {
-                    // Special case for the first PDA
+                if (j == 0) { // Special case for the first PDA
                     index = 0
                 }
 
-                if (j != currentPDA && j < 128 && (inventory.pdasViewed[j shr 5] and (1 shl (j and 31))) != 0) {
-                    // This pda has been read already, mark in gray
+                if (j != currentPDA && j < 128 && (inventory.pdasViewed[j shr 5] and (1 shl (j and 31))) != 0) { // This pda has been read already, mark in gray
                     objectiveSystem!!.SetStateString(
                         Str.va("listPDA_item_%d", index), Str.va(Str.S_COLOR_GRAY + "%s", pda.GetPdaName())
                     )
-                } else {
-                    // This pda has not been read yet
+                } else { // This pda has not been read yet
                     objectiveSystem!!.SetStateString(Str.va("listPDA_item_%d", index), pda.GetPdaName())
                 }
 
@@ -8460,8 +8315,7 @@ object Player {
                     objectiveSystem!!.SetStateString("pda_id", pda.GetID())
                     objectiveSystem!!.SetStateString("pda_title", pda.GetTitle())
 
-                    if (j == 0) {
-                        // Selected, personal pda
+                    if (j == 0) { // Selected, personal pda
                         // Add videos
                         if (updatePDASel || !inventory.pdaOpened) {
                             objectiveSystem!!.HandleNamedEvent("playerPDAActive")
@@ -8485,15 +8339,13 @@ object Player {
                             objectiveSystem!!.SetStateString("PDAVideoVid", vid.GetRoq())
                             objectiveSystem!!.SetStateString("PDAVideoIcon", vid.GetPreview())
                             objectiveSystem!!.SetStateString("PDAVideoInfo", vid.GetInfo())
-                        } else {
-                            //FIXME: need to precache these in the player def
+                        } else { //FIXME: need to precache these in the player def
                             objectiveSystem!!.SetStateString("PDAVideoVid", "sound/vo/video/welcome.tga")
                             objectiveSystem!!.SetStateString("PDAVideoIcon", "sound/vo/video/welcome.tga")
                             objectiveSystem!!.SetStateString("PDAVideoTitle", "")
                             objectiveSystem!!.SetStateString("PDAVideoInfo", "")
                         }
-                    } else {
-                        // Selected, non-personal pda
+                    } else { // Selected, non-personal pda
                         // Add audio logs
                         if (updatePDASel) {
                             objectiveSystem!!.HandleNamedEvent("playerPDANotActive")
@@ -8519,8 +8371,7 @@ object Player {
                             objectiveSystem!!.SetStateString("PDAAutioTitle", "")
                             objectiveSystem!!.SetStateString("PDAAudioInfo", "")
                         }
-                    }
-                    // add emails
+                    } // add emails
                     name = ""
                     data = ""
                     val numEmails = pda.GetNumEmails()
@@ -8758,21 +8609,18 @@ object Player {
             if (gameLocal.isServer) {
                 ServerSendEvent(EVENT_EXIT_TELEPORTER, null, false, -1)
             }
-            SetPrivateCameraView(null)
-            // setup origin and push according to the exit target
+            SetPrivateCameraView(null) // setup origin and push according to the exit target
             SetOrigin(exitEnt.GetPhysics().GetOrigin().plus(idVec3(0.0f, 0.0f, CM_CLIP_EPSILON)))
             SetViewAngles(exitEnt.GetPhysics().GetAxis().ToAngles())
             physicsObj.SetLinearVelocity(exitEnt.GetPhysics().GetAxis()[0].times(pushVel))
-            physicsObj.ClearPushedVelocity()
-            // teleport fx
+            physicsObj.ClearPushedVelocity() // teleport fx
             playerView.Flash(colorWhite, 120)
 
             // clear the ik heights so model doesn't appear in the wrong place
             walkIK.EnableAll()
             UpdateVisuals()
             StartSound("snd_teleport_exit", gameSoundChannel_t.SND_CHANNEL_ANY, 0, false)
-            if (teleportKiller != -1) {
-                // we got killed while being teleported
+            if (teleportKiller != -1) { // we got killed while being teleported
                 Damage(
                     gameLocal.entities[teleportKiller],
                     gameLocal.entities[teleportKiller],
@@ -8782,8 +8630,7 @@ object Player {
                     Model.INVALID_JOINT
                 )
                 teleportKiller = -1
-            } else {
-                // kill anything that would have waited at teleport exit
+            } else { // kill anything that would have waited at teleport exit
                 gameLocal.KillBox(this)
             }
             teleportEntity.oSet(null)
@@ -8809,16 +8656,16 @@ object Player {
 
         // D3XP event handlers
         private fun Event_GiveInventoryItem(name: idEventArg<String>) {
-            GiveInventoryItem(name.value as String)
+            GiveInventoryItem(name.value)
         }
 
         private fun Event_RemoveInventoryItem(name: idEventArg<String>) {
-            RemoveInventoryItem(name.value as String)
+            RemoveInventoryItem(name.value)
         }
 
         private fun Event_SetPowerupTime(powerup: idEventArg<Int>, time: idEventArg<Int>) {
-            val p = powerup.value as Int
-            val t = time.value as Int
+            val p = powerup.value
+            val t = time.value
             if (t > 0) {
                 GivePowerUp(p, t)
             } else {
@@ -8827,11 +8674,11 @@ object Player {
         }
 
         private fun Event_IsPowerupActive(powerup: idEventArg<Int>) {
-            idThread.ReturnInt(if (PowerUpActive(powerup.value as Int)) 1 else 0)
+            idThread.ReturnInt(if (PowerUpActive(powerup.value)) 1 else 0)
         }
 
         private fun Event_WeaponAvailable(name: idEventArg<String>) {
-            idThread.ReturnInt(if (WeaponAvailable(name.value as String)) 1 else 0)
+            idThread.ReturnInt(if (WeaponAvailable(name.value)) 1 else 0)
         }
 
         private fun Event_StartWarp() {
@@ -8845,16 +8692,16 @@ object Player {
         }
 
         private fun Event_StopHelltime(mode: idEventArg<Int>) {
-            StopHelltime(mode.value as Int == 1)
+            StopHelltime(mode.value == 1)
         }
 
         private fun Event_ToggleBloom(on: idEventArg<Int>) {
-            bloomEnabled = (on.value as Int) != 0
+            bloomEnabled = on.value != 0
         }
 
         private fun Event_SetBloomParms(speed: idEventArg<Float>, intensity: idEventArg<Float>) {
-            bloomSpeed = speed.value as Float
-            bloomIntensity = intensity.value as Float
+            bloomSpeed = speed.value
+            bloomIntensity = intensity.value
         }
 
         // D3XP methods
@@ -8933,16 +8780,14 @@ object Player {
         fun DropFlag() {
             if (!carryingFlag || !gameLocal.isMultiplayer) {
                 return
-            }
-            // TODO T8: full CTF flag drop via mpGame.GetTeamFlag
+            } // TODO T8: full CTF flag drop via mpGame.GetTeamFlag
             carryingFlag = false
         }
 
         fun ReturnFlag() {
             if (!carryingFlag || !gameLocal.isMultiplayer) {
                 return
-            }
-            // TODO T8: full CTF flag return via mpGame.GetTeamFlag
+            } // TODO T8: full CTF flag return via mpGame.GetTeamFlag
             carryingFlag = false
         }
 
@@ -9067,9 +8912,9 @@ object Player {
             influenceSkin = null
             privateCameraView = null
 
-//	memset( loggedViewAngles, 0, sizeof( loggedViewAngles ) );
-            loggedViewAngles = Array(NUM_LOGGED_VIEW_ANGLES) { idAngles() }
-            //	memset( loggedAccel, 0, sizeof( loggedAccel ) );
+            //	memset( loggedViewAngles, 0, sizeof( loggedViewAngles ) );
+            loggedViewAngles =
+                Array(NUM_LOGGED_VIEW_ANGLES) { idAngles() } //	memset( loggedAccel, 0, sizeof( loggedAccel ) );
             loggedAccel = Array(NUM_LOGGED_ACCELS) { loggedAccel_t() }
             currentLoggedAccel = 0
             focusTime = 0

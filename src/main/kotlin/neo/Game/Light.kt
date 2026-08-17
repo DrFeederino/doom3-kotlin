@@ -99,15 +99,11 @@ object Light {
                 eventCallbacks[EV_Light_SetLightParm] =
                     eventCallback_t2<idLight> { obj: idLight, parmnum: idEventArg<*>?, value: idEventArg<*>? ->
                         obj.Event_SetLightParm(
-                            parmnum as idEventArg<Int>,
-                            value as idEventArg<Float>
+                            parmnum as idEventArg<Int>, value as idEventArg<Float>
                         )
                     }
                 eventCallbacks[EV_Light_SetLightParms] =
-                    eventCallback_t4<idLight> { obj: idLight, parm0: idEventArg<*>?,
-                                                parm1: idEventArg<*>?,
-                                                parm2: idEventArg<*>?,
-                                                parm3: idEventArg<*>? ->
+                    eventCallback_t4<idLight> { obj: idLight, parm0: idEventArg<*>?, parm1: idEventArg<*>?, parm2: idEventArg<*>?, parm3: idEventArg<*>? ->
                         obj.Event_SetLightParms(
                             parm0 as idEventArg<Float>,
                             parm1 as idEventArg<Float>,
@@ -118,27 +114,19 @@ object Light {
                 eventCallbacks[EV_Light_SetRadiusXYZ] =
                     eventCallback_t3<idLight> { obj: idLight, x: idEventArg<*>?, y: idEventArg<*>?, z: idEventArg<*>? ->
                         obj.Event_SetRadiusXYZ(
-                            x as idEventArg<Float>,
-                            y as idEventArg<Float>,
-                            z as idEventArg<Float>
+                            x as idEventArg<Float>, y as idEventArg<Float>, z as idEventArg<Float>
                         )
                     }
                 eventCallbacks[EV_Light_SetRadius] =
                     eventCallback_t1<idLight> { obj: idLight, radius: idEventArg<*>? -> obj.Event_SetRadius(radius as idEventArg<Float>) }
-                eventCallbacks[EV_Hide] =
-                    eventCallback_t0<idLight> { obj: idLight -> obj.Event_Hide() }
-                eventCallbacks[EV_Show] =
-                    eventCallback_t0<idLight> { obj: idLight -> obj.Event_Show() }
-                eventCallbacks[EV_Light_On] =
-                    eventCallback_t0<idLight> { obj: idLight -> obj.Event_On() }
-                eventCallbacks[EV_Light_Off] =
-                    eventCallback_t0<idLight> { obj: idLight -> obj.Event_Off() }
-                eventCallbacks[EV_Activate] =
-                    eventCallback_t1<idLight> { obj: idLight, activator: idEventArg<*>? ->
-                        obj.Event_ToggleOnOff(activator as idEventArg<idEntity>)
-                    }
-                eventCallbacks[EV_PostSpawn] =
-                    eventCallback_t0<idLight> { obj: idLight -> obj.Event_SetSoundHandles() }
+                eventCallbacks[EV_Hide] = eventCallback_t0<idLight> { obj: idLight -> obj.Event_Hide() }
+                eventCallbacks[EV_Show] = eventCallback_t0<idLight> { obj: idLight -> obj.Event_Show() }
+                eventCallbacks[EV_Light_On] = eventCallback_t0<idLight> { obj: idLight -> obj.Event_On() }
+                eventCallbacks[EV_Light_Off] = eventCallback_t0<idLight> { obj: idLight -> obj.Event_Off() }
+                eventCallbacks[EV_Activate] = eventCallback_t1<idLight> { obj: idLight, activator: idEventArg<*>? ->
+                    obj.Event_ToggleOnOff(activator as idEventArg<idEntity>)
+                }
+                eventCallbacks[EV_PostSpawn] = eventCallback_t0<idLight> { obj: idLight -> obj.Event_SetSoundHandles() }
                 eventCallbacks[EV_Light_FadeOut] =
                     eventCallback_t1<idLight> { obj: idLight, time: idEventArg<*>? -> obj.Event_FadeOut(time as idEventArg<Float>) }
                 eventCallbacks[EV_Light_FadeIn] =
@@ -215,10 +203,9 @@ object Light {
             // the renderer will ignore this value after a light has been moved,
             // but there may still be a chance to get it wrong if the game moves
             // a light before the first present, and doesn't clear the prelight
-            renderLight.prelightModel = null
-            // FIX: C++ name[0] safely returns '\0' on empty string; Kotlin name[0] would throw IndexOutOfBoundsException
-            if (name.Length() > 0) {
-                // this will return 0 if not found
+            renderLight.prelightModel =
+                null // FIX: C++ name[0] safely returns '\0' on empty string; Kotlin name[0] would throw IndexOutOfBoundsException
+            if (name.Length() > 0) { // this will return 0 if not found
                 renderLight.prelightModel = ModelManager.renderModelManager.CheckModel(Str.va("_prelight_%s", name))
             }
             spawnArgs.GetBool("start_off", "0", start_off)
@@ -227,9 +214,9 @@ object Light {
             }
 
             // D3XP CTF: Midnight mode turns off all lights unless overridden
-            if (isD3XP && Game_local.gameLocal.mpGame.IsGametypeFlagBased()
-                && Game_local.gameLocal.serverInfo.GetBool("si_midnight")
-                && !spawnArgs.GetBool("midnight_override")
+            if (isD3XP && Game_local.gameLocal.mpGame.IsGametypeFlagBased() && Game_local.gameLocal.serverInfo.GetBool("si_midnight") && !spawnArgs.GetBool(
+                    "midnight_override"
+                )
             ) {
                 Off()
             }
@@ -249,9 +236,7 @@ object Light {
                 val model = idStr(spawnArgs.GetString("model")) // get the visual model
                 if (0 == model.Length()) {
                     idGameLocal.Error(
-                        "Breakable light without a model set on entity #%d(%s)",
-                        entityNumber,
-                        name
+                        "Breakable light without a model set on entity #%d(%s)", entityNumber, name
                     )
                 }
                 fl.takedamage = true
@@ -278,10 +263,7 @@ object Light {
                 if (ModelManager.renderModelManager.CheckModel(brokenModel) == null) {
                     if (needBroken) {
                         idGameLocal.Error(
-                            "Model '%s' not found for entity %d(%s)",
-                            brokenModel,
-                            entityNumber,
-                            name
+                            "Model '%s' not found for entity %d(%s)", brokenModel, entityNumber, name
                         )
                     } else {
                         brokenModel.set("")
@@ -339,11 +321,9 @@ object Light {
             renderLight.prelightModel = ModelManager.renderModelManager.CheckModel(Str.va("_prelight_%s", name))
             if (renderLight.prelightModel == null && hadPrelightModel._val) {
                 assert(false)
-                if (Common.com_developer.GetBool()) {
-                    // we really want to know if this happens
+                if (Common.com_developer.GetBool()) { // we really want to know if this happens
                     idGameLocal.Error("idLight::Restore: prelightModel '_prelight_%s' not found", name)
-                } else {
-                    // but let it slide after release
+                } else { // but let it slide after release
                     Game_local.gameLocal.Warning("idLight::Restore: prelightModel '_prelight_%s' not found", name)
                 }
             }
@@ -413,8 +393,7 @@ object Light {
             return true
         }
 
-        override fun Present() {
-            // don't present to the renderer if the entity hasn't changed
+        override fun Present() { // don't present to the renderer if the entity hasn't changed
             if ((thinkFlags and TH_UPDATEVISUALS) == 0) {
                 return
             }
@@ -490,8 +469,7 @@ object Light {
             return baseColor
         }
 
-        fun SetShader(shadername: String) {
-            // allow this to be NULL
+        fun SetShader(shadername: String) { // allow this to be NULL
             renderLight.shader = DeclManager.declManager.FindMaterial(shadername, false)
             PresentLightDefChange()
         }
@@ -524,8 +502,7 @@ object Light {
             PresentLightDefChange()
         }
 
-        fun SetRadius(radius: Float) {
-            // FIX: Was using fragile chained set() calls; simplified to match C++ direct assignment
+        fun SetRadius(radius: Float) { // FIX: Was using fragile chained set() calls; simplified to match C++ direct assignment
             renderLight.lightRadius[0] = radius
             renderLight.lightRadius[1] = radius
             renderLight.lightRadius[2] = radius
@@ -533,10 +510,8 @@ object Light {
         }
 
         fun On() {
-            currentLevel = levels._val
-            // offset the start time of the shader to sync it to the game time
-            renderLight.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                -MS2SEC(Game_local.gameLocal.time.toFloat())
+            currentLevel = levels._val // offset the start time of the shader to sync it to the game time
+            renderLight.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(Game_local.gameLocal.time.toFloat())
             if ((soundWasPlaying || refSound.waitfortrigger) && refSound.shader != null) {
                 StartSoundShader(refSound.shader, gameSoundChannel_t.SND_CHANNEL_ANY.ordinal, 0, false)
                 soundWasPlaying = false
@@ -546,8 +521,7 @@ object Light {
         }
 
         fun Off() {
-            currentLevel = 0
-            // kill any sound it was making
+            currentLevel = 0 // kill any sound it was making
             if (refSound.referenceSound != null && refSound.referenceSound!!.CurrentlyPlaying()) {
                 StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
                 soundWasPlaying = true
@@ -605,10 +579,8 @@ object Light {
             ActivateTargets(activator)
 
             // offset the start time of the shader to sync it to the game time
-            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                -MS2SEC(Game_local.gameLocal.time.toFloat())
-            renderLight.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                -MS2SEC(Game_local.gameLocal.time.toFloat())
+            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(Game_local.gameLocal.time.toFloat())
+            renderLight.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(Game_local.gameLocal.time.toFloat())
 
             // set the state parm
             renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE] = 1.0f
@@ -622,13 +594,9 @@ object Light {
                     if (refSound.shader != null) refSound.shader!!.GetAltSound() else DeclManager.declManager.FindSound(
                         parm
                     )
-                if (alternate != null) {
-                    // start it with no diversity, so the leadin break sound plays
+                if (alternate != null) { // start it with no diversity, so the leadin break sound plays
                     refSound.referenceSound!!.StartSound(
-                        alternate,
-                        (gameSoundChannel_t.SND_CHANNEL_ANY).ordinal,
-                        0.0f,
-                        0
+                        alternate, (gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, 0.0f, 0
                     )
                 }
             }
@@ -678,16 +646,14 @@ object Light {
             GetPhysics().WriteToSnapshot(msg)
             WriteBindToSnapshot(msg)
             msg.WriteByte(currentLevel)
-            msg.WriteLong(PackColor(baseColor).toInt())
-            // msg.WriteBits( lightParent.GetEntityNum(), GENTITYNUM_BITS );
+            msg.WriteLong(PackColor(baseColor).toInt()) // msg.WriteBits( lightParent.GetEntityNum(), GENTITYNUM_BITS );
 
             /*	// only helps prediction
              msg.WriteLong( PackColor( fadeFrom ) );
              msg.WriteLong( PackColor( fadeTo ) );
              msg.WriteLong( fadeStart );
              msg.WriteLong( fadeEnd );
-             */
-            // FIXME: send renderLight.shader
+             */ // FIXME: send renderLight.shader
             msg.WriteFloat(renderLight.lightRadius[0], 5, 10)
             msg.WriteFloat(renderLight.lightRadius[1], 5, 10)
             msg.WriteFloat(renderLight.lightRadius[2], 5, 10)
@@ -702,8 +668,7 @@ object Light {
                 ).toInt()
             )
             msg.WriteFloat(renderLight.shaderParms[RenderWorld.SHADERPARM_TIMESCALE], 5, 10)
-            msg.WriteLong(renderLight.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET].toInt())
-            //msg.WriteByte( renderLight.shaderParms[SHADERPARM_DIVERSITY] );
+            msg.WriteLong(renderLight.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET].toInt()) //msg.WriteByte( renderLight.shaderParms[SHADERPARM_DIVERSITY] );
             msg.WriteShort(renderLight.shaderParms[RenderWorld.SHADERPARM_MODE].toInt())
             WriteColorToSnapshot(msg)
         }
@@ -715,8 +680,7 @@ object Light {
             GetPhysics().ReadFromSnapshot(msg)
             ReadBindFromSnapshot(msg)
             currentLevel = msg.ReadByte()
-            if (currentLevel != oldCurrentLevel) {
-                // need to call On/Off for flickering lights to start/stop the sound
+            if (currentLevel != oldCurrentLevel) { // need to call On/Off for flickering lights to start/stop the sound
                 // while doing it this way rather than through events, the flickering is out of sync between clients
                 // but at least there is no question about saving the event and having them happening globally in the world
                 if (currentLevel != 0) {
@@ -725,16 +689,14 @@ object Light {
                     Off()
                 }
             }
-            UnpackColor(msg.ReadLong().toLong(), baseColor)
-            // lightParentEntityNum = msg.ReadBits( GENTITYNUM_BITS );
+            UnpackColor(msg.ReadLong().toLong(), baseColor) // lightParentEntityNum = msg.ReadBits( GENTITYNUM_BITS );
 
             /*	// only helps prediction
              UnpackColor( msg.ReadLong(), fadeFrom );
              UnpackColor( msg.ReadLong(), fadeTo );
              fadeStart = msg.ReadLong();
              fadeEnd = msg.ReadLong();
-             */
-            // FIXME: read renderLight.shader
+             */ // FIXME: read renderLight.shader
             renderLight.lightRadius[0] = msg.ReadFloat(5, 10)
             renderLight.lightRadius[1] = msg.ReadFloat(5, 10)
             renderLight.lightRadius[2] = msg.ReadFloat(5, 10)
@@ -744,8 +706,8 @@ object Light {
             renderLight.shaderParms[RenderWorld.SHADERPARM_BLUE] = shaderColor[2]
             renderLight.shaderParms[RenderWorld.SHADERPARM_ALPHA] = shaderColor[3]
             renderLight.shaderParms[RenderWorld.SHADERPARM_TIMESCALE] = msg.ReadFloat(5, 10)
-            renderLight.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = msg.ReadLong().toFloat()
-            //renderLight.shaderParms[SHADERPARM_DIVERSITY] = msg.ReadFloat()
+            renderLight.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
+                msg.ReadLong().toFloat() //renderLight.shaderParms[SHADERPARM_DIVERSITY] = msg.ReadFloat()
             renderLight.shaderParms[RenderWorld.SHADERPARM_MODE] = msg.ReadShort().toFloat()
             ReadColorFromSnapshot(msg)
             if (msg.HasChanged()) {
@@ -769,8 +731,7 @@ object Light {
             }
         }
 
-        private fun PresentLightDefChange() {
-            // let the renderer apply it to the world
+        private fun PresentLightDefChange() { // let the renderer apply it to the world
             if (lightDefHandle != -1) {
                 Game_local.gameRenderWorld!!.UpdateLightDef(lightDefHandle, renderLight)
             } else {
@@ -808,10 +769,7 @@ object Light {
         }
 
         private fun Event_SetLightParms(
-            parm0: idEventArg<Float>,
-            parm1: idEventArg<Float>,
-            parm2: idEventArg<Float>,
-            parm3: idEventArg<Float>
+            parm0: idEventArg<Float>, parm1: idEventArg<Float>, parm2: idEventArg<Float>, parm3: idEventArg<Float>
         ) {
             SetLightParms(parm0.value, parm1.value, parm2.value, parm3.value)
         }

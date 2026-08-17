@@ -158,9 +158,7 @@ object UserInterface {
 
 
             fun FindGui(
-                qpath: String?,
-                autoLoad: Boolean = false /*= false*/,
-                needUnique: Boolean = false /*= false*/
+                qpath: String?, autoLoad: Boolean = false /*= false*/, needUnique: Boolean = false /*= false*/
             ): idUserInterface? {
                 return FindGui(qpath, autoLoad, needUnique, false)
             }

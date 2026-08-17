@@ -65,8 +65,7 @@ class Physics_Base {
         ================
         idPhysics_Base::~idPhysics_Base
         ================
-        */
-        // ~idPhysics_Base( void );
+        */ // ~idPhysics_Base( void );
         override fun _deconstructor() {
             if (self != null && self!!.GetPhysics() === this) {
                 self!!.SetPhysics(null)
@@ -141,8 +140,7 @@ class Physics_Base {
         ================
         idPhysics_Base::SetSelf
         ================
-        */
-        // common physics interface
+        */ // common physics interface
         override fun SetSelf(e: idEntity) {
             assert(e != null)
             self = e
@@ -753,8 +751,7 @@ class Physics_Base {
         ================
         idPhysics_Base::AddGroundContacts
         ================
-        */
-        // add ground contacts for the clip model
+        */ // add ground contacts for the clip model
         protected fun AddGroundContacts(clipModel: idClipModel) {
             val dir = idVec6()
             val index: Int
@@ -785,8 +782,7 @@ class Physics_Base {
         ================
         idPhysics_Base::AddContactEntitiesForContacts
         ================
-        */
-        // add contact entity links to contact entities
+        */ // add contact entity links to contact entities
         protected fun AddContactEntitiesForContacts() {
             var i: Int
             var ent: idEntity?
@@ -804,8 +800,7 @@ class Physics_Base {
         ================
         idPhysics_Base::ActivateContactEntities
         ================
-        */
-        // active all contact entities
+        */ // active all contact entities
         protected fun ActivateContactEntities() {
             var i: Int
             var ent: idEntity?
@@ -821,8 +816,7 @@ class Physics_Base {
         ================
         idPhysics_Base::IsOutsideWorld
         ================
-        */
-        // returns true if the whole physics object is outside the world bounds
+        */ // returns true if the whole physics object is outside the world bounds
         protected fun IsOutsideWorld(): Boolean {
             return !gameLocal.clip.GetWorldBounds().Expand(128.0f).IntersectsBounds(GetAbsBounds())
         }
@@ -831,8 +825,7 @@ class Physics_Base {
         ================
         idPhysics_Base::DrawVelocity
         ================
-        */
-        // draw linear and angular velocity
+        */ // draw linear and angular velocity
         protected fun DrawVelocity(id: Int, linearScale: Float, angularScale: Float) {
             val dir = idVec3()
             val org = idVec3()
@@ -862,8 +855,7 @@ class Physics_Base {
                 vec.set(axis[2])
                 if (abs(dir * vec) > 0.99) {
                     vec.set(axis[0])
-                }
-                // FIX: was vec.timesVec(dir).timesVec(vec) (element-wise), should be dot-product-then-scale
+                } // FIX: was vec.timesVec(dir).timesVec(vec) (element-wise), should be dot-product-then-scale
                 vec.minusAssign(vec * (vec * dir))
                 vec.Normalize()
                 vec.timesAssign(4.0f)
@@ -891,8 +883,7 @@ class Physics_Base {
         idPhysics_Base::idPhysics_Base
         ================
         */
-        init {
-            //SetGravity(gameLocal.GetGravity());
+        init { //SetGravity(gameLocal.GetGravity());
             gravityNormal.Normalize()
             ClearContacts()
         }

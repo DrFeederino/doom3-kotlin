@@ -116,9 +116,7 @@ class SliderWindow {
         }
 
         override fun GetWinVarByName(
-            _name: String?,
-            winLookup: Boolean /*= false*/,
-            owner: Array<drawWin_t?>? /*= NULL*/
+            _name: String?, winLookup: Boolean /*= false*/, owner: Array<drawWin_t?>? /*= NULL*/
         ): idWinVar? {
             if (Icmp(_name!!, "value") == 0) {
                 return value
@@ -132,9 +130,7 @@ class SliderWindow {
             return if (Icmp(_name, "cvarGroup") == 0) {
                 cvarGroup
             } else super.GetWinVarByName(
-                _name,
-                winLookup,
-                owner
+                _name, winLookup, owner
             )
         }
 
@@ -169,8 +165,7 @@ class SliderWindow {
             thumbMat = DeclManager.declManager.FindMaterial(thumbShader)
             thumbMat!!.SetSort(Material.SS_GUI.toFloat())
             thumbWidth = thumbMat!!.GetImageWidth().toFloat()
-            thumbHeight = thumbMat!!.GetImageHeight().toFloat()
-            //vertical = state.GetBool("vertical");
+            thumbHeight = thumbMat!!.GetImageHeight().toFloat() //vertical = state.GetBool("vertical");
             //scrollbar = state.GetBool("scrollbar");
             flags = flags or (Window.WIN_HOLDCAPTURE or Window.WIN_CANFOCUS)
             InitCvar()
@@ -224,12 +219,7 @@ class SliderWindow {
             dc!!.DrawMaterial(thumbRect.x, thumbRect.y, thumbRect.w, thumbRect.h, thumbMat, color)
             if (flags and Window.WIN_FOCUS != 0) {
                 dc!!.DrawRect(
-                    thumbRect.x + 1.0f,
-                    thumbRect.y + 1.0f,
-                    thumbRect.w - 2.0f,
-                    thumbRect.h - 2.0f,
-                    1.0f,
-                    color
+                    thumbRect.x + 1.0f, thumbRect.y + 1.0f, thumbRect.w - 2.0f, thumbRect.h - 2.0f, 1.0f, color
                 )
             }
         }
@@ -335,13 +325,13 @@ class SliderWindow {
             if (0 == Cmpn(eventName!!, "cvar read ", 10)) {
                 event = idStr(eventName)
                 group = idStr(event.Mid(10, event.Length() - 10))
-                if (group.Cmp(cvarGroup!!.data!!) == 0) {
+                if (group.Cmp(cvarGroup.data) == 0) {
                     UpdateCvar(true, true)
                 }
             } else if (0 == Cmpn(eventName, "cvar write ", 11)) {
                 event = idStr(eventName)
                 group = idStr(event.Mid(11, event.Length() - 11))
-                if (group.Cmp(cvarGroup!!.data!!) == 0) {
+                if (group.Cmp(cvarGroup.data) == 0) {
                     UpdateCvar(false, true)
                 }
             }

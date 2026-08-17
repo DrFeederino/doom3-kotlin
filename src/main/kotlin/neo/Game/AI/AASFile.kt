@@ -100,8 +100,16 @@ object AASFile {
     fun Reachability_Write(fp: idFile, reach: idReachability): Boolean {
         fp.WriteFloatString(
             "\t\t%d %d (%f %f %f) (%f %f %f) %d %d",
-            reach.travelType, reach.toAreaNum.toInt(), reach.start.x, reach.start.y, reach.start.z,
-            reach.end.x, reach.end.y, reach.end.z, reach.edgeNum, reach.travelTime
+            reach.travelType,
+            reach.toAreaNum.toInt(),
+            reach.start.x,
+            reach.start.y,
+            reach.start.z,
+            reach.end.x,
+            reach.end.y,
+            reach.end.z,
+            reach.edgeNum,
+            reach.travelTime
         )
         return true
     }
@@ -321,8 +329,7 @@ object AASFile {
             areas = null
             points = null
             maxAreas = 0
-            travelFlags = maxAreas
-            //false;
+            travelFlags = maxAreas //false;
             flags = travelFlags
             getOutOfSolid = flags
         }
@@ -553,8 +560,12 @@ object AASFile {
             while (i < numBoundingBoxes) {
                 fp.WriteFloatString(
                     "\t\t(%f %f %f)-(%f %f %f)\n",
-                    boundingBoxes[i][0].x, boundingBoxes[i][0].y, boundingBoxes[i][0].z,
-                    boundingBoxes[i][1].x, boundingBoxes[i][1].y, boundingBoxes[i][1].z
+                    boundingBoxes[i][0].x,
+                    boundingBoxes[i][0].y,
+                    boundingBoxes[i][0].z,
+                    boundingBoxes[i][1].x,
+                    boundingBoxes[i][1].y,
+                    boundingBoxes[i][1].z
                 )
                 i++
             }
@@ -605,9 +616,7 @@ object AASFile {
             }
             val decl = DeclManager.declManager.FindType(declType_t.DECL_ENTITYDEF, classname, false) as idDeclEntityDef
             if (decl != null && decl.dict.GetString(
-                    "use_aas",
-                    null,
-                    use_aas
+                    "use_aas", null, use_aas
                 ) && fileExtension.Icmp(use_aas) == 0
             ) {
                 if (decl.dict.GetVector("mins", null, bounds[0])) {
@@ -649,9 +658,7 @@ object AASFile {
         }
 
         private fun ParseVector(src: idLexer, vec: idVec3): Boolean {
-            return if (!src.ExpectTokenString("=")) {
-                false
-            } else src.Parse1DMatrix(3, vec)
+            return src.ExpectTokenString("=") && src.Parse1DMatrix(3, vec)
         }
 
         private fun ParseBBoxes(src: idLexer): Boolean {
@@ -686,8 +693,7 @@ object AASFile {
             noOptimize = false
             allowSwimReachabilities._val = (false)
             allowFlyReachabilities._val = (false)
-            fileExtension = idStr("aas48")
-            // physics settings
+            fileExtension = idStr("aas48") // physics settings
             gravity = idVec3(0.0f, 0.0f, -1066.0f)
             gravityDir = gravity
             gravityValue = gravityDir.Normalize()
@@ -696,8 +702,7 @@ object AASFile {
             maxBarrierHeight._val = 32.0f
             maxWaterJumpHeight._val = 20.0f
             maxFallHeight._val = 64.0f
-            minFloorCos._val = 0.7f
-            // fixed travel times
+            minFloorCos._val = 0.7f // fixed travel times
             tt_barrierJump._val = 100
             tt_startCrouching._val = 100
             tt_waterJump._val = 100
@@ -870,10 +875,7 @@ object AASFile {
         //
         abstract fun PointAreaNum(origin: idVec3): Int
         abstract fun PointReachableAreaNum(
-            origin: idVec3,
-            searchBounds: idBounds,
-            areaFlags: Int,
-            excludeTravelFlags: Int
+            origin: idVec3, searchBounds: idBounds, areaFlags: Int, excludeTravelFlags: Int
         ): Int
 
         abstract fun BoundsReachableAreaNum(bounds: idBounds, areaFlags: Int, excludeTravelFlags: Int): Int

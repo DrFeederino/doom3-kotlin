@@ -40,8 +40,11 @@ import neo.Renderer.ModelManager
 import neo.Renderer.RenderWorld
 import neo.Sound.snd_shader.idSoundShader
 import neo.cm.collisionModelManager
-import neo.framework.*
+import neo.framework.CVarSystem
+import neo.framework.Common
+import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
+import neo.framework.UsercmdGen
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Dict_h.idKeyValue
 import neo.idlib.Text.Str
@@ -362,8 +365,7 @@ object Target {
         private fun Event_Activate(activator: idEventArg<idEntity>) {
             if ((thinkFlags and TH_THINK) != 0) {
                 BecomeInactive(TH_THINK)
-            } else {
-                // always allow during cinematics
+            } else { // always allow during cinematics
                 cinematic = true
                 BecomeActive(TH_THINK)
             }
@@ -629,7 +631,7 @@ object Target {
             cinematic = true
             BecomeActive(TH_THINK)
 
-//	ent = this;
+            //	ent = this;
             i = 0
             while (i < targets.Num()) {
                 ent = targets[i].GetEntity()
@@ -694,8 +696,7 @@ object Target {
             if (0 == targets.Num()) {
                 return
             }
-            time = spawnArgs.GetFloat("fadetime")
-            //	ent = this;
+            time = spawnArgs.GetFloat("fadetime") //	ent = this;
             i = 0
             while (i < targets.Num()) {
                 ent = targets[i].GetEntity()
@@ -756,8 +757,7 @@ object Target {
             if (0 == targets.Num()) {
                 return
             }
-            time = spawnArgs.GetFloat("fadetime")
-            //	ent = this;
+            time = spawnArgs.GetFloat("fadetime") //	ent = this;
             i = 0
             while (i < targets.Num()) {
                 ent = targets[i].GetEntity()
@@ -926,10 +926,11 @@ object Target {
             super.Spawn()
             val model: idStr
             model = idStr(spawnArgs.GetString("newmodel"))
-            if (DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, model, false) == null) {
-                // precache the render model
-                ModelManager.renderModelManager.FindModel(model)
-                // precache .cm files only
+            if (DeclManager.declManager.FindType(
+                    declType_t.DECL_MODELDEF, model, false
+                ) == null
+            ) { // precache the render model
+                ModelManager.renderModelManager.FindModel(model) // precache .cm files only
                 collisionModelManager.LoadModel(model, true)
             }
         }
@@ -1046,8 +1047,7 @@ object Target {
             savefile.WriteFloat(fovSetting.GetStartValue())
             savefile.WriteFloat(fovSetting.GetEndValue())
             savefile.WriteBool(soundFaded)
-            savefile.WriteBool(restoreOnTrigger)
-            // D3XP
+            savefile.WriteBool(restoreOnTrigger) // D3XP
             if (isD3XP) {
                 savefile.WriteInt(savedGuiList.Num())
                 var si = 0
@@ -1055,8 +1055,7 @@ object Target {
                     var sj = 0
                     while (sj < RenderWorld.MAX_RENDERENTITY_GUI) {
                         savefile.WriteUserInterface(
-                            savedGuiList[si].gui[sj],
-                            savedGuiList[si].gui[sj]?.IsUniqued() ?: false
+                            savedGuiList[si].gui[sj], savedGuiList[si].gui[sj]?.IsUniqued() ?: false
                         )
                         sj++
                     }
@@ -1114,8 +1113,7 @@ object Target {
             savefile.ReadFloat(set)
             fovSetting.SetEndValue(set._val)
             soundFaded = savefile.ReadBool()
-            restoreOnTrigger = savefile.ReadBool()
-            // D3XP
+            restoreOnTrigger = savefile.ReadBool() // D3XP
             if (isD3XP) {
                 savefile.ReadInt(num)
                 var ri = 0
@@ -1172,8 +1170,7 @@ object Target {
             val fadeTime = spawnArgs.GetFloat("fadeWorldSounds")
             if (delay > 0.0f) {
                 PostEventSec(EV_Activate, delay, activator.value)
-                delay = 0.0f
-                // start any sound fading now
+                delay = 0.0f // start any sound fading now
                 if (fadeTime != 0.0f) {
                     Game_local.gameSoundWorld!!.FadeSoundClasses(0, -40.0f, fadeTime)
                     soundFaded = true
@@ -1266,18 +1263,19 @@ object Target {
                 update = false
                 j = 0
                 while (j < RenderWorld.MAX_RENDERENTITY_GUI) {
-                    if (ent.GetRenderEntity()!!.gui[j] != null
-                        && ent.spawnArgs.FindKey(if (j == 0) "gui_demonic" else Str.va("gui_demonic%d", j + 1)) != null
-                    ) {
-                        // D3XP: backup the old gui before replacing
+                    if (ent.GetRenderEntity()!!.gui[j] != null && ent.spawnArgs.FindKey(
+                            if (j == 0) "gui_demonic" else Str.va(
+                                "gui_demonic%d", j + 1
+                            )
+                        ) != null
+                    ) { // D3XP: backup the old gui before replacing
                         if (isD3XP) {
                             savedGuiList[i].gui[j] = ent.GetRenderEntity()!!.gui[j]
                         }
                         ent.GetRenderEntity()!!.gui[j] = UserInterface.uiManager.FindGui(
                             ent.spawnArgs.GetString(
                                 if (j == 0) "gui_demonic" else Str.va(
-                                    "gui_demonic%d",
-                                    j + 1
+                                    "gui_demonic%d", j + 1
                                 )
                             ), true
                         )!!
@@ -1380,15 +1378,13 @@ object Target {
                 j = 0
                 while (j < RenderWorld.MAX_RENDERENTITY_GUI) {
                     if (ent.GetRenderEntity()!!.gui[j] != null) {
-                        if (isD3XP) {
-                            // D3XP: restore from saved gui backup
+                        if (isD3XP) { // D3XP: restore from saved gui backup
                             ent.GetRenderEntity()!!.gui[j] = savedGuiList[i].gui[j]
                         } else {
                             ent.GetRenderEntity()!!.gui[j] = UserInterface.uiManager.FindGui(
                                 ent.spawnArgs.GetString(
                                     if (j == 0) "gui" else Str.va(
-                                        "gui%d",
-                                        j + 1
+                                        "gui%d", j + 1
                                     )
                                 )
                             )!!
@@ -1448,10 +1444,7 @@ object Target {
             } else {
                 val radius = spawnArgs.GetFloat("radius")
                 listedEntities = Game_local.gameLocal.EntitiesWithinRadius(
-                    GetPhysics().GetOrigin(),
-                    radius,
-                    entityList,
-                    Game_local.MAX_GENTITIES
+                    GetPhysics().GetOrigin(), radius, entityList, Game_local.MAX_GENTITIES
                 )
             }
             i = 0
@@ -1686,13 +1679,14 @@ object Target {
             }
         }
 
-        private fun Event_Activate(activator: idEventArg<idEntity>) {
-            // always allow during cinematics
+        private fun Event_Activate(activator: idEventArg<idEntity>) { // always allow during cinematics
             cinematic = true
             val player = Game_local.gameLocal.GetLocalPlayer()
             fovSetting.Init(
-                Game_local.gameLocal.time.toFloat(), SEC2MS(spawnArgs.GetFloat("time")).toFloat(), (player?.DefaultFov()
-                    ?: SysCvar.g_fov.GetFloat()).toInt(), spawnArgs.GetFloat("fov").toInt()
+                Game_local.gameLocal.time.toFloat(),
+                SEC2MS(spawnArgs.GetFloat("time")).toFloat(),
+                (player?.DefaultFov() ?: SysCvar.g_fov.GetFloat()).toInt(),
+                spawnArgs.GetFloat("fov").toInt()
             )
             BecomeActive(TH_THINK)
         }
@@ -1859,15 +1853,14 @@ object Target {
                             name
                         )
                     }
-                    if (!ent.scriptObject.GetTypeDef()!!.Inherits(func.type!!.GetParmType(0))) {
+                    if (!ent.scriptObject.GetTypeDef().Inherits(func.type!!.GetParmType(0))) {
                         idGameLocal.Error(
                             "Function '%s' on entity '%s' is the wrong type for function call from '%s'",
                             funcName,
                             ent.name,
                             name
                         )
-                    }
-                    // create a thread and call the function
+                    } // create a thread and call the function
                     thread = idThread()
                     thread.CallFunction(ent, func, true)
                     thread.Start()
@@ -1970,8 +1963,7 @@ object Target {
                     eventCallback_t1<idTarget_Tip> { obj: idTarget_Tip, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
-                eventCallbacks[EV_TipOff] =
-                    eventCallback_t0<idTarget_Tip> { obj: idTarget_Tip -> obj.Event_TipOff() }
+                eventCallbacks[EV_TipOff] = eventCallback_t0<idTarget_Tip> { obj: idTarget_Tip -> obj.Event_TipOff() }
                 eventCallbacks[EV_GetPlayerPos] =
                     eventCallback_t0<idTarget_Tip> { obj: idTarget_Tip -> obj.Event_GetPlayerPos() }
             }
@@ -2242,13 +2234,10 @@ object Target {
             val fadeTime = spawnArgs.GetFloat("fadeTime")
             val fadeDB = spawnArgs.GetFloat("fadeDB")
             val fadeDuration = spawnArgs.GetFloat("fadeDuration")
-            val fadeClass = spawnArgs.GetInt("fadeClass")
-            // start any sound fading now
+            val fadeClass = spawnArgs.GetInt("fadeClass") // start any sound fading now
             if (fadeTime != 0.0f) {
                 Game_local.gameSoundWorld!!.FadeSoundClasses(
-                    fadeClass,
-                    if (spawnArgs.GetBool("fadeIn")) fadeDB else  /*0.0f */ -fadeDB,
-                    fadeTime
+                    fadeClass, if (spawnArgs.GetBool("fadeIn")) fadeDB else  /*0.0f */ -fadeDB, fadeTime
                 )
                 if (fadeDuration != 0.0f) {
                     PostEventSec(EV_RestoreVolume, fadeDuration)
@@ -2258,8 +2247,7 @@ object Target {
 
         private fun Event_RestoreVolume() {
             val fadeTime = spawnArgs.GetFloat("fadeTime")
-            val fadeDB = spawnArgs.GetFloat("fadeDB")
-            // restore volume
+            val fadeDB = spawnArgs.GetFloat("fadeDB") // restore volume
             Game_local.gameSoundWorld!!.FadeSoundClasses(0, fadeDB, fadeTime)
         }
 

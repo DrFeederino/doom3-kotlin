@@ -59,9 +59,6 @@ import neo.idlib.containers.LinkList.idLinkList
 import neo.idlib.containers.List
 import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import kotlin.collections.HashMap
-import kotlin.collections.MutableMap
-import kotlin.collections.set
 import kotlin.math.ceil
 import kotlin.math.cos
 
@@ -175,8 +172,7 @@ class idAnimState {
         thread!!.ManualControl()
     }
 
-    fun Shutdown() {
-//	delete thread;
+    fun Shutdown() { //	delete thread;
         thread = null
     }
 
@@ -263,10 +259,7 @@ class idAnimState {
     fun AnimDone(blendFrames: Int): Boolean {
         val animDoneTime: Int
         animDoneTime = animator!!.CurrentAnim(channel).GetEndTime()
-        return if (animDoneTime < 0) {
-            // playing a cycle
-            false
-        } else animDoneTime - Anim.FRAME2MS(blendFrames) <= Game_local.gameLocal.time
+        return animDoneTime >= 0 && animDoneTime - Anim.FRAME2MS(blendFrames) <= Game_local.gameLocal.time // playing a cycle
     }
 
     fun IsIdle(): Boolean {
@@ -276,7 +269,7 @@ class idAnimState {
     fun GetAnimFlags(): animFlags_t {
         var flags = animFlags_t()
 
-//            memset(flags, 0, sizeof(flags));
+        //            memset(flags, 0, sizeof(flags));
         if (!disabled && !AnimDone(0)) {
             flags = animator!!.GetAnimFlags(animator!!.CurrentAnim(channel).AnimNum())
         }
@@ -476,22 +469,18 @@ open class idActor : idAFEntity_Gibbable() {
                 eventCallback_t2 { obj: idActor, groupName: idEventArg<*>, scale: idEventArg<*> ->
                     obj.Event_SetDamageGroupScale(groupName as idEventArg<String>, scale as idEventArg<Float>)
                 }
-            eventCallbacks[EV_SetDamageGroupScaleAll] =
-                eventCallback_t1 { obj: idActor, scale: idEventArg<*>? ->
-                    obj.Event_SetDamageGroupScaleAll(scale as idEventArg<Float>)
-                }
-            eventCallbacks[EV_GetDamageGroupScale] =
-                eventCallback_t1 { obj: idActor, groupName: idEventArg<*>? ->
-                    obj.Event_GetDamageGroupScale(groupName as idEventArg<String>)
-                }
-            eventCallbacks[EV_SetDamageCap] =
-                eventCallback_t1 { obj: idActor, cap: idEventArg<*>? ->
-                    obj.Event_SetDamageCap(cap as idEventArg<Float>)
-                }
-            eventCallbacks[EV_SetWaitState] =
-                eventCallback_t1 { obj: idActor, state: idEventArg<*>? ->
-                    obj.Event_SetWaitState(state as idEventArg<String>)
-                }
+            eventCallbacks[EV_SetDamageGroupScaleAll] = eventCallback_t1 { obj: idActor, scale: idEventArg<*>? ->
+                obj.Event_SetDamageGroupScaleAll(scale as idEventArg<Float>)
+            }
+            eventCallbacks[EV_GetDamageGroupScale] = eventCallback_t1 { obj: idActor, groupName: idEventArg<*>? ->
+                obj.Event_GetDamageGroupScale(groupName as idEventArg<String>)
+            }
+            eventCallbacks[EV_SetDamageCap] = eventCallback_t1 { obj: idActor, cap: idEventArg<*>? ->
+                obj.Event_SetDamageCap(cap as idEventArg<Float>)
+            }
+            eventCallbacks[EV_SetWaitState] = eventCallback_t1 { obj: idActor, state: idEventArg<*>? ->
+                obj.Event_SetWaitState(state as idEventArg<String>)
+            }
             eventCallbacks[EV_GetWaitState] = eventCallback_t0 { obj: idActor -> obj.Event_GetWaitState() }
         }
 
@@ -643,12 +632,10 @@ open class idActor : idAFEntity_Gibbable() {
         } else {
             animator
         }
-        if (headEnt != null) {
-            // set up the list of joints to copy to the head
+        if (headEnt != null) { // set up the list of joints to copy to the head
             kv = spawnArgs.MatchPrefix("copy_joint", null)
             while (kv != null) {
-                if (kv.GetValue().IsEmpty()) {
-                    // probably clearing out inherited key, so skip it
+                if (kv.GetValue().IsEmpty()) { // probably clearing out inherited key, so skip it
                     kv = spawnArgs.MatchPrefix("copy_joint", kv)
                     continue
                 }
@@ -1008,8 +995,10 @@ open class idActor : idAFEntity_Gibbable() {
 
             // set up the eye height.  check if it's specified in the def.
             val eyeHeight = CFloat(eyeOffset.z)
-            if (!spawnArgs.GetFloat("eye_height", "0", eyeHeight)) {
-                // if not in the def, then try to base it off the idle animation
+            if (!spawnArgs.GetFloat(
+                    "eye_height", "0", eyeHeight
+                )
+            ) { // if not in the def, then try to base it off the idle animation
                 val anim = headEnt.GetAnimator()!!.GetAnim("idle")
                 if (anim != 0 && leftEyeJoint != Model.INVALID_JOINT) {
                     val pos = idVec3()
@@ -1020,8 +1009,7 @@ open class idActor : idAFEntity_Gibbable() {
                     headEnt.GetAnimator()!!.ForceUpdate()
                     pos.plusAssign(headEnt.GetPhysics().GetOrigin().minus(GetPhysics().GetOrigin()))
                     eyeOffset.set(pos.plus(modelOffset))
-                } else {
-                    // just base it off the bounding box size
+                } else { // just base it off the bounding box size
                     eyeOffset.z = GetPhysics().GetBounds()[1].z - 6
                 }
             } else {
@@ -1036,8 +1024,10 @@ open class idActor : idAFEntity_Gibbable() {
 
             // set up the eye height.  check if it's specified in the def.
             val eyeHeight2 = CFloat(eyeOffset.z)
-            if (!spawnArgs.GetFloat("eye_height", "0", eyeHeight2)) {
-                // if not in the def, then try to base it off the idle animation
+            if (!spawnArgs.GetFloat(
+                    "eye_height", "0", eyeHeight2
+                )
+            ) { // if not in the def, then try to base it off the idle animation
                 val anim = animator.GetAnim("idle")
                 if (anim != 0 && leftEyeJoint != Model.INVALID_JOINT) {
                     val pos = idVec3()
@@ -1047,8 +1037,7 @@ open class idActor : idAFEntity_Gibbable() {
                     animator.ClearAllAnims(Game_local.gameLocal.time, 0)
                     animator.ForceUpdate()
                     eyeOffset.set(pos.plus(modelOffset))
-                } else {
-                    // just base it off the bounding box size
+                } else { // just base it off the bounding box size
                     eyeOffset.z = GetPhysics().GetBounds()[1].z - 6
                 }
             } else {
@@ -1061,8 +1050,7 @@ open class idActor : idAFEntity_Gibbable() {
         legsAnim.Init(this, animator, Anim.ANIMCHANNEL_LEGS)
     }
 
-    fun CheckBlink() {
-        // check if it's time to blink
+    fun CheckBlink() { // check if it's time to blink
         if (0 == blink_anim || health <= 0 || !allowEyeFocus || blink_time > Game_local.gameLocal.time) {
             return
         }
@@ -1104,16 +1092,14 @@ open class idActor : idAFEntity_Gibbable() {
 
      script state management
 
-     ***********************************************************************/
-    // script state management
+     ***********************************************************************/ // script state management
     fun ShutdownThreads() {
         headAnim.Shutdown()
         torsoAnim.Shutdown()
         legsAnim.Shutdown()
         if (scriptThread != null) {
             scriptThread!!.EndThread()
-            scriptThread!!.PostEventMS(EV_Remove, 0)
-            //		delete scriptThread;
+            scriptThread!!.PostEventMS(EV_Remove, 0) //		delete scriptThread;
             scriptThread = null
         }
     }
@@ -1147,8 +1133,7 @@ open class idActor : idAFEntity_Gibbable() {
                 "No scriptobject set on '%s'.  Check the '%s' entityDef.", name, GetEntityDefName()
             )
         }
-        if (scriptThread == null) {
-            // create script thread
+        if (scriptThread == null) { // create script thread
             scriptThread = idThread()
             scriptThread!!.ManualDelete()
             scriptThread!!.ManualControl()
@@ -1241,8 +1226,7 @@ open class idActor : idAFEntity_Gibbable() {
 
      vision
 
-     ***********************************************************************/
-    // vision testing
+     ***********************************************************************/ // vision testing
     fun SetEyeHeight(height: Float) {
         eyeOffset.z = height
     }
@@ -1336,8 +1320,7 @@ open class idActor : idAFEntity_Gibbable() {
 
      Damage
 
-     ***********************************************************************/
-    // damage
+     ***********************************************************************/ // damage
     /*
      =====================
      obj.SetupDamageGroups
@@ -1434,15 +1417,13 @@ open class idActor : idAFEntity_Gibbable() {
         }
         if (isD3XP) {
             val ts = SetTimeState(timeGroup)
-            try {
-                // Helltime boss is immune to all projectiles except the helltime killer
+            try { // Helltime boss is immune to all projectiles except the helltime killer
                 if (finalBoss && idStr.Icmp(inflictor!!.GetEntityDefName(), "projectile_helltime_killer") != 0) {
                     return
-                }
-                // Maledict is immune to the falling asteroids
-                if (idStr.Icmp(GetEntityDefName(), "monster_boss_d3xp_maledict") == 0 &&
-                    (idStr.Icmp(damageDefName, "damage_maledict_asteroid") == 0 ||
-                            idStr.Icmp(damageDefName, "damage_maledict_asteroid_splash") == 0)
+                } // Maledict is immune to the falling asteroids
+                if (idStr.Icmp(GetEntityDefName(), "monster_boss_d3xp_maledict") == 0 && (idStr.Icmp(
+                        damageDefName, "damage_maledict_asteroid"
+                    ) == 0 || idStr.Icmp(damageDefName, "damage_maledict_asteroid_splash") == 0)
                 ) {
                     return
                 }
@@ -1465,8 +1446,7 @@ open class idActor : idAFEntity_Gibbable() {
         // inform the attacker that they hit someone
         attacker!!.DamageFeedback(this, inflictor, damage)
         if (damage._val > 0) {
-            health -= damage._val
-            // D3XP: damageCap prevents kill shots during scripted boss phases
+            health -= damage._val // D3XP: damageCap prevents kill shots during scripted boss phases
             if (isD3XP) {
                 if (damageCap >= 0 && health < damageCap) {
                     health = damageCap
@@ -1484,10 +1464,8 @@ open class idActor : idAFEntity_Gibbable() {
             } else {
                 Pain(inflictor, attacker, damage._val, dir, location)
             }
-        } else {
-            // don't accumulate knockback
-            if (af.IsLoaded()) {
-                // clear impacts
+        } else { // don't accumulate knockback
+            if (af.IsLoaded()) { // clear impacts
                 af.Rest()
 
                 // physics is turned off by calling af.Rest()
@@ -1515,8 +1493,7 @@ open class idActor : idAFEntity_Gibbable() {
     override fun Pain(
         inflictor: idEntity?, attacker: idEntity?, damage: Int, dir: idVec3, location: Int
     ): Boolean {
-        if (af.IsLoaded()) {
-            // clear impacts
+        if (af.IsLoaded()) { // clear impacts
             af.Rest()
 
             // physics is turned off by calling af.Rest()
@@ -1537,8 +1514,7 @@ open class idActor : idAFEntity_Gibbable() {
         } else {
             StartSound("snd_pain_huge", gameSoundChannel_t.SND_CHANNEL_VOICE, 0, false, null)
         }
-        if (!allowPain || Game_local.gameLocal.time < painTime) {
-            // don't play a pain anim
+        if (!allowPain || Game_local.gameLocal.time < painTime) { // don't play a pain anim
             return false
         }
         if (pain_threshold != 0 && damage < pain_threshold) {
@@ -1588,8 +1564,7 @@ open class idActor : idAFEntity_Gibbable() {
 
      Model/Ragdoll
 
-     ***********************************************************************/
-    // model/combat model/ragdoll
+     ***********************************************************************/ // model/combat model/ragdoll
     override fun SetCombatModel() {
         val headEnt: idAFAttachment?
         if (!use_combat_bbox) {
@@ -1827,8 +1802,7 @@ open class idActor : idAFEntity_Gibbable() {
         GetPhysics().SetLinearVelocity(vec3_origin)
         viewAxis.set(angles.ToMat3())
         UpdateVisuals()
-        if (!IsHidden()) {
-            // kill anything at the new position
+        if (!IsHidden()) { // kill anything at the new position
             Game_local.gameLocal.KillBox(this)
         }
     }
@@ -1844,8 +1818,7 @@ open class idActor : idAFEntity_Gibbable() {
 
      animation state
 
-     ***********************************************************************/
-    // animation state control
+     ***********************************************************************/ // animation state control
     fun GetAnim(channel: Int, animName: String): Int {
         var anim: Int
         val temp: String?
@@ -1954,10 +1927,7 @@ open class idActor : idAFEntity_Gibbable() {
     fun AnimDone(channel: Int, blendFrames: Int): Boolean {
         val animDoneTime: Int
         animDoneTime = animator.CurrentAnim(channel).GetEndTime()
-        return if (animDoneTime < 0) {
-            // playing a cycle
-            false
-        } else animDoneTime - Anim.FRAME2MS(blendFrames) <= Game_local.gameLocal.time
+        return animDoneTime >= 0 && animDoneTime - Anim.FRAME2MS(blendFrames) <= Game_local.gameLocal.time // playing a cycle
     }
 
     override fun SpawnGibs(dir: idVec3, damageDefName: String) {
@@ -1965,12 +1935,12 @@ open class idActor : idAFEntity_Gibbable() {
         RemoveAttachments()
     }
 
-    override fun Gib(dir: idVec3, damageDefName: String) {
-        // no gibbing in multiplayer - by self damage or by moving objects
+    override fun Gib(
+        dir: idVec3, damageDefName: String
+    ) { // no gibbing in multiplayer - by self damage or by moving objects
         if (Game_local.gameLocal.isMultiplayer) {
             return
-        }
-        // only gib once
+        } // only gib once
         if (gibbed) {
             return
         }
@@ -2137,8 +2107,7 @@ open class idActor : idAFEntity_Gibbable() {
                 args.Set(sndKV.GetKey(), sndKV.GetValue())
                 sndKV = spawnArgs.MatchPrefix("snd_", sndKV)
             }
-            if (isD3XP) {
-                // copy slowmo param to the head
+            if (isD3XP) { // copy slowmo param to the head
                 args.SetBool("slowmo", spawnArgs.GetBool("slowmo", "1"))
             }
             headEnt = Game_local.gameLocal.SpawnEntityType(idAFAttachment.Type, args) as idAFAttachment
@@ -2188,11 +2157,7 @@ open class idActor : idAFEntity_Gibbable() {
         }
         if (!sound.isEmpty()) { // != '\0' ) {
             StartSoundShader(
-                DeclManager.declManager.FindSound(sound),
-                (gameSoundChannel_t.SND_CHANNEL_BODY).ordinal,
-                0,
-                false,
-                null
+                DeclManager.declManager.FindSound(sound), (gameSoundChannel_t.SND_CHANNEL_BODY).ordinal, 0, false, null
             )
         }
     }
@@ -2467,39 +2432,32 @@ open class idActor : idAFEntity_Gibbable() {
         when (channel) {
             Anim.ANIMCHANNEL_HEAD -> {
                 headAnim.BecomeIdle()
-                if (torsoAnim.GetAnimFlags().prevent_idle_override) {
-                    // don't sync to torso body if it doesn't override idle anims
+                if (torsoAnim.GetAnimFlags().prevent_idle_override) { // don't sync to torso body if it doesn't override idle anims
                     headAnim.CycleAnim(anim)
-                } else if (torsoAnim.IsIdle() && legsAnim.IsIdle()) {
-                    // everything is idle, so play the anim on the head and copy it to the torso and legs
+                } else if (torsoAnim.IsIdle() && legsAnim.IsIdle()) { // everything is idle, so play the anim on the head and copy it to the torso and legs
                     headAnim.CycleAnim(anim)
                     torsoAnim.animBlendFrames = headAnim.lastAnimBlendFrames
                     SyncAnimChannels(Anim.ANIMCHANNEL_TORSO, Anim.ANIMCHANNEL_HEAD, headAnim.lastAnimBlendFrames)
                     legsAnim.animBlendFrames = headAnim.lastAnimBlendFrames
                     SyncAnimChannels(Anim.ANIMCHANNEL_LEGS, Anim.ANIMCHANNEL_HEAD, headAnim.lastAnimBlendFrames)
-                } else if (torsoAnim.IsIdle()) {
-                    // sync the head and torso to the legs
+                } else if (torsoAnim.IsIdle()) { // sync the head and torso to the legs
                     SyncAnimChannels(Anim.ANIMCHANNEL_HEAD, Anim.ANIMCHANNEL_LEGS, headAnim.animBlendFrames)
                     torsoAnim.animBlendFrames = headAnim.lastAnimBlendFrames
                     SyncAnimChannels(Anim.ANIMCHANNEL_TORSO, Anim.ANIMCHANNEL_LEGS, torsoAnim.animBlendFrames)
-                } else {
-                    // sync the head to the torso
+                } else { // sync the head to the torso
                     SyncAnimChannels(Anim.ANIMCHANNEL_HEAD, Anim.ANIMCHANNEL_TORSO, headAnim.animBlendFrames)
                 }
             }
 
             Anim.ANIMCHANNEL_TORSO -> {
                 torsoAnim.BecomeIdle()
-                if (legsAnim.GetAnimFlags().prevent_idle_override) {
-                    // don't sync to legs if legs anim doesn't override idle anims
+                if (legsAnim.GetAnimFlags().prevent_idle_override) { // don't sync to legs if legs anim doesn't override idle anims
                     torsoAnim.CycleAnim(anim)
-                } else if (legsAnim.IsIdle()) {
-                    // play the anim in both legs and torso
+                } else if (legsAnim.IsIdle()) { // play the anim in both legs and torso
                     torsoAnim.CycleAnim(anim)
                     legsAnim.animBlendFrames = torsoAnim.lastAnimBlendFrames
                     SyncAnimChannels(Anim.ANIMCHANNEL_LEGS, Anim.ANIMCHANNEL_TORSO, torsoAnim.lastAnimBlendFrames)
-                } else {
-                    // sync the anim to the legs
+                } else { // sync the anim to the legs
                     SyncAnimChannels(Anim.ANIMCHANNEL_TORSO, Anim.ANIMCHANNEL_LEGS, torsoAnim.animBlendFrames)
                 }
                 if (headAnim.IsIdle()) {
@@ -2509,19 +2467,16 @@ open class idActor : idAFEntity_Gibbable() {
 
             Anim.ANIMCHANNEL_LEGS -> {
                 legsAnim.BecomeIdle()
-                if (torsoAnim.GetAnimFlags().prevent_idle_override) {
-                    // don't sync to torso if torso anim doesn't override idle anims
+                if (torsoAnim.GetAnimFlags().prevent_idle_override) { // don't sync to torso if torso anim doesn't override idle anims
                     legsAnim.CycleAnim(anim)
-                } else if (torsoAnim.IsIdle()) {
-                    // play the anim in both legs and torso
+                } else if (torsoAnim.IsIdle()) { // play the anim in both legs and torso
                     legsAnim.CycleAnim(anim)
                     torsoAnim.animBlendFrames = legsAnim.lastAnimBlendFrames
                     SyncAnimChannels(Anim.ANIMCHANNEL_TORSO, Anim.ANIMCHANNEL_LEGS, legsAnim.lastAnimBlendFrames)
                     if (headAnim.IsIdle()) {
                         SyncAnimChannels(Anim.ANIMCHANNEL_HEAD, Anim.ANIMCHANNEL_LEGS, legsAnim.lastAnimBlendFrames)
                     }
-                } else {
-                    // sync the anim to the torso
+                } else { // sync the anim to the torso
                     SyncAnimChannels(Anim.ANIMCHANNEL_LEGS, Anim.ANIMCHANNEL_TORSO, legsAnim.animBlendFrames)
                 }
             }
@@ -2851,7 +2806,7 @@ open class idActor : idAFEntity_Gibbable() {
     }
 
     private fun Event_SetDamageGroupScaleAll(scale: idEventArg<Float>) {
-        val s = scale.value as Float
+        val s = scale.value
         var i = 0
         while (i < damageScale.Num()) {
             damageScale[i] = s
@@ -2860,7 +2815,7 @@ open class idActor : idAFEntity_Gibbable() {
     }
 
     private fun Event_GetDamageGroupScale(groupName: idEventArg<String>) {
-        val name = groupName.value as String
+        val name = groupName.value
         var i = 0
         while (i < damageScale.Num()) {
             if (damageGroups[i].toString() == name) {

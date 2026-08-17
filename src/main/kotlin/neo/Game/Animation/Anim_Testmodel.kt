@@ -118,8 +118,7 @@ class Anim_Testmodel {
          ================
          */
         override fun Restore(savefile: idRestoreGame) {
-            super.Restore(savefile)
-            // FIXME: one day we may actually want to save/restore test models, but for now we'll just delete them
+            super.Restore(savefile) // FIXME: one day we may actually want to save/restore test models, but for now we'll just delete them
             // FIX: Was missing cleanup logic — C++ calls `delete this` which triggers the destructor
             cleanup()
             PostEventMS(EV_Remove, 0)
@@ -190,8 +189,7 @@ class Anim_Testmodel {
                 joint = animator.GetJointHandle(jointName.toString())
                 if (joint == Model.INVALID_JOINT) {
                     Game_local.gameLocal.Warning("Joint '%s' not found for 'head_joint'", jointName)
-                } else {
-                    // copy any sounds in case we have frame commands on the head
+                } else { // copy any sounds in case we have frame commands on the head
                     val args = idDict()
                     var sndKV = spawnArgs.MatchPrefix("snd_", null)
                     while (sndKV != null) {
@@ -266,8 +264,7 @@ class Anim_Testmodel {
                 return
             }
             anim++
-            if (anim >= animator.NumAnims()) {
-                // anim 0 is no anim
+            if (anim >= animator.NumAnims()) { // anim 0 is no anim
                 anim = 1
             }
             startTime = Game_local.gameLocal.time
@@ -390,24 +387,22 @@ class Anim_Testmodel {
                 Game_local.gameLocal.Printf("usage: testanim <animname>\n")
                 return
             }
-            name = args.Argv(1)
-            //if (false){
-//	if ( strstr( name, ".ma" ) || strstr( name, ".mb" ) ) {
-//		const idMD5Anim	*md5anims[ ANIM_MaxSyncedAnims ];
-//		idModelExport exporter;
-//		exporter.ExportAnim( name );
-//		name.SetFileExtension( MD5_ANIM_EXT );
-//		md5anims[ 0 ] = animationLib.GetAnim( name );
-//		if ( md5anims[ 0 ] ) {
-//			customAnim.SetAnim( animator.ModelDef(), name, name, 1, md5anims );
-//			newanim = &customAnim;
-//		}
-//	} else {
-//		animNum = animator.GetAnim( name );
-//	}
-//        }else{
-            animNum = animator.GetAnim(name)
-            //    }
+            name = args.Argv(1) //if (false){
+            //	if ( strstr( name, ".ma" ) || strstr( name, ".mb" ) ) {
+            //		const idMD5Anim	*md5anims[ ANIM_MaxSyncedAnims ];
+            //		idModelExport exporter;
+            //		exporter.ExportAnim( name );
+            //		name.SetFileExtension( MD5_ANIM_EXT );
+            //		md5anims[ 0 ] = animationLib.GetAnim( name );
+            //		if ( md5anims[ 0 ] ) {
+            //			customAnim.SetAnim( animator.ModelDef(), name, name, 1, md5anims );
+            //			newanim = &customAnim;
+            //		}
+            //	} else {
+            //		animNum = animator.GetAnim( name );
+            //	}
+            //        }else{
+            animNum = animator.GetAnim(name) //    }
             if (0 == animNum) {
                 Game_local.gameLocal.Printf("Animation '%s' not found.\n", name)
                 return
@@ -485,10 +480,8 @@ class Anim_Testmodel {
                         head.GetEntity()!!.StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
                     }
                     when (SysCvar.g_testModelAnimate.GetInteger()) {
-                        0 -> {
-                            // cycle anim with origin reset
-                            if (animator.NumFrames(anim) <= 1) {
-                                // single frame animations end immediately, so just cycle it since it's the same result
+                        0 -> { // cycle anim with origin reset
+                            if (animator.NumFrames(anim) <= 1) { // single frame animations end immediately, so just cycle it since it's the same result
                                 animator.CycleAnim(
                                     Anim.ANIMCHANNEL_ALL,
                                     anim,
@@ -517,8 +510,7 @@ class Anim_Testmodel {
                                         Game_local.gameLocal.time,
                                         Anim.FRAME2MS(SysCvar.g_testModelBlend.GetInteger())
                                     )
-                                    if (headAnimator!!.AnimLength(headAnim) > animator.AnimLength(anim)) {
-                                        // loop the body anim when the head anim is longer
+                                    if (headAnimator!!.AnimLength(headAnim) > animator.AnimLength(anim)) { // loop the body anim when the head anim is longer
                                         animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).SetCycleCount(-1)
                                     }
                                 }
@@ -526,8 +518,7 @@ class Anim_Testmodel {
                             animator.RemoveOriginOffset(false)
                         }
 
-                        1 -> {
-                            // cycle anim with fixed origin
+                        1 -> { // cycle anim with fixed origin
                             animator.CycleAnim(
                                 Anim.ANIMCHANNEL_ALL,
                                 anim,
@@ -545,8 +536,7 @@ class Anim_Testmodel {
                             }
                         }
 
-                        2 -> {
-                            // cycle anim with continuous origin
+                        2 -> { // cycle anim with continuous origin
                             animator.CycleAnim(
                                 Anim.ANIMCHANNEL_ALL,
                                 anim,
@@ -564,8 +554,7 @@ class Anim_Testmodel {
                             }
                         }
 
-                        3 -> {
-                            // frame by frame with continuous origin
+                        3 -> { // frame by frame with continuous origin
                             animator.SetFrame(
                                 Anim.ANIMCHANNEL_ALL,
                                 anim,
@@ -585,8 +574,7 @@ class Anim_Testmodel {
                             }
                         }
 
-                        4 -> {
-                            // play anim once
+                        4 -> { // play anim once
                             animator.PlayAnim(
                                 Anim.ANIMCHANNEL_ALL,
                                 anim,
@@ -604,8 +592,7 @@ class Anim_Testmodel {
                             }
                         }
 
-                        5 -> {
-                            // frame by frame with fixed origin
+                        5 -> { // frame by frame with fixed origin
                             animator.SetFrame(
                                 Anim.ANIMCHANNEL_ALL,
                                 anim,
@@ -681,14 +668,12 @@ class Anim_Testmodel {
                             Game_local.gameLocal.time,
                             Anim.FRAME2MS(SysCvar.g_testModelBlend.GetInteger())
                         )
-                        if (headAnimator!!.AnimLength(headAnim) > animator.AnimLength(anim)) {
-                            // loop the body anim when the head anim is longer
+                        if (headAnimator!!.AnimLength(headAnim) > animator.AnimLength(anim)) { // loop the body anim when the head anim is longer
                             animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).SetCycleCount(-1)
                         }
                     }
                 }
-                if (headAnimator != null) {
-                    // copy the animation from the body to the head
+                if (headAnimator != null) { // copy the animation from the body to the head
                     i = 0
                     while (i < copyJoints.Num()) {
                         if (copyJoints[i].mod == jointModTransform_t.JOINTMOD_WORLD_OVERRIDE) {
@@ -727,8 +712,7 @@ class Anim_Testmodel {
                 )
                 val clip = physicsObj.GetClipModel()
                 if (clip != null && animator.ModelDef() != null) {
-                    val neworigin = idVec3()
-                    //			idMat3 axis;
+                    val neworigin = idVec3() //			idMat3 axis;
                     val   /*jointHandle_t*/joint: Int
                     joint = animator.GetJointHandle("origin")
                     animator.GetJointTransform(joint, Game_local.gameLocal.time, neworigin, axis)
@@ -917,12 +901,10 @@ class Anim_Testmodel {
                 }
 
                 // delete the testModel if active
-                if (Game_local.gameLocal.testmodel != null) {
-                    // FIX: Was just nulling the reference — C++ `delete` calls the destructor
+                if (Game_local.gameLocal.testmodel != null) { // FIX: Was just nulling the reference — C++ `delete` calls the destructor
                     // which stops sounds, removes head entity, and prints removal message
                     val oldModel = Game_local.gameLocal.testmodel!!
-                    oldModel.cleanup()
-                    // NOTE: Differs from C++ — deferred removal via EV_Remove instead of immediate delete
+                    oldModel.cleanup() // NOTE: Differs from C++ — deferred removal via EV_Remove instead of immediate delete
                     oldModel.PostEventMS(EV_Remove, 0)
                 }
                 if (args!!.Argc() < 2) {
@@ -935,8 +917,7 @@ class Anim_Testmodel {
                 } else {
                     if (DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, name, false) != null) {
                         dict.Set("model", name)
-                    } else {
-                        // allow map models with underscore prefixes to be tested during development
+                    } else { // allow map models with underscore prefixes to be tested during development
                         // without appending an ase
                         if (name[0] != '_') {
                             name.DefaultFileExtension(".ase")
@@ -956,8 +937,7 @@ class Anim_Testmodel {
                 offset.set(player.GetPhysics().GetOrigin() + player.viewAngles.ToForward() * 100.0f)
                 dict.Set("origin", offset.ToString())
                 dict.Set("angle", Str.va("%f", player.viewAngles.yaw + 180.0f))
-                Game_local.gameLocal.testmodel =
-                    Game_local.gameLocal.SpawnEntityType(Type, dict) as idTestModel
+                Game_local.gameLocal.testmodel = Game_local.gameLocal.SpawnEntityType(Type, dict) as idTestModel
                 Game_local.gameLocal.testmodel!!.renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
                     -MS2SEC(Game_local.gameLocal.time.toFloat())
             }

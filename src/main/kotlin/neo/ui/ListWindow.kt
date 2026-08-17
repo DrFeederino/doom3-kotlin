@@ -114,19 +114,18 @@ object ListWindow {
             CommonInit()
         }
 
-        override fun HandleEvent(event: sysEvent_s, updateVisuals: CBool?): String? {
-            // need to call this to allow proper focus and capturing on embedded children
+        override fun HandleEvent(
+            event: sysEvent_s, updateVisuals: CBool?
+        ): String? { // need to call this to allow proper focus and capturing on embedded children
             val ret = super.HandleEvent(event, updateVisuals)
             val vert = GetMaxCharHeight()
             val numVisibleLines = (textRect.h / vert).toInt()
             var key = event.evValue
             if (event.evType == sysEventType_t.SE_KEY) {
-                if (0 == event.evValue2) {
-                    // We only care about key down, not up
+                if (0 == event.evValue2) { // We only care about key down, not up
                     return ret
                 }
-                if (key == K_MOUSE1 || key == K_MOUSE2) {
-                    // If the user clicked in the scroller, then ignore it
+                if (key == K_MOUSE1 || key == K_MOUSE2) { // If the user clicked in the scroller, then ignore it
                     if (scroller!!.Contains(gui!!.CursorX(), gui!!.CursorY())) {
                         return ret
                     }
@@ -142,8 +141,7 @@ object ListWindow {
                 }
                 if (key == K_MOUSE1) {
                     var cursorY = gui!!.CursorY()
-                    if (Contains(gui!!.CursorX(), cursorY)) {
-                        // DG: adjust cursorY for cst anchors
+                    if (Contains(gui!!.CursorX(), cursorY)) { // DG: adjust cursorY for cst anchors
                         val scale = idVec2()
                         val offset = idVec2()
                         if (CstGetParams(cstAnchor.data, cstAnchorTo.data, cstAnchorFactor.data, scale, offset)) {
@@ -159,8 +157,7 @@ object ListWindow {
                                     AddCurrentSel(cur)
                                 }
                             } else {
-                                if (IsSelected(cur) && gui!!.GetTime() < clickTime + doubleClickSpeed) {
-                                    // Double-click causes ON_ENTER to get run
+                                if (IsSelected(cur) && gui!!.GetTime() < clickTime + doubleClickSpeed) { // Double-click causes ON_ENTER to get run
                                     RunScript((ON.ON_ENTER).ordinal)
                                     return cmd.toString()
                                 }
@@ -231,8 +228,7 @@ object ListWindow {
                 top = 0
                 scroller!!.SetValue(0.0f)
             }
-            if (key != K_MOUSE1) {
-                // Send a fake mouse click event so onAction gets run in our parents
+            if (key != K_MOUSE1) { // Send a fake mouse click event so onAction gets run in our parents
                 val ev: sysEvent_s = sys.GenerateMouseButtonEvent(1, true)
                 super.HandleEvent(ev, updateVisuals)
             }
@@ -531,8 +527,8 @@ object ListWindow {
                 }
             }
             val vert = GetMaxCharHeight()
-            val fit = (textRect.h / vert).toInt()
-            // FIX: was listName.c_str() which returns CharArray — String.format prints it as "[C@hash"
+            val fit =
+                (textRect.h / vert).toInt() // FIX: was listName.c_str() which returns CharArray — String.format prints it as "[C@hash"
             var selection = gui!!.State().GetInt(va("%s_sel_0", listName))
             if (listItems.size() < fit) {
                 scroller!!.SetRange(0.0f, 0.0f, 1.0f)
@@ -550,8 +546,7 @@ object ListWindow {
                     value = (listItems.size() - 1).toFloat()
                 }
                 var maxVisibleVal = Min(value + fit, scroller!!.GetHigh())
-                if (selection >= 0 && (selection < value || selection > maxVisibleVal)) {
-                    // if selected entry is not currently visible, center it (if possible)
+                if (selection >= 0 && (selection < value || selection > maxVisibleVal)) { // if selected entry is not currently visible, center it (if possible)
                     value = Max(0.0f, selection - 0.5f * fit)
                 }
 
@@ -663,14 +658,7 @@ object ListWindow {
                 scrollRect.h = clientRect.h
             }
             scroller!!.InitWithDefaults(
-                scrollerName,
-                scrollRect,
-                foreColor.data,
-                matColor.data,
-                mat.GetName(),
-                thumbImage,
-                !horizontal,
-                true
+                scrollerName, scrollRect, foreColor.data, matColor.data, mat.GetName(), thumbImage, !horizontal, true
             )
             InsertChild(scroller!!, null)
             scroller!!.SetBuddy(this)

@@ -30,7 +30,7 @@ object Script_Program {
 
     const val MAX_GLOBALS = 296608 // in bytes -- DG: increased for 64-bit compatibility (dhewm3 value);
     fun MAX_STATEMENTS(): Int {
-        return if (isD3XP) 131072 else 81920// D3XP: 81920 → 131072
+        return if (isD3XP) 131072 else 81920 // D3XP: 81920 → 131072
     }
 
     const val MAX_STRINGS = 1024
@@ -57,8 +57,7 @@ object Script_Program {
 
          Variable and type defintions
 
-         ***********************************************************************/
-    // simple types.  function types are dynamically allocated
+         ***********************************************************************/ // simple types.  function types are dynamically allocated
     val type_argsize =
         idTypeDef(ev_argsize, "<argsize>", SIZEOF_INTPTR, null) // only used for function call and thread opcodes
     val type_boolean = idTypeDef(ev_boolean, "boolean", SIZEOF_INTPTR, null)
@@ -181,8 +180,7 @@ object Script_Program {
             file.WriteInt(numStatements)
             file.WriteInt(parmTotal)
             file.WriteInt(locals)
-            file.WriteInt(filenum)
-            // parmSize idList - write num and pointer
+            file.WriteInt(filenum) // parmSize idList - write num and pointer
             file.WriteInt(parmSize.Num())
             file.WriteInt(0) // list data pointer
         }
@@ -595,8 +593,7 @@ object Script_Program {
         // ~idScriptObject();
         fun Save(savefile: idSaveGame) {            // archives object for save game file
             val   /*size_t*/size: Int
-            if (type == type_object && data == null) {
-                // Write empty string for uninitialized object
+            if (type == type_object && data == null) { // Write empty string for uninitialized object
                 savefile.WriteString("")
             } else {
                 savefile.WriteString(type.Name())
@@ -628,10 +625,9 @@ object Script_Program {
             savefile.Read(data!!, size._val)
         }
 
-        fun Free() {
-//            if (data != null) {
-//                Mem_Free(data);
-//            }
+        fun Free() { //            if (data != null) {
+            //                Mem_Free(data);
+            //            }
             data = null
             type = type_object
         }
@@ -687,10 +683,8 @@ object Script_Program {
          */
         fun ClearObject() {
             val   /*size_t*/size: Int
-            if (type != type_object) {
-                // init object memory
-                size = type.Size()
-                //		memset( data, 0, size );
+            if (type != type_object) { // init object memory
+                size = type.Size() //		memset( data, 0, size );
                 for (i in 0 until size) {
                     data!!.put(i, 0)
                 }
@@ -818,8 +812,7 @@ object Script_Program {
             }
         }
 
-        fun set(value: returnType): idScriptVariable<*, *> {
-            // check if we attempt to access the object before it's been linked
+        fun set(value: returnType): idScriptVariable<*, *> { // check if we attempt to access the object before it's been linked
             assert(data != null)
 
             // make sure we don't crash if we don't have a pointer
@@ -834,8 +827,7 @@ object Script_Program {
             return this
         }
 
-        fun underscore(): returnType? {
-            // check if we attempt to access the object before it's been linked
+        fun underscore(): returnType? { // check if we attempt to access the object before it's been linked
             assert(data != null)
 
             // make sure we don't crash if we don't have a pointer
@@ -846,8 +838,7 @@ object Script_Program {
                     ev_float -> data!!.getFloat(pos) as returnType
                     else -> null
                 }
-            } else {
-                // reasonably safe value
+            } else { // reasonably safe value
                 null
             }
         }
@@ -1000,14 +991,12 @@ object Script_Program {
             stringPtr = btos(data!!.array(), offset)
         }
 
-        fun setString(string: String?) {
-            // C++ uses idStr::Copynz(stringPtr, src, MAX_STRING_LEN) — null-terminates and zero-pads
+        fun setString(string: String?) { // C++ uses idStr::Copynz(stringPtr, src, MAX_STRING_LEN) — null-terminates and zero-pads
             stringPtr = string
             val bytes = (string ?: "").toByteArray()
             val copyLen = Math.min(bytes.size, Math.min(primitive.capacity(), MAX_STRING_LEN) - 1)
             primitive.rewind()
-            primitive.put(bytes, 0, copyLen)
-            // null-terminate and zero-fill remaining space
+            primitive.put(bytes, 0, copyLen) // null-terminate and zero-fill remaining space
             val remaining = Math.min(primitive.remaining(), MAX_STRING_LEN - copyLen)
             for (i in 0 until remaining) {
                 primitive.put(0.toByte())
@@ -1046,8 +1035,7 @@ object Script_Program {
         //
         //
         init {
-            initialized = initialized_t.uninitialized
-            //	memset( &value, 0, sizeof( value ) );
+            initialized = initialized_t.uninitialized //	memset( &value, 0, sizeof( value ) );
         }
 
         // ~idVarDef();

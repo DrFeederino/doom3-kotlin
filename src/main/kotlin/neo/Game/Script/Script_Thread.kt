@@ -207,8 +207,7 @@ object Script_Thread {
             }
         }
 
-        override fun Init() {
-            // create a unique threadNum
+        override fun Init() { // create a unique threadNum
             do {
                 threadIndex++
                 if (threadIndex == 0) {
@@ -505,14 +504,12 @@ object Script_Thread {
             return interpreter.threadDying
         }
 
-        fun End() {
-            // Tell thread to die.  It will exit on its own.
+        fun End() { // Tell thread to die.  It will exit on its own.
             Pause()
             interpreter.threadDying = true
         }
 
-        fun Execute(): Boolean {
-//            return false;//HACKME::6
+        fun Execute(): Boolean { //            return false;//HACKME::6
             val oldThread: idThread?
             val done: Boolean
             if (manualControl && waitingUntil > gameLocal.time) {
@@ -568,9 +565,7 @@ object Script_Thread {
          ================
          */
         fun IsWaiting(): Boolean {
-            return if (waitingForThread != null || waitingFor != Game_local.ENTITYNUM_NONE) {
-                true
-            } else waitingUntil != 0 && waitingUntil > gameLocal.time
+            return waitingForThread != null || waitingFor != Game_local.ENTITYNUM_NONE || waitingUntil != 0 && waitingUntil > gameLocal.time
         }
 
         fun ClearWaitFor() {
@@ -1459,8 +1454,8 @@ object Script_Thread {
             }
 
             //
-// script callable Events
-//
+            // script callable Events
+            //
             private fun Event_TerminateThread(t: idThread, num: idEventArg<Int>) {
                 KillThread(num.value)
             }
@@ -1484,8 +1479,7 @@ object Script_Thread {
                 val thread: idThread?
                 thread = GetThread(num.value)
                 if (null == thread) {
-                    if (SysCvar.g_debugScript.GetBool()) {
-                        // just print a warning and continue executing
+                    if (SysCvar.g_debugScript.GetBool()) { // just print a warning and continue executing
                         t.Warning("Thread %d not running", num.value)
                     }
                 } else {
@@ -1709,8 +1703,7 @@ object Script_Thread {
             }
 
 
-            fun Restart() {
-                // reset the threadIndex
+            fun Restart() { // reset the threadIndex
                 threadIndex = 0
                 currentThread = null
                 val n = threadList.Num()
@@ -1807,8 +1800,7 @@ object Script_Thread {
                 gameLocal.program.ReturnFloat(value)
             }
 
-            fun ReturnInt(value: Int) {
-                // true integers aren't supported in the compiler,
+            fun ReturnInt(value: Int) { // true integers aren't supported in the compiler,
                 // so int values are stored as floats
                 gameLocal.program.ReturnFloat(value.toFloat())
             }

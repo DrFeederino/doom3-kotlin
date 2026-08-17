@@ -113,23 +113,16 @@ object tr_trace {
         cullBits = scratch.ensureCullBits(tri.numVerts)
         totalOr[0] = 0
         SIMDProcessor!!.TracePointCull(
-            cullBits,
-            totalOr,
-            radius,
-            planes,
-            tri.verts as Array<DrawVert.idDrawVert>,
-            tri.numVerts
+            cullBits, totalOr, radius, planes, tri.verts as Array<DrawVert.idDrawVert>, tri.numVerts
         )
 
         // if we don't have points on both sides of both the ray planes, no intersection
-        if (((totalOr[0].toInt() xor (totalOr[0].toInt() shr 4)) and 3) != 0) {
-            //common.Printf( "nothing crossed the trace planes\n" );
+        if (((totalOr[0].toInt() xor (totalOr[0].toInt() shr 4)) and 3) != 0) { //common.Printf( "nothing crossed the trace planes\n" );
             return hit
         }
 
         // if we don't have any points between front and end, no intersection
-        if (((totalOr[0].toInt() xor (totalOr[0].toInt() shr 1)) and 4) != 0) {
-            //common.Printf( "trace didn't reach any triangles\n" );
+        if (((totalOr[0].toInt() xor (totalOr[0].toInt() shr 1)) and 4) != 0) { //common.Printf( "trace didn't reach any triangles\n" );
             return hit
         }
 
@@ -208,8 +201,8 @@ object tr_trace {
 
             // see if the point is within the three edges
             // if radius > 0 the triangle is expanded with a circle in the triangle plane
-            dir0.setSub(tri.verts!![tri.indexes!![i + 0]]!!.xyz, point)
-            dir1.setSub(tri.verts!![tri.indexes!![i + 1]]!!.xyz, point)
+            dir0.setSub(tri.verts!![tri.indexes!![i + 0]].xyz, point)
+            dir1.setSub(tri.verts!![tri.indexes!![i + 1]].xyz, point)
             cross.Cross(dir0, dir1)
             d = plane.Normal().times(cross)
             if (d > 0.0f) {
@@ -218,7 +211,7 @@ object tr_trace {
                     j++
                     continue
                 }
-                edge.setSub(tri.verts!![tri.indexes!![i + 0]]!!.xyz, tri.verts!![tri.indexes!![i + 1]]!!.xyz)
+                edge.setSub(tri.verts!![tri.indexes!![i + 0]].xyz, tri.verts!![tri.indexes!![i + 1]].xyz)
                 edgeLengthSqr = edge.LengthSqr()
                 if (cross.LengthSqr() > edgeLengthSqr * radiusSqr) {
                     i += 3
@@ -227,7 +220,7 @@ object tr_trace {
                 }
                 d = dir0.times(edge)
                 if (d < 0.0f) {
-                    edge.setSub(tri.verts!![tri.indexes!![i + 0]]!!.xyz, tri.verts!![tri.indexes!![i + 2]]!!.xyz)
+                    edge.setSub(tri.verts!![tri.indexes!![i + 0]].xyz, tri.verts!![tri.indexes!![i + 2]].xyz)
                     d = dir0.times(edge)
                     if (d < 0.0f) {
                         if (dir0.LengthSqr() > radiusSqr) {
@@ -237,7 +230,7 @@ object tr_trace {
                         }
                     }
                 } else if (d > edgeLengthSqr) {
-                    edge.setSub(tri.verts!![tri.indexes!![i + 1]]!!.xyz, tri.verts!![tri.indexes!![i + 2]]!!.xyz)
+                    edge.setSub(tri.verts!![tri.indexes!![i + 1]].xyz, tri.verts!![tri.indexes!![i + 2]].xyz)
                     d = dir1.times(edge)
                     if (d < 0.0f) {
                         if (dir1.LengthSqr() > radiusSqr) {
@@ -248,7 +241,7 @@ object tr_trace {
                     }
                 }
             }
-            dir2.setSub(tri.verts!![tri.indexes!![i + 2]]!!.xyz, point)
+            dir2.setSub(tri.verts!![tri.indexes!![i + 2]].xyz, point)
             cross.Cross(dir1, dir2)
             d = plane.Normal().times(cross)
             if (d > 0.0f) {
@@ -257,7 +250,7 @@ object tr_trace {
                     j++
                     continue
                 }
-                edge.setSub(tri.verts!![tri.indexes!![i + 1]]!!.xyz, tri.verts!![tri.indexes!![i + 2]]!!.xyz)
+                edge.setSub(tri.verts!![tri.indexes!![i + 1]].xyz, tri.verts!![tri.indexes!![i + 2]].xyz)
                 edgeLengthSqr = edge.LengthSqr()
                 if (cross.LengthSqr() > edgeLengthSqr * radiusSqr) {
                     i += 3
@@ -266,7 +259,7 @@ object tr_trace {
                 }
                 d = dir1.times(edge)
                 if (d < 0.0f) {
-                    edge.setSub(tri.verts!![tri.indexes!![i + 1]]!!.xyz, tri.verts!![tri.indexes!![i + 0]]!!.xyz)
+                    edge.setSub(tri.verts!![tri.indexes!![i + 1]].xyz, tri.verts!![tri.indexes!![i + 0]].xyz)
                     d = dir1.times(edge)
                     if (d < 0.0f) {
                         if (dir1.LengthSqr() > radiusSqr) {
@@ -276,7 +269,7 @@ object tr_trace {
                         }
                     }
                 } else if (d > edgeLengthSqr) {
-                    edge.setSub(tri.verts!![tri.indexes!![i + 2]]!!.xyz, tri.verts!![tri.indexes!![i + 0]]!!.xyz)
+                    edge.setSub(tri.verts!![tri.indexes!![i + 2]].xyz, tri.verts!![tri.indexes!![i + 0]].xyz)
                     d = dir2.times(edge)
                     if (d < 0.0f) {
                         if (dir2.LengthSqr() > radiusSqr) {
@@ -295,7 +288,7 @@ object tr_trace {
                     j++
                     continue
                 }
-                edge.setSub(tri.verts!![tri.indexes!![i + 2]]!!.xyz, tri.verts!![tri.indexes!![i + 0]]!!.xyz)
+                edge.setSub(tri.verts!![tri.indexes!![i + 2]].xyz, tri.verts!![tri.indexes!![i + 0]].xyz)
                 edgeLengthSqr = edge.LengthSqr()
                 if (cross.LengthSqr() > edgeLengthSqr * radiusSqr) {
                     i += 3
@@ -304,7 +297,7 @@ object tr_trace {
                 }
                 d = dir2.times(edge)
                 if (d < 0.0f) {
-                    edge.setSub(tri.verts!![tri.indexes!![i + 2]]!!.xyz, tri.verts!![tri.indexes!![i + 1]]!!.xyz)
+                    edge.setSub(tri.verts!![tri.indexes!![i + 2]].xyz, tri.verts!![tri.indexes!![i + 1]].xyz)
                     d = dir2.times(edge)
                     if (d < 0.0f) {
                         if (dir2.LengthSqr() > radiusSqr) {
@@ -314,7 +307,7 @@ object tr_trace {
                         }
                     }
                 } else if (d > edgeLengthSqr) {
-                    edge.setSub(tri.verts!![tri.indexes!![i + 0]]!!.xyz, tri.verts!![tri.indexes!![i + 1]]!!.xyz)
+                    edge.setSub(tri.verts!![tri.indexes!![i + 0]].xyz, tri.verts!![tri.indexes!![i + 1]].xyz)
                     d = dir0.times(edge)
                     if (d < 0.0f) {
                         if (dir0.LengthSqr() > radiusSqr) {
@@ -341,7 +334,11 @@ object tr_trace {
             trace_timer!!.Stop()
             Common.common.Printf(
                 "testVerts:%d c_testPlanes:%d c_testEdges:%d c_intersect:%d msec:%d\n",
-                tri.numVerts, c_testPlanes, c_testEdges, c_intersect, trace_timer.Milliseconds()
+                tri.numVerts,
+                c_testPlanes,
+                c_testEdges,
+                c_intersect,
+                trace_timer.Milliseconds()
             )
         }
         return hit
@@ -362,9 +359,9 @@ object tr_trace {
         i = 0
         while (i < tri.numIndexes) {
             val p /*[3]*/: Array<idVec3> = arrayOf(
-                tri.verts!![tri.indexes!![i + 0]]!!.xyz,
-                tri.verts!![tri.indexes!![i + 1]]!!.xyz,
-                tri.verts!![tri.indexes!![i + 2]]!!.xyz
+                tri.verts!![tri.indexes!![i + 0]].xyz,
+                tri.verts!![tri.indexes!![i + 1]].xyz,
+                tri.verts!![tri.indexes!![i + 2]].xyz
             )
             dir[0].set(p[0].minus(p[1]))
             dir[1].set(p[1].minus(p[2]))
@@ -424,10 +421,10 @@ object tr_trace {
         val localEnd = idVec3()
         val hit = localTrace_t()
         val radius: Float
-        if (r_showTrace!!.GetInteger() == 0) {
+        if (r_showTrace.GetInteger() == 0) {
             return
         }
-        if (r_showTrace!!.GetInteger() == 2) {
+        if (r_showTrace.GetInteger() == 2) {
             radius = 5.0f
         } else {
             radius = 0.0f
@@ -472,8 +469,7 @@ object tr_trace {
             tr_backend.GL_State(GLS_DEPTHFUNC_ALWAYS)
             qgl.qglColor4f(1.0f, 1.0f, 1.0f, 1.0f)
             tr_rendertools.RB_DrawBounds(tri.bounds)
-            if (radius != 0.0f) {
-                // draw the expanded triangles
+            if (radius != 0.0f) { // draw the expanded triangles
                 qgl.qglColor4f(0.5f, 0.5f, 1.0f, 1.0f)
                 RB_DrawExpandedTriangles(tri, radius, localStart)
             }

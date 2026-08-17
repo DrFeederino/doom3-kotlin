@@ -102,8 +102,16 @@ object qgl {
     }
 
     fun qglCombinerOutputNV(
-        stage: Int, portion: Int, abOutput: Int, cdOutput: Int, sumOutput: Int, scale: Int, bias: Int,
-        abDotProduct: Boolean, cdDotProduct: Boolean, muxSum: Boolean
+        stage: Int,
+        portion: Int,
+        abOutput: Int,
+        cdOutput: Int,
+        sumOutput: Int,
+        scale: Int,
+        bias: Int,
+        abDotProduct: Boolean,
+        cdDotProduct: Boolean,
+        muxSum: Boolean
     ) {
         throw UnsupportedOperationException()
     }
@@ -146,8 +154,14 @@ object qgl {
     //
     // ARB_texture_compression
     fun  /*PFNGLCOMPRESSEDTEXIMAGE2DARBPROC*/qglCompressedTexImage2DARB(
-        target: Int, level: Int, internalformat: Int,
-        width: Int, height: Int, border: Int, imageSize: Int, data: ByteBuffer?
+        target: Int,
+        level: Int,
+        internalformat: Int,
+        width: Int,
+        height: Int,
+        border: Int,
+        imageSize: Int,
+        data: ByteBuffer?
     ) {
         DEBUG_printName("glCompressedTexImage2DARB")
         GL13.glCompressedTexImage2D(target, level, internalformat, width, height, border, data)
@@ -165,14 +179,7 @@ object qgl {
         pData_buffer_offset: Long
     ) {
         GL13.glCompressedTexImage2D(
-            target,
-            level,
-            internalformat,
-            width,
-            height,
-            border,
-            imageSize,
-            pData_buffer_offset
+            target, level, internalformat, width, height, border, imageSize, pData_buffer_offset
         )
     }
 
@@ -185,12 +192,7 @@ object qgl {
     // ARB_vertex_program / ARB_fragment_program
     @Deprecated("")
     fun  /*PFNGLVERTEXATTRIBPOINTERARBPROC*/qglVertexAttribPointerARB(
-        index: Int,
-        size: Int,
-        type: Int,
-        normalized: Boolean,
-        stride: Int,
-        pointer: FloatArray?
+        index: Int, size: Int, type: Int, normalized: Boolean, stride: Int, pointer: FloatArray?
     ) {
         throw UnsupportedOperationException("Not supported yet.")
     }
@@ -228,9 +230,7 @@ object qgl {
     //extern PFNGLGENPROGRAMSARBPROC				qglGenProgramsARB;
     //
     fun  /*PFNGLPROGRAMENVPARAMETER4FVARBPROC*/qglProgramEnvParameter4fvARB(
-        target: Int,
-        index: Enum<*>,
-        params: FloatBuffer
+        target: Int, index: Enum<*>, params: FloatBuffer
     ) {
         DEBUG_printName("glProgramEnvParameter4fvARB")
         ARBVertexProgram.glProgramEnvParameter4fvARB(target, index.ordinal, params)
@@ -238,9 +238,7 @@ object qgl {
 
     //    @Deprecated
     fun  /*PFNGLPROGRAMENVPARAMETER4FVARBPROC*/qglProgramEnvParameter4fvARB(
-        target: Int,
-        index: Enum<*>,
-        params: FloatArray
+        target: Int, index: Enum<*>, params: FloatArray
     ) {
         DEBUG_printName("glProgramEnvParameter4fvARB")
         qglProgramEnvParameter4fvARB(target, index.ordinal, params)
@@ -248,27 +246,21 @@ object qgl {
 
     //    @Deprecated
     fun  /*PFNGLPROGRAMENVPARAMETER4FVARBPROC*/qglProgramEnvParameter4fvARB(
-        target: Int,
-        index: Int,
-        params: FloatArray
+        target: Int, index: Int, params: FloatArray
     ) {
         DEBUG_printName("glProgramEnvParameter4fvARB")
         ARBVertexProgram.glProgramEnvParameter4fvARB(target, index, params)
     }
 
     fun  /*PFNGLPROGRAMENVPARAMETER4FVARBPROC*/qglProgramEnvParameter4fvARB(
-        target: Int,
-        index: Int,
-        params: FloatBuffer
+        target: Int, index: Int, params: FloatBuffer
     ) {
         DEBUG_printName("glProgramEnvParameter4fvARB")
         ARBVertexProgram.glProgramEnvParameter4fvARB(target, index, params)
     }
 
     fun  /*PFNGLPROGRAMLOCALPARAMETER4FVARBPROC*/qglProgramLocalParameter4fvARB(
-        target: Int,
-        index: Int,
-        params: FloatBuffer
+        target: Int, index: Int, params: FloatBuffer
     ) {
         DEBUG_printName("glProgramLocalParameter4fvARB")
         ARBVertexProgram.glProgramLocalParameter4fvARB(target, index, params)
@@ -311,13 +303,7 @@ object qgl {
     }
 
     fun qglBitmap(
-        width: Int,
-        height: Int,
-        xorig: Float,
-        yorig: Float,
-        xmove: Float,
-        ymove: Float,
-        bitmap: ByteBuffer?
+        width: Int, height: Int, xorig: Float, yorig: Float, xmove: Float, ymove: Float, bitmap: ByteBuffer?
     ) {
         DEBUG_printName("glBitmap")
         GL43.glBitmap(width, height, xorig, yorig, xmove, ymove, bitmap)
@@ -566,14 +552,7 @@ object qgl {
     }
 
     fun qglCopyTexImage2D(
-        target: Int,
-        level: Int,
-        internalFormat: Int,
-        x: Int,
-        y: Int,
-        width: Int,
-        height: Int,
-        border: Int
+        target: Int, level: Int, internalFormat: Int, x: Int, y: Int, width: Int, height: Int, border: Int
     ) {
         DEBUG_printName("glCopyTexImage2D")
         GL43.glCopyTexImage2D(target, level, internalFormat, x, y, width, height, border)
@@ -585,14 +564,7 @@ object qgl {
     }
 
     fun qglCopyTexSubImage2D(
-        target: Int,
-        level: Int,
-        xoffset: Int,
-        yoffset: Int,
-        x: Int,
-        y: Int,
-        width: Int,
-        height: Int
+        target: Int, level: Int, xoffset: Int, yoffset: Int, x: Int, y: Int, width: Int, height: Int
     ) {
         DEBUG_printName("glCopyTexSubImage2D")
         GL43.glCopyTexSubImage2D(target, level, xoffset, yoffset, x, y, width, height)
@@ -614,8 +586,7 @@ object qgl {
     }
 
     fun qglDeleteTextures(n: Int, textures: IntArray?) {
-        DEBUG_printName("glDeleteTextures")
-        //        GL43.glDeleteTextures();
+        DEBUG_printName("glDeleteTextures") //        GL43.glDeleteTextures();
         throw UnsupportedOperationException("Not supported yet.")
     }
 
@@ -1412,8 +1383,7 @@ object qgl {
     }
 
     fun qglPrioritizeTextures(n: Int, textures: Int, priorities: Float) {
-        DEBUG_printName("glPrioritizeTextures")
-        // Legacy fixed-function GL hint; no-op. The buffer-overload below handles real calls.
+        DEBUG_printName("glPrioritizeTextures") // Legacy fixed-function GL hint; no-op. The buffer-overload below handles real calls.
     }
 
     fun qglPrioritizeTextures(n: Int, textures: IntBuffer, priorities: FloatBuffer) {
@@ -1967,13 +1937,7 @@ object qgl {
     }
 
     fun qglTexSubImage1D(
-        target: Int,
-        level: Int,
-        xoffset: Int,
-        width: Int,
-        format: Int,
-        type: Int,
-        pixels: ByteBuffer
+        target: Int, level: Int, xoffset: Int, width: Int, format: Int, type: Int, pixels: ByteBuffer
     ) {
         DEBUG_printName("glTexSubImage1D")
         GL43.glTexSubImage1D(target, level, xoffset, width, format, type, pixels)
@@ -2142,8 +2106,7 @@ object qgl {
         }
     }
 
-    private fun checkGLError() {
-        // Debug error checking is a no-op when GL_DEBUG is false
+    private fun checkGLError() { // Debug error checking is a no-op when GL_DEBUG is false
     }
 
     @Deprecated("the calling functions should send ByteBuffers instead.")
@@ -2171,13 +2134,7 @@ object qgl {
         fun  /*PFNGLPASSTEXCOORDATIPROC*/qglPassTexCoordATI(dst: Int, coord: Int, swizzle: Int) {}
         fun  /*PFNGLSAMPLEMAPATIPROC*/qglSampleMapATI(dst: Int, interp: Int, swizzle: Int) {}
         fun  /*PFNGLCOLORFRAGMENTOP1ATIPROC*/qglColorFragmentOp1ATI(
-            op: Int,
-            dst: Int,
-            dstMask: Int,
-            dstMod: Int,
-            arg1: Int,
-            arg1Rep: Int,
-            arg1Mod: Int
+            op: Int, dst: Int, dstMask: Int, dstMod: Int, arg1: Int, arg1Rep: Int, arg1Mod: Int
         ) {
         }
 
@@ -2213,25 +2170,12 @@ object qgl {
         }
 
         fun  /*PFNGLALPHAFRAGMENTOP1ATIPROC*/qglAlphaFragmentOp1ATI(
-            op: Int,
-            dst: Int,
-            dstMod: Int,
-            arg1: Int,
-            arg1Rep: Int,
-            arg1Mod: Int
+            op: Int, dst: Int, dstMod: Int, arg1: Int, arg1Rep: Int, arg1Mod: Int
         ) {
         }
 
         fun  /*PFNGLALPHAFRAGMENTOP2ATIPROC*/qglAlphaFragmentOp2ATI(
-            op: Int,
-            dst: Int,
-            dstMod: Int,
-            arg1: Int,
-            arg1Rep: Int,
-            arg1Mod: Int,
-            arg2: Int,
-            arg2Rep: Int,
-            arg2Mod: Int
+            op: Int, dst: Int, dstMod: Int, arg1: Int, arg1Rep: Int, arg1Mod: Int, arg2: Int, arg2Rep: Int, arg2Mod: Int
         ) {
         }
 

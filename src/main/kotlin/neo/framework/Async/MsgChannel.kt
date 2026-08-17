@@ -157,8 +157,7 @@ object MsgChannel {
             reliableReceive.Init(0)
         }
 
-        fun Shutdown() {
-            //compressor = null
+        fun Shutdown() { //compressor = null
         }
 
         fun ResetRate() {
@@ -220,9 +219,7 @@ object MsgChannel {
                 return true
             }
             deltaTime = time - lastSendTime
-            return if (deltaTime > 1000) {
-                true
-            } else lastDataBytes - deltaTime * maxRate / 1000 <= 0
+            return deltaTime > 1000 || lastDataBytes - deltaTime * maxRate / 1000 <= 0
         }
 
         //
@@ -233,8 +230,7 @@ object MsgChannel {
          Sends a message to a connection, fragmenting if necessary
          A 0 length will still generate a packet.
          ================
-         */
-        // Sends an unreliable message, in order and without duplicates.
+         */ // Sends an unreliable message, in order and without duplicates.
         @Throws(idException::class)
         fun SendMessage(port: idPort, time: Int, msg: idBitMsg): Int {
             val totalLength: Int
@@ -280,11 +276,7 @@ object MsgChannel {
             UpdateOutgoingRate(time, unsentMsg.GetSize())
             if (net_channelShowPackets.GetBool()) {
                 Common.common.Printf(
-                    "%d send %4d : s = %d ack = %d\n",
-                    id,
-                    unsentMsg.GetSize(),
-                    outgoingSequence - 1,
-                    incomingSequence
+                    "%d send %4d : s = %d ack = %d\n", id, unsentMsg.GetSize(), outgoingSequence - 1, incomingSequence
                 )
             }
             outgoingSequence++
@@ -298,8 +290,7 @@ object MsgChannel {
 
          Sends one fragment of the current message.
          =================
-         */
-        // Sends the next fragment if the last message was too large to send at once.
+         */ // Sends the next fragment if the last message was too large to send at once.
         @Throws(idException::class)
         fun SendNextFragment(port: idPort, time: Int) {
             val msg = idBitMsg()
@@ -365,8 +356,7 @@ object MsgChannel {
          msg must be large enough to hold MAX_MESSAGE_SIZE, because if this is the final
          fragment of a multi-part message, the entire thing will be copied out.
          =================
-         */
-        // Processes the incoming message. Returns true when a complete message
+         */ // Processes the incoming message. Returns true when a complete message
         // is ready for further processing. In that case the read pointer of msg
         // points to the first byte ready for reading, and sequence is set to
         // the sequence number of the message.
@@ -456,8 +446,7 @@ object MsgChannel {
             //
             // if the message is fragmented
             //
-            if (fragmented) {
-                // make sure we have the correct sequence number
+            if (fragmented) { // make sure we have the correct sequence number
                 if (sequence._val != fragmentSequence) {
                     fragmentSequence = sequence._val
                     fragmentLength = 0
@@ -471,8 +460,7 @@ object MsgChannel {
                             win_net.Sys_NetAdrToString(remoteAddress),
                             sequence._val
                         )
-                    }
-                    // we can still keep the part that we have so far,
+                    } // we can still keep the part that we have so far,
                     // so we don't need to clear fragmentLength
                     UpdatePacketLoss(time, 0, 1)
                     return false
@@ -487,10 +475,9 @@ object MsgChannel {
                     return false
                 }
 
-//		memcpy( fragmentBuffer + fragmentLength, msg.GetData()!! + msg.GetReadCount(), fragLength );
+                //		memcpy( fragmentBuffer + fragmentLength, msg.GetData()!! + msg.GetReadCount(), fragLength );
                 System.arraycopy(
-                    msg.GetData()!!.array(), msg.GetReadCount(),
-                    fragmentBuffer.array(), fragmentLength, fragLength
+                    msg.GetData()!!.array(), msg.GetReadCount(), fragmentBuffer.array(), fragmentLength, fragLength
                 )
                 fragmentLength += fragLength
                 UpdatePacketLoss(time, 1, 0)
@@ -499,11 +486,9 @@ object MsgChannel {
                 if (fragLength == FRAGMENT_SIZE) {
                     return false
                 }
-            } else {
-//		memcpy( fragmentBuffer, msg.GetData()!! + msg.GetReadCount(), msg.GetRemaingData() );
+            } else { //		memcpy( fragmentBuffer, msg.GetData()!! + msg.GetReadCount(), msg.GetRemaingData() );
                 System.arraycopy(
-                    msg.GetData()!!.array(), msg.GetReadCount(),
-                    fragmentBuffer.array(), 0, msg.GetRemaingData()
+                    msg.GetData()!!.array(), msg.GetReadCount(), fragmentBuffer.array(), 0, msg.GetRemaingData()
                 )
                 fragmentLength = msg.GetRemaingData()
                 UpdatePacketLoss(time, 1, 0)
@@ -538,8 +523,9 @@ object MsgChannel {
         fun GetReliableMessage(msg: idBitMsg): Boolean {
             val size = CInt()
             val result: Boolean
-            result = reliableReceive.Get(msg.GetData()!!.array(), size)
-            // FIX: was setting size to buffer capacity, ignoring actual message size from Get()
+            result = reliableReceive.Get(
+                msg.GetData()!!.array(), size
+            ) // FIX: was setting size to buffer capacity, ignoring actual message size from Get()
             msg.SetSize(size._val)
             msg.BeginReading()
             return result
@@ -618,8 +604,7 @@ object MsgChannel {
                 if (reliableSequence == reliableReceive.GetLast() + 1) {
                     reliableReceive.Add(
                         Arrays.copyOfRange(
-                            out.GetData()!!.array(),
-                            out.GetReadCount(), out.GetReadCount() + reliableMessageSize._val
+                            out.GetData()!!.array(), out.GetReadCount(), out.GetReadCount() + reliableMessageSize._val
                         ), reliableMessageSize._val
                     )
                 }
@@ -630,8 +615,7 @@ object MsgChannel {
         }
 
         //
-        private fun UpdateOutgoingRate(time: Int, size: Int) {
-            // update the outgoing rate control variables
+        private fun UpdateOutgoingRate(time: Int, size: Int) { // update the outgoing rate control variables
             val deltaTime = time - lastSendTime
             if (deltaTime > 1000) {
                 lastDataBytes = 0
@@ -655,8 +639,7 @@ object MsgChannel {
             outgoingRateBytes += size
         }
 
-        private fun UpdateIncomingRate(time: Int, size: Int) {
-            // update incoming rate variables
+        private fun UpdateIncomingRate(time: Int, size: Int) { // update incoming rate variables
             if (time - incomingRateTime > 1000) {
                 incomingRateBytes -= incomingRateBytes * (time - incomingRateTime - 1000) / 1000
                 if (incomingRateBytes < 0) {
@@ -667,8 +650,9 @@ object MsgChannel {
             incomingRateBytes += size
         }
 
-        private fun UpdatePacketLoss(time: Int, numReceived: Int, numDropped: Int) {
-            // update incoming packet loss variables
+        private fun UpdatePacketLoss(
+            time: Int, numReceived: Int, numDropped: Int
+        ) { // update incoming packet loss variables
             if (time - incomingPacketLossTime > 5000) {
                 val scale = (time - incomingPacketLossTime - 5000) * (1.0f / 5000.0f)
                 incomingReceivedPackets -= incomingReceivedPackets * scale
@@ -761,13 +745,12 @@ object MsgChannel {
         }
 
         fun CopyToBuffer(buf: ByteArray, offset: Int = 0) {
-            if (startIndex <= endIndex) {
-//		memcpy( buf, buffer + startIndex, endIndex - startIndex );
+            if (startIndex <= endIndex) { //		memcpy( buf, buffer + startIndex, endIndex - startIndex );
                 System.arraycopy(buffer, startIndex, buf, offset, endIndex - startIndex)
-            } else {
-//		memcpy( buf, buffer + startIndex, sizeof( buffer ) - startIndex );
-                System.arraycopy(buffer, startIndex, buf, offset, buffer.size - startIndex)
-                //		memcpy( buf + sizeof( buffer ) - startIndex, buffer, endIndex );
+            } else { //		memcpy( buf, buffer + startIndex, sizeof( buffer ) - startIndex );
+                System.arraycopy(
+                    buffer, startIndex, buf, offset, buffer.size - startIndex
+                ) //		memcpy( buf + sizeof( buffer ) - startIndex, buffer, endIndex );
                 System.arraycopy(buffer, 0, buf, offset + buffer.size - startIndex, endIndex)
             }
         }
@@ -803,10 +786,7 @@ object MsgChannel {
 
         // FIX: Same byte sign extension issue as ReadShort
         private fun ReadLong(): Int {
-            return (ReadByte().toInt() and 0xFF) or
-                    ((ReadByte().toInt() and 0xFF) shl 8) or
-                    ((ReadByte().toInt() and 0xFF) shl 16) or
-                    ((ReadByte().toInt() and 0xFF) shl 24)
+            return (ReadByte().toInt() and 0xFF) or ((ReadByte().toInt() and 0xFF) shl 8) or ((ReadByte().toInt() and 0xFF) shl 16) or ((ReadByte().toInt() and 0xFF) shl 24)
         }
 
         private fun WriteData(data: ByteArray, size: Int) {

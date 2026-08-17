@@ -113,21 +113,17 @@ open class idItem : idEntity() {
 
         init {
             eventCallbacks.putAll(idEntity.getEventCallBacks())
-            eventCallbacks[EV_DropToFloor] =
-                eventCallback_t0<idItem> { obj: idItem -> obj.Event_DropToFloor() }
+            eventCallbacks[EV_DropToFloor] = eventCallback_t0<idItem> { obj: idItem -> obj.Event_DropToFloor() }
             eventCallbacks[EV_Touch] =
                 eventCallback_t2<idItem> { obj: idItem, _other: idEventArg<*>?, trace: idEventArg<*>? ->
                     obj.Event_Touch(
-                        _other as idEventArg<idEntity>,
-                        trace as idEventArg<trace_s>
+                        _other as idEventArg<idEntity>, trace as idEventArg<trace_s>
                     )
                 }
             eventCallbacks[EV_Activate] =
                 eventCallback_t1<idItem> { obj: idItem, _activator: idEventArg<*>? -> obj.Event_Trigger(_activator as idEventArg<idEntity>) }
-            eventCallbacks[EV_RespawnItem] =
-                eventCallback_t0<idItem> { obj: idItem -> obj.Event_Respawn() }
-            eventCallbacks[EV_RespawnFx] =
-                eventCallback_t0<idItem> { obj: idItem -> obj.Event_RespawnFx() }
+            eventCallbacks[EV_RespawnItem] = eventCallback_t0<idItem> { obj: idItem -> obj.Event_Respawn() }
+            eventCallbacks[EV_RespawnFx] = eventCallback_t0<idItem> { obj: idItem -> obj.Event_RespawnFx() }
         }
     }
 
@@ -148,8 +144,7 @@ open class idItem : idEntity() {
     private var pulse = false
     private var shellMaterial: Material.idMaterial?
     private var spin = false
-    override fun _deconstructor() {
-        // remove the highlight shell
+    override fun _deconstructor() { // remove the highlight shell
         if (itemShellHandle != -1) {
             gameRenderWorld!!.FreeEntityDef(itemShellHandle)
         }
@@ -192,8 +187,7 @@ open class idItem : idEntity() {
             PostEventMS(EV_DropToFloor, 0)
         }
         if (spawnArgs.GetFloat("triggersize", "0", tsize)) {
-            GetPhysics().GetClipModel()!!
-                .LoadModel(idTraceModel(idBounds(vec3_origin).Expand(tsize._val)))
+            GetPhysics().GetClipModel()!!.LoadModel(idTraceModel(idBounds(vec3_origin).Expand(tsize._val)))
             GetPhysics().GetClipModel()!!.Link(gameLocal.clip)
         }
         if (spawnArgs.GetBool("start_off")) {
@@ -239,10 +233,7 @@ open class idItem : idEntity() {
     }
 
     open fun GiveToPlayer(player: idPlayer?): Boolean {
-        if (player == null) {
-            return false
-        }
-        return if (spawnArgs.GetBool("inv_carry")) {
+        return player != null && if (spawnArgs.GetBool("inv_carry")) {
             player.GiveInventoryItem(spawnArgs)
         } else player.GiveItem(this)
     }
@@ -284,8 +275,7 @@ open class idItem : idEntity() {
                 PostEventSec(EV_RespawnFx, respawn - 0.5f)
             }
             PostEventSec(EV_RespawnItem, respawn)
-        } else if (!spawnArgs.GetBool("inv_objective") && !no_respawn) {
-            // give some time for the pickup sound to play
+        } else if (!spawnArgs.GetBool("inv_objective") && !no_respawn) { // give some time for the pickup sound to play
             // FIXME: Play on the owner
             if (!spawnArgs.GetBool("inv_carry")) {
                 PostEventMS(EV_Remove, 5000)
@@ -315,8 +305,7 @@ open class idItem : idEntity() {
 
     override fun Present() {
         super.Present()
-        if (!fl.hidden && pulse) {
-            // also add a highlight shell model
+        if (!fl.hidden && pulse) { // also add a highlight shell model
             // C++ creates a copy: renderEntity_t shell = renderEntity;
             // Kotlin has no copy constructor, so we save/restore modified fields
             val shell = renderEntity!!
@@ -342,8 +331,7 @@ open class idItem : idEntity() {
         }
     }
 
-    override fun ClientPredictionThink() {
-        // only think forward because the state is not synced through snapshots
+    override fun ClientPredictionThink() { // only think forward because the state is not synced through snapshots
         if (!gameLocal.isNewFrame) {
             return
         }
@@ -352,8 +340,7 @@ open class idItem : idEntity() {
 
     override fun ClientReceiveEvent(event: Int, time: Int, msg: idBitMsg): Boolean {
         return when (event) {
-            EVENT_PICKUP -> {
-                // play pickup sound
+            EVENT_PICKUP -> { // play pickup sound
                 StartSound("snd_acquire", gameSoundChannel_t.SND_CHANNEL_ITEM, 0, false)
 
                 // hide the model
@@ -380,8 +367,7 @@ open class idItem : idEntity() {
             else -> {
                 super.ClientReceiveEvent(event, time, msg)
             }
-        }
-        //	return false;
+        } //	return false;
     }
 
     // networking
@@ -413,8 +399,7 @@ open class idItem : idEntity() {
         if (d > 0.94f) {
             if (!inView) {
                 inView = true
-                if (cycle > lastCycle) {
-                    // restart at the beginning
+                if (cycle > lastCycle) { // restart at the beginning
                     inViewTime = renderView.time
                     cycle = 0.0f
                 }
@@ -429,8 +414,7 @@ open class idItem : idEntity() {
         // fade down after the last pulse finishes
         if (!inView && cycle > lastCycle) {
             renderEntity.shaderParms[4] = 0.0f
-        } else {
-            // pulse up in 1/4 second
+        } else { // pulse up in 1/4 second
             cycle -= cycle.toInt().toFloat()
             if (cycle < 0.1f) {
                 renderEntity.shaderParms[4] = cycle * 10.0f
@@ -438,8 +422,7 @@ open class idItem : idEntity() {
                 renderEntity.shaderParms[4] = 1.0f
             } else if (cycle < 0.3f) {
                 renderEntity.shaderParms[4] = 1.0f - (cycle - 0.2f) * 10.0f
-            } else {
-                // stay off between pulses
+            } else { // stay off between pulses
                 renderEntity.shaderParms[4] = 0.0f
             }
         }
@@ -517,8 +500,9 @@ open class idItem : idEntity() {
     }
 
     class ModelCallback private constructor() : deferredEntityCallback_t() {
-        override fun run(e: renderEntity_s?, v: renderView_s?): Boolean {
-            // this may be triggered by a model trace or other non-view related source
+        override fun run(
+            e: renderEntity_s?, v: renderView_s?
+        ): Boolean { // this may be triggered by a model trace or other non-view related source
             if (null == v) {
                 return false
             }
@@ -621,16 +605,14 @@ class idObjective : idItem() {
 
         init {
             eventCallbacks.putAll(idItem.getEventCallBacks())
-            eventCallbacks[EV_Activate] =
-                eventCallback_t1<idObjective> { obj: idObjective, activator: idEventArg<*>? ->
-                    obj.Event_Trigger(activator as idEventArg<idEntity>)
-                }
+            eventCallbacks[EV_Activate] = eventCallback_t1<idObjective> { obj: idObjective, activator: idEventArg<*>? ->
+                obj.Event_Trigger(activator as idEventArg<idEntity>)
+            }
             eventCallbacks[EV_HideObjective] =
                 eventCallback_t1<idObjective> { obj: idObjective, e: idEventArg<*>? -> obj.Event_HideObjective(e as idEventArg<idEntity>) }
             eventCallbacks[EV_GetPlayerPos] =
                 eventCallback_t0<idObjective> { obj: idObjective -> obj.Event_GetPlayerPos() }
-            eventCallbacks[EV_CamShot] =
-                eventCallback_t0<idObjective> { obj: idObjective -> obj.Event_CamShot() }
+            eventCallbacks[EV_CamShot] = eventCallback_t0<idObjective> { obj: idObjective -> obj.Event_CamShot() }
         }
     }
 
@@ -673,9 +655,7 @@ class idObjective : idItem() {
                     player.hud!!.SetStateString("objectivetext", spawnArgs.GetString("objectivetext"))
                     player.hud!!.SetStateString("objectivetitle", spawnArgs.GetString("objectivetitle"))
                     player.GiveObjective(
-                        spawnArgs.GetString("objectivetitle"),
-                        spawnArgs.GetString("objectivetext"),
-                        shotName.toString()
+                        spawnArgs.GetString("objectivetitle"), spawnArgs.GetString("objectivetext"), shotName.toString()
                     )
 
                     // a tad slow but keeps from having to update all objectives in all maps with a name ptr
@@ -734,9 +714,7 @@ class idObjective : idItem() {
                 fullView.height = SCREEN_HEIGHT
 
                 // D3XP: HACK - always draw sky-portal view if there is one in the map
-                if (isD3XP && gameLocal.portalSkyEnt.GetEntity() != null
-                    && SysCvar.g_enablePortalSky.GetBool()
-                ) {
+                if (isD3XP && gameLocal.portalSkyEnt.GetEntity() != null && SysCvar.g_enablePortalSky.GetBool()) {
                     val portalView = renderView_s(fullView)
                     portalView.vieworg.set(
                         gameLocal.portalSkyEnt.GetEntity()!!.GetPhysics().GetOrigin()
@@ -892,10 +870,7 @@ open class idMoveableItem : idItem() {
                     joint = ent.GetAnimator().GetJointHandle(jointName)
                     if (!ent.GetJointWorldTransform(joint, gameLocal.time, origin, axis)) {
                         gameLocal.Warning(
-                            "%s refers to invalid joint '%s' on entity '%s'\n",
-                            key,
-                            jointName,
-                            ent.name
+                            "%s refers to invalid joint '%s' on entity '%s'\n", key, jointName, ent.name
                         )
                         origin.set(ent.GetPhysics().GetOrigin())
                         axis.set(ent.GetPhysics().GetAxis())
@@ -931,12 +906,7 @@ open class idMoveableItem : idItem() {
         }
 
         fun DropItem(
-            classname: String,
-            origin: idVec3,
-            axis: idMat3,
-            velocity: idVec3,
-            activateDelay: Int,
-            removeDelay: Int
+            classname: String, origin: idVec3, axis: idMat3, velocity: idVec3, activateDelay: Int, removeDelay: Int
         ): idEntity? {
             var removeDelay = removeDelay
             val args = idDict()
@@ -950,8 +920,7 @@ open class idMoveableItem : idItem() {
                 args.SetBool("triggerFirst", true)
             }
             gameLocal.SpawnEntityDef(args, item)
-            if (item.isNotEmpty() && item[0] != null) {
-                // set item position
+            if (item.isNotEmpty() && item[0] != null) { // set item position
                 item[0]!!.GetPhysics().SetOrigin(origin)
                 item[0]!!.GetPhysics().SetAxis(axis)
                 item[0]!!.GetPhysics().SetLinearVelocity(velocity)
@@ -961,8 +930,7 @@ open class idMoveableItem : idItem() {
                 }
                 if (0 == removeDelay) {
                     removeDelay = 5 * 60 * 1000
-                }
-                // always remove a dropped item after 5 minutes in case it dropped to an unreachable location
+                } // always remove a dropped item after 5 minutes in case it dropped to an unreachable location
                 item[0]!!.PostEventMS(EV_Remove, removeDelay)
             }
             return item[0]
@@ -1099,23 +1067,14 @@ open class idMoveableItem : idItem() {
 
     override fun Think() {
         RunPhysics()
-        if ((thinkFlags and TH_PHYSICS) != 0) {
-            // update trigger position
+        if ((thinkFlags and TH_PHYSICS) != 0) { // update trigger position
             trigger!!.Link(
-                gameLocal.clip,
-                this,
-                0,
-                GetPhysics().GetOrigin(),
-                idMat3.getMat3_identity()
+                gameLocal.clip, this, 0, GetPhysics().GetOrigin(), idMat3.getMat3_identity()
             )
         }
         if ((thinkFlags and TH_UPDATEPARTICLES) != 0) {
             if (!gameLocal.smokeParticles!!.EmitSmoke(
-                    smoke,
-                    smokeTime,
-                    gameLocal.random.CRandomFloat(),
-                    GetPhysics().GetOrigin(),
-                    GetPhysics().GetAxis()
+                    smoke, smokeTime, gameLocal.random.CRandomFloat(), GetPhysics().GetOrigin(), GetPhysics().GetAxis()
                 )
             ) {
                 if (!repeatSmoke) {
@@ -1148,25 +1107,18 @@ open class idMoveableItem : idItem() {
         }
     }
 
-    private fun Gib(dir: idVec3, damageDefName: String) {
-        // spawn smoke puff
+    private fun Gib(dir: idVec3, damageDefName: String) { // spawn smoke puff
         val smokeName = spawnArgs.GetString("smoke_gib")
         if (!smokeName.isEmpty()) { // != '\0' ) {
             val smoke = DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, smokeName) as idDeclParticle
             gameLocal.smokeParticles!!.EmitSmoke(
-                smoke,
-                gameLocal.time,
-                gameLocal.random.CRandomFloat(),
-                renderEntity!!.origin,
-                renderEntity!!.axis
+                smoke, gameLocal.time, gameLocal.random.CRandomFloat(), renderEntity!!.origin, renderEntity!!.axis
             )
-        }
-        // remove the entity
+        } // remove the entity
         PostEventMS(EV_Remove, 0)
     }
 
-    private fun Event_DropToFloor() {
-        // the physics will drop the moveable to the floor
+    private fun Event_DropToFloor() { // the physics will drop the moveable to the floor
     }
 
     private fun Event_Gib(damageDefName: idEventArg<String>) {
@@ -1221,8 +1173,7 @@ class idMoveablePDAItem : idMoveableItem() {
  Item removers.
 
  ===============================================================================
- */
-/*
+ *//*
  ===============================================================================
 
  idItemRemover
@@ -1257,7 +1208,7 @@ open class idItemRemover : idEntity() {
     private fun Event_Trigger(_activator: idEventArg<idEntity>) {
         val activator = _activator.value
         if (activator is idPlayer) {
-            RemoveItem(activator as idPlayer)
+            RemoveItem(activator)
         }
     }
 
@@ -1418,12 +1369,12 @@ class idItemTeam : idMoveableItem() {
 
         var skinName = spawnArgs.GetString("skin", "")
         if (!skinName.isNullOrEmpty()) {
-            skinDefault = DeclManager.declManager!!.FindSkin(skinName)
+            skinDefault = DeclManager.declManager.FindSkin(skinName)
         }
 
         skinName = spawnArgs.GetString("skin_carried", "")
         if (!skinName.isNullOrEmpty()) {
-            skinCarried = DeclManager.declManager!!.FindSkin(skinName)
+            skinCarried = DeclManager.declManager.FindSkin(skinName)
         }
 
         val nugget = spawnArgs.GetString("nugget_name", "")
@@ -1447,17 +1398,16 @@ class idItemTeam : idMoveableItem() {
         TouchTriggers()
 
         // should only the server do this?
-        if (gameLocal.isServer && nuggetName != null && carried
-            && (lastNuggetDrop == 0 || (gameLocal.time - lastNuggetDrop) > spawnArgs.GetInt("nugget_frequency"))
+        if (gameLocal.isServer && nuggetName != null && carried && (lastNuggetDrop == 0 || (gameLocal.time - lastNuggetDrop) > spawnArgs.GetInt(
+                "nugget_frequency"
+            ))
         ) {
             SpawnNugget(GetPhysics().GetOrigin())
             lastNuggetDrop = gameLocal.time
         }
 
         // return dropped flag after si_flagDropTimeLimit seconds
-        if (dropped && !carried && lastDrop != 0
-            && (gameLocal.time - lastDrop) > (SysCvar.si_flagDropTimeLimit.GetInteger() * 1000)
-        ) {
+        if (dropped && !carried && lastDrop != 0 && (gameLocal.time - lastDrop) > (SysCvar.si_flagDropTimeLimit.GetInteger() * 1000)) {
             Return()
             return
         }
@@ -1469,9 +1419,7 @@ class idItemTeam : idMoveableItem() {
             return false
         }
 
-        if (gameLocal.mpGame.GetGameState() == MultiplayerGame.idMultiplayerGame.gameState_t.WARMUP
-            || gameLocal.mpGame.GetGameState() == MultiplayerGame.idMultiplayerGame.gameState_t.COUNTDOWN
-        ) {
+        if (gameLocal.mpGame.GetGameState() == MultiplayerGame.idMultiplayerGame.gameState_t.WARMUP || gameLocal.mpGame.GetGameState() == MultiplayerGame.idMultiplayerGame.gameState_t.COUNTDOWN) {
             return false
         }
 
@@ -1484,8 +1432,7 @@ class idItemTeam : idMoveableItem() {
             PostEventMS(EV_TakeFlag, 0, player)
             return true
         } else if (!carried && dropped && player.team == this.team) {
-            gameLocal.mpGame.PlayerScoreCTF(player.entityNumber, 5)
-            // return flag
+            gameLocal.mpGame.PlayerScoreCTF(player.entityNumber, 5) // return flag
             PostEventMS(EV_FlagReturn, 0, player)
             return false
         }
@@ -1493,8 +1440,7 @@ class idItemTeam : idMoveableItem() {
         return false
     }
 
-    fun Drop(death: Boolean = false) {
-        // had to remove the delayed drop because of drop flag on disconnect
+    fun Drop(death: Boolean = false) { // had to remove the delayed drop because of drop flag on disconnect
         Event_DropFlag(death)
     }
 
@@ -1515,8 +1461,7 @@ class idItemTeam : idMoveableItem() {
         }
     }
 
-    override fun Present() {
-        // hide the flag for localplayer if in first person
+    override fun Present() { // hide the flag for localplayer if in first person
         if (carried && GetBindMaster() != null) {
             val player = GetBindMaster() as? idPlayer
             if (player === gameLocal.GetLocalPlayer() && !SysCvar.pm_thirdPerson.GetBool()) {
@@ -1584,7 +1529,9 @@ class idItemTeam : idMoveableItem() {
             if (function == null) {
                 gameLocal.Warning(
                     "idItemTeam '%s' at (%s) calls unknown function '%s'",
-                    name, GetPhysics().GetOrigin().ToString(0), funcname
+                    name,
+                    GetPhysics().GetOrigin().ToString(0),
+                    funcname
                 )
             }
             return function
@@ -1603,8 +1550,7 @@ class idItemTeam : idMoveableItem() {
 
         val velVec = angle.ToMat3().times(idVec3(velocity, velocity, velocity))
         val ent = DropItem(
-            nuggetName!!, pos, GetPhysics().GetAxis(),
-            velVec, 0, spawnArgs.GetInt("nugget_removedelay")
+            nuggetName!!, pos, GetPhysics().GetAxis(), velVec, 0, spawnArgs.GetInt("nugget_removedelay")
         )
         if (ent != null) {
             val physics = ent.GetPhysics()
@@ -1642,10 +1588,7 @@ class idItemTeam : idMoveableItem() {
             gameLocal.mpGame.PlayTeamSound(team, MultiplayerGame.snd_evt_t.SND_FLAG_TAKEN_YOURS)
 
             gameLocal.mpGame.PrintMessageEvent(
-                -1,
-                MultiplayerGame.idMultiplayerGame.msg_evt_t.MSG_FLAGTAKEN,
-                team,
-                player.entityNumber
+                -1, MultiplayerGame.idMultiplayerGame.msg_evt_t.MSG_FLAGTAKEN, team, player.entityNumber
             )
 
             // dont drop a nugget RIGHT away
@@ -1722,8 +1665,8 @@ class idItemTeam : idMoveableItem() {
 
         if (GetBindMaster() != null) {
             val bounds = GetPhysics().GetBounds()
-            val origin = GetBindMaster()!!.GetPhysics().GetOrigin()
-                .plus(idVec3(0f, 0f, (bounds[1].z - bounds[0].z) * 0.6f))
+            val origin =
+                GetBindMaster()!!.GetPhysics().GetOrigin().plus(idVec3(0f, 0f, (bounds[1].z - bounds[0].z) * 0.6f))
             Unbind()
             SetOrigin(origin)
         }
@@ -1767,10 +1710,7 @@ class idItemTeam : idMoveableItem() {
 
                 val entitynum = player?.entityNumber ?: 255
                 gameLocal.mpGame.PrintMessageEvent(
-                    -1,
-                    MultiplayerGame.idMultiplayerGame.msg_evt_t.MSG_FLAGRETURN,
-                    team,
-                    entitynum
+                    -1, MultiplayerGame.idMultiplayerGame.msg_evt_t.MSG_FLAGRETURN, team, entitynum
                 )
             }
         }
@@ -1897,8 +1837,7 @@ class idItemTeam : idMoveableItem() {
 
     companion object {
         val Type: idTypeInfo = idTypeInfo(
-            "idItemTeam",
-            "idMoveableItem"
+            "idItemTeam", "idMoveableItem"
         ) { idItemTeam() }
 
         private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = buildEventCallbacks()

@@ -40,7 +40,7 @@ import neo.Game.AI.idCombatNode
 import neo.Game.Animation.Anim_Testmodel.idTestModel
 import neo.Game.BrittleFracture.idBrittleFracture
 import neo.Game.GameEdit.idCursor3D
-import neo.Game.GameSys.Class.*
+import neo.Game.GameSys.Class.idClass
 import neo.Game.GameSys.Event.D_EVENT_MAXARGS
 import neo.Game.GameSys.Event.idEvent
 import neo.Game.GameSys.Event.idEventDef
@@ -272,18 +272,17 @@ class Class {
         var value: T
 
         private constructor(data: T) {
-            type =
-                if (data is Int) Event.D_EVENT_INTEGER.code
-                else if (data is Enum<*>) Event.D_EVENT_INTEGER.code
-                else if (data is Float) Event.D_EVENT_FLOAT.code
-                else if (data is idVec3) Event.D_EVENT_VECTOR.code
-                else if (data is idStr) Event.D_EVENT_STRING.code
-                else if (data is String) Event.D_EVENT_STRING.code
-                else if (data is idEntity) Event.D_EVENT_ENTITY.code
-                else if (data is trace_s) Event.D_EVENT_TRACE.code
-                else {
-                    Event.D_EVENT_VOID.code
-                }
+            type = if (data is Int) Event.D_EVENT_INTEGER.code
+            else if (data is Enum<*>) Event.D_EVENT_INTEGER.code
+            else if (data is Float) Event.D_EVENT_FLOAT.code
+            else if (data is idVec3) Event.D_EVENT_VECTOR.code
+            else if (data is idStr) Event.D_EVENT_STRING.code
+            else if (data is String) Event.D_EVENT_STRING.code
+            else if (data is idEntity) Event.D_EVENT_ENTITY.code
+            else if (data is trace_s) Event.D_EVENT_TRACE.code
+            else {
+                Event.D_EVENT_VOID.code
+            }
             value = data
         }
 
@@ -412,9 +411,7 @@ class Class {
                 }
                 initialized = true
                 Game_local.gameLocal.Printf(
-                    "...%d classes, %d bytes for event callbacks\n",
-                    types.Num(),
-                    eventCallbackMemory
+                    "...%d classes, %d bytes for event callbacks\n", types.Num(), eventCallbackMemory
                 )
             }
 
@@ -578,8 +575,7 @@ class Class {
          all fields to their default values, so this check is unnecessary.
          ================
          */
-        fun FindUninitializedMemory() {
-            // No-op on JVM — all fields are initialized by the runtime.
+        fun FindUninitializedMemory() { // No-op on JVM — all fields are initialized by the runtime.
         }
 
         open fun Save(savefile: idSaveGame) {}
@@ -590,8 +586,7 @@ class Class {
          idClass::RespondsTo
          ================
          */
-        fun RespondsTo(ev: idEventDef): Boolean {
-            // NOTE: Differs from C++ — C++ delegates to GetType()->RespondsTo(ev) which checks
+        fun RespondsTo(ev: idEventDef): Boolean { // NOTE: Differs from C++ — C++ delegates to GetType()->RespondsTo(ev) which checks
             // eventMap[eventNum]. In the Kotlin port, we use the virtual getEventCallBack dispatch
             // since the idTypeInfo eventMap system is not populated.
             return getEventCallBack(ev) != null
@@ -618,12 +613,7 @@ class Class {
 
         fun PostEventMS(ev: idEventDef, time: Int, arg1: Any?, arg2: Any?, arg3: Any?): Boolean {
             return PostEventArgs(
-                ev,
-                time,
-                3,
-                idEventArg.toArg<Any?>(arg1),
-                idEventArg.toArg<Any?>(arg2),
-                idEventArg.toArg<Any?>(arg3)
+                ev, time, 3, idEventArg.toArg<Any?>(arg1), idEventArg.toArg<Any?>(arg2), idEventArg.toArg<Any?>(arg3)
             )
         }
 
@@ -640,13 +630,7 @@ class Class {
         }
 
         fun PostEventMS(
-            ev: idEventDef,
-            time: Int,
-            arg1: Any?,
-            arg2: Any?,
-            arg3: Any?,
-            arg4: Any?,
-            arg5: Any?
+            ev: idEventDef, time: Int, arg1: Any?, arg2: Any?, arg3: Any?, arg4: Any?, arg5: Any?
         ): Boolean {
             return PostEventArgs(
                 ev,
@@ -661,14 +645,7 @@ class Class {
         }
 
         fun PostEventMS(
-            ev: idEventDef,
-            time: Int,
-            arg1: Any?,
-            arg2: Any?,
-            arg3: Any?,
-            arg4: Any?,
-            arg5: Any?,
-            arg6: Any?
+            ev: idEventDef, time: Int, arg1: Any?, arg2: Any?, arg3: Any?, arg4: Any?, arg5: Any?, arg6: Any?
         ): Boolean {
             return PostEventArgs(
                 ev,
@@ -754,11 +731,7 @@ class Class {
 
         fun PostEventSec(ev: idEventDef, time: Float, arg1: Any?, arg2: Any?): Boolean {
             return PostEventArgs(
-                ev,
-                SEC2MS(time).toInt(),
-                2,
-                idEventArg.toArg<Any?>(arg1),
-                idEventArg.toArg<Any?>(arg2)
+                ev, SEC2MS(time).toInt(), 2, idEventArg.toArg<Any?>(arg1), idEventArg.toArg<Any?>(arg2)
             )
         }
 
@@ -786,13 +759,7 @@ class Class {
         }
 
         fun PostEventSec(
-            ev: idEventDef,
-            time: Float,
-            arg1: Any?,
-            arg2: Any?,
-            arg3: Any?,
-            arg4: Any?,
-            arg5: Any?
+            ev: idEventDef, time: Float, arg1: Any?, arg2: Any?, arg3: Any?, arg4: Any?, arg5: Any?
         ): Boolean {
             return PostEventArgs(
                 ev,
@@ -807,14 +774,7 @@ class Class {
         }
 
         fun PostEventSec(
-            ev: idEventDef,
-            time: Float,
-            arg1: Any?,
-            arg2: Any?,
-            arg3: Any?,
-            arg4: Any?,
-            arg5: Any?,
-            arg6: Any?
+            ev: idEventDef, time: Float, arg1: Any?, arg2: Any?, arg3: Any?, arg4: Any?, arg5: Any?, arg6: Any?
         ): Boolean {
             return PostEventArgs(
                 ev,
@@ -904,11 +864,7 @@ class Class {
 
         fun ProcessEvent(ev: idEventDef, arg1: Any?, arg2: Any?, arg3: Any?): Boolean {
             return ProcessEventArgs(
-                ev,
-                3,
-                idEventArg.toArg<Any?>(arg1),
-                idEventArg.toArg<Any?>(arg2),
-                idEventArg.toArg<Any?>(arg3)
+                ev, 3, idEventArg.toArg<Any?>(arg1), idEventArg.toArg<Any?>(arg2), idEventArg.toArg<Any?>(arg3)
             )
         }
 
@@ -936,13 +892,7 @@ class Class {
         }
 
         fun ProcessEvent(
-            ev: idEventDef,
-            arg1: Any?,
-            arg2: Any?,
-            arg3: Any?,
-            arg4: Any?,
-            arg5: Any?,
-            arg6: Any?
+            ev: idEventDef, arg1: Any?, arg2: Any?, arg3: Any?, arg4: Any?, arg5: Any?, arg6: Any?
         ): Boolean {
             return ProcessEventArgs(
                 ev,
@@ -957,14 +907,7 @@ class Class {
         }
 
         fun ProcessEvent(
-            ev: idEventDef,
-            arg1: Any?,
-            arg2: Any?,
-            arg3: Any?,
-            arg4: Any?,
-            arg5: Any?,
-            arg6: Any?,
-            arg7: Any?
+            ev: idEventDef, arg1: Any?, arg2: Any?, arg3: Any?, arg4: Any?, arg5: Any?, arg6: Any?, arg7: Any?
         ): Boolean {
             return ProcessEventArgs(
                 ev,
@@ -1030,10 +973,7 @@ class Class {
                     val name: String =
                         if (data[0] != null && data[0]!!.value as idClass? is idEntity) (data[0]!!.value as idEntity).GetName() else "NULL"
                     Game_local.gameLocal.Printf(
-                        "%d: '%s' activated by '%s'\n",
-                        Game_local.gameLocal.framenum,
-                        this.GetName(),
-                        name
+                        "%d: '%s' activated by '%s'\n", Game_local.gameLocal.framenum, this.GetName(), name
                     )
                 }
 
@@ -1041,8 +981,7 @@ class Class {
                 // In the Kotlin port, we use getEventCallBack virtual dispatch.
                 callback = getEventCallBack(ev!!)
 
-                if (callback == null) {
-                    // we don't respond to this event, so ignore it
+                if (callback == null) { // we don't respond to this event, so ignore it
                     return false
                 }
 
@@ -1053,8 +992,7 @@ class Class {
                 assert(D_EVENT_MAXARGS == 8)
 
                 when (ev.GetNumArgs()) {
-                    0, 1, 2, 3, 4, 5, 6, 7, 8 ->
-                        callback.accept(this, *data as Array<out idEventArg<*>>)
+                    0, 1, 2, 3, 4, 5, 6, 7, 8 -> callback.accept(this, *data as Array<out idEventArg<*>>)
 
                     else -> Game_local.gameLocal.Warning("Invalid formatspec on event '%s'", ev.GetName())
                 }
@@ -1121,8 +1059,7 @@ class Class {
             // NOTE: Differs from C++ — C++ checks c->eventMap[ev->GetEventNum()] using the
             // idTypeInfo eventMap. In the Kotlin port, we use getEventCallBack virtual dispatch.
             val c = this.GetType()
-            if (getEventCallBack(ev) == null) {
-                // we don't respond to this event, so ignore it
+            if (getEventCallBack(ev) == null) { // we don't respond to this event, so ignore it
                 return false
             }
 
@@ -1149,8 +1086,7 @@ class Class {
 
             // FIX: Restored the eventMap check that was commented out.
             // C++ checks c->eventMap[ev->GetEventNum()] before copying args.
-            if (getEventCallBack(ev) == null) {
-                // we don't respond to this event, so ignore it
+            if (getEventCallBack(ev) == null) { // we don't respond to this event, so ignore it
                 return false
             }
 
@@ -1165,8 +1101,7 @@ class Class {
          idClass::Event_SafeRemove
          ================
          */
-        private fun Event_SafeRemove() {
-            // Forces the remove to be done at a safe time
+        private fun Event_SafeRemove() { // Forces the remove to be done at a safe time
             PostEventMS(EV_Remove, 0)
         }
 
@@ -1178,9 +1113,7 @@ class Class {
         class DisplayInfo_f private constructor() : cmdFunction_t() {
             override fun run(args: CmdArgs.idCmdArgs?) {
                 Game_local.gameLocal.Printf(
-                    "Class memory status: %d bytes allocated in %d objects\n",
-                    memused,
-                    numobjects
+                    "Class memory status: %d bytes allocated in %d objects\n", memused, numobjects
                 )
             }
 
@@ -1273,8 +1206,7 @@ class Class {
             var i: Int
             val set: BooleanArray
             val num: Int
-            if (eventMap != null) {
-                // we've already been initialized by a subclass
+            if (eventMap != null) { // we've already been initialized by a subclass
                 return
             }
 
@@ -1311,14 +1243,12 @@ class Class {
             // are events.  NOTE: could save some space by keeping track of the maximum
             // event that the class responds to and doing range checking.
             num = idEventDef.NumEventCommands()
-            eventMap = arrayOfNulls<eventCallback_t<*>?>(num)
-            //	memset( eventMap, 0, sizeof( eventCallback_t ) * num );
+            eventMap = arrayOfNulls<eventCallback_t<*>?>(num) //	memset( eventMap, 0, sizeof( eventCallback_t ) * num );
             eventCallbackMemory += num * 4
 
             // allocate temporary memory for flags so that the subclass's event callbacks
             // override the superclass's event callback
-            set = BooleanArray(num)
-            //	memset( set, 0, sizeof( bool ) * num );
+            set = BooleanArray(num) //	memset( set, 0, sizeof( bool ) * num );
 
             // go through the inheritence order and copies the event callback function into
             // a list indexed by the event number.  This allows fast lookups of
@@ -1346,7 +1276,7 @@ class Class {
                 c = c.zuper
             }
 
-//	delete[] set;
+            //	delete[] set;
         }
 
         /*
@@ -1358,12 +1288,10 @@ class Class {
          from the class list since the program is shutting down.
          ================
          */
-        fun Shutdown() {
-            // free up the memory used for event lookups
-            if (eventMap != null) {
-//		if ( freeEventMap ) {
-//			delete[] eventMap;
-//		}
+        fun Shutdown() { // free up the memory used for event lookups
+            if (eventMap != null) { //		if ( freeEventMap ) {
+                //			delete[] eventMap;
+                //		}
                 eventMap = null
             }
             typeNum = 0
@@ -1388,8 +1316,7 @@ class Class {
          ================
          */
         fun RespondsTo(ev: idEventDef): Boolean {
-            assert(Event.initialized)
-            // we don't respond to this event
+            assert(Event.initialized) // we don't respond to this event
             return null != eventMap!![ev.GetEventNum()]
         }
 
@@ -1418,8 +1345,9 @@ class Class {
             // Check if any subclasses were initialized before their superclass
             type = typelist
             while (type != null) {
-                if (type.zuper == null && idStr.Cmp(type.superclass, this.classname) == 0
-                    && idStr.Cmp(type.classname, "idClass") != 0
+                if (type.zuper == null && idStr.Cmp(type.superclass, this.classname) == 0 && idStr.Cmp(
+                        type.classname, "idClass"
+                    ) != 0
                 ) {
                     type.zuper = this
                 }
@@ -1428,8 +1356,9 @@ class Class {
 
             // Also check in typeRegistry for subclasses that were registered before us
             for (registered in typeRegistry.values) {
-                if (registered.zuper == null && idStr.Cmp(registered.superclass, this.classname) == 0
-                    && idStr.Cmp(registered.classname, "idClass") != 0
+                if (registered.zuper == null && idStr.Cmp(registered.superclass, this.classname) == 0 && idStr.Cmp(
+                        registered.classname, "idClass"
+                    ) != 0
                 ) {
                     registered.zuper = this
                 }
@@ -1465,8 +1394,7 @@ class Class {
  order that was handled by CLASS_DECLARATION macros.
  ================
  */
-fun registerAllTypes() {
-    // idClass (base)
+fun registerAllTypes() { // idClass (base)
     idClass.Type
 
     // Entity

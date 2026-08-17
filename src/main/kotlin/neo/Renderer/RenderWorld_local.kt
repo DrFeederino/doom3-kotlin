@@ -25,7 +25,6 @@ Translated to Kotlin by Dr. Feederino with support of Claude Code.
 */
 package neo.Renderer
 
-import neo.Renderer.*
 import neo.Renderer.Interaction.areaNumRef_s
 import neo.Renderer.Interaction.idInteraction
 import neo.Renderer.Material.idMaterial
@@ -85,7 +84,6 @@ import neo.idlib.math.idMath.Tan16
 import neo.sys.win_shared.Sys_Milliseconds
 import neo.ui.UserInterface.uiManager
 import org.lwjgl.opengl.GL11
-import java.nio.*
 import java.util.*
 import kotlin.math.sqrt
 
@@ -246,8 +244,7 @@ object RenderWorld_local {
             interactionTableHeight = 0
         }
 
-        override fun AddEntityDef(re: renderEntity_s): Int {
-            // try and reuse a free spot
+        override fun AddEntityDef(re: renderEntity_s): Int { // try and reuse a free spot
             var entityHandle: Int = entityDefs.FindNull()
             if (entityHandle == -1) {
                 entityHandle = entityDefs.Append(null as idRenderEntityLocal?)
@@ -293,8 +290,7 @@ object RenderWorld_local {
                         val originMatch: Boolean = re.origin.equals(def.parms.origin)
                         val boundsMatch: Boolean = re.bounds.equals(def.referenceBounds)
                         val modelMatch: Boolean = (re.hModel === def.parms.hModel)
-                        if (boundsMatch && originMatch && axisMatch && modelMatch) {
-                            // only clear the dynamic model and interaction surfaces if they exist
+                        if (boundsMatch && originMatch && axisMatch && modelMatch) { // only clear the dynamic model and interaction surfaces if they exist
                             c_callbackUpdate++
                             tr_lightrun.R_ClearEntityDefDynamicModel(def)
                             def.parms = renderEntity_s(re)
@@ -309,8 +305,7 @@ object RenderWorld_local {
                 } else {
                     tr_lightrun.R_FreeEntityDefDerivedData(def, false, false)
                 }
-            } else {
-                // creating a new one
+            } else { // creating a new one
                 def = idRenderEntityLocal()
                 entityDefs[entityHandle] = def
                 def.world = this
@@ -374,9 +369,7 @@ object RenderWorld_local {
             val def: idRenderEntityLocal?
             if (entityHandle < 0 || entityHandle >= entityDefs.Num()) {
                 Common.common.Printf(
-                    "idRenderWorld::GetRenderEntity: invalid handle %d [0, %d]\n",
-                    entityHandle,
-                    entityDefs.Num()
+                    "idRenderWorld::GetRenderEntity: invalid handle %d [0, %d]\n", entityHandle, entityDefs.Num()
                 )
                 return null
             }
@@ -388,8 +381,7 @@ object RenderWorld_local {
             return def.parms
         }
 
-        override fun AddLightDef(rlight: renderLight_s): Int {
-            // try and reuse a free spot
+        override fun AddLightDef(rlight: renderLight_s): Int { // try and reuse a free spot
             var lightHandle: Int = lightDefs.FindNull()
             if (lightHandle == -1) {
                 lightHandle = lightDefs.Append(null as idRenderLightLocal?)
@@ -426,25 +418,24 @@ object RenderWorld_local {
             }
             var justUpdate = false
             var light: idRenderLightLocal? = lightDefs[lightHandle]
-            if (light != null) {
-                // if the shape of the light stays the same, we don't need to dump
+            if (light != null) { // if the shape of the light stays the same, we don't need to dump
                 // any of our derived data, because shader parms are calculated every frame
-                if ((rlight.axis.equals(light.parms.axis) && rlight.end.equals(light.parms.end)
-                            && rlight.lightCenter.equals(light.parms.lightCenter) && rlight.lightRadius.equals(light.parms.lightRadius)
-                            && (rlight.noShadows == light.parms.noShadows) && rlight.origin.equals(light.parms.origin)
-                            && (rlight.parallel == light.parms.parallel) && (rlight.pointLight == light.parms.pointLight
-                            ) && rlight.right.equals(light.parms.right) && rlight.start.equals(light.parms.start)
-                            && rlight.target.equals(light.parms.target) && rlight.up.equals(light.parms.up)
-                            && (rlight.shader === light.lightShader) && (rlight.prelightModel === light.parms.prelightModel))
+                if ((rlight.axis.equals(light.parms.axis) && rlight.end.equals(light.parms.end) && rlight.lightCenter.equals(
+                        light.parms.lightCenter
+                    ) && rlight.lightRadius.equals(light.parms.lightRadius) && (rlight.noShadows == light.parms.noShadows) && rlight.origin.equals(
+                        light.parms.origin
+                    ) && (rlight.parallel == light.parms.parallel) && (rlight.pointLight == light.parms.pointLight) && rlight.right.equals(
+                        light.parms.right
+                    ) && rlight.start.equals(light.parms.start) && rlight.target.equals(light.parms.target) && rlight.up.equals(
+                        light.parms.up
+                    ) && (rlight.shader === light.lightShader) && (rlight.prelightModel === light.parms.prelightModel))
                 ) {
                     justUpdate = true
-                } else {
-                    // if we are updating shadows, the prelight model is no longer valid
+                } else { // if we are updating shadows, the prelight model is no longer valid
                     light.lightHasMoved = true
                     tr_lightrun.R_FreeLightDefDerivedData(light)
                 }
-            } else {
-                // create a new one
+            } else { // create a new one
                 light = idRenderLightLocal()
                 lightDefs[lightHandle] = light
                 light.world = this
@@ -478,9 +469,7 @@ object RenderWorld_local {
             val light: idRenderLightLocal?
             if (lightHandle < 0 || lightHandle >= lightDefs.Num()) {
                 Common.common.Printf(
-                    "idRenderWorld::FreeLightDef: invalid handle %d [0, %d]\n",
-                    lightHandle,
-                    lightDefs.Num()
+                    "idRenderWorld::FreeLightDef: invalid handle %d [0, %d]\n", lightHandle, lightDefs.Num()
                 )
                 return
             }
@@ -560,9 +549,7 @@ object RenderWorld_local {
             val end = Sys_Milliseconds()
             val msec = end - start
             Common.common.Printf(
-                "idRenderWorld::GenerateAllInteractions, msec = %d, staticAllocCount = %d.\n",
-                msec,
-                tr.staticAllocCount
+                "idRenderWorld::GenerateAllInteractions, msec = %d, staticAllocCount = %d.\n", msec, tr.staticAllocCount
             )
 
             // build the interaction table
@@ -617,13 +604,7 @@ object RenderWorld_local {
             val info = decalProjectionInfo_s()
             val localInfo = decalProjectionInfo_s()
             if (!idRenderModelDecal.CreateProjectionInfo(
-                    info,
-                    winding,
-                    projectionOrigin,
-                    parallel,
-                    fadeDepth,
-                    material,
-                    startTime
+                    info, winding, projectionOrigin, parallel, fadeDepth, material, startTime
                 )
             ) {
                 return
@@ -663,10 +644,7 @@ object RenderWorld_local {
 
                     // transform the bounding planes, fade planes and texture axis into local space
                     idRenderModelDecal.GlobalProjectionInfoToLocal(
-                        localInfo,
-                        info,
-                        def.parms.origin,
-                        def.parms.axis
+                        localInfo, info, def.parms.origin, def.parms.axis
                     )
                     localInfo.force = (def.parms.customShader != null)
                     if (def.decals == null) {
@@ -703,13 +681,7 @@ object RenderWorld_local {
                 return
             }
             if (!idRenderModelDecal.CreateProjectionInfo(
-                    info,
-                    winding,
-                    projectionOrigin,
-                    parallel,
-                    fadeDepth,
-                    material,
-                    startTime
+                    info, winding, projectionOrigin, parallel, fadeDepth, material, startTime
                 )
             ) {
                 return
@@ -732,9 +704,7 @@ object RenderWorld_local {
         }
 
         override fun ProjectOverlay(
-            entityHandle: Int,
-            localTextureAxis: Array<idPlane?>?,
-            material: idMaterial?
+            entityHandle: Int, localTextureAxis: Array<idPlane?>?, material: idMaterial?
         ) {
             if (entityHandle < 0 || entityHandle >= entityDefs.Num()) {
                 Common.common.Error("idRenderWorld::ProjectOverlay: index = %d", entityHandle)
@@ -804,9 +774,7 @@ object RenderWorld_local {
                 }
                 if (renderView.fov_x <= 0 || renderView.fov_y <= 0) {
                     Common.common.Error(
-                        "idRenderWorld::RenderScene: bad FOVs: %f, %f",
-                        renderView.fov_x,
-                        renderView.fov_y
+                        "idRenderWorld::RenderScene: bad FOVs: %f, %f", renderView.fov_x, renderView.fov_y
                     )
                 }
 
@@ -873,8 +841,7 @@ object RenderWorld_local {
                     parms.viewEntitys = origParms.viewEntitys
                     parms.connectedAreas = origParms.connectedAreas
 
-                } else {
-                    // save current viewDef so it can be used if we enable r_lockSurfaces in the next frame
+                } else { // save current viewDef so it can be used if we enable r_lockSurfaces in the next frame
                     tr.lockSurfacesViewDef = viewDef_s(parms)
                 }
 
@@ -943,7 +910,7 @@ object RenderWorld_local {
                 node = areaNodes!![nodeNum]
             }
 
-//            return -1;
+            //            return -1;
         }
 
         /*
@@ -956,12 +923,16 @@ object RenderWorld_local {
          */
         override fun BoundsInAreas(bounds: idBounds, areas: IntArray?, maxAreas: Int): Int {
             val numAreas = IntArray(1)
-            assert((areas != null))
-            // DG: apparently this happens sometimes.. handle it more gracefully than an assertion.
+            assert((areas != null)) // DG: apparently this happens sometimes.. handle it more gracefully than an assertion.
             if (bounds[0][0] > bounds[1][0] || bounds[0][1] > bounds[1][1] || bounds[0][2] > bounds[1][2]) {
                 Common.common.Warning(
                     "idRenderWorld::BoundsInAreas() called with invalid bounds: { { %f %f %f }, { %f %f %f } } !",
-                    bounds[0][0], bounds[0][1], bounds[0][2], bounds[1][0], bounds[1][1], bounds[1][2]
+                    bounds[0][0],
+                    bounds[0][1],
+                    bounds[0][2],
+                    bounds[1][0],
+                    bounds[1][1],
+                    bounds[1][2]
                 )
                 return numAreas[0]
             }
@@ -1071,8 +1042,7 @@ object RenderWorld_local {
                 if (null == shader) {
                     j++
                     continue
-                }
-                // only trace against gui surfaces
+                } // only trace against gui surfaces
                 if (!shader.HasGui()) {
                     j++
                     continue
@@ -1098,11 +1068,7 @@ object RenderWorld_local {
         }
 
         override fun ModelTrace(
-            trace: modelTrace_s,
-            entityHandle: Int,
-            start: idVec3,
-            end: idVec3,
-            radius: Float
+            trace: modelTrace_s, entityHandle: Int, start: idVec3, end: idVec3, radius: Float
         ): Boolean {
             var i: Int
             var collisionSurface: Boolean
@@ -1114,8 +1080,7 @@ object RenderWorld_local {
             val localEnd = idVec3()
             var shader: idMaterial?
             trace.fraction = 1.0f
-            if (entityHandle < 0 || entityHandle >= entityDefs.Num()) {
-//		common.Error( "idRenderWorld::ModelTrace: index = %i", entityHandle );
+            if (entityHandle < 0 || entityHandle >= entityDefs.Num()) { //		common.Error( "idRenderWorld::ModelTrace: index = %i", entityHandle );
                 return false
             }
             val def: idRenderEntityLocal? = entityDefs[entityHandle]
@@ -1156,14 +1121,12 @@ object RenderWorld_local {
                     i++
                     continue
                 }
-                if (collisionSurface) {
-                    // only trace vs collision surfaces
+                if (collisionSurface) { // only trace vs collision surfaces
                     if (0 == (shader.GetSurfaceFlags() and Material.SURF_COLLISION)) {
                         i++
                         continue
                     }
-                } else {
-                    // skip if not drawn or translucent
+                } else { // skip if not drawn or translucent
                     if (!shader.IsDrawn() || (shader.Coverage() != materialCoverage_t.MC_OPAQUE && shader.Coverage() != materialCoverage_t.MC_PERFORATED)) {
                         i++
                         continue
@@ -1177,10 +1140,7 @@ object RenderWorld_local {
                     trace.material = shader
                     trace.entity = def.parms
                     trace.jointNumber = refEnt.hModel!!.NearestJoint(
-                        i,
-                        localTrace.indexes[0],
-                        localTrace.indexes[1],
-                        localTrace.indexes[2]
+                        i, localTrace.indexes[0], localTrace.indexes[1], localTrace.indexes[2]
                     )
                 }
                 i++
@@ -1327,10 +1287,7 @@ object RenderWorld_local {
                             trace.material = shader
                             trace.entity = def.parms
                             trace.jointNumber = model.NearestJoint(
-                                j,
-                                localTrace.indexes[0],
-                                localTrace.indexes[1],
-                                localTrace.indexes[2]
+                                j, localTrace.indexes[0], localTrace.indexes[1], localTrace.indexes[2]
                             )
                             traceBounds.Clear()
                             traceBounds.AddPoint(start)
@@ -1374,10 +1331,9 @@ object RenderWorld_local {
             var s: Float
             var i: Int
             DebugLine(color, start, end, lifetime)
-            if (r_debugArrowStep!!.GetInteger() <= 10) {
+            if (r_debugArrowStep.GetInteger() <= 10) {
                 return
-            }
-            // calculate sine and cosine when step size changes
+            } // calculate sine and cosine when step size changes
             if (arrowStep != r_debugArrowStep.GetInteger()) {
                 arrowStep = r_debugArrowStep.GetInteger()
                 i = 0
@@ -1390,8 +1346,7 @@ object RenderWorld_local {
                 }
                 arrowCos[i] = arrowCos[0]
                 arrowSin[i] = arrowSin[0]
-            }
-            // draw a nice arrow
+            } // draw a nice arrow
             forward.set(end.minus((start)))
             forward.Normalize()
             forward.NormalVectors(right, up)
@@ -1416,12 +1371,7 @@ object RenderWorld_local {
         }
 
         override fun DebugWinding(
-            color: idVec4,
-            w: idWinding,
-            origin: idVec3,
-            axis: idMat3,
-            lifetime: Int,
-            depthTest: Boolean
+            color: idVec4, w: idWinding, origin: idVec3, axis: idMat3, lifetime: Int, depthTest: Boolean
         ) {
             var i: Int
             val point = idVec3()
@@ -1440,13 +1390,7 @@ object RenderWorld_local {
         }
 
         override fun DebugCircle(
-            color: idVec4,
-            origin: idVec3,
-            dir: idVec3,
-            radius: Float,
-            numSteps: Int,
-            lifetime: Int,
-            depthTest: Boolean
+            color: idVec4, origin: idVec3, dir: idVec3, radius: Float, numSteps: Int, lifetime: Int, depthTest: Boolean
         ) {
             var i: Int
             var a: Float
@@ -1580,12 +1524,7 @@ object RenderWorld_local {
          ============
          */
         override fun DebugCone(
-            color: idVec4,
-            apex: idVec3,
-            dir: idVec3,
-            radius1: Float,
-            radius2: Float,
-            lifetime: Int
+            color: idVec4, apex: idVec3, dir: idVec3, radius1: Float, radius2: Float, lifetime: Int
         ) {
             var i: Int
             val axis = idMat3()
@@ -1605,8 +1544,7 @@ object RenderWorld_local {
                 i = 20
                 while (i <= 360) {
                     d.set(
-                        axis[0].times(Sin16(DEG2RAD(i.toFloat())))
-                            .plus(axis[1].times(Cos16(DEG2RAD(i.toFloat()))))
+                        axis[0].times(Sin16(DEG2RAD(i.toFloat()))).plus(axis[1].times(Cos16(DEG2RAD(i.toFloat()))))
                     )
                     p2.set(top.plus(d.times(radius2)))
                     DebugLine(color, lastp2, p2, lifetime)
@@ -1619,8 +1557,7 @@ object RenderWorld_local {
                 i = 20
                 while (i <= 360) {
                     d.set(
-                        axis[0].times(Sin16(DEG2RAD(i.toFloat())))
-                            .plus(axis[1].times(Cos16(DEG2RAD(i.toFloat()))))
+                        axis[0].times(Sin16(DEG2RAD(i.toFloat()))).plus(axis[1].times(Cos16(DEG2RAD(i.toFloat()))))
                     )
                     p1.set(apex.plus(d.times(radius1)))
                     p2.set(top.plus(d.times(radius2)))
@@ -1658,9 +1595,7 @@ object RenderWorld_local {
             while (i < 4) {
                 p[i].set(
                     idVec3(
-                        bounds[0][0],
-                        bounds[(i xor (i shr 1)) and 1].y,
-                        bounds[(i shr 1) and 1].z
+                        bounds[0][0], bounds[(i xor (i shr 1)) and 1].y, bounds[(i shr 1) and 1].z
                     )
                 )
                 p[i].set(viewDef.renderView.vieworg.plus(p[i].times(viewDef.renderView.viewaxis)))
@@ -1819,7 +1754,7 @@ object RenderWorld_local {
             src.ExpectTokenString("}")
 
             // we do NOT do a model.FinishSurfaceces, because we don't need sil edges, planes, tangents, etc.
-//	model.FinishSurfaces();
+            //	model.FinishSurfaces();
             return model
         }
 
@@ -1872,8 +1807,7 @@ object RenderWorld_local {
                 w.SetNumPoints(numPoints)
                 j = 0
                 while (j < numPoints) {
-                    src.Parse1DMatrix(3, w[j])
-                    // no texture coordinates
+                    src.Parse1DMatrix(3, w[j]) // no texture coordinates
                     w[j][3] = 0.0f
                     w[j][4] = 0.0f
                     j++
@@ -1995,9 +1929,9 @@ object RenderWorld_local {
             }
             localModels.Clear()
 
-//            areaReferenceAllocator.Shutdown();
-//            interactionAllocator.Shutdown();
-//            areaNumRefAllocator.Shutdown();
+            //            areaReferenceAllocator.Shutdown();
+            //            interactionAllocator.Shutdown();
+            //            areaNumRefAllocator.Shutdown();
             mapName.set("<FREED>")
         }
 
@@ -2179,8 +2113,7 @@ object RenderWorld_local {
             val currentTimeStamp = LongArray(1)
             fileSystem.ReadFile(filename.toString(), null, currentTimeStamp)
             if (mapName.equals(name)) {
-                if (currentTimeStamp[0] != FILE_NOT_FOUND_TIMESTAMP.toLong() && currentTimeStamp[0] == mapTimeStamp[0]
-                ) {
+                if (currentTimeStamp[0] != FILE_NOT_FOUND_TIMESTAMP.toLong() && currentTimeStamp[0] == mapTimeStamp[0]) {
                     Common.common.Printf("idRenderWorldLocal::InitFromMap: retaining existing map\n")
                     FreeDefs()
                     TouchWorldModels()
@@ -2206,9 +2139,7 @@ object RenderWorld_local {
             }
             if (!src.ReadToken(token) || token.Icmp(RenderWorld.PROC_FILE_ID) != 0) {
                 Common.common.Printf(
-                    "idRenderWorldLocal::InitFromMap: bad id '%s' instead of '%s'\n",
-                    token,
-                    RenderWorld.PROC_FILE_ID
+                    "idRenderWorldLocal::InitFromMap: bad id '%s' instead of '%s'\n", token, RenderWorld.PROC_FILE_ID
                 )
                 return false
             }
@@ -2279,10 +2210,8 @@ object RenderWorld_local {
                     w[i].x * space.modelMatrix[2] + w[i].y * space.modelMatrix[6] + w[i].z * space.modelMatrix[10] + space.modelMatrix[14]
                 )
                 tr_main.R_GlobalToNormalizedDeviceCoordinates(v, ndc)
-                windowX =
-                    0.5f * (1.0f + ndc[0]) * (tr.viewDef!!.viewport.x2 - tr.viewDef!!.viewport.x1)
-                windowY =
-                    0.5f * (1.0f + ndc[1]) * (tr.viewDef!!.viewport.y2 - tr.viewDef!!.viewport.y1)
+                windowX = 0.5f * (1.0f + ndc[0]) * (tr.viewDef!!.viewport.x2 - tr.viewDef!!.viewport.x1)
+                windowY = 0.5f * (1.0f + ndc[1]) * (tr.viewDef!!.viewport.y2 - tr.viewDef!!.viewport.y1)
                 r.AddPoint(windowX, windowY)
                 i++
             }
@@ -2305,10 +2234,7 @@ object RenderWorld_local {
             val size: Int = lightShader.GetNumRegisters()
             val regs = FloatArray(size)
             lightShader.EvaluateRegisters(
-                regs,
-                ldef.parms.shaderParms,
-                tr.viewDef!!,
-                ldef.parms.referenceSound
+                regs, ldef.parms.shaderParms, tr.viewDef!!, ldef.parms.referenceSound
             )
             val stage: shaderStage_t? = lightShader.GetStage(0)
             val alpha: Float = regs[stage!!.color.registers[3]]
@@ -2317,8 +2243,7 @@ object RenderWorld_local {
             val a: Float
             if (alpha <= 1.0f) {
                 a = -0.5f / DEFAULT_FOG_DISTANCE
-            } else {
-                // otherwise, distance = alpha color
+            } else { // otherwise, distance = alpha color
                 a = -0.5f / alpha
             }
             forward[0] = a * tr.viewDef!!.worldSpace.modelViewMatrix[2]
@@ -2409,9 +2334,7 @@ object RenderWorld_local {
                 j = 0
                 while (j < ps.numPortalPlanes) {
                     if (!w.ClipInPlaceNoAlloc(
-                            NegativePlaneToScratch(ps.portalPlanes[j]),
-                            portalFlowClipScratch,
-                            0.0f
+                            NegativePlaneToScratch(ps.portalPlanes[j]), portalFlowClipScratch, 0.0f
                         )
                     ) {
                         break
@@ -2568,8 +2491,7 @@ object RenderWorld_local {
 
                 // if we are very close to the portal surface, don't bother clipping
                 // it, which tends to give epsilon problems that make the area vanish
-                if (d < 1.0f) {
-                    // go through this portal
+                if (d < 1.0f) { // go through this portal
                     newStack = portalStack_s(ps)
                     newStack.p = p
                     newStack.next = ps
@@ -2583,9 +2505,7 @@ object RenderWorld_local {
                 j = 0
                 while (j < ps.numPortalPlanes) {
                     if (!w.ClipInPlaceNoAlloc(
-                            NegativePlaneToScratch(ps.portalPlanes[j]),
-                            portalFlowClipScratch,
-                            0.0f
+                            NegativePlaneToScratch(ps.portalPlanes[j]), portalFlowClipScratch, 0.0f
                         )
                     ) {
                         break
@@ -2595,15 +2515,12 @@ object RenderWorld_local {
                 if (0 == w.GetNumPoints()) {
                     p = p.next
                     continue  // portal not visible
-                }
-                // also always clip to the original light planes, because they aren't
+                } // also always clip to the original light planes, because they aren't
                 // necessarily extending to infinitiy like a view frustum
                 j = 0
                 while (j < firstPortalStack.numPortalPlanes) {
                     if (!w.ClipInPlaceNoAlloc(
-                            NegativePlaneToScratch(firstPortalStack.portalPlanes[j]),
-                            portalFlowClipScratch,
-                            0.0f
+                            NegativePlaneToScratch(firstPortalStack.portalPlanes[j]), portalFlowClipScratch, 0.0f
                         )
                     ) {
                         break
@@ -2688,10 +2605,7 @@ object RenderWorld_local {
         }
 
         fun FloodFrustumAreas_r(
-            frustum: idFrustum,
-            areaNum: Int,
-            bounds: idBounds,
-            areas: areaNumRef_s
+            frustum: idFrustum, areaNum: Int, bounds: idBounds, areas: areaNumRef_s
         ): areaNumRef_s {
             var areas: areaNumRef_s = areas
             var p: portal_s?
@@ -2733,10 +2647,7 @@ object RenderWorld_local {
                 // get the bounds for the portal winding projected in the frustum
                 frustum.ProjectionBounds((p.w)!!, newBounds)
                 newBounds.IntersectSelf((bounds))
-                if ((newBounds[0][0] > newBounds[1][0]
-                            ) || (newBounds[0][1] > newBounds[1][1]
-                            ) || (newBounds[0][2] > newBounds[1][2])
-                ) {
+                if ((newBounds[0][0] > newBounds[1][0]) || (newBounds[0][1] > newBounds[1][1]) || (newBounds[0][2] > newBounds[1][2])) {
                     p = p.next
                     continue
                 }
@@ -2783,21 +2694,15 @@ object RenderWorld_local {
          ================
          */
         fun CullEntityByPortals(entity: idRenderEntityLocal, ps: portalStack_s): Boolean {
-            if (!r_useEntityCulling!!.GetBool()) {
-                return false
-            }
+            return r_useEntityCulling.GetBool() && tr_main.R_CullLocalBox(
+                entity.referenceBounds, entity.modelMatrix, ps.numPortalPlanes, ps.portalPlanes as Array<idPlane?>
+            )
 
             // try to cull the entire thing using the reference bounds.
             // we do not yet do callbacks or dynamic model creation,
             // because we want to do all touching of the model after
             // we have determined all the lights that may effect it,
             // which optimizes cache usage
-            return tr_main.R_CullLocalBox(
-                entity.referenceBounds,
-                entity.modelMatrix,
-                ps.numPortalPlanes,
-                ps.portalPlanes as Array<idPlane?>
-            )
         }
 
         /*
@@ -2812,8 +2717,7 @@ object RenderWorld_local {
             var ref: areaReference_s
             var entity: idRenderEntityLocal
             val area: portalArea_s
-            var vEnt: viewEntity_s
-            //            idBounds b;
+            var vEnt: viewEntity_s //            idBounds b;
             area = portalAreas!![areaNum]
             ref = area.entityRefs.areaNext!!
             while (ref !== area.entityRefs) {
@@ -2841,8 +2745,7 @@ object RenderWorld_local {
                 }
 
                 // cull reference bounds
-                if (CullEntityByPortals(entity, ps)) {
-                    // we are culled out through this portal chain, but it might
+                if (CullEntityByPortals(entity, ps)) { // we are culled out through this portal chain, but it might
                     // still be visible through others
                     ref = ref.areaNext!!
                     continue
@@ -2868,13 +2771,13 @@ object RenderWorld_local {
             var j: Int
             val tri: srfTriangles_s
             var d: Float
-            val lightCulling = r_useLightCulling!!.GetInteger()
+            val lightCulling = r_useLightCulling.GetInteger()
             if (lightCulling == 0) {
                 return false
             }
             if (lightCulling >= 2) {
-                val w = lightCullWindingScratch // we won't overflow because MAX_PORTAL_PLANES = 20
-                // exact clip of light faces against all planes
+                val w =
+                    lightCullWindingScratch // we won't overflow because MAX_PORTAL_PLANES = 20 // exact clip of light faces against all planes
                 i = 0
                 while (i < 6) {
 
@@ -2905,14 +2808,12 @@ object RenderWorld_local {
                         }
                         j++
                     }
-                    if (w.GetNumPoints() != 0) {
-                        // part of the winding is visible through the portalStack,
+                    if (w.GetNumPoints() != 0) { // part of the winding is visible through the portalStack,
                         // so the light is not culled
                         return false
                     }
                     i++
-                }
-                // none of the light surfaces were visible
+                } // none of the light surfaces were visible
                 return true
             } else {
 
@@ -2924,14 +2825,13 @@ object RenderWorld_local {
                 while (i < ps.numPortalPlanes - 1) {
                     j = 0
                     while (j < tri.numVerts) {
-                        d = ps.portalPlanes[i].Distance(tri.verts!![j]!!.xyz)
+                        d = ps.portalPlanes[i].Distance(tri.verts!![j].xyz)
                         if (d < 0.0f) {
                             break // point is inside this plane
                         }
                         j++
                     }
-                    if (j == tri.numVerts) {
-                        // all points were outside one of the planes
+                    if (j == tri.numVerts) { // all points were outside one of the planes
                         tr.pc!!.c_box_cull_out++
                         return true
                     }
@@ -2953,24 +2853,20 @@ object RenderWorld_local {
                 light = lref.light!!
 
                 // debug tool to allow viewing of only one light at a time
-                if (r_singleLight!!.GetInteger() >= 0 && r_singleLight!!.GetInteger() != light.index) {
+                if (r_singleLight.GetInteger() >= 0 && r_singleLight.GetInteger() != light.index) {
                     lref = lref.areaNext!!
                     continue
                 }
 
                 // check for being closed off behind a door
                 // a light that doesn't cast shadows will still light even if it is behind a door
-                if (((r_useLightCulling!!.GetInteger() >= 3
-                            ) && !light.parms.noShadows._val && light.lightShader!!.LightCastsShadows()
-                            && (light.areaNum != -1) && !tr.viewDef!!.connectedAreas!![light.areaNum])
-                ) {
+                if (((r_useLightCulling.GetInteger() >= 3) && !light.parms.noShadows._val && light.lightShader!!.LightCastsShadows() && (light.areaNum != -1) && !tr.viewDef!!.connectedAreas!![light.areaNum])) {
                     lref = lref.areaNext!!
                     continue
                 }
 
                 // cull frustum
-                if (CullLightByPortals(light, ps)) {
-                    // we are culled out through this portal chain, but it might
+                if (CullLightByPortals(light, ps)) { // we are culled out through this portal chain, but it might
                     // still be visible through others
                     lref = lref.areaNext!!
                     continue
@@ -2991,8 +2887,7 @@ object RenderWorld_local {
          if more than one portal sees into the area
          ===================
          */
-        fun AddAreaRefs(areaNum: Int, ps: portalStack_s) {
-            // mark the viewCount, so r_showPortals can display the
+        fun AddAreaRefs(areaNum: Int, ps: portalStack_s) { // mark the viewCount, so r_showPortals can display the
             // considered portals
             portalAreas!![areaNum].viewCount = tr.viewCount
 
@@ -3041,15 +2936,13 @@ object RenderWorld_local {
             BuildConnectedAreas_r(tr.viewDef!!.areaNum)
         }
 
-        fun FindViewLightsAndEntities() {
-            // clear the visible lightDef and entityDef lists
+        fun FindViewLightsAndEntities() { // clear the visible lightDef and entityDef lists
             tr.viewDef!!.viewLights = null
             tr.viewDef!!.viewEntitys = null
             tr.viewDef!!.numViewEntitys = 0
 
             // find the area to start the portal flooding in
-            if (!r_usePortals!!.GetBool()) {
-                // debug tool to force no portal culling
+            if (!r_usePortals.GetBool()) { // debug tool to force no portal culling
                 tr.viewDef!!.areaNum = -1
             } else {
                 tr.viewDef!!.areaNum = PointInArea(tr.viewDef!!.initialViewAreaOrigin)
@@ -3065,8 +2958,7 @@ object RenderWorld_local {
             tr.DBG_viewCount++
 
             // flow through all the portals and add models / lights
-            if (r_singleArea!!.GetBool()) {
-                // if debugging, only mark this area
+            if (r_singleArea.GetBool()) { // if debugging, only mark this area
                 // if we are outside the world, don't draw anything
                 if (tr.viewDef!!.areaNum >= 0) {
                     val ps = portalStack_s()
@@ -3084,14 +2976,11 @@ object RenderWorld_local {
                     ps.rect = idScreenRect(tr.viewDef!!.scissor)
                     AddAreaRefs(tr.viewDef!!.areaNum, ps)
                 }
-            } else {
-                // note that the center of projection for flowing through portals may
+            } else { // note that the center of projection for flowing through portals may
                 // be a different point than initialViewAreaOrigin for subviews that
                 // may have the viewOrigin in a solid/invalid area
                 FlowViewThroughPortals(
-                    tr.viewDef!!.renderView.vieworg,
-                    5,
-                    tr.viewDef!!.frustum as Array<idPlane?>
+                    tr.viewDef!!.renderView.vieworg, 5, tr.viewDef!!.frustum as Array<idPlane?>
                 )
             }
         }
@@ -3160,8 +3049,7 @@ object RenderWorld_local {
                 if (((old xor blockTypes) and (1 shl i)) != 0) {
                     connectedAreaNum++
                     FloodConnectedAreas(
-                        portalAreas!![doublePortals!![portal - 1]!!.portals[1]!!.intoArea],
-                        i
+                        portalAreas!![doublePortals!![portal - 1]!!.portals[1]!!.intoArea], i
                     )
                 }
             }
@@ -3198,8 +3086,7 @@ object RenderWorld_local {
             }
             if (attribute >= RenderWorld.NUM_PORTAL_ATTRIBUTES || (1 shl attribute) != connection.ordinal) {
                 Common.common.Error(
-                    "idRenderWorldLocal::AreasAreConnected: bad connection number: %d\n",
-                    connection.ordinal
+                    "idRenderWorldLocal::AreasAreConnected: bad connection number: %d\n", connection.ordinal
                 )
             }
             return portalAreas!![areaNum1].connectedAreaNum[attribute] == portalAreas!![areaNum2].connectedAreaNum[attribute]
@@ -3252,11 +3139,9 @@ object RenderWorld_local {
                         p = p.next
                         continue
                     }
-                    if (portalAreas!![p.intoArea].viewCount != tr.viewCount) {
-                        // red = can't see
+                    if (portalAreas!![p.intoArea].viewCount != tr.viewCount) { // red = can't see
                         qgl.qglColor3f(1.0f, 0.0f, 0.0f)
-                    } else {
-                        // green = see through
+                    } else { // green = see through
                         qgl.qglColor3f(0.0f, 1.0f, 0.0f)
                     }
                     qgl.qglBegin(GL11.GL_LINE_LOOP)
@@ -3310,9 +3195,7 @@ object RenderWorld_local {
         }
 
         override fun ProcessDemoCommand(
-            readDemo: idDemoFile?,
-            renderView: renderView_s,
-            demoTimeOffset: CInt
+            readDemo: idDemoFile?, renderView: renderView_s, demoTimeOffset: CInt
         ): Boolean {
             var newMap = false
             val viewShadow = RenderWorld.renderViewShadow()
@@ -3322,23 +3205,19 @@ object RenderWorld_local {
             val dc: demoCommand_t
             val d = CInt()
             val h = CInt()
-            if (readDemo.ReadInt(d) == 0) {
-                // a demoShot may not have an endFrame, but it is still valid
+            if (readDemo.ReadInt(d) == 0) { // a demoShot may not have an endFrame, but it is still valid
                 return false
             }
             dc = demoCommand_t.values()[d._val]
             when (dc) {
-                demoCommand_t.DC_LOADMAP -> {
-                    // read the initial data
+                demoCommand_t.DC_LOADMAP -> { // read the initial data
                     val header = demoHeader_t()
-                    readDemo.ReadInt(header.version)
-                    // DG: bumped version to 5 for nospecular support, still support old demos though.
+                    readDemo.ReadInt(header.version) // DG: bumped version to 5 for nospecular support, still support old demos though.
                     if (header.version._val != 4 && header.version._val != 5) {
                         Common.common.Error("Demo version mismatch.\n")
                     }
                     readDemo.ReadInt(header.sizeofRenderEntity)
-                    readDemo.ReadInt(header.sizeofRenderLight)
-                    // DG: set allowNoSpecular from demo, if it's v5 (otherwise default to false)
+                    readDemo.ReadInt(header.sizeofRenderLight) // DG: set allowNoSpecular from demo, if it's v5 (otherwise default to false)
                     val allowNoSpecular = CInt()
                     if (header.version._val == 5) {
                         readDemo.ReadInt(allowNoSpecular)
@@ -3350,11 +3229,10 @@ object RenderWorld_local {
                         header.mapname[i] = Char(c[0].toUShort())
                         i++
                     }
-                    if (r_showDemo!!.GetBool()) {
+                    if (r_showDemo.GetBool()) {
                         Common.common.Printf("DC_LOADMAP: %s\n", header.mapname)
                     }
-                    InitFromMap(ctos(header.mapname))
-                    // DG: must be set after InitFromMap(), because that sets it to false as a default
+                    InitFromMap(ctos(header.mapname)) // DG: must be set after InitFromMap(), because that sets it to false as a default
                     tr.allowNoSpecular = (allowNoSpecular._val != 0)
                     newMap = true // we will need to set demoTimeOffset
                 }
@@ -3370,8 +3248,7 @@ object RenderWorld_local {
                     readDemo.ReadVec3(viewShadow.vieworg)
                     readDemo.ReadMat3(viewShadow.viewaxis)
                     readDemo.ReadBool(viewShadow.cramZNear)
-                    readDemo.ReadBool(viewShadow.forceUpdate)
-                    // binary compatibility with win32 padded structures
+                    readDemo.ReadBool(viewShadow.forceUpdate) // binary compatibility with win32 padded structures
                     val tmp = ShortArray(1)
                     readDemo.ReadChar(tmp)
                     readDemo.ReadChar(tmp)
@@ -3387,7 +3264,7 @@ object RenderWorld_local {
                     if (readDemo.ReadInt(globalMatTmp) == 0) {
                         return false
                     }
-                    if (r_showDemo!!.GetBool()) {
+                    if (r_showDemo.GetBool()) {
                         Common.common.Printf("DC_RENDERVIEW: %d\n", viewShadow.time)
                     }
 
@@ -3404,7 +3281,7 @@ object RenderWorld_local {
                     if (readDemo.ReadInt(h) == 0) {
                         return false
                     }
-                    if (r_showDemo!!.GetBool()) {
+                    if (r_showDemo.GetBool()) {
                         Common.common.Printf("DC_DELETE_ENTITYDEF: %d\n", h._val)
                     }
                     FreeEntityDef(h._val)
@@ -3415,21 +3292,21 @@ object RenderWorld_local {
                     if (readDemo.ReadInt(h) == 0) {
                         return false
                     }
-                    if (r_showDemo!!.GetBool()) {
+                    if (r_showDemo.GetBool()) {
                         Common.common.Printf("DC_DELETE_LIGHTDEF: %d\n", h._val)
                     }
                     FreeLightDef(h._val)
                 }
 
                 demoCommand_t.DC_CAPTURE_RENDER -> {
-                    if (r_showDemo!!.GetBool()) {
+                    if (r_showDemo.GetBool()) {
                         Common.common.Printf("DC_CAPTURE_RENDER\n")
                     }
                     RenderSystem.renderSystem.CaptureRenderToImage(readDemo.ReadHashString())
                 }
 
                 demoCommand_t.DC_CROP_RENDER -> {
-                    if (r_showDemo!!.GetBool()) {
+                    if (r_showDemo.GetBool()) {
                         Common.common.Printf("DC_CROP_RENDER\n")
                     }
                     val size: Array<CInt> = Array(3) { CInt() }
@@ -3437,21 +3314,19 @@ object RenderWorld_local {
                     readDemo.ReadInt(size[1])
                     readDemo.ReadInt(size[2])
                     RenderSystem.renderSystem.CropRenderSize(
-                        size[0]._val,
-                        size[1]._val,
-                        size[2]._val != 0
+                        size[0]._val, size[1]._val, size[2]._val != 0
                     )
                 }
 
                 demoCommand_t.DC_UNCROP_RENDER -> {
-                    if (r_showDemo!!.GetBool()) {
+                    if (r_showDemo.GetBool()) {
                         Common.common.Printf("DC_UNCROP\n")
                     }
                     RenderSystem.renderSystem.UnCrop()
                 }
 
                 demoCommand_t.DC_GUI_MODEL -> {
-                    if (r_showDemo!!.GetBool()) {
+                    if (r_showDemo.GetBool()) {
                         Common.common.Printf("DC_GUI_MODEL\n")
                     }
                     tr.demoGuiModel!!.ReadFromDemo(readDemo)
@@ -3459,13 +3334,12 @@ object RenderWorld_local {
 
                 demoCommand_t.DC_DEFINE_MODEL -> {
                     val model: idRenderModel = ModelManager.renderModelManager.AllocModel()
-                    model.ReadFromDemoFile(Session.session.readDemo)
-                    // add to model manager, so we can find it
+                    model.ReadFromDemoFile(Session.session.readDemo) // add to model manager, so we can find it
                     ModelManager.renderModelManager.AddModel(model)
 
                     // save it in the list to free when clearing this map
                     localModels.Append(model)
-                    if (r_showDemo!!.GetBool()) {
+                    if (r_showDemo.GetBool()) {
                         Common.common.Printf("DC_DEFINE_MODEL\n")
                     }
                 }
@@ -3475,7 +3349,7 @@ object RenderWorld_local {
                     readDemo.ReadInt(data[0])
                     readDemo.ReadInt(data[1])
                     SetPortalState(data[0]._val, data[1]._val)
-                    if (r_showDemo!!.GetBool()) {
+                    if (r_showDemo.GetBool()) {
                         Common.common.Printf("DC_SET_PORTAL_STATE: %d %d\n", data[0]._val, data[1]._val)
                     }
                 }
@@ -3495,8 +3369,7 @@ object RenderWorld_local {
             }
             Session.session.writeDemo!!.WriteInt(demoSystem_t.DS_RENDER)
             Session.session.writeDemo!!.WriteInt(demoCommand_t.DC_LOADMAP)
-            val header = demoHeader_t()
-            // safely copy mapName into 256-char buffer, padding with nulls
+            val header = demoHeader_t() // safely copy mapName into 256-char buffer, padding with nulls
             val nameChars = mapName.data.toCharArray()
             val len = minOf(nameChars.size, 255)
             System.arraycopy(nameChars, 0, header.mapname, 0, len)
@@ -3511,7 +3384,7 @@ object RenderWorld_local {
             for (i in 0..255) {
                 Session.session.writeDemo!!.WriteChar(header.mapname[i].code.toShort())
             }
-            if (r_showDemo!!.GetBool()) {
+            if (r_showDemo.GetBool()) {
                 Common.common.Printf("write DC_LOADMAP: %s\n", mapName)
             }
         }
@@ -3538,8 +3411,7 @@ object RenderWorld_local {
             Session.session.writeDemo!!.WriteVec3(renderView.vieworg)
             Session.session.writeDemo!!.WriteMat3(renderView.viewaxis)
             Session.session.writeDemo!!.WriteBool(renderView.cramZNear)
-            Session.session.writeDemo!!.WriteBool(renderView.forceUpdate)
-            // binary compatibility with old win32 version writing padded structures directly to disk
+            Session.session.writeDemo!!.WriteBool(renderView.forceUpdate) // binary compatibility with old win32 version writing padded structures directly to disk
             Session.session.writeDemo!!.WriteUnsignedChar(0.toChar())
             Session.session.writeDemo!!.WriteUnsignedChar(0.toChar())
             Session.session.writeDemo!!.WriteInt(renderView.time)
@@ -3549,13 +3421,12 @@ object RenderWorld_local {
                 i++
             }
             Session.session.writeDemo!!.WriteInt(0) // globalMaterial
-            if (r_showDemo!!.GetBool()) {
+            if (r_showDemo.GetBool()) {
                 Common.common.Printf("write DC_RENDERVIEW: %d\n", renderView.time)
             }
         }
 
-        fun WriteVisibleDefs(viewDef: viewDef_s) {
-            // only the main renderWorld writes stuff to demos, not the wipes or
+        fun WriteVisibleDefs(viewDef: viewDef_s) { // only the main renderWorld writes stuff to demos, not the wipes or
             // menu renders
             if (this !== Session.session.rw) {
                 return
@@ -3565,8 +3436,7 @@ object RenderWorld_local {
             var viewEnt: viewEntity_s? = viewDef.viewEntitys
             while (viewEnt != null) {
                 val ent: idRenderEntityLocal = viewEnt.entityDef!!
-                if (ent.archived) {
-                    // still up to date
+                if (ent.archived) { // still up to date
                     viewEnt = viewEnt.next
                     continue
                 }
@@ -3579,12 +3449,10 @@ object RenderWorld_local {
             var viewLight: viewLight_s? = viewDef.viewLights
             while (viewLight != null) {
                 val light: idRenderLightLocal = viewLight.lightDef!!
-                if (light.archived) {
-                    // still up to date
+                if (light.archived) { // still up to date
                     viewLight = viewLight.next
                     continue
-                }
-                // write it out
+                } // write it out
                 WriteRenderLight(light.index, light.parms)
                 light.archived = true
                 viewLight = viewLight.next
@@ -3616,7 +3484,7 @@ object RenderWorld_local {
             Session.session.writeDemo!!.WriteInt(demoSystem_t.DS_RENDER.ordinal)
             Session.session.writeDemo!!.WriteInt(demoCommand_t.DC_DELETE_ENTITYDEF)
             Session.session.writeDemo!!.WriteInt(handle)
-            if (r_showDemo!!.GetBool()) {
+            if (r_showDemo.GetBool()) {
                 Common.common.Printf("write DC_DELETE_ENTITYDEF: %d\n", handle)
             }
         }
@@ -3663,7 +3531,7 @@ object RenderWorld_local {
                 val index: Int = light.referenceSound!!.Index()
                 Session.session.writeDemo!!.WriteInt(index)
             }
-            if (r_showDemo!!.GetBool()) {
+            if (r_showDemo.GetBool()) {
                 Common.common.Printf("write DC_UPDATE_LIGHTDEF: %d\n", handle)
             }
         }
@@ -3739,7 +3607,7 @@ object RenderWorld_local {
             // RENDERDEMO_VERSION >= 2 ( Doom3 1.2 )
             Session.session.writeDemo!!.WriteInt(ent.timeGroup)
             Session.session.writeDemo!!.WriteInt(ent.xrayIndex)
-            if (r_showDemo!!.GetBool()) {
+            if (r_showDemo.GetBool()) {
                 Common.common.Printf(
                     "write DC_UPDATE_ENTITYDEF: %d = %s\n",
                     handle,
@@ -3869,7 +3737,7 @@ object RenderWorld_local {
             }
             ent.atomicSet(shadow)
             UpdateEntityDef(index._val, ent)
-            if (r_showDemo!!.GetBool()) {
+            if (r_showDemo.GetBool()) {
                 Common.common.Printf(
                     "DC_UPDATE_ENTITYDEF: %d = %s\n",
                     index._val,
@@ -3932,15 +3800,14 @@ object RenderWorld_local {
                 light.referenceSound = null
             }
             UpdateLightDef(index._val, light)
-            if (r_showDemo!!.GetBool()) {
+            if (r_showDemo.GetBool()) {
                 Common.common.Printf("DC_UPDATE_LIGHTDEF: %d\n", index._val)
             }
         }
 
         //--------------------------
         // RenderWorld.cpp
-        fun ResizeInteractionTable() {
-            // we overflowed the interaction table, so dump it
+        fun ResizeInteractionTable() { // we overflowed the interaction table, so dump it
             // we may want to resize this in the future if it turns out to be common
             Common.common.Printf("idRenderWorldLocal::ResizeInteractionTable: overflowed interactionTableWidth, dumping\n")
             interactionTable = null
@@ -3986,13 +3853,7 @@ object RenderWorld_local {
         }
 
         fun RecurseProcBSP_r(
-            results: modelTrace_s,
-            parentNodeNum: Int,
-            nodeNum: Int,
-            p1f: Float,
-            p2f: Float,
-            p1: idVec3,
-            p2: idVec3
+            results: modelTrace_s, parentNodeNum: Int, nodeNum: Int, p1f: Float, p2f: Float, p1: idVec3, p2: idVec3
         ) {
             val t1: Float
             val t2: Float
@@ -4003,12 +3864,10 @@ object RenderWorld_local {
             val node: areaNode_t
             if (results.fraction <= p1f) {
                 return  // already hit something nearer
-            }
-            // empty leaf
+            } // empty leaf
             if (nodeNum < 0) {
                 return
-            }
-            // if solid leaf node
+            } // if solid leaf node
             if (nodeNum == 0) {
                 if (parentNodeNum != -1) {
                     results.fraction = p1f
@@ -4093,9 +3952,8 @@ object RenderWorld_local {
                 if (def == null) {
                     i++
                     continue
-                }
-                // free all the interactions
-                while (def!!.firstInteraction != null) {
+                } // free all the interactions
+                while (def.firstInteraction != null) {
                     def.firstInteraction!!.UnlinkAndFree()
                 }
                 i++
@@ -4150,10 +4008,7 @@ object RenderWorld_local {
 
             // if we know that all possible children nodes only touch an area
             // we have already marked, we can early out
-            if ((r_useNodeCommonChildren!!.GetBool()
-                        && node.commonChildrenArea != CHILDREN_HAVE_MULTIPLE_AREAS)
-            ) {
-                // note that we do NOT try to set a reference in this area
+            if ((r_useNodeCommonChildren.GetBool() && node.commonChildrenArea != CHILDREN_HAVE_MULTIPLE_AREAS)) { // note that we do NOT try to set a reference in this area
                 // yet, because the test volume may yet wind up being in the
                 // solid part, which would cause bounds slightly poked into
                 // a wall to show up in the next room
@@ -4182,57 +4037,56 @@ object RenderWorld_local {
 
             // exact check all the points against the node plane
             back = false
-            front = back
-            //if(MACOS_X){	//loop unrolling & pre-fetching for performance
-//	const idVec3 norm = node.plane.Normal();
-//	const float plane3 = node.plane[3];
-//	float D0, D1, D2, D3;
-//
-//	for ( i = 0 ; i < numPoints - 4; i+=4 ) {
-//		D0 = points[i+0] * norm + plane3;
-//		D1 = points[i+1] * norm + plane3;
-//		if ( !front && D0 >= 0.0f ) {
-//		    front = true;
-//		} else if ( !back && D0 <= 0.0f ) {
-//		    back = true;
-//		}
-//		D2 = points[i+1] * norm + plane3;
-//		if ( !front && D1 >= 0.0f ) {
-//		    front = true;
-//		} else if ( !back && D1 <= 0.0f ) {
-//		    back = true;
-//		}
-//		D3 = points[i+1] * norm + plane3;
-//		if ( !front && D2 >= 0.0f ) {
-//		    front = true;
-//		} else if ( !back && D2 <= 0.0f ) {
-//		    back = true;
-//		}
-//		
-//		if ( !front && D3 >= 0.0f ) {
-//		    front = true;
-//		} else if ( !back && D3 <= 0.0f ) {
-//		    back = true;
-//		}
-//		if ( back && front ) {
-//		    break;
-//		}
-//	}
-//	if(!(back && front)) {
-//		for (; i < numPoints ; i++ ) {
-//			float d;
-//			d = points[i] * node.plane.Normal() + node.plane[3];
-//			if ( d >= 0.0f ) {
-//				front = true;
-//			} else if ( d <= 0.0f ) {
-//				back = true;
-//			}
-//			if ( back && front ) {
-//				break;
-//			}
-//		}	
-//	}
-//}else
+            front = back //if(MACOS_X){	//loop unrolling & pre-fetching for performance
+            //	const idVec3 norm = node.plane.Normal();
+            //	const float plane3 = node.plane[3];
+            //	float D0, D1, D2, D3;
+            //
+            //	for ( i = 0 ; i < numPoints - 4; i+=4 ) {
+            //		D0 = points[i+0] * norm + plane3;
+            //		D1 = points[i+1] * norm + plane3;
+            //		if ( !front && D0 >= 0.0f ) {
+            //		    front = true;
+            //		} else if ( !back && D0 <= 0.0f ) {
+            //		    back = true;
+            //		}
+            //		D2 = points[i+1] * norm + plane3;
+            //		if ( !front && D1 >= 0.0f ) {
+            //		    front = true;
+            //		} else if ( !back && D1 <= 0.0f ) {
+            //		    back = true;
+            //		}
+            //		D3 = points[i+1] * norm + plane3;
+            //		if ( !front && D2 >= 0.0f ) {
+            //		    front = true;
+            //		} else if ( !back && D2 <= 0.0f ) {
+            //		    back = true;
+            //		}
+            //
+            //		if ( !front && D3 >= 0.0f ) {
+            //		    front = true;
+            //		} else if ( !back && D3 <= 0.0f ) {
+            //		    back = true;
+            //		}
+            //		if ( back && front ) {
+            //		    break;
+            //		}
+            //	}
+            //	if(!(back && front)) {
+            //		for (; i < numPoints ; i++ ) {
+            //			float d;
+            //			d = points[i] * node.plane.Normal() + node.plane[3];
+            //			if ( d >= 0.0f ) {
+            //				front = true;
+            //			} else if ( d <= 0.0f ) {
+            //				back = true;
+            //			}
+            //			if ( back && front ) {
+            //				break;
+            //			}
+            //		}
+            //	}
+            //}else
             run({
                 i = 0
                 while (i < numPoints) {
@@ -4264,10 +4118,7 @@ object RenderWorld_local {
         }
 
         fun PushVolumeIntoTree(
-            def: idRenderEntityLocal?,
-            light: idRenderLightLocal?,
-            numPoints: Int,
-            points: Array<idVec3>
+            def: idRenderEntityLocal?, light: idRenderLightLocal?, numPoints: Int, points: Array<idVec3>
         ) {
             var i: Int
             var radSquared: Float
@@ -4353,15 +4204,13 @@ object RenderWorld_local {
                     // but we don't want to instantiate dynamic models yet, so we can't check that on
                     // most things
                     // if the entity isn't viewed
-                    if (tr.viewDef != null && eDef.viewCount != tr.viewCount) {
-                        // if the light doesn't cast shadows, skip
+                    if (tr.viewDef != null && eDef.viewCount != tr.viewCount) { // if the light doesn't cast shadows, skip
                         if (!lDef.lightShader!!.LightCastsShadows()) {
                             eRef = eRef.areaNext!!
                             j++
                             continue
-                        }
-                        // if we are suppressing its shadow in this view, skip
-                        if (!r_skipSuppress!!.GetBool()) {
+                        } // if we are suppressing its shadow in this view, skip
+                        if (!r_skipSuppress.GetBool()) {
                             if (eDef.parms.suppressShadowInViewID != 0 && eDef.parms.suppressShadowInViewID == tr.viewDef!!.renderView.viewID) {
                                 eRef = eRef.areaNext!!
                                 j++
@@ -4385,13 +4234,11 @@ object RenderWorld_local {
 
                     // if any of the edef's interaction match this light, we don't
                     // need to consider it. 
-                    if (r_useInteractionTable!!.GetBool() && interactionTable != null) {
-                        // allocating these tables may take several megs on big maps, but it saves 3% to 5% of
+                    if (r_useInteractionTable.GetBool() && interactionTable != null) { // allocating these tables may take several megs on big maps, but it saves 3% to 5% of
                         // the CPU time.  The table is updated at interaction::AllocAndLink() and interaction::UnlinkAndFree()
                         val index: Int = lDef.index * interactionTableWidth + eDef.index
                         inter = interactionTable!![index]
-                        if (inter != null) {
-                            // if this entity wasn't in view already, the scissor rect will be empty,
+                        if (inter != null) { // if this entity wasn't in view already, the scissor rect will be empty,
                             // so it will only be used for shadow casting
                             if (!inter.IsEmpty()) {
                                 tr_light.R_SetEntityDefViewEntity(eDef)
@@ -4400,8 +4247,7 @@ object RenderWorld_local {
                             j++
                             continue
                         }
-                    } else {
-                        // scan the doubly linked lists, which may have several dozen entries
+                    } else { // scan the doubly linked lists, which may have several dozen entries
 
                         // we could check either model refs or light refs for matches, but it is
                         // assumed that there will be less lights in an area than models
@@ -4415,8 +4261,7 @@ object RenderWorld_local {
                         }
 
                         // if we already have an interaction, we don't need to do anything
-                        if (inter != null) {
-                            // if this entity wasn't in view already, the scissor rect will be empty,
+                        if (inter != null) { // if this entity wasn't in view already, the scissor rect will be empty,
                             // so it will only be used for shadow casting
                             if (!inter.IsEmpty()) {
                                 tr_light.R_SetEntityDefViewEntity(eDef)
@@ -4462,8 +4307,7 @@ object RenderWorld_local {
 
         companion object {
             val playerMaterialExcludeList: Array<String?> = arrayOf(
-                "muzzlesmokepuff",
-                null
+                "muzzlesmokepuff", null
             )
 
             // FIXME: _D3XP added those.

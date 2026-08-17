@@ -113,8 +113,7 @@ fun CM_FindSplitter(node: cm_node_s, bounds: idBounds, planeType: CInt, planeDis
     }
 
     // find an axial aligned splitter
-    for (idx in 0 until 3) {
-        // start with the largest axis first
+    for (idx in 0 until 3) { // start with the largest axis first
         type = axis[idx]
         bestt = size[idx]
 
@@ -130,12 +129,10 @@ fun CM_FindSplitter(node: cm_node_s, bounds: idBounds, planeType: CInt, planeDis
             bref = n.brushes
             while (bref != null) {
                 for (jj in 0 until 2) {
-                    dist = bref.b!!.bounds[jj, type]
-                    // if the splitter is already used or outside node bounds
+                    dist = bref.b!!.bounds[jj, type] // if the splitter is already used or outside node bounds
                     if (dist >= bounds[1, type] || dist <= bounds[0, type]) {
                         continue
-                    }
-                    // find the most centered splitter
+                    } // find the most centered splitter
                     t = abs((bounds[1, type] - dist) - (dist - bounds[0, type]))
                     if (t < bestt) {
                         bestt = t
@@ -155,12 +152,10 @@ fun CM_FindSplitter(node: cm_node_s, bounds: idBounds, planeType: CInt, planeDis
             pref = n.polygons
             while (pref != null) {
                 for (jj in 0 until 2) {
-                    dist = pref.p!!.bounds[jj, type]
-                    // if the splitter is already used or outside node bounds
+                    dist = pref.p!!.bounds[jj, type] // if the splitter is already used or outside node bounds
                     if (dist >= bounds[1, type] || dist <= bounds[0, type]) {
                         continue
-                    }
-                    // find the most centered splitter
+                    } // find the most centered splitter
                     t = abs((bounds[1, type] - dist) - (dist - bounds[0, type]))
                     if (t < bestt) {
                         bestt = t
@@ -174,18 +169,13 @@ fun CM_FindSplitter(node: cm_node_s, bounds: idBounds, planeType: CInt, planeDis
         }
 
         // if we found a splitter on the largest axis
-        if (bestt < size[idx]) {
-            // if forced split due to lots of polygons
+        if (bestt < size[idx]) { // if forced split due to lots of polygons
             if (forceSplit) {
                 return true
-            }
-            // don't create splitters real close to the bounds
-            if (bounds[1, type] - planeDist._val > MIN_NODE_SIZE * 0.5f
-                && planeDist._val - bounds[0, type] > MIN_NODE_SIZE * 0.5f
-            ) {
+            } // don't create splitters real close to the bounds
+            if (bounds[1, type] - planeDist._val > MIN_NODE_SIZE * 0.5f && planeDist._val - bounds[0, type] > MIN_NODE_SIZE * 0.5f) {
                 return true
-            }
-            // FIX: Removed erroneous `break` that was not in the C++ original.
+            } // FIX: Removed erroneous `break` that was not in the C++ original.
             // C++ continues to next axis to try finding a better splitter.
         }
     }
@@ -236,17 +226,14 @@ fun CM_EstimateVertsAndEdges(mapEnt: idMapEntity, numVerts: CInt, numEdges: CInt
     numEdges._val = 0
     for (j in 0 until mapEnt.GetNumPrimitives()) {
         val mapPrim: idMapPrimitive = mapEnt.GetPrimitive(j)
-        if (mapPrim.GetType() == idMapPrimitive.TYPE_PATCH) {
-            // assume maximum tesselation without adding verts
+        if (mapPrim.GetType() == idMapPrimitive.TYPE_PATCH) { // assume maximum tesselation without adding verts
             width = (mapPrim as idMapPatch).GetWidth()
             height = mapPrim.GetHeight()
             numVerts._val = width * height + numVerts._val
-            numEdges._val =
-                (width - 1) * height + width * (height - 1) + (width - 1) * (height - 1) + numEdges._val
+            numEdges._val = (width - 1) * height + width * (height - 1) + (width - 1) * (height - 1) + numEdges._val
             continue
         }
-        if (mapPrim.GetType() == idMapPrimitive.TYPE_BRUSH) {
-            // assume cylinder with a polygon with (numSides - 2) edges ontop and on the bottom
+        if (mapPrim.GetType() == idMapPrimitive.TYPE_BRUSH) { // assume cylinder with a polygon with (numSides - 2) edges ontop and on the bottom
             numVerts._val = ((mapPrim as idMapBrush).GetNumSides() - 2) * 2 + numVerts._val
             numEdges._val = (mapPrim.GetNumSides() - 2) * 3 + numEdges._val
             continue

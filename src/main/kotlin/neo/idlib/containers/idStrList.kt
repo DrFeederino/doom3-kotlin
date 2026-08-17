@@ -70,16 +70,14 @@ open class idStrList : Comparator<idStr> {
         val indexOfObj = stringsList.lastIndexOf(newIdStr)
         return if (indexOfObj == -1) {
             add(newIdStr) // assuming it's added to the end
-        } else indexOfObj
-        // already in the array
+        } else indexOfObj // already in the array
     }
 
     fun addUnique(obj: idStr): Int {
         val indexOfObj = stringsList.lastIndexOf(obj)
         return if (indexOfObj == -1) {
             add(obj) // assuming it's added to the end
-        } else indexOfObj
-        // already in the array
+        } else indexOfObj // already in the array
     }
 
     fun add(obj: String): Int {
@@ -88,29 +86,24 @@ open class idStrList : Comparator<idStr> {
         return stringsList.size - 1
     }
 
-    fun add(obj: idStr): Int {
-        // FIX: C++ idList<idStr>::Append copies by value. Must create a new idStr
+    fun add(obj: idStr): Int { // FIX: C++ idList<idStr>::Append copies by value. Must create a new idStr
         // to avoid all elements sharing the same reference (e.g. ListWindow.UpdateList
         // reuses one idStr in a loop — all list items ended up pointing to the same object).
         stringsList.add(idStr(obj))
         return stringsList.size - 1
     }
 
-    fun resize(newSize: Int) {
-        // free up the list if no data is being reserved
+    fun resize(newSize: Int) { // free up the list if no data is being reserved
         if (newSize <= 0) {
             clear()
             return
         }
-        if (newSize == stringsList.size) {
-            // not changing the size, so just exit
+        if (newSize == stringsList.size) { // not changing the size, so just exit
             return
         }
-        if (newSize < stringsList.size) {
-            // shrink
+        if (newSize < stringsList.size) { // shrink
             stringsList = stringsList.subList(0, newSize).toMutableList()
-        } else {
-            // grow — fill new slots with empty idStr (C++ default-constructs elements)
+        } else { // grow — fill new slots with empty idStr (C++ default-constructs elements)
             for (i in stringsList.size until newSize) {
                 stringsList.add(idStr())
             }
@@ -125,8 +118,7 @@ open class idStrList : Comparator<idStr> {
         return insert(obj, 0)
     }
 
-    fun insert(obj: idStr, i: Int): Int {
-        // FIX: copy by value, not reference (C++ value semantics)
+    fun insert(obj: idStr, i: Int): Int { // FIX: copy by value, not reference (C++ value semantics)
         stringsList.add(i, idStr(obj))
         return i
     }
@@ -159,8 +151,7 @@ open class idStrList : Comparator<idStr> {
         stringsList = ArrayList(associatedModels.getStringsList())
     }
 
-    fun SetGranularity(i: Int) {
-        // ah yes granularity my favourite friend
+    fun SetGranularity(i: Int) { // ah yes granularity my favourite friend
         return
     }
 
@@ -198,8 +189,7 @@ open class idStrList : Comparator<idStr> {
         var i = i
         if (i >= stringsList.size) {
             i = if (stringsList.isEmpty()) 0 else stringsList.size - 1
-        }
-        // FIX: copy by value, not reference (C++ value semantics)
+        } // FIX: copy by value, not reference (C++ value semantics)
         stringsList[i] = idStr(obj)
     }
 

@@ -54,8 +54,7 @@ val EV_Speaker_On: idEventDef = idEventDef("On", null)
 val EV_Speaker_Off: idEventDef = idEventDef("Off", null)
 val EV_Speaker_Timer: idEventDef = idEventDef("<timer>", null)
 
-object Sound {
-    // NOTE: SSF constants and soundShaderParms_t originate from neo/sound/sound.h in C++.
+object Sound { // NOTE: SSF constants and soundShaderParms_t originate from neo/sound/sound.h in C++.
     // They are placed here in Kotlin for organizational convenience.
 
     // sound shader flags
@@ -117,16 +116,12 @@ object Sound {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[EV_Activate] =
-                    eventCallback_t1<idSound> { obj: idSound, activator: idEventArg<*>? ->
-                        obj.Event_Trigger(activator as idEventArg<idEntity>)
-                    }
-                eventCallbacks[EV_Speaker_On] =
-                    eventCallback_t0<idSound> { obj: idSound -> obj.Event_On() }
-                eventCallbacks[EV_Speaker_Off] =
-                    eventCallback_t0<idSound> { obj: idSound -> obj.Event_Off() }
-                eventCallbacks[EV_Speaker_Timer] =
-                    eventCallback_t0<idSound> { obj: idSound -> obj.Event_Timer() }
+                eventCallbacks[EV_Activate] = eventCallback_t1<idSound> { obj: idSound, activator: idEventArg<*>? ->
+                    obj.Event_Trigger(activator as idEventArg<idEntity>)
+                }
+                eventCallbacks[EV_Speaker_On] = eventCallback_t0<idSound> { obj: idSound -> obj.Event_On() }
+                eventCallbacks[EV_Speaker_Off] = eventCallback_t0<idSound> { obj: idSound -> obj.Event_Off() }
+                eventCallbacks[EV_Speaker_Timer] = eventCallback_t0<idSound> { obj: idSound -> obj.Event_Timer() }
             }
         }
 
@@ -189,9 +184,7 @@ object Sound {
             if (wait > 0.0f && random >= wait) {
                 random = wait - 0.001f
                 Game_local.gameLocal.Warning(
-                    "speaker '%s' at (%s) has random >= wait",
-                    name,
-                    GetPhysics().GetOrigin().ToString(0)
+                    "speaker '%s' at (%s) has random >= wait", name, GetPhysics().GetOrigin().ToString(0)
                 )
             }
 
@@ -227,8 +220,7 @@ object Sound {
                     DoSound(true)
                     PostEventSec(EV_Speaker_Timer, wait + Game_local.gameLocal.random.CRandomFloat() * random)
                 }
-            } else {
-                // FIX: Restructured to match C++ explicit if/else toggle pattern.
+            } else { // FIX: Restructured to match C++ explicit if/else toggle pattern.
                 // Previously used compressed boolean expression DoSound(condition) which was
                 // functionally equivalent but harder to read and maintain.
                 if (Game_local.gameLocal.isMultiplayer) {
@@ -262,8 +254,7 @@ object Sound {
         idSound::Think
         ================
         */
-        override fun Think() {
-            // run physics
+        override fun Think() { // run physics
             RunPhysics()
 
             // clear out our update visuals think flag since we never call Present
@@ -300,9 +291,7 @@ object Sound {
                 if (wait > 0.0f && random >= wait) {
                     random = wait - 0.001f
                     Game_local.gameLocal.Warning(
-                        "speaker '%s' at (%s) has random >= wait",
-                        name,
-                        GetPhysics().GetOrigin().ToString(0)
+                        "speaker '%s' at (%s) has random >= wait", name, GetPhysics().GetOrigin().ToString(0)
                     )
                 }
 
@@ -311,8 +300,7 @@ object Sound {
                     DoSound(false)
                     CancelEvents(EV_Speaker_Timer)
                     PostEventSec(EV_Speaker_Timer, wait + Game_local.gameLocal.random.CRandomFloat() * random)
-                } else if (!refSound.waitfortrigger && !(refSound.referenceSound != null && refSound.referenceSound!!.CurrentlyPlaying())) {
-                    // start it if it isn't already playing, and we aren't waitForTrigger
+                } else if (!refSound.waitfortrigger && !(refSound.referenceSound != null && refSound.referenceSound!!.CurrentlyPlaying())) { // start it if it isn't already playing, and we aren't waitForTrigger
                     DoSound(true)
                     timerOn = false
                 }
@@ -330,8 +318,7 @@ object Sound {
                 FreeSoundEmitter(true)
             }
             GameEdit.gameEdit.ParseSpawnArgsToRefSound(spawnArgs, refSound)
-            refSound.shader = shader
-            // start it if it isn't already playing, and we aren't waitForTrigger
+            refSound.shader = shader // start it if it isn't already playing, and we aren't waitForTrigger
             if (!refSound.waitfortrigger && !(refSound.referenceSound != null && refSound.referenceSound!!.CurrentlyPlaying())) {
                 DoSound(true)
             }

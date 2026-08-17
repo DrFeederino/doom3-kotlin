@@ -408,8 +408,7 @@ class idBounds : idSerializable {
      */
     fun Expand(d: Float): idBounds {
         return idBounds(
-            idVec3(b[0][0] - d, b[0][1] - d, b[0][2] - d),
-            idVec3(b[1][0] + d, b[1][1] + d, b[1][2] + d)
+            idVec3(b[0][0] - d, b[0][1] - d, b[0][2] - d), idVec3(b[1][0] + d, b[1][1] + d, b[1][2] + d)
         )
     }
 
@@ -459,9 +458,7 @@ class idBounds : idSerializable {
 
         d1 = plane.Distance(center)
         d2 =
-            (abs((b[1][0] - center[0]) * plane.Normal()[0]) +
-                    abs((b[1][1] - center[1]) * plane.Normal()[1]) +
-                    abs((b[1][2] - center[2]) * plane.Normal()[2]))
+            (abs((b[1][0] - center[0]) * plane.Normal()[0]) + abs((b[1][1] - center[1]) * plane.Normal()[1]) + abs((b[1][2] - center[2]) * plane.Normal()[2]))
         if (d1 - d2 > 0.0f) {
             return d1 - d2
         }
@@ -478,9 +475,7 @@ class idBounds : idSerializable {
         center.set((b[0] + b[1]) * 0.5f)
         d1 = plane.Distance(center)
         d2 =
-            (abs((b[1][0] - center[0]) * plane.Normal()[0]) +
-                    abs((b[1][1] - center[1]) * plane.Normal()[1]) +
-                    abs((b[1][2] - center[2]) * plane.Normal()[2]))
+            (abs((b[1][0] - center[0]) * plane.Normal()[0]) + abs((b[1][1] - center[1]) * plane.Normal()[1]) + abs((b[1][2] - center[2]) * plane.Normal()[2]))
         if (d1 - d2 > epsilon) {
             return PLANESIDE_FRONT
         }
@@ -491,14 +486,12 @@ class idBounds : idSerializable {
 
     // includes touching
     fun ContainsPoint(p: idVec3): Boolean {
-        return !(p[0] < b[0][0] || p[1] < b[0][1] || p[2] < b[0][2]
-                || p[0] > b[1][0] || p[1] > b[1][1] || p[2] > b[1][2])
+        return !(p[0] < b[0][0] || p[1] < b[0][1] || p[2] < b[0][2] || p[0] > b[1][0] || p[1] > b[1][1] || p[2] > b[1][2])
     }
 
     // includes touching
     fun IntersectsBounds(a: idBounds): Boolean {
-        return !(a.b[1][0] < b[0][0] || a.b[1][1] < b[0][1] || a.b[1][2] < b[0][2]
-                || a.b[0][0] > b[1][0] || a.b[0][1] > b[1][1] || a.b[0][2] > b[1][2])
+        return !(a.b[1][0] < b[0][0] || a.b[1][1] < b[0][1] || a.b[1][2] < b[0][2] || a.b[0][0] > b[1][0] || a.b[0][1] > b[1][1] || a.b[0][2] > b[1][2])
     }
 
     /*
@@ -587,8 +580,7 @@ class idBounds : idSerializable {
             i++
         }
         if (ax0 < 0) {
-            scale._val = 0.0f
-            // return true if the start point is inside the bounds
+            scale._val = 0.0f // return true if the start point is inside the bounds
             return inside == 3
         }
 
@@ -610,9 +602,8 @@ class idBounds : idSerializable {
         center.set((bounds[0] + bounds[1]) * 0.5f)
         extents.set(bounds[1] - center)
         for (i in 0 until 3) {
-            rotatedExtents[i] = idMath.Fabs(extents[0] * axis[0][i]) +
-                    idMath.Fabs(extents[1] * axis[1][i]) +
-                    idMath.Fabs(extents[2] * axis[2][i])
+            rotatedExtents[i] =
+                idMath.Fabs(extents[0] * axis[0][i]) + idMath.Fabs(extents[1] * axis[1][i]) + idMath.Fabs(extents[2] * axis[2][i])
         }
         center.set(origin + center * axis)
         b[0].set(center - rotatedExtents)

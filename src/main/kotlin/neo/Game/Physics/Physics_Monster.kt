@@ -29,11 +29,9 @@ import neo.idlib.toInt
 object Physics_Monster {
     //
     const val MONSTER_VELOCITY_MAX = 4000.0f
-    val MONSTER_VELOCITY_EXPONENT_BITS =
-        idMath.BitsForInteger(idMath.BitsForFloat(MONSTER_VELOCITY_MAX)) + 1
+    val MONSTER_VELOCITY_EXPONENT_BITS = idMath.BitsForInteger(idMath.BitsForFloat(MONSTER_VELOCITY_MAX)) + 1
     const val MONSTER_VELOCITY_TOTAL_BITS = 16
-    val MONSTER_VELOCITY_MANTISSA_BITS =
-        MONSTER_VELOCITY_TOTAL_BITS - 1 - MONSTER_VELOCITY_EXPONENT_BITS
+    val MONSTER_VELOCITY_MANTISSA_BITS = MONSTER_VELOCITY_TOTAL_BITS - 1 - MONSTER_VELOCITY_EXPONENT_BITS
     const val OVERCLIP = 1.001f
 
     /*
@@ -183,8 +181,7 @@ object Physics_Monster {
          ================
          idPhysics_Monster::SetMaxStepHeight
          ================
-         */
-        // maximum step up the monster can take, default 18 units
+         */ // maximum step up the monster can take, default 18 units
         fun SetMaxStepHeight(newMaxStepHeight: Float) {
             maxStepHeight = newMaxStepHeight
         }
@@ -206,8 +203,7 @@ object Physics_Monster {
          ================
          idPhysics_Monster::SetDelta
          ================
-         */
-        // set delta for next move
+         */ // set delta for next move
         fun SetDelta(d: idVec3) {
             delta.set(d)
             if (delta != vec3_origin) {
@@ -219,8 +215,7 @@ object Physics_Monster {
          ================
          idPhysics_Monster::OnGround
          ================
-         */
-        // returns true if monster is standing on the ground
+         */ // returns true if monster is standing on the ground
         fun OnGround(): Boolean {
             return current.onGround
         }
@@ -229,8 +224,7 @@ object Physics_Monster {
          ================
          idPhysics_Monster::GetMoveResult
          ================
-         */
-        // returns the movement result
+         */ // returns the movement result
         fun GetMoveResult(): monsterMoveResult_t {
             return moveResult
         }
@@ -239,8 +233,7 @@ object Physics_Monster {
          ================
          idPhysics_Monster::ForceDeltaMove
          ================
-         */
-        // overrides any velocity for pure delta movement
+         */ // overrides any velocity for pure delta movement
         fun ForceDeltaMove(force: Boolean) {
             forceDeltaMove = force
         }
@@ -249,8 +242,7 @@ object Physics_Monster {
          ================
          idPhysics_Monster::UseFlyMove
          ================
-         */
-        // whether velocity should be affected by gravity
+         */ // whether velocity should be affected by gravity
         fun UseFlyMove(force: Boolean) {
             fly = force
         }
@@ -259,8 +251,7 @@ object Physics_Monster {
          ================
          idPhysics_Monster::UseVelocityMove
          ================
-         */
-        // don't use delta movement
+         */ // don't use delta movement
         fun UseVelocityMove(force: Boolean) {
             useVelocityMove = force
         }
@@ -269,8 +260,7 @@ object Physics_Monster {
          ================
          idPhysics_Monster::GetSlideMoveEntity
          ================
-         */
-        // get entity blocking the move
+         */ // get entity blocking the move
         fun GetSlideMoveEntity(): idEntity? {
             return blockingEntity
         }
@@ -279,8 +269,7 @@ object Physics_Monster {
          ================
          idPhysics_Monster::EnableImpact
          ================
-         */
-        // enable/disable activation by impact
+         */ // enable/disable activation by impact
         fun EnableImpact() {
             noImpact = false
         }
@@ -298,8 +287,7 @@ object Physics_Monster {
          ================
          idPhysics_Monster::Evaluate
          ================
-         */
-        // common physics interface
+         */ // common physics interface
         override fun Evaluate(timeStepMSec: Int, endTimeMSec: Int): Boolean {
             val masterOrigin = idVec3()
             val oldOrigin = idVec3()
@@ -366,8 +354,7 @@ object Physics_Monster {
                 current.velocity.minusAssign(gravityNormal.times(current.velocity.times(gravityNormal)))
                 if (delta == vec3_origin) {
                     Rest()
-                } else {
-                    // try moving into the desired direction
+                } else { // try moving into the desired direction
                     moveResult = StepMove(current.origin, current.velocity, delta)
                     delta.Zero()
                 }
@@ -382,9 +369,7 @@ object Physics_Monster {
             current.pushVelocity.Zero()
             if (IsOutsideWorld()) {
                 Game_local.gameLocal.Warning(
-                    "clip model outside world bounds for entity '%s' at (%s)",
-                    self!!.name,
-                    current.origin.ToString(0)
+                    "clip model outside world bounds for entity '%s' at (%s)", self!!.name, current.origin.ToString(0)
                 )
                 Rest()
             }
@@ -478,8 +463,7 @@ object Physics_Monster {
          idPhysics_Monster::SaveState
          ================
          */
-        override fun SaveState() {
-            // FIX: Was "saved = current" which only copies the reference in Kotlin.
+        override fun SaveState() { // FIX: Was "saved = current" which only copies the reference in Kotlin.
             // C++ copies the struct by value. Use deep copy instead.
             saved.set(current)
         }
@@ -489,8 +473,7 @@ object Physics_Monster {
          idPhysics_Monster::RestoreState
          ================
          */
-        override fun RestoreState() {
-            // FIX: Was "current = saved" which only copies the reference in Kotlin.
+        override fun RestoreState() { // FIX: Was "current = saved" which only copies the reference in Kotlin.
             current.set(saved)
             clipModel!!.Link(Game_local.gameLocal.clip, self, 0, current.origin, clipModel!!.GetAxis())
             EvaluateContacts()
@@ -553,11 +536,7 @@ object Physics_Monster {
                 current.localOrigin.set(current.origin)
             }
             clipModel!!.Link(
-                Game_local.gameLocal.clip,
-                self,
-                0,
-                current.origin,
-                clipModel!!.GetAxis().times(rotation.ToMat3())
+                Game_local.gameLocal.clip, self, 0, current.origin, clipModel!!.GetAxis().times(rotation.ToMat3())
             )
             Activate()
         }
@@ -586,8 +565,7 @@ object Physics_Monster {
          idPhysics_Monster::SetPushed
          ================
          */
-        override fun SetPushed(deltaTime: Int) {
-            // velocity with which the monster is pushed
+        override fun SetPushed(deltaTime: Int) { // velocity with which the monster is pushed
             current.pushVelocity.plusAssign(current.origin.minus(saved.origin).div(deltaTime * idMath.M_MS2SEC))
         }
 
@@ -611,8 +589,7 @@ object Physics_Monster {
             val masterOrigin = idVec3()
             val masterAxis = idMat3()
             if (master != null) {
-                if (null == masterEntity) {
-                    // transform from world space to master space
+                if (null == masterEntity) { // transform from world space to master space
                     self!!.GetMasterPosition(masterOrigin, masterAxis)
                     current.localOrigin.set(current.origin.minus(masterOrigin).times(masterAxis.Transpose()))
                     masterEntity = master
@@ -637,40 +614,25 @@ object Physics_Monster {
             msg.WriteFloat(current.origin[1])
             msg.WriteFloat(current.origin[2])
             msg.WriteFloat(
-                current.velocity[0],
-                MONSTER_VELOCITY_EXPONENT_BITS,
-                MONSTER_VELOCITY_MANTISSA_BITS
+                current.velocity[0], MONSTER_VELOCITY_EXPONENT_BITS, MONSTER_VELOCITY_MANTISSA_BITS
             )
             msg.WriteFloat(
-                current.velocity[1],
-                MONSTER_VELOCITY_EXPONENT_BITS,
-                MONSTER_VELOCITY_MANTISSA_BITS
+                current.velocity[1], MONSTER_VELOCITY_EXPONENT_BITS, MONSTER_VELOCITY_MANTISSA_BITS
             )
             msg.WriteFloat(
-                current.velocity[2],
-                MONSTER_VELOCITY_EXPONENT_BITS,
-                MONSTER_VELOCITY_MANTISSA_BITS
+                current.velocity[2], MONSTER_VELOCITY_EXPONENT_BITS, MONSTER_VELOCITY_MANTISSA_BITS
             )
             msg.WriteDeltaFloat(current.origin[0], current.localOrigin[0])
             msg.WriteDeltaFloat(current.origin[1], current.localOrigin[1])
             msg.WriteDeltaFloat(current.origin[2], current.localOrigin[2])
             msg.WriteDeltaFloat(
-                0.0f,
-                current.pushVelocity[0],
-                MONSTER_VELOCITY_EXPONENT_BITS,
-                MONSTER_VELOCITY_MANTISSA_BITS
+                0.0f, current.pushVelocity[0], MONSTER_VELOCITY_EXPONENT_BITS, MONSTER_VELOCITY_MANTISSA_BITS
             )
             msg.WriteDeltaFloat(
-                0.0f,
-                current.pushVelocity[1],
-                MONSTER_VELOCITY_EXPONENT_BITS,
-                MONSTER_VELOCITY_MANTISSA_BITS
+                0.0f, current.pushVelocity[1], MONSTER_VELOCITY_EXPONENT_BITS, MONSTER_VELOCITY_MANTISSA_BITS
             )
             msg.WriteDeltaFloat(
-                0.0f,
-                current.pushVelocity[2],
-                MONSTER_VELOCITY_EXPONENT_BITS,
-                MONSTER_VELOCITY_MANTISSA_BITS
+                0.0f, current.pushVelocity[2], MONSTER_VELOCITY_EXPONENT_BITS, MONSTER_VELOCITY_MANTISSA_BITS
             )
             msg.WriteLong(current.atRest)
             msg.WriteBits((current.onGround).toInt(), 1)
@@ -686,34 +648,25 @@ object Physics_Monster {
             current.origin[1] = msg.ReadFloat()
             current.origin[2] = msg.ReadFloat()
             current.velocity[0] = msg.ReadFloat(
-                MONSTER_VELOCITY_EXPONENT_BITS,
-                MONSTER_VELOCITY_MANTISSA_BITS
+                MONSTER_VELOCITY_EXPONENT_BITS, MONSTER_VELOCITY_MANTISSA_BITS
             )
             current.velocity[1] = msg.ReadFloat(
-                MONSTER_VELOCITY_EXPONENT_BITS,
-                MONSTER_VELOCITY_MANTISSA_BITS
+                MONSTER_VELOCITY_EXPONENT_BITS, MONSTER_VELOCITY_MANTISSA_BITS
             )
             current.velocity[2] = msg.ReadFloat(
-                MONSTER_VELOCITY_EXPONENT_BITS,
-                MONSTER_VELOCITY_MANTISSA_BITS
+                MONSTER_VELOCITY_EXPONENT_BITS, MONSTER_VELOCITY_MANTISSA_BITS
             )
             current.localOrigin[0] = msg.ReadDeltaFloat(current.origin[0])
             current.localOrigin[1] = msg.ReadDeltaFloat(current.origin[1])
             current.localOrigin[2] = msg.ReadDeltaFloat(current.origin[2])
             current.pushVelocity[0] = msg.ReadDeltaFloat(
-                0.0f,
-                MONSTER_VELOCITY_EXPONENT_BITS,
-                MONSTER_VELOCITY_MANTISSA_BITS
+                0.0f, MONSTER_VELOCITY_EXPONENT_BITS, MONSTER_VELOCITY_MANTISSA_BITS
             )
             current.pushVelocity[1] = msg.ReadDeltaFloat(
-                0.0f,
-                MONSTER_VELOCITY_EXPONENT_BITS,
-                MONSTER_VELOCITY_MANTISSA_BITS
+                0.0f, MONSTER_VELOCITY_EXPONENT_BITS, MONSTER_VELOCITY_MANTISSA_BITS
             )
             current.pushVelocity[2] = msg.ReadDeltaFloat(
-                0.0f,
-                MONSTER_VELOCITY_EXPONENT_BITS,
-                MONSTER_VELOCITY_MANTISSA_BITS
+                0.0f, MONSTER_VELOCITY_EXPONENT_BITS, MONSTER_VELOCITY_MANTISSA_BITS
             )
             current.atRest = msg.ReadLong()
             current.onGround = msg.ReadBits(1) != 0
@@ -734,13 +687,7 @@ object Physics_Monster {
             }
             down.set(state.origin.plus(gravityNormal.times(Physics.CONTACT_EPSILON)))
             Game_local.gameLocal.clip.Translation(
-                groundTrace,
-                state.origin,
-                down,
-                clipModel,
-                clipModel!!.GetAxis(),
-                clipMask,
-                self
+                groundTrace, state.origin, down, clipModel, clipModel!!.GetAxis(), clipMask, self
             )
             if (groundTrace.fraction == 1.0f) {
                 state.onGround = false
@@ -781,13 +728,7 @@ object Physics_Monster {
             i = 0
             while (i < 3) {
                 Game_local.gameLocal.clip.Translation(
-                    tr,
-                    start,
-                    start.plus(move),
-                    clipModel,
-                    clipModel!!.GetAxis(),
-                    clipMask,
-                    self
+                    tr, start, start.plus(move), clipModel, clipModel!!.GetAxis(), clipMask, self
                 )
                 start.set(tr.endpos)
                 if (tr.fraction == 1.0f) {
@@ -845,13 +786,7 @@ object Physics_Monster {
                 // try to step down so that we walk down slopes and stairs at a normal rate
                 down.set(noStepPos.plus(gravityNormal.times(maxStepHeight)))
                 Game_local.gameLocal.clip.Translation(
-                    tr,
-                    noStepPos,
-                    down,
-                    clipModel,
-                    clipModel!!.GetAxis(),
-                    clipMask,
-                    self
+                    tr, noStepPos, down, clipModel, clipModel!!.GetAxis(), clipMask, self
                 )
                 return if (tr.fraction < 1.0f) {
                     start.set(tr.endpos)
@@ -861,17 +796,10 @@ object Physics_Monster {
                     monsterMoveResult_t.MM_OK
                 }
             }
-            if (blockingEntity != null && blockingEntity is idActor) {
-                // try to step down in case walking into an actor while going down steps
+            if (blockingEntity != null && blockingEntity is idActor) { // try to step down in case walking into an actor while going down steps
                 down.set(noStepPos.plus(gravityNormal.times(maxStepHeight)))
                 Game_local.gameLocal.clip.Translation(
-                    tr,
-                    noStepPos,
-                    down,
-                    clipModel,
-                    clipModel!!.GetAxis(),
-                    clipMask,
-                    self
+                    tr, noStepPos, down, clipModel, clipModel!!.GetAxis(), clipMask, self
                 )
                 start.set(tr.endpos)
                 velocity.set(noStepVel)

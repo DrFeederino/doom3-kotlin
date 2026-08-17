@@ -86,8 +86,7 @@ class AsyncNetwork {
      Asynchronous Networking.
 
      ===============================================================================
-     */
-    // unreliable server -> client messages
+     */ // unreliable server -> client messages
     enum class SERVER_UNRELIABLE {
         SERVER_UNRELIABLE_MESSAGE_EMPTY,
         SERVER_UNRELIABLE_MESSAGE_PING,
@@ -144,7 +143,7 @@ class AsyncNetwork {
                         Common.common.Printf("USAGE: connect <serverName>\n")
                         return
                     }
-                    client.ConnectToServer(args!!.Argv(1))
+                    client.ConnectToServer(args.Argv(1))
                 }
 
                 companion object {
@@ -184,8 +183,7 @@ class AsyncNetwork {
                             soundSystem.SetMute(true)
                             soundSystem.ShutdownHW()
                         }
-                    }
-                    // use serverMapRestart if we already have a running server
+                    } // use serverMapRestart if we already have a running server
                     if (server.IsActive()) {
                         cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "serverMapRestart")
                     } else {
@@ -213,7 +211,7 @@ class AsyncNetwork {
                         Common.common.Warning("idAsyncNetwork::UpdateUI_f: server is not active\n")
                         return
                     }
-                    val clientNum = args!!.Args(1).toInt()
+                    val clientNum = args.Args(1).toInt()
                     server.UpdateUI(clientNum)
                 }
 
@@ -376,13 +374,9 @@ class AsyncNetwork {
                     CmdSystem.CMD_FL_SYSTEM,
                     "spawns a server",
                     ArgCompletion_MapName.getInstance()
-                )
-                // FIX: was using Game_local.idGameLocal.NextMap_f - should use local NextMap_f per C++ original
+                ) // FIX: was using Game_local.idGameLocal.NextMap_f - should use local NextMap_f per C++ original
                 cmdSystem.AddCommand(
-                    "nextMap",
-                    NextMap_f.instance,
-                    CmdSystem.CMD_FL_SYSTEM,
-                    "loads the next map on the server"
+                    "nextMap", NextMap_f.instance, CmdSystem.CMD_FL_SYSTEM, "loads the next map on the server"
                 )
                 cmdSystem.AddCommand(
                     "connect", Connect_f.instance, CmdSystem.CMD_FL_SYSTEM, "connects to a server"
@@ -403,10 +397,7 @@ class AsyncNetwork {
                     "listServers", ListServers_f.instance, CmdSystem.CMD_FL_SYSTEM, "lists scanned servers"
                 )
                 cmdSystem.AddCommand(
-                    "rcon",
-                    RemoteConsole_f.instance,
-                    CmdSystem.CMD_FL_SYSTEM,
-                    "sends remote console command to server"
+                    "rcon", RemoteConsole_f.instance, CmdSystem.CMD_FL_SYSTEM, "sends remote console command to server"
                 )
                 cmdSystem.AddCommand(
                     "heartbeat",
@@ -512,8 +503,7 @@ class AsyncNetwork {
             fun DuplicateUsercmd(
                 previousUserCmd: usercmd_t, currentUserCmd: usercmd_t, frame: Int, time: Int
             ): Boolean {
-                if (currentUserCmd.gameTime <= previousUserCmd.gameTime) {
-                    // FIX: was reassigning local var reference instead of copying fields.
+                if (currentUserCmd.gameTime <= previousUserCmd.gameTime) { // FIX: was reassigning local var reference instead of copying fields.
                     // C++ operator= copies all fields; Kotlin reference reassignment just changes the pointer.
                     currentUserCmd.gameFrame = previousUserCmd.gameFrame
                     currentUserCmd.gameTime = previousUserCmd.gameTime

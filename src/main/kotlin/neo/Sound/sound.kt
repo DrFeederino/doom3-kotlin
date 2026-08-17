@@ -17,8 +17,7 @@ object sound {
      SOUND EMITTER
 
      ===============================================================================
-     */
-    // sound channels
+     */ // sound channels
     const val SCHANNEL_ANY = 0 // used in queries and commands to effect every channel at once, in
 
     // startSound to have it not override any other channel

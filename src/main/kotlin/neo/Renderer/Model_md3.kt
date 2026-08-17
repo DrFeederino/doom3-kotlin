@@ -250,8 +250,7 @@ object Model_md3 {
             if (version != MD3_VERSION) {
                 fileSystem.FreeFile(buffer)
                 Common.common.Warning(
-                    "InitFromFile: %s has wrong version (%d should be %d)",
-                    (fileName), version, MD3_VERSION
+                    "InitFromFile: %s has wrong version (%d should be %d)", (fileName), version, MD3_VERSION
                 )
                 MakeDefaultModel()
                 return
@@ -330,13 +329,17 @@ object Model_md3 {
                 if (surf.numVerts > SHADER_MAX_VERTEXES) {
                     Common.common.Error(
                         "InitFromFile: %s has more than %d verts on a surface (%d)",
-                        (fileName), SHADER_MAX_VERTEXES, surf.numVerts
+                        (fileName),
+                        SHADER_MAX_VERTEXES,
+                        surf.numVerts
                     )
                 }
                 if (surf.numTriangles * 3 > SHADER_MAX_INDEXES) {
                     Common.common.Error(
                         "InitFromFile: %s has more than %d triangles on a surface (%d)",
-                        (fileName), SHADER_MAX_INDEXES / 3, surf.numTriangles
+                        (fileName),
+                        SHADER_MAX_INDEXES / 3,
+                        surf.numTriangles
                     )
                 }
 
@@ -412,9 +415,7 @@ object Model_md3 {
         }
 
         override fun InstantiateDynamicModel(
-            ent: renderEntity_s?,
-            view: viewDef_s?,
-            cachedModel: idRenderModel?
+            ent: renderEntity_s?, view: viewDef_s?, cachedModel: idRenderModel?
         ): idRenderModel {
             var cachedModel: idRenderModel? = cachedModel
             var j: Int
@@ -434,12 +435,10 @@ object Model_md3 {
 
             // TODO: these need set by an entity
             frame = idMath.ClampInt(
-                0, md3!!.numFrames - 1,
-                ent!!.shaderParms[RenderWorld.SHADERPARM_MD3_FRAME].toInt()
+                0, md3!!.numFrames - 1, ent!!.shaderParms[RenderWorld.SHADERPARM_MD3_FRAME].toInt()
             )
             oldframe = idMath.ClampInt(
-                0, md3!!.numFrames - 1,
-                ent.shaderParms[RenderWorld.SHADERPARM_MD3_LASTFRAME].toInt()
+                0, md3!!.numFrames - 1, ent.shaderParms[RenderWorld.SHADERPARM_MD3_LASTFRAME].toInt()
             )
             backlerp = ent.shaderParms[RenderWorld.SHADERPARM_MD3_BACKLERP]
 
@@ -466,7 +465,7 @@ object Model_md3 {
                 tri.numIndexes += indexes
                 numVerts = surface.numVerts
                 for (k in 0 until surface.numVerts) {
-                    val stri = tri.verts!![k]!!
+                    val stri = tri.verts!![k]
                     stri.st[0] = surface.verts!![k]!!.st[0]
                     stri.st[1] = surface.verts!![k]!!.st[1]
                 }
@@ -482,16 +481,14 @@ object Model_md3 {
         override fun Bounds(ent: renderEntity_s?): idBounds {
             val ret = idBounds()
             ret.Clear()
-            if (null == ent || null == md3) {
-                // just give it the editor bounds
+            if (null == ent || null == md3) { // just give it the editor bounds
                 ret.AddPoint(idVec3(-10, -10, -10))
                 ret.AddPoint(idVec3(10, 10, 10))
                 return ret
             }
 
             val frameIdx = idMath.ClampInt(
-                0, md3!!.numFrames - 1,
-                ent.shaderParms[RenderWorld.SHADERPARM_MD3_FRAME].toInt()
+                0, md3!!.numFrames - 1, ent.shaderParms[RenderWorld.SHADERPARM_MD3_FRAME].toInt()
             )
             val frame: md3Frame_s = md3!!.frames!![frameIdx]!!
             ret.AddPoint(frame.bounds[0])
@@ -500,9 +497,7 @@ object Model_md3 {
         }
 
         private fun LerpMeshVertexes(
-            tri: srfTriangles_s, surf: md3Surface_s, backlerp: Float,
-            frame: Int,
-            oldframe: Int
+            tri: srfTriangles_s, surf: md3Surface_s, backlerp: Float, frame: Int, oldframe: Int
         ) {
             var oldXyz: md3XyzNormal_t?
             var newXyz: md3XyzNormal_t?
@@ -516,8 +511,7 @@ object Model_md3 {
             newXyz = surf.normals!![newXyzIdx]
             newXyzScale = (MD3_XYZ_SCALE * (1.0f - backlerp))
             numVerts = surf.numVerts
-            if (backlerp == 0.0f) {
-                //
+            if (backlerp == 0.0f) { //
                 // just copy the vertexes
                 //
                 vertNum = 0
@@ -533,8 +527,7 @@ object Model_md3 {
                         newXyz = surf.normals!![newXyzIdx]
                     }
                 }
-            } else {
-                //
+            } else { //
                 // interpolate and copy the vertexes
                 //
                 var oldXyzIdx = oldframe * surf.numVerts

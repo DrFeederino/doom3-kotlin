@@ -103,8 +103,7 @@ open class idEntityFx : idEntity() {
                 nfx.SetOrigin(if (useOrigin != null) useOrigin else ent!!.GetPhysics().GetOrigin())
                 nfx.SetAxis(if (useAxis != null) useAxis else ent!!.GetPhysics().GetAxis())
             }
-            if (bind) {
-                // never bind to world spawn
+            if (bind) { // never bind to world spawn
                 if (ent !== Game_local.gameLocal.world) {
                     nfx.Bind(ent, true)
                 }
@@ -123,14 +122,12 @@ open class idEntityFx : idEntity() {
 
         init {
             eventCallbacks.putAll(idEntity.getEventCallBacks())
-            eventCallbacks[EV_Activate] =
-                eventCallback_t1<idEntityFx> { obj: idEntityFx, activator: idEventArg<*>? ->
-                    obj.Event_Trigger(
-                        activator as idEventArg<idEntity>
-                    )
-                }
-            eventCallbacks[EV_Fx_KillFx] =
-                eventCallback_t0<idEntityFx> { obj: idEntityFx -> obj.Event_ClearFx() }
+            eventCallbacks[EV_Activate] = eventCallback_t1<idEntityFx> { obj: idEntityFx, activator: idEventArg<*>? ->
+                obj.Event_Trigger(
+                    activator as idEventArg<idEntity>
+                )
+            }
+            eventCallbacks[EV_Fx_KillFx] = eventCallback_t0<idEntityFx> { obj: idEntityFx -> obj.Event_ClearFx() }
         }
     }
 
@@ -197,8 +194,7 @@ open class idEntityFx : idEntity() {
         val num = CInt()
         val hasObject = CBool(false)
         started = savefile.ReadInt()
-        nextTriggerTime = savefile.ReadInt()
-        // Inline ReadFX logic: C++ ReadFX sets the pointer directly, but Kotlin's
+        nextTriggerTime = savefile.ReadInt() // Inline ReadFX logic: C++ ReadFX sets the pointer directly, but Kotlin's
         // ReadFX requires a non-null object and calls oSet() which is unimplemented.
         val fxName = idStr()
         savefile.ReadString(fxName)
@@ -217,8 +213,7 @@ open class idEntityFx : idEntity() {
             if (hasObject._val) {
                 savefile.ReadRenderLight(actions[i].renderLight)
                 actions[i].lightDefHandle = Game_local.gameRenderWorld!!.AddLightDef(actions[i].renderLight)
-            } else {
-//			memset( actions.oGet(i).renderLight, 0, sizeof( renderLight_t ) );
+            } else { //			memset( actions.oGet(i).renderLight, 0, sizeof( renderLight_t ) );
 
                 actions[i].renderLight = renderLight_s()
                 actions[i].lightDefHandle = -1
@@ -226,10 +221,8 @@ open class idEntityFx : idEntity() {
             savefile.ReadBool(hasObject)
             if (hasObject._val) {
                 actions[i].renderEntity = savefile.ReadRenderEntity()
-                actions[i].modelDefHandle =
-                    Game_local.gameRenderWorld!!.AddEntityDef(actions[i].renderEntity)
-            } else {
-//			memset( &actions[i].renderEntity, 0, sizeof( renderEntity_t ) );
+                actions[i].modelDefHandle = Game_local.gameRenderWorld!!.AddEntityDef(actions[i].renderEntity)
+            } else { //			memset( &actions[i].renderEntity, 0, sizeof( renderEntity_t ) );
                 actions[i].renderEntity = renderEntity_s()
                 actions[i].modelDefHandle = -1
             }
@@ -279,12 +272,11 @@ open class idEntityFx : idEntity() {
         if (fxEffect != null) {
             val localAction = idFXLocalAction()
 
-//		memset( &localAction, 0, sizeof( idFXLocalAction ) );
+            //		memset( &localAction, 0, sizeof( idFXLocalAction ) );
 
-//		memset( &localAction, 0, sizeof( idFXLocalAction ) );
+            //		memset( &localAction, 0, sizeof( idFXLocalAction ) );
             actions.AssureSize(fxEffect!!.events.Num(), localAction)
-            for (i in 0 until fxEffect!!.events.Num()) {
-                // Each action needs its own independent object (AssureSize shares one reference)
+            for (i in 0 until fxEffect!!.events.Num()) { // Each action needs its own independent object (AssureSize shares one reference)
                 actions[i] = idFXLocalAction()
                 val fxaction = fxEffect!!.events[i]
                 val laction = actions[i]
@@ -385,8 +377,7 @@ open class idEntityFx : idEntity() {
                             useAction.renderLight.lightRadius[0] = fxaction.lightRadius
                             useAction.renderLight.lightRadius[1] = fxaction.lightRadius
                             useAction.renderLight.lightRadius[2] = fxaction.lightRadius
-                            useAction.renderLight.shader =
-                                DeclManager.declManager.FindMaterial(fxaction.data, false)
+                            useAction.renderLight.shader = DeclManager.declManager.FindMaterial(fxaction.data, false)
                             useAction.renderLight.shaderParms[RenderWorld.SHADERPARM_RED] = fxaction.lightColor.x
                             useAction.renderLight.shaderParms[RenderWorld.SHADERPARM_GREEN] = fxaction.lightColor.y
                             useAction.renderLight.shaderParms[RenderWorld.SHADERPARM_BLUE] = fxaction.lightColor.z
@@ -398,8 +389,7 @@ open class idEntityFx : idEntity() {
                             if (fxaction.noshadows) {
                                 useAction.renderLight.noShadows._val = true
                             }
-                            useAction.lightDefHandle =
-                                Game_local.gameRenderWorld!!.AddLightDef(useAction.renderLight)
+                            useAction.lightDefHandle = Game_local.gameRenderWorld!!.AddLightDef(useAction.renderLight)
                         }
                         if (fxaction.noshadows) {
                             j = 0
@@ -426,8 +416,7 @@ open class idEntityFx : idEntity() {
                             if (laction2.lightDefHandle != -1) {
                                 laction2.renderLight.referenceSound = refSound.referenceSound
                                 Game_local.gameRenderWorld!!.UpdateLightDef(
-                                    laction2.lightDefHandle,
-                                    laction2.renderLight
+                                    laction2.lightDefHandle, laction2.renderLight
                                 )
                             }
                             j++
@@ -474,8 +463,7 @@ open class idEntityFx : idEntity() {
                                 if (fxaction.shakeIgnoreMaster) {
                                     ignore_ent = GetBindMaster()
                                 }
-                            }
-                            // lookup the ent we are bound to?
+                            } // lookup the ent we are bound to?
                             Game_local.gameLocal.RadiusPush(
                                 GetPhysics().GetOrigin(),
                                 fxaction.shakeDistance,
@@ -491,8 +479,7 @@ open class idEntityFx : idEntity() {
                 }
 
                 fx_enum.FX_ATTACHENTITY, fx_enum.FX_PARTICLE, fx_enum.FX_MODEL -> {
-                    if (useAction.modelDefHandle == -1) {
-//					memset( &useAction.renderEntity, 0, sizeof( renderEntity_t ) );
+                    if (useAction.modelDefHandle == -1) { //					memset( &useAction.renderEntity, 0, sizeof( renderEntity_t ) );
                         useAction.renderEntity = renderEntity_s()
                         useAction.renderEntity.origin.set(GetPhysics().GetOrigin().plus(fxaction.offset))
                         useAction.renderEntity.axis.set(if (fxaction.explicitAxis) fxaction.axis else GetPhysics().GetAxis())
@@ -501,8 +488,7 @@ open class idEntityFx : idEntity() {
                         useAction.renderEntity.shaderParms[RenderWorld.SHADERPARM_RED] = 1.0f
                         useAction.renderEntity.shaderParms[RenderWorld.SHADERPARM_GREEN] = 1.0f
                         useAction.renderEntity.shaderParms[RenderWorld.SHADERPARM_BLUE] = 1.0f
-                        useAction.renderEntity.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                            -MS2SEC(time.toFloat())
+                        useAction.renderEntity.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(time.toFloat())
                         useAction.renderEntity.shaderParms[3] = 1.0f
                         useAction.renderEntity.shaderParms[5] = 0.0f
                         if (useAction.renderEntity.hModel != null) {
@@ -511,12 +497,10 @@ open class idEntityFx : idEntity() {
                         useAction.modelDefHandle = Game_local.gameRenderWorld!!.AddEntityDef(useAction.renderEntity)
                     } else if (fxaction.trackOrigin) {
                         useAction.renderEntity.origin.set(GetPhysics().GetOrigin().plus(fxaction.offset))
-                        useAction.renderEntity.axis.set(if (fxaction.explicitAxis) fxaction.axis else GetPhysics().GetAxis())
-                        // D3XP: actually update the render entity so the change is visible
+                        useAction.renderEntity.axis.set(if (fxaction.explicitAxis) fxaction.axis else GetPhysics().GetAxis()) // D3XP: actually update the render entity so the change is visible
                         if (isD3XP) {
                             Game_local.gameRenderWorld!!.UpdateEntityDef(
-                                useAction.modelDefHandle,
-                                useAction.renderEntity
+                                useAction.modelDefHandle, useAction.renderEntity
                             )
                         }
                     }
@@ -524,13 +508,11 @@ open class idEntityFx : idEntity() {
                 }
 
                 fx_enum.FX_LAUNCH -> {
-                    if (Game_local.gameLocal.isClient) {
-                        // client never spawns entities outside of ClientReadSnapshot
+                    if (Game_local.gameLocal.isClient) { // client never spawns entities outside of ClientReadSnapshot
                         useAction.launched = true
                     } else if (!useAction.launched) {
                         useAction.launched = true
-                        projectile = null
-                        // FIXME: may need to cache this if it is slow
+                        projectile = null // FIXME: may need to cache this if it is slow
                         projectileDef = Game_local.gameLocal.FindEntityDefDict(fxaction.data.toString(), false)
                         if (null == projectileDef) {
                             Game_local.gameLocal.Warning("projectile '%s' not found", fxaction.data)
@@ -540,17 +522,14 @@ open class idEntityFx : idEntity() {
                                 projectile = ent[0] as idProjectile
                                 projectile.Create(this, GetPhysics().GetOrigin(), GetPhysics().GetAxis()[0])
                                 projectile.Launch(
-                                    GetPhysics().GetOrigin(),
-                                    GetPhysics().GetAxis()[0],
-                                    vec3_origin
+                                    GetPhysics().GetOrigin(), GetPhysics().GetAxis()[0], vec3_origin
                                 )
                             }
                         }
                     }
                 }
 
-                fx_enum.FX_SHOCKWAVE -> {
-                    // D3XP: spawn a shockwave entity
+                fx_enum.FX_SHOCKWAVE -> { // D3XP: spawn a shockwave entity
                     if (Game_local.gameLocal.isClient) {
                         useAction.shakeStarted = true
                     } else if (!useAction.shakeStarted) {
@@ -631,9 +610,7 @@ open class idEntityFx : idEntity() {
         WriteBindToSnapshot(msg)
         msg.WriteLong(
             if (fxEffect != null) Game_local.gameLocal.ServerRemapDecl(
-                -1,
-                declType_t.DECL_FX,
-                fxEffect!!.Index()
+                -1, declType_t.DECL_FX, fxEffect!!.Index()
             ) else -1
         )
         msg.WriteLong(started)
@@ -649,8 +626,7 @@ open class idEntityFx : idEntity() {
         start_time = msg.ReadLong()
         if (fx_index != -1 && start_time > 0 && fxEffect == null && started < 0) {
             spawnArgs.GetInt("effect_lapse", "1000", max_lapse)
-            if (Game_local.gameLocal.time - start_time > max_lapse._val) {
-                // too late, skip the effect completely
+            if (Game_local.gameLocal.time - start_time > max_lapse._val) { // too late, skip the effect completely
                 started = 0
                 return
             }
@@ -691,8 +667,7 @@ open class idEntityFx : idEntity() {
         fxActionDelay = spawnArgs.GetFloat("fxActionDelay")
         nextTriggerTime = if (fxActionDelay != 0.0f) {
             (Game_local.gameLocal.time + SEC2MS(fxActionDelay))
-        } else {
-            // prevent multiple triggers on same frame
+        } else { // prevent multiple triggers on same frame
             Game_local.gameLocal.time + 1
         }
         PostEventSec(EV_Fx_Action, fxActionDelay, activator.value)

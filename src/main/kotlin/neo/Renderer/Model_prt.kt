@@ -44,7 +44,6 @@ import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idFloatList
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.math.Random.idRandom
-import java.util.*
 
 object Model_prt {
     val parametricParticle_SnapshotName: String = "_ParametricParticle_Snapshot_"
@@ -66,8 +65,7 @@ object Model_prt {
             SetSofteningRadii()
         }
 
-        override fun TouchData() {
-            // Ensure our particle system is added to the list of referenced decls
+        override fun TouchData() { // Ensure our particle system is added to the list of referenced decls
             particleSystem = DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, name) as idDeclParticle?
         }
 
@@ -76,13 +74,11 @@ object Model_prt {
         }
 
         override fun InstantiateDynamicModel(
-            renderEntity: renderEntity_s?,
-            viewDef: viewDef_s?,
-            cachedModel: idRenderModel?
+            renderEntity: renderEntity_s?, viewDef: viewDef_s?, cachedModel: idRenderModel?
         ): idRenderModel? {
             var cachedModel: idRenderModel? = cachedModel
             val staticModel: idRenderModelStatic
-            if (cachedModel != null && !r_useCachedDynamicModels!!.GetBool()) {
+            if (cachedModel != null && !r_useCachedDynamicModels.GetBool()) {
                 cachedModel = null
             }
 
@@ -90,7 +86,7 @@ object Model_prt {
             if (renderEntity == null || viewDef == null) {
                 return null
             }
-            if (r_skipParticles!!.GetBool()) {
+            if (r_skipParticles.GetBool()) {
                 return null
             }
 
@@ -163,12 +159,10 @@ object Model_prt {
                         (stage.particleLife * 1000 * stage.spawnBunching * index / stage.totalParticles).toInt()
                     val particleAge: Int = stageAge - bunchOffset
                     val particleCycle: Int = particleAge / stage.cycleMsec
-                    if (particleCycle < 0) {
-                        // before the particleSystem spawned
+                    if (particleCycle < 0) { // before the particleSystem spawned
                         continue
                     }
-                    if (stage.cycles != 0.0f && particleCycle >= stage.cycles) {
-                        // cycled systems will only run cycle times
+                    if (stage.cycles != 0.0f && particleCycle >= stage.cycles) { // cycled systems will only run cycle times
                         continue
                     }
                     if (particleCycle == stageCycle) {
@@ -177,21 +171,16 @@ object Model_prt {
                         g.random = idRandom(steppingRandom2)
                     }
                     val inCycleTime: Int = particleAge - particleCycle * stage.cycleMsec
-                    if ((renderEntity.shaderParms[RenderWorld.SHADERPARM_PARTICLE_STOPTIME] != 0.0f
-                                && g.renderView.time - inCycleTime >= renderEntity.shaderParms[RenderWorld.SHADERPARM_PARTICLE_STOPTIME] * 1000)
-                    ) {
-                        // don't fire any more particles
+                    if ((renderEntity.shaderParms[RenderWorld.SHADERPARM_PARTICLE_STOPTIME] != 0.0f && g.renderView.time - inCycleTime >= renderEntity.shaderParms[RenderWorld.SHADERPARM_PARTICLE_STOPTIME] * 1000)) { // don't fire any more particles
                         continue
                     }
 
                     // supress particles before or after the age clamp
                     g.frac = inCycleTime.toFloat() / (stage.particleLife * 1000)
-                    if (g.frac < 0.0f) {
-                        // yet to be spawned
+                    if (g.frac < 0.0f) { // yet to be spawned
                         continue
                     }
-                    if (g.frac > 1.0f) {
-                        // this particle is in the deadTime band
+                    if (g.frac > 1.0f) { // this particle is in the deadTime band
                         continue
                     }
 

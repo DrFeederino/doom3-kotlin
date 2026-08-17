@@ -79,8 +79,7 @@ object Session_local {
         override fun writeTo(file: idFile) {
             if (cmd != null) {
                 cmd!!.writeTo(file)
-            } else {
-                // pad with zero bytes equal to usercmd_t.BYTES
+            } else { // pad with zero bytes equal to usercmd_t.BYTES
                 var i = 0
                 while (i < usercmd_t.BYTES) {
                     file.WriteChar(0.toShort())
@@ -281,7 +280,7 @@ object Session_local {
                 "writes precache commands"
             )
 
-//            if (ID_DEDICATED) {
+            //            if (ID_DEDICATED) {
             cmdSystem.AddCommand(
                 "map",
                 Session_Map_f.getInstance(),
@@ -367,8 +366,7 @@ object Session_local {
                 CmdSystem.CMD_FL_SYSTEM,
                 "compresses a demo file",
                 ArgCompletion_DemoName.getInstance()
-            )
-            //            }
+            ) //            }
             cmdSystem.AddCommand(
                 "disconnect", Session_Disconnect_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "disconnects from a game"
             )
@@ -464,16 +462,13 @@ object Session_local {
             }
 
             Stop()
-            if (rw != null) {
-//		delete rw;
+            if (rw != null) { //		delete rw;
                 //rw = null
             }
-            if (sw != null) {
-//		delete sw;
+            if (sw != null) { //		delete sw;
                 //sw = null
             }
-            if (menuSoundWorld != null) {
-//		delete menuSoundWorld;
+            if (menuSoundWorld != null) { //		delete menuSoundWorld;
                 //menuSoundWorld = null
             }
             mapSpawnData.serverInfo.Clear()
@@ -531,8 +526,7 @@ object Session_local {
                         return
                     }
                 }
-            }
-            // FIX: C++ just returns silently on recursive calls (the FatalError is commented out)
+            } // FIX: C++ just returns silently on recursive calls (the FatalError is commented out)
             if (insideUpdateScreen) {
                 return
             }
@@ -578,8 +572,7 @@ object Session_local {
             lastPacifierTime = time
             if (guiLoading != null && bytesNeededForMapLoad != 0) {
                 val n = FileSystem_h.fileSystem.GetReadCount().toFloat()
-                val pct = n / bytesNeededForMapLoad
-                // pct = idMath::ClampFloat( 0.0f.0f, 100.0f.0f, pct );
+                val pct = n / bytesNeededForMapLoad // pct = idMath::ClampFloat( 0.0f.0f, 100.0f.0f, pct );
                 guiLoading!!.SetStateFloat("map_loading", pct)
                 guiLoading!!.StateChanged(Common.com_frameTime)
             }
@@ -618,8 +611,7 @@ object Session_local {
                 )
                 val ratio = 30.0f / (1000.0f / UsercmdGen.USERCMD_MSEC / com_aviDemoTics.GetInteger())
                 aviDemoFrameCount += ratio
-                if (aviTicStart + 1 != aviDemoFrameCount.toInt()) {
-                    // skipped frames so write them out
+                if (aviTicStart + 1 != aviDemoFrameCount.toInt()) { // skipped frames so write them out
                     var c = (aviDemoFrameCount - aviTicStart).toInt()
                     while (c-- != 0) {
                         RenderSystem.renderSystem.TakeScreenshot(
@@ -664,12 +656,10 @@ object Session_local {
             if (com_minTics.GetInteger() > 1) {
                 minTic = lastGameTic + com_minTics.GetInteger()
             }
-            if (readDemo != null) {
-                // FIX: C++ `!timeDemo` means `timeDemo == TD_NO` (0 is falsy), not null check
+            if (readDemo != null) { // FIX: C++ `!timeDemo` means `timeDemo == TD_NO` (0 is falsy), not null check
                 minTic = if (timeDemo == timeDemo_t.TD_NO && numDemoFrames != 1) {
                     lastDemoTic + USERCMD_PER_DEMO_FRAME
-                } else {
-                    // timedemos and demoshots will run as fast as they can, other demos
+                } else { // timedemos and demoshots will run as fast as they can, other demos
                     // will not run more than 30 hz
                     latchedTicNumber
                 }
@@ -683,25 +673,22 @@ object Session_local {
             }
 
             // FIXME: deserves a cleanup and abstraction
-            if (WIN32 || MACOS_X) {
-                // Spin in place if needed.  The game should yield the cpu if
+            if (WIN32 || MACOS_X) { // Spin in place if needed.  The game should yield the cpu if
                 // it is running over 60 hz, because there is fundamentally
                 // nothing useful for it to do.
                 while (true) {
-                    latchedTicNumber = Common.com_ticNumber
-                    //                    System.out.printf("Frame(%d, %d)\n", latchedTicNumber, minTic);
+                    latchedTicNumber =
+                        Common.com_ticNumber //                    System.out.printf("Frame(%d, %d)\n", latchedTicNumber, minTic);
                     if (latchedTicNumber >= minTic) {
                         break
-                    }
-                    // DG: com_ticNumber is now updated on the main thread via wall-clock time.
+                    } // DG: com_ticNumber is now updated on the main thread via wall-clock time.
                     // Async() no longer increments it (only does sound updates on the async thread).
                     Common.Com_UpdateTicNumber()
-                    win_main.Sys_Sleep(1)
-                    //win_main.hTimer.isTerminated
+                    win_main.Sys_Sleep(1) //win_main.hTimer.isTerminated
                     //                    if (win_main.DEBUG) {
-//                        //TODO:the debugger slows the code too much at this point, so we shall manually move to the next frame.
-//                        com_ticNumber = minTic;
-//                    }
+                    //                        //TODO:the debugger slows the code too much at this point, so we shall manually move to the next frame.
+                    //                        com_ticNumber = minTic;
+                    //                    }
                 }
             } else {
                 while (true) {
@@ -712,14 +699,11 @@ object Session_local {
                     win_main.Sys_WaitForEvent(TRIGGER_EVENT_ONE)
                 }
             }
-            if (authEmitTimeout != 0) {
-                // waiting for a game auth
-                if (win_shared.Sys_Milliseconds() > authEmitTimeout) {
-                    // expired with no reply
+            if (authEmitTimeout != 0) { // waiting for a game auth
+                if (win_shared.Sys_Milliseconds() > authEmitTimeout) { // expired with no reply
                     // means that if a firewall is blocking the master, we will let through
                     Common.common.DPrintf("no reply from auth\n")
-                    if (authWaitBox) {
-                        // close the wait box
+                    if (authWaitBox) { // close the wait box
                         StopBox()
                         authWaitBox = false
                     }
@@ -728,8 +712,7 @@ object Session_local {
                     }
                     if (xpkey_state == cdKeyState_t.CDKEY_CHECKING) {
                         xpkey_state = cdKeyState_t.CDKEY_OK
-                    }
-                    // maintain this empty as it's set by auth denials
+                    } // maintain this empty as it's set by auth denials
                     authMsg.Empty()
                     authEmitTimeout = 0
                     SetCDKeyGuiVars()
@@ -746,8 +729,7 @@ object Session_local {
             }
 
             //------------ single player game tics --------------
-            if (!mapSpawned || guiActive != null) {
-                // DG: dhewm3 removed com_asyncInput — always use direct usercmd
+            if (!mapSpawned || guiActive != null) { // DG: dhewm3 removed com_asyncInput — always use direct usercmd
                 // early exit, won't do RunGameTic .. but still need to update mouse position for GUIs
                 UsercmdGen.usercmdGen.GetDirectUsercmd()
             }
@@ -791,15 +773,12 @@ object Session_local {
             // never use more than USERCMD_PER_DEMO_FRAME,
             // which makes it go into slow motion when recording
             if (writeDemo != null) {
-                val fixedTic = USERCMD_PER_DEMO_FRAME
-                // we should have waited long enough
+                val fixedTic = USERCMD_PER_DEMO_FRAME // we should have waited long enough
                 if (numCmdsToRun < fixedTic) {
                     Common.common.Error("idSessionLocal::Frame: numCmdsToRun < fixedTic")
-                }
-                // we may need to dump older commands
+                } // we may need to dump older commands
                 lastGameTic = latchedTicNumber - fixedTic
-            } else if (com_fixedTic.GetInteger() > 0) {
-                // this may cause commands run in a previous frame to
+            } else if (com_fixedTic.GetInteger() > 0) { // this may cause commands run in a previous frame to
                 // be run again if we are going at above the real time rate
                 lastGameTic = latchedTicNumber - com_fixedTic.GetInteger()
             } else if (aviCaptureMode) {
@@ -824,12 +803,10 @@ object Session_local {
             i = 0
             while (i < gameTicsToRun) {
                 RunGameTic()
-                if (!mapSpawned) {
-                    // exited game play
+                if (!mapSpawned) { // exited game play
                     break
                 }
-                if (syncNextGameFrame) {
-                    // long game frame, so break out and continue executing as if there was no hitch
+                if (syncNextGameFrame) { // long game frame, so break out and continue executing as if there was no hitch
                     break
                 }
                 i++
@@ -841,8 +818,7 @@ object Session_local {
         }
 
         @Throws(idException::class)
-        override fun ProcessEvent(event: sysEvent_s): Boolean {
-            // hitting escape anywhere brings up the menu
+        override fun ProcessEvent(event: sysEvent_s): Boolean { // hitting escape anywhere brings up the menu
             // FIX: C++ also checks `!idKeyInput::IsDown( K_SHIFT )` — Shift+Escape opens console, not menu
             if (guiActive == null && event.evType == sysEventType_t.SE_KEY && event.evValue2 == 1 && event.evValue == KeyInput.K_ESCAPE && !idKeyInput.IsDown(
                     KeyInput.K_SHIFT
@@ -868,8 +844,7 @@ object Session_local {
             }
 
             // if we are testing a GUI, send all events to it
-            if (guiTest != null) {
-                // hitting escape exits the testgui
+            if (guiTest != null) { // hitting escape exits the testgui
                 if (event.evType == sysEventType_t.SE_KEY && event.evValue2 == 1 && event.evValue == KeyInput.K_ESCAPE) {
                     guiTest = null
                     return true
@@ -906,8 +881,7 @@ object Session_local {
             if (guiActive == guiMainMenu) {
                 return
             }
-            if (readDemo != null) {
-                // if we're playing a demo, esc kills it
+            if (readDemo != null) { // if we're playing a demo, esc kills it
                 UnloadMap()
             }
 
@@ -984,7 +958,7 @@ object Session_local {
                 return
             }
 
-//	memset( &ev, 0, sizeof( ev ) );
+            //	memset( &ev, 0, sizeof( ev ) );
             ev = sysEvent_s()
             ev.evType = sysEventType_t.SE_NONE
             cmd = gui!!.HandleEvent(ev, Common.com_frameTime)
@@ -1094,8 +1068,9 @@ object Session_local {
                     guiMsg!!.SetStateString("right", Common.common.GetLanguageDict().GetString("#str_04340"))
                     guiMsg!!.SetStateString("visible_msgbox", "0")
                     guiMsg!!.SetStateString("visible_cdkey", "1")
-                    guiMsg!!.SetStateString("visible_hasxp", if (FileSystem_h.fileSystem.HasD3XP()) "1" else "0")
-                    // the current cdkey / xpkey values may have bad/random data in them
+                    guiMsg!!.SetStateString(
+                        "visible_hasxp", if (FileSystem_h.fileSystem.HasD3XP()) "1" else "0"
+                    ) // the current cdkey / xpkey values may have bad/random data in them
                     // it's best to avoid printing them completely, unless the key is good
                     if (cdkey_state == cdKeyState_t.CDKEY_OK) {
                         guiMsg!!.SetStateString("str_cdkey", String(cdkey, 0, CDKEY_BUF_LEN - 1))
@@ -1127,16 +1102,14 @@ object Session_local {
             guiActive!!.Activate(true, Common.com_frameTime)
             msgRunning = true
             msgRetIndex = -1
-            if (wait) {
-                // play one frame ignoring events so we don't get confused by parasite button releases
+            if (wait) { // play one frame ignoring events so we don't get confused by parasite button releases
                 msgIgnoreButtons = true
                 Common.common.GUIFrame(true, network)
                 msgIgnoreButtons = false
                 while (msgRunning) {
                     Common.common.GUIFrame(true, network)
                 }
-                if (msgRetIndex < 0) {
-                    // MSG_WAIT and other StopBox calls
+                if (msgRetIndex < 0) { // MSG_WAIT and other StopBox calls
                     return null
                 }
                 return if (type == msgBoxType_t.MSG_PROMPT) {
@@ -1147,8 +1120,7 @@ object Session_local {
                         null
                     }
                 } else if (type == msgBoxType_t.MSG_CDKEY) {
-                    if (msgRetIndex == 0) {
-                        // the visible_ values distinguish looking at a valid key, or editing it
+                    if (msgRetIndex == 0) { // the visible_ values distinguish looking at a valid key, or editing it
                         msgFireBack[0].set(
                             String.format(
                                 "%1s;%16s;%2s;%1s;%16s;%2s",
@@ -1257,20 +1229,17 @@ object Session_local {
                         }
                         guiMsg!!.SetStateString("message", sMsg)
                     }
-                }
-                // abort was used - tell the downloader and wait till final stop
+                } // abort was used - tell the downloader and wait till final stop
                 bgl.url.status = dlStatus_t.DL_ABORTING
                 guiMsg!!.SetStateString("title", "Aborting..")
-                guiMsg!!.SetStateString("visible_mid", "0")
-                // continue looping
+                guiMsg!!.SetStateString("visible_mid", "0") // continue looping
                 guiMsgRestore = guiActive
                 guiActive = guiMsg
                 msgRunning = true
             }
         }
 
-        override fun SetPlayingSoundWorld() {
-            // FIX: C++ has `guiActive == guiLoading || ( guiActive == guiMsg && !mapSpawned )`
+        override fun SetPlayingSoundWorld() { // FIX: C++ has `guiActive == guiLoading || ( guiActive == guiMsg && !mapSpawned )`
             // Kotlin had `guiActive == guiLoading != null` which is always true (Boolean != null)
             if (guiActive != null && (guiActive == guiMainMenu || guiActive == guiIntro || guiActive == guiLoading || (guiActive == guiMsg && !mapSpawned))) {
                 snd_system.soundSystem.SetPlayingSoundWorld(menuSoundWorld!!)
@@ -1305,8 +1274,7 @@ object Session_local {
             if (null == f) {
                 Common.common.Printf("Couldn't read %s.\n", filename)
                 cdkey[0] = '\u0000'
-            } else {
-//		memset( buffer, 0, sizeof(buffer) );
+            } else { //		memset( buffer, 0, sizeof(buffer) );
                 f.Read(buffer, CDKEY_BUF_LEN - 1)
                 FileSystem_h.fileSystem.CloseFile(f)
                 idStr.Copynz(cdkey, String(buffer.array()), CDKEY_BUF_LEN)
@@ -1321,8 +1289,7 @@ object Session_local {
             if (null == f) {
                 Common.common.Printf("Couldn't read %s.\n", filename)
                 xpkey[0] = '\u0000'
-            } else {
-//		memset( buffer, 0, sizeof(buffer) );
+            } else { //		memset( buffer, 0, sizeof(buffer) );
                 buffer.clear()
                 f.Read(buffer, CDKEY_BUF_LEN - 1)
                 FileSystem_h.fileSystem.CloseFile(f)
@@ -1334,8 +1301,8 @@ object Session_local {
             var filename: String
             var f: idFile?
             val OSPath: String?
-            filename = "../" + Licensee.BASE_GAMEDIR + "/" + Licensee.CDKEY_FILE
-            // OpenFileWrite advertises creating directories to the path if needed, but that won't work with a '..' in the path
+            filename =
+                "../" + Licensee.BASE_GAMEDIR + "/" + Licensee.CDKEY_FILE // OpenFileWrite advertises creating directories to the path if needed, but that won't work with a '..' in the path
             // occasionally on windows, but mostly on Linux and OSX, the fs_savepath/base may not exist in full
             OSPath = FileSystem_h.fileSystem.BuildOSPath(
                 cvarSystem.GetCVarString("fs_savepath"), Licensee.BASE_GAMEDIR, Licensee.CDKEY_FILE
@@ -1362,8 +1329,7 @@ object Session_local {
             if (!xp) {
                 return ctos(cdkey)
             }
-            return if (xpkey_state == cdKeyState_t.CDKEY_OK || xpkey_state == cdKeyState_t.CDKEY_CHECKING) {
-                // FIX: C++ returns `xpkey`, not `cdkey`, when requesting the XP key
+            return if (xpkey_state == cdKeyState_t.CDKEY_OK || xpkey_state == cdKeyState_t.CDKEY_CHECKING) { // FIX: C++ returns `xpkey`, not `cdkey`, when requesting the XP key
                 ctos(xpkey)
             } else null
         }
@@ -1427,8 +1393,7 @@ object Session_local {
                     }
                     i++
                 }
-                if (edited_key[i_key]) {
-                    // verify the checksum for edited keys only
+                if (edited_key[i_key]) { // verify the checksum for edited keys only
                     checksum = CRC32.CRC32_BlockChecksum(lkey[i_key], CDKEY_BUF_LEN - 1).toInt()
                     chk8 =
                         checksum and 0xff xor (checksum and 0xff00 shr 8 xor (checksum and 0xff0000 shr 16 xor (checksum and -0x1000000 shr 24)))
@@ -1474,8 +1439,7 @@ object Session_local {
         override fun CDKeysAreValid(strict: Boolean): Boolean {
             var i: Int
             var emitAuth = false
-            if (cdkey_state == cdKeyState_t.CDKEY_UNKNOWN) {
-                // FIX: C++ uses `strlen(cdkey)` which counts chars until null terminator.
+            if (cdkey_state == cdKeyState_t.CDKEY_UNKNOWN) { // FIX: C++ uses `strlen(cdkey)` which counts chars until null terminator.
                 // cdkey.size always returns CDKEY_BUF_LEN (17), making the check always fail.
                 if (ctos(cdkey).length != CDKEY_BUF_LEN - 1) {
                     cdkey_state = cdKeyState_t.CDKEY_INVALID
@@ -1517,8 +1481,7 @@ object Session_local {
             }
             if (emitAuth) {
                 EmitGameAuth()
-            }
-            // make sure to keep the mainmenu gui up to date in case we made state changes
+            } // make sure to keep the mainmenu gui up to date in case we made state changes
             SetCDKeyGuiVars()
             return if (strict) {
                 cdkey_state == cdKeyState_t.CDKEY_OK && (xpkey_state == cdKeyState_t.CDKEY_OK || xpkey_state == cdKeyState_t.CDKEY_NA)
@@ -1528,17 +1491,14 @@ object Session_local {
         }
 
         override fun ClearCDKey(valid: BooleanArray) {
-            if (!valid[0]) {
-//		memset( cdkey, 0, CDKEY_BUF_LEN );
+            if (!valid[0]) { //		memset( cdkey, 0, CDKEY_BUF_LEN );
                 // FIX: C++ memset fills with 0 (null char), not '0' (digit character)
                 Arrays.fill(cdkey, '\u0000')
                 cdkey_state = cdKeyState_t.CDKEY_UNKNOWN
-            } else if (cdkey_state == cdKeyState_t.CDKEY_CHECKING) {
-                // if a key was in checking and not explicitely asked for clearing, put it back to ok
+            } else if (cdkey_state == cdKeyState_t.CDKEY_CHECKING) { // if a key was in checking and not explicitely asked for clearing, put it back to ok
                 cdkey_state = cdKeyState_t.CDKEY_OK
             }
-            if (!valid[1]) {
-//		memset( xpkey, 0, CDKEY_BUF_LEN );
+            if (!valid[1]) { //		memset( xpkey, 0, CDKEY_BUF_LEN );
                 // FIX: C++ clears `xpkey`, not `cdkey`; also fills with 0 not '0'
                 Arrays.fill(xpkey, '\u0000')
                 xpkey_state = cdKeyState_t.CDKEY_UNKNOWN
@@ -1576,8 +1536,7 @@ object Session_local {
 
         override fun CDKeysAuthReply(valid: Boolean, auth_msg: String?) {
             assert(authEmitTimeout > 0)
-            if (authWaitBox) {
-                // close the wait box
+            if (authWaitBox) { // close the wait box
                 StopBox()
                 authWaitBox = false
             }
@@ -1650,14 +1609,11 @@ object Session_local {
                 Common.common.Printf("Dedicated servers cannot start singleplayer games.\n")
                 return
             } else {
-                if (ID_ENFORCE_KEY) {
-                    // strict check. don't let a game start without a definitive answer
+                if (ID_ENFORCE_KEY) { // strict check. don't let a game start without a definitive answer
                     if (!CDKeysAreValid(true)) {
                         var prompt = true
-                        if (MaybeWaitOnCDKey()) {
-                            // check again, maybe we just needed more time
-                            if (CDKeysAreValid(true)) {
-                                // can continue directly
+                        if (MaybeWaitOnCDKey()) { // check again, maybe we just needed more time
+                            if (CDKeysAreValid(true)) { // can continue directly
                                 prompt = false
                             }
                         }
@@ -1701,8 +1657,7 @@ object Session_local {
 
          Draw the fade material over everything that has been drawn
          ===============
-         */
-        // called by Draw when the scene to scene wipe is still running
+         */ // called by Draw when the scene to scene wipe is still running
         fun DrawWipeModel() {
             val now = win_shared.Sys_Milliseconds()
             if (wipeStartTime >= wipeStopTime) {
@@ -1739,8 +1694,7 @@ object Session_local {
         }
 
         fun CompleteWipe() {
-            if (Common.com_ticNumber == 0) {
-                // if the tic counting hasn't started, we would hang here
+            if (Common.com_ticNumber == 0) { // if the tic counting hasn't started, we would hang here
                 wipeStopTime = 0
                 UpdateScreen(true)
                 return
@@ -1766,8 +1720,7 @@ object Session_local {
             Console.console.Close()
 
             // introduced in D3XP code. don't think it actually fixes anything, but doesn't hurt either
-            if (true) {
-                // Try and prevent the while loop from being skipped over (long hitch on the main thread?)
+            if (true) { // Try and prevent the while loop from being skipped over (long hitch on the main thread?)
                 val stop = win_shared.Sys_Milliseconds() + 1000
                 var force = 10
                 while (win_shared.Sys_Milliseconds() < stop || force-- > 0) {
@@ -1802,11 +1755,9 @@ object Session_local {
             val len = inFileName.Length()
             i = 0
             while (i < len) {
-                if ("',.~!@#$%^&*()[]{}<>\\|/=?+;:-'\"".indexOf(inFileName[i]) > -1) {
-                    // random junk
+                if ("',.~!@#$%^&*()[]{}<>\\|/=?+;:-'\"".indexOf(inFileName[i]) > -1) { // random junk
                     saveFileName.Append('_')
-                } else if (inFileName[i].code >= 128) {
-                    // high ascii chars
+                } else if (inFileName[i].code >= 128) { // high ascii chars
                     saveFileName.Append('_')
                 } else if (inFileName[i] == ' ') {
                     saveFileName.Append('_')
@@ -1824,8 +1775,7 @@ object Session_local {
             val mapDef = mapDecl as idDeclEntityDef?
             if (mapDef != null) {
                 mapName = Common.common.GetLanguageDict().GetString(mapDef.dict.GetString("name", mapName))
-            }
-            // Fixme: Localization
+            } // Fixme: Localization
             return Str.va("^3AutoSave:^0 %s", mapName)
         }
 
@@ -1855,9 +1805,7 @@ object Session_local {
             // only allow loads from the game directory because we don't want a base game to load
             val game = idStr(cvarSystem.GetCVarString("fs_game"))
             savegameFile = FileSystem_h.fileSystem.OpenFileRead(
-                saveFilePath.toString(),
-                true,
-                if (game.Length() != 0) game.toString() else null
+                saveFilePath.toString(), true, if (game.Length() != 0) game.toString() else null
             )
 
             if (savegameFile == null) {
@@ -1920,8 +1868,7 @@ object Session_local {
                 mapSpawnData.syncedCVars.Clear()
                 mapSpawnData.syncedCVars.set(cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_NETWORKSYNC))
 
-                mapSpawnData.mapSpawnUsercmd[0].set(UsercmdGen.usercmdGen.TicCmd(latchedTicNumber))
-                // make sure no buttons are pressed
+                mapSpawnData.mapSpawnUsercmd[0].set(UsercmdGen.usercmdGen.TicCmd(latchedTicNumber)) // make sure no buttons are pressed
                 mapSpawnData.mapSpawnUsercmd[0].buttons = 0
 
                 ExecuteMapChange()
@@ -1945,8 +1892,8 @@ object Session_local {
             ScrubSaveGameFileName(saveFilePathBase)
             saveFilePathBase.set("savegames/" + saveFilePathBase)
 
-            var game: String? = cvarSystem.GetCVarString("fs_game")
-            // FIX: C++ checks `game != NULL && game[0] == '\0'` meaning "if game is not null AND is empty".
+            var game: String? =
+                cvarSystem.GetCVarString("fs_game") // FIX: C++ checks `game != NULL && game[0] == '\0'` meaning "if game is not null AND is empty".
             // Kotlin had `isNotEmpty()` which is the opposite.
             if (game != null && game.isEmpty()) {
                 game = null
@@ -1958,8 +1905,7 @@ object Session_local {
             var newestTime = 0L
             for (i in 1..maxNum) {
                 val saveFilePath = idStr(saveFilePathBase)
-                if (i > 1) {
-                    // the first one is just called "QuickSave" without a number, like before.
+                if (i > 1) { // the first one is just called "QuickSave" without a number, like before.
                     // the others are called "QuickSave2" "QuickSave3" etc
                     saveFilePath.Append(i.toString())
                 }
@@ -1988,8 +1934,7 @@ object Session_local {
         fun SaveGame(saveName: String, autosave: Boolean = false, saveFileName: String? = null): Boolean {
             val previewFile = idStr()
             val descriptionFile = idStr()
-            val mapName = idStr()
-            // DG: support setting an explicit savename to avoid problems with autosave names
+            val mapName = idStr() // DG: support setting an explicit savename to avoid problems with autosave names
             val gameFile = idStr(saveFileName ?: saveName)
             if (!mapSpawned) {
                 Common.common.Printf("Not playing a game.\n")
@@ -2067,8 +2012,7 @@ object Session_local {
             fileOut.WriteString(mapName)
 
             // persistent player info
-            for (i in 0 until AsyncNetwork.MAX_ASYNC_CLIENTS) {
-                // C++ operator= copies by value; Kotlin = copies reference — use .set() for value copy
+            for (i in 0 until AsyncNetwork.MAX_ASYNC_CLIENTS) { // C++ operator= copies by value; Kotlin = copies reference — use .set() for value copy
                 mapSpawnData.persistentPlayerInfo[i].set(Game_local.game.GetPersistentPlayerInfo(i))
                 mapSpawnData.persistentPlayerInfo[i].WriteToFileHandle(fileOut)
             }
@@ -2142,8 +2086,8 @@ object Session_local {
             ScrubSaveGameFileName(saveFilePathBase)
             saveFilePathBase.set("savegames/" + saveFilePathBase)
 
-            var game: String? = cvarSystem.GetCVarString("fs_game")
-            // FIX: Same as QuickLoad — C++ checks if game string is empty to set null
+            var game: String? =
+                cvarSystem.GetCVarString("fs_game") // FIX: Same as QuickLoad — C++ checks if game string is empty to set null
             if (game != null && game.isEmpty()) {
                 game = null
             }
@@ -2153,23 +2097,20 @@ object Session_local {
             var oldestTime = 0L
             for (i in 1..maxNum) {
                 val saveFilePath = idStr(saveFilePathBase)
-                if (i > 1) {
-                    // the first one is just called "QuickSave" without a number, like before.
+                if (i > 1) { // the first one is just called "QuickSave" without a number, like before.
                     // the others are called "QuickSave2" "QuickSave3" etc
                     saveFilePath.Append(i.toString())
                 }
                 saveFilePath.SetFileExtension(".save")
 
                 val f = FileSystem_h.fileSystem.OpenFileRead(saveFilePath.toString(), true, game)
-                if (f == null) {
-                    // this savegame doesn't exist yet => we can use this index for the name
+                if (f == null) { // this savegame doesn't exist yet => we can use this index for the name
                     indexToUse = i
                     break
                 } else {
                     val ts = f.Timestamp()
                     assert(ts != 0L)
-                    if (ts < oldestTime || oldestTime == 0L) {
-                        // this is the oldest quicksave we found so far => a candidate to be overwritten
+                    if (ts < oldestTime || oldestTime == 0L) { // this is the oldest quicksave we found so far => a candidate to be overwritten
                         indexToUse = i
                         oldestTime = ts
                     }
@@ -2287,8 +2228,7 @@ object Session_local {
                 if (guiActive == guiMsg) {
                     guiMsg!!.Redraw(Common.com_frameTime)
                 }
-            } else if (guiTest != null) {
-                // if testing a gui, clear the screen and draw it
+            } else if (guiTest != null) { // if testing a gui, clear the screen and draw it
                 // clear the background, in case the tested gui is transparent
                 // NOTE that you can't use this for aviGame recording, it will tick at real com_frameTime between screenshots..
                 RenderSystem.renderSystem.SetColor(colorBlack)
@@ -2312,10 +2252,8 @@ object Session_local {
                 rw.RenderScene(currentDemoRenderView)
                 RenderSystem.renderSystem.DrawDemoPics()
             } else if (mapSpawned) {
-                var gameDraw = false
-                // normal drawing for both single and multi player
-                if (!com_skipGameDraw.GetBool() && GetLocalClientNum() >= 0) {
-                    // draw the game view
+                var gameDraw = false // normal drawing for both single and multi player
+                if (!com_skipGameDraw.GetBool() && GetLocalClientNum() >= 0) { // draw the game view
                     val start = win_shared.Sys_Milliseconds()
                     gameDraw = Game_local.game.Draw(GetLocalClientNum())
                     val end = win_shared.Sys_Milliseconds()
@@ -2346,8 +2284,7 @@ object Session_local {
                         Console.console.Draw(true)
                     } else {
                         emptyDrawCount++
-                        if (emptyDrawCount > 5) {
-                            // it's best if you can avoid triggering the watchgod by doing the right thing somewhere else
+                        if (emptyDrawCount > 5) { // it's best if you can avoid triggering the watchgod by doing the right thing somewhere else
                             assert(false)
                             Common.common.Warning("idSession: triggering mainmenu watchdog")
                             emptyDrawCount = 0
@@ -2366,8 +2303,7 @@ object Session_local {
                             DeclManager.declManager.FindMaterial("_white")
                         )
                     }
-                } else {
-                    // draw the console full screen - this should only ever happen in developer builds
+                } else { // draw the console full screen - this should only ever happen in developer builds
                     Console.console.Draw(true)
                 }
                 fullConsole = true
@@ -2437,8 +2373,7 @@ object Session_local {
         }
 
         @Throws(idException::class)
-        fun StartPlayingCmdDemo(demoName: String) {
-            // exit any current game
+        fun StartPlayingCmdDemo(demoName: String) { // exit any current game
             Stop()
             val fullDemoName = idStr("demos/")
             fullDemoName.Append(demoName)
@@ -2448,8 +2383,9 @@ object Session_local {
                 Common.common.Printf("Couldn't open %s\n", fullDemoName.toString())
                 return
             }
-            guiLoading = UserInterface.uiManager.FindGui("guis/map/loading.gui", true, false, true)
-            //cmdDemoFile.Read(&loadGameTime, sizeof(loadGameTime));
+            guiLoading = UserInterface.uiManager.FindGui(
+                "guis/map/loading.gui", true, false, true
+            ) //cmdDemoFile.Read(&loadGameTime, sizeof(loadGameTime));
             LoadCmdDemoFromFile(cmdDemoFile!!)
 
             // start the map
@@ -2523,12 +2459,10 @@ object Session_local {
         }
 
         fun StartRecordingRenderDemo(demoName: String) {
-            if (writeDemo != null) {
-                // allow it to act like a toggle
+            if (writeDemo != null) { // allow it to act like a toggle
                 StopRecordingRenderDemo()
                 return
-            }
-            // FIX: C++ `!demoName[0]` means "is empty". Kotlin had `isNotEmpty()` — inverted.
+            } // FIX: C++ `!demoName[0]` means "is empty". Kotlin had `isNotEmpty()` — inverted.
             if (demoName.isEmpty()) {
                 Common.common.Printf("idSessionLocal::StartRecordingRenderDemo: no name specified\n")
                 return
@@ -2536,8 +2470,7 @@ object Session_local {
             Console.console.Close()
             writeDemo = idDemoFile()
             if (!writeDemo!!.OpenForWriting(demoName)) {
-                Common.common.Printf("error opening %s\n", demoName)
-                //		delete writeDemo;
+                Common.common.Printf("error opening %s\n", demoName) //		delete writeDemo;
                 writeDemo = null
                 return
             }
@@ -2558,14 +2491,12 @@ object Session_local {
             sw.StopWritingDemo()
             rw.StopWritingDemo()
             writeDemo!!.Close()
-            Common.common.Printf("stopped recording %s.\n", writeDemo!!.GetName())
-            //	delete writeDemo;
+            Common.common.Printf("stopped recording %s.\n", writeDemo!!.GetName()) //	delete writeDemo;
             writeDemo = null
         }
 
         @Throws(idException::class)
-        fun StartPlayingRenderDemo(demoName: idStr) {
-            // FIX: C++ `!demoName[0]` means "is empty". Kotlin had `isNotEmpty()` — inverted.
+        fun StartPlayingRenderDemo(demoName: idStr) { // FIX: C++ `!demoName[0]` means "is empty". Kotlin had `isNotEmpty()` — inverted.
             if (demoName != null && demoName.toString().isEmpty()) {
                 Common.common.Printf("idSessionLocal::StartPlayingRenderDemo: no name specified\n")
                 return
@@ -2590,8 +2521,7 @@ object Session_local {
             readDemo = idDemoFile()
             demoName.DefaultFileExtension(".demo")
             if (!readDemo!!.OpenForReading(demoName.toString())) {
-                Common.common.Printf("couldn't open %s\n", demoName)
-                //		delete readDemo;
+                Common.common.Printf("couldn't open %s\n", demoName) //		delete readDemo;
                 readDemo = null
                 Stop()
                 StartMenu()
@@ -2639,8 +2569,7 @@ object Session_local {
             Common.common.Printf("stopped playing %s.\n", readDemo!!.GetName())
             readDemo = null
 
-            if (timeDemo != timeDemo_t.TD_NO) {
-                // report the stats
+            if (timeDemo != timeDemo_t.TD_NO) { // report the stats
                 val demoSeconds = (timeDemoStopTime - timeDemoStartTime) * 0.001f
                 val demoFPS = numDemoFrames / demoSeconds
                 val message = Str.va(
@@ -2706,8 +2635,7 @@ object Session_local {
             // no sound in time demos
             snd_system.soundSystem.SetMute(true)
             StartPlayingRenderDemo(demo)
-            if (twice && readDemo != null) {
-                // cycle through once to precache everything
+            if (twice && readDemo != null) { // cycle through once to precache everything
                 guiLoading!!.SetStateString("demo", Common.common.GetLanguageDict().GetString("#str_04852"))
                 guiLoading!!.StateChanged(Common.com_frameTime)
                 while (readDemo != null) {
@@ -2794,8 +2722,7 @@ object Session_local {
             f.Printf("FILENAME demos/%s/%s.RoQ\n", aviDemoShortName, aviDemoShortName)
             f.Printf("\nINPUT\n")
             f.Printf("%s_*.tga [00000-%05i]\n", aviDemoShortName, (aviDemoFrameCount - 1).toInt())
-            f.Printf("END_INPUT\n")
-            //	delete f;
+            f.Printf("END_INPUT\n") //	delete f;
             Common.common.Printf("captured %d frames for %s.\n", aviDemoFrameCount.toInt(), aviDemoShortName)
             aviCaptureMode = false
         }
@@ -2807,22 +2734,20 @@ object Session_local {
             }
             var skipFrames = 0
             if (!aviCaptureMode && null == timeDemo && !singleFrameOnly) {
-                skipFrames = (latchedTicNumber - lastDemoTic) / USERCMD_PER_DEMO_FRAME - 1
-                // never skip too many frames, just let it go into slightly slow motion
+                skipFrames =
+                    (latchedTicNumber - lastDemoTic) / USERCMD_PER_DEMO_FRAME - 1 // never skip too many frames, just let it go into slightly slow motion
                 if (skipFrames > 4) {
                     skipFrames = 4
                 }
                 lastDemoTic = latchedTicNumber - latchedTicNumber % USERCMD_PER_DEMO_FRAME
-            } else {
-                // always advance a single frame with avidemo and timedemo
+            } else { // always advance a single frame with avidemo and timedemo
                 lastDemoTic = latchedTicNumber
             }
             while (skipFrames > -1) {
                 val ds = CInt(demoSystem_t.DS_FINISHED.ordinal)
                 readDemo!!.ReadInt(ds)
                 if (ds._val == demoSystem_t.DS_FINISHED.ordinal) {
-                    if (numDemoFrames != 1) {
-                        // if the demo has a single frame (a demoShot), continuously replay
+                    if (numDemoFrames != 1) { // if the demo has a single frame (a demoShot), continuously replay
                         // the renderView that has already been read
                         Stop()
                         StartMenu()
@@ -2831,8 +2756,10 @@ object Session_local {
                 }
                 if (ds._val == demoSystem_t.DS_RENDER.ordinal) {
                     val demoTimeOffset = CInt()
-                    if (rw.ProcessDemoCommand(readDemo, currentDemoRenderView, demoTimeOffset)) {
-                        // a view is ready to render
+                    if (rw.ProcessDemoCommand(
+                            readDemo, currentDemoRenderView, demoTimeOffset
+                        )
+                    ) { // a view is ready to render
                         skipFrames--
                         numDemoFrames++
                     }
@@ -2842,14 +2769,14 @@ object Session_local {
                 if (ds._val == demoSystem_t.DS_SOUND.ordinal) {
                     sw.ProcessDemoCommand(readDemo!!)
                     continue
-                }
-                // appears in v1.2, with savegame format 17
+                } // appears in v1.2, with savegame format 17
                 if (ds._val == demoSystem_t.DS_VERSION.ordinal) {
                     val renderdemoVersion = CInt()
                     readDemo!!.ReadInt(renderdemoVersion)
                     this.renderdemoVersion = renderdemoVersion._val
-                    Common.common.Printf("reading a v%d render demo\n", renderdemoVersion._val)
-                    // set the savegameVersion to current for render demo paths that share the savegame paths
+                    Common.common.Printf(
+                        "reading a v%d render demo\n", renderdemoVersion._val
+                    ) // set the savegameVersion to current for render demo paths that share the savegame paths
                     savegameVersion = SAVEGAME_VERSION
                     continue
                 }
@@ -2877,8 +2804,7 @@ object Session_local {
                     if (aviCaptureMode) {
                         EndAVICapture()
                         Shutdown()
-                    }
-                    // we fall out of the demo to normal commands
+                    } // we fall out of the demo to normal commands
                     // the impulse and chat character toggles may not be correct, and the view
                     // angle will definitely be wrong
                 } else {
@@ -2889,8 +2815,7 @@ object Session_local {
             }
 
             // if we didn't get one from the file, get it locally
-            if (null == cmdDemoFile) {
-                // get a locally created command
+            if (null == cmdDemoFile) { // get a locally created command
                 // DG: dhewm3 removed com_asyncInput — always use direct usercmd
                 cmd[0].set(UsercmdGen.usercmdGen.GetDirectUsercmd())
                 lastGameTic++
@@ -2914,8 +2839,7 @@ object Session_local {
             // save the cmd for cmdDemo archiving
             if (logIndex < MAX_LOGGED_USERCMDS) {
                 loggedUsercmds[logIndex].cmd = usercmd_t()
-                loggedUsercmds[logIndex].cmd!!.set(cmd[0])
-                // save the consistencyHash for demo playback verification
+                loggedUsercmds[logIndex].cmd!!.set(cmd[0]) // save the consistencyHash for demo playback verification
                 loggedUsercmds[logIndex].consistencyHash = ret.consistencyHash
                 if (logIndex % 30 == 0 && statIndex < MAX_LOGGED_STATS) {
                     loggedStats[statIndex].health = ret.health
@@ -2930,12 +2854,10 @@ object Session_local {
             if (ret.sessionCommand[0].code != 0) {
                 val args = CmdArgs.idCmdArgs()
                 args.TokenizeString(ctos(ret.sessionCommand), false)
-                if (0 == idStr.Icmp(args.Argv(0), "map")) {
-                    // get current player states
+                if (0 == idStr.Icmp(args.Argv(0), "map")) { // get current player states
                     for (i in 0 until numClients) {
                         mapSpawnData.persistentPlayerInfo[i].set(Game_local.game.GetPersistentPlayerInfo(i))
-                    }
-                    // clear the devmap key on serverinfo, so player spawns
+                    } // clear the devmap key on serverinfo, so player spawns
                     // won't get the map testing items
                     mapSpawnData.serverInfo.Delete("devmap")
 
@@ -2944,8 +2866,7 @@ object Session_local {
                 } else if (0 == idStr.Icmp(args.Argv(0), "devmap")) {
                     mapSpawnData.serverInfo.Set("devmap", "1")
                     MoveToNewMap(args.Argv(1))
-                } else if (0 == idStr.Icmp(args.Argv(0), "died")) {
-                    // restart on the same map
+                } else if (0 == idStr.Icmp(args.Argv(0), "died")) { // restart on the same map
                     UnloadMap()
                     SetGUI(guiRestartMenu, null)
                 } else if (0 == idStr.Icmp(args.Argv(0), "disconnect")) {
@@ -2958,13 +2879,11 @@ object Session_local {
 
         //
         fun FinishCmdLoad() {}
-        fun LoadLoadingGui(mapName: String) {
-            // load / program a gui to stay up on the screen while loading
+        fun LoadLoadingGui(mapName: String) { // load / program a gui to stay up on the screen while loading
             val stripped = idStr(mapName).StripFileExtension().StripPath()
             val guiMap = Str.va(
                 "guis/map/%." + MAX_STRING_CHARS + "s.gui", stripped.toString()
-            ) //char guiMap[ MAX_STRING_CHARS ];
-            // give the gamecode a chance to override
+            ) //char guiMap[ MAX_STRING_CHARS ]; // give the gamecode a chance to override
             Game_local.game.GetMapLoadingGUI(guiMap.toCharArray())
             guiLoading = if (UserInterface.uiManager.CheckGui(guiMap)) {
                 UserInterface.uiManager.FindGui(guiMap, true, false, true)
@@ -3020,8 +2939,7 @@ object Session_local {
             val mapDecl =  /*const_cast<idDecl *>*/
                 DeclManager.declManager.FindType(declType_t.DECL_MAPDEF, mapName, false)
             val mapDef = mapDecl as idDeclEntityDef?
-            if (Common.com_updateLoadSize.GetBool() && mapDef != null) {
-                // we assume that if com_updateLoadSize is true then the file is writable
+            if (Common.com_updateLoadSize.GetBool() && mapDef != null) { // we assume that if com_updateLoadSize is true then the file is writable
                 mapDef.dict.SetInt(Str.va("size%d", Common.com_machineSpec.GetInteger()), bytesNeeded)
                 val declText = idStr("\nmapDef ")
                 declText.Append(mapDef.GetName())
@@ -3059,8 +2977,7 @@ object Session_local {
 
             // close console and remove any prints from the notify lines
             Console.console.Close()
-            if (IsMultiplayer()) {
-                // make sure the mp GUI isn't up, or when players get back in the
+            if (IsMultiplayer()) { // make sure the mp GUI isn't up, or when players get back in the
                 // map, mpGame's menu and the gui will be out of sync.
                 SetGUI(null, null)
             }
@@ -3076,8 +2993,7 @@ object Session_local {
             if (sw.IsPaused()) {
                 sw.UnPause()
             }
-            if (!noFadeWipe) {
-                // capture the current screen and start a wipe
+            if (!noFadeWipe) { // capture the current screen and start a wipe
                 StartWipe("wipeMaterial", true)
 
                 // immediately complete the wipe to fade out the level transition
@@ -3153,8 +3069,7 @@ object Session_local {
 
             // for the synchronous networking we needed to roll the angles over from
             // level to level, but now we can just clear everything
-            UsercmdGen.usercmdGen.InitForNewMap()
-            //	memset( mapSpawnData.mapSpawnUsercmd, 0, sizeof( mapSpawnData.mapSpawnUsercmd ) );
+            UsercmdGen.usercmdGen.InitForNewMap() //	memset( mapSpawnData.mapSpawnUsercmd, 0, sizeof( mapSpawnData.mapSpawnUsercmd ) );
             mapSpawnData.mapSpawnUsercmd = Array(mapSpawnData.mapSpawnUsercmd.size) { usercmd_t() }
 
             // set the user info
@@ -3167,8 +3082,10 @@ object Session_local {
 
             // load and spawn all other entities ( from a savegame possibly )
             if (loadingSaveGame && savegameFile != null) {
-                if (Game_local.game.InitFromSaveGame("$fullMapName.map", rw, sw, savegameFile!!) == false) {
-                    // If the loadgame failed, restart the map with the player persistent data
+                if (Game_local.game.InitFromSaveGame(
+                        "$fullMapName.map", rw, sw, savegameFile!!
+                    ) == false
+                ) { // If the loadgame failed, restart the map with the player persistent data
                     loadingSaveGame = false
                     FileSystem_h.fileSystem.CloseFile(savegameFile!!)
                     savegameFile = null
@@ -3193,8 +3110,7 @@ object Session_local {
                     win_shared.Sys_Milliseconds()
                 )
             }
-            if (!idAsyncNetwork.IsActive() && !loadingSaveGame) {
-                // spawn players
+            if (!idAsyncNetwork.IsActive() && !loadingSaveGame) { // spawn players
                 i = 0
                 while (i < numClients) {
                     Game_local.game.SpawnPlayer(i)
@@ -3210,8 +3126,7 @@ object Session_local {
                 SetBytesNeededForMapLoad(mapString, FileSystem_h.fileSystem.GetReadCount())
             }
             UserInterface.uiManager.EndLevelLoad()
-            if (!idAsyncNetwork.IsActive() && !loadingSaveGame) {
-                // run a few frames to allow everything to settle
+            if (!idAsyncNetwork.IsActive() && !loadingSaveGame) { // run a few frames to allow everything to settle
                 i = 0
                 while (i < 10) {
                     Game_local.game.RunFrame(mapSpawnData.mapSpawnUsercmd /*[0]*/)
@@ -3258,14 +3173,13 @@ object Session_local {
             // stop drawing the laoding screen
             insideExecuteMapChange = false
 
-//            Sys_SetPhysicalWorkMemory(-1, -1);
+            //            Sys_SetPhysicalWorkMemory(-1, -1);
 
             // set the game sound world for playback
             snd_system.soundSystem.SetPlayingSoundWorld(sw)
 
             // when loading a save game the sound is paused
-            if (sw.IsPaused()) {
-                // unpause the game sound world
+            if (sw.IsPaused()) { // unpause the game sound world
                 sw.UnPause()
             }
 
@@ -3351,12 +3265,10 @@ object Session_local {
                     guiActive = null
                 } else if (idStr.Icmp(cmd, "main") == 0) {
                     StartMenu()
-                } else if (cmd.startsWith("sound ")) {
-                    // pipe the GUI sound commands not handled by the game to the main menu code
+                } else if (cmd.startsWith("sound ")) { // pipe the GUI sound commands not handled by the game to the main menu code
                     HandleMainMenuCommands(cmd)
                 }
-            } else if (guiHandle != null) {
-                // FIX: C++ calls `(*guiHandle)(menuCommand)` and returns if it returns non-null.
+            } else if (guiHandle != null) { // FIX: C++ calls `(*guiHandle)(menuCommand)` and returns if it returns non-null.
                 // Kotlin was checking `menuCommand != null` (always true) instead of invoking the callback.
                 if (guiHandle!!.run(menuCommand) != null) {
                     return
@@ -3384,8 +3296,7 @@ object Session_local {
                 return
             }
             menuCommand = guiActive!!.HandleEvent(event, Common.com_frameTime)
-            if (null == menuCommand || menuCommand.isEmpty()) {
-                // If the menu didn't handle the event, and it's a key down event for an F key, run the bind
+            if (null == menuCommand || menuCommand.isEmpty()) { // If the menu didn't handle the event, and it's a key down event for an F key, run the bind
                 if (event.evType == sysEventType_t.SE_KEY && event.evValue2 == 1 && event.evValue >= KeyInput.K_F1 && event.evValue <= KeyInput.K_F12) {
                     idKeyInput.ExecKeyBinding(event.evValue)
                 }
@@ -3405,8 +3316,8 @@ object Session_local {
                 return true
             }
             if (0 == idStr.Icmp(cmd, "saveGame")) {
-                val saveGameName = guiActive!!.State().GetString("saveGameName")
-                // FIX: C++ `saveGameName && saveGameName[0]` means "non-null AND non-empty".
+                val saveGameName = guiActive!!.State()
+                    .GetString("saveGameName") // FIX: C++ `saveGameName && saveGameName[0]` means "non-null AND non-empty".
                 // Kotlin had `saveGameName.isEmpty()` which is the opposite.
                 if (saveGameName != null && saveGameName.isNotEmpty()) {
 
@@ -3434,8 +3345,7 @@ object Session_local {
                                 src.ReadToken(tok) // Name
                                 src.ReadToken(tok) // Map
                                 src.ReadToken(tok) // Screenshot
-                                if (!tok.IsEmpty()) {
-                                    // NOTE: base/ gui doesn't handle that one
+                                if (!tok.IsEmpty()) { // NOTE: base/ gui doesn't handle that one
                                     guiActive!!.HandleNamedEvent("autosaveOverwriteError")
                                     return true
                                 }
@@ -3445,8 +3355,7 @@ object Session_local {
                         }
                     }
                     Session.sessLocal.SaveGame(saveGameName)
-                    SetSaveGameGuiVars()
-                    // DG: select item 0 => select savegame just created (should be on top as it's newest)
+                    SetSaveGameGuiVars() // DG: select item 0 => select savegame just created (should be on top as it's newest)
                     guiActive!!.SetStateInt("loadgame_sel_0", 0)
                     guiActive!!.StateChanged(Common.com_frameTime)
                 }
@@ -3517,8 +3426,7 @@ object Session_local {
          Executes any commands returned by the gui
          ==============
          */
-        fun HandleInGameCommands(menuCommand: String) {
-            // execute the command from the menu
+        fun HandleInGameCommands(menuCommand: String) { // execute the command from the menu
             val args = CmdArgs.idCmdArgs()
             args.TokenizeString(menuCommand, false)
 
@@ -3542,8 +3450,7 @@ object Session_local {
          ==============
          */
         @Throws(idException::class)
-        fun HandleMainMenuCommands(menuCommand: String) {
-            // execute the command from the menu
+        fun HandleMainMenuCommands(menuCommand: String) { // execute the command from the menu
             val icmd = CInt()
             val args = CmdArgs.idCmdArgs()
             args.TokenizeString(menuCommand, false)
@@ -3562,20 +3469,17 @@ object Session_local {
                     cvarSystem.SetCVarInteger("g_skill", guiMainMenu!!.State().GetInt("skill"))
                     if (icmd._val < args.Argc()) {
                         StartNewGame(args.Argv(icmd.increment()))
-                    } else {
-                        // FIX: Branches were swapped — demo build should use demo map, not full game map
+                    } else { // FIX: Branches were swapped — demo build should use demo map, not full game map
                         if (ID_DEMO_BUILD) {
                             StartNewGame("game/demo_mars_city1")
                         } else {
                             StartNewGame("game/mars_city1")
                         }
-                    }
-                    // need to do this here to make sure com_frameTime is correct or the gui activates with a time that
+                    } // need to do this here to make sure com_frameTime is correct or the gui activates with a time that
                     // is "however long map load took" time in the past
                     Common.common.GUIFrame(false, false)
                     SetGUI(guiIntro, null)
-                    guiIntro!!.StateChanged(Common.com_frameTime, true)
-                    // stop playing the game sounds
+                    guiIntro!!.StateChanged(Common.com_frameTime, true) // stop playing the game sounds
                     snd_system.soundSystem.SetPlayingSoundWorld(menuSoundWorld!!)
                     continue
                 }
@@ -3585,11 +3489,9 @@ object Session_local {
                     return
                 }
                 if (0 == idStr.Icmp(cmd, "loadMod")) {
-                    val choice = guiActive!!.State().GetInt("modsList_sel_0")
-//                    if (choice >= 0 && choice < modsList.size()) {
-//                        CVarSystem.cvarSystem.SetCVarString("fs_game", modsList[choice].toString())
-//                        CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "reloadEngine menu\n")
-//                    }
+                    val choice = guiActive!!.State()
+                        .GetInt("modsList_sel_0") //                    if (choice >= 0 && choice < modsList.size()) { //                        CVarSystem.cvarSystem.SetCVarString("fs_game", modsList[choice].toString()) //                        CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "reloadEngine menu\n")
+                    //                    }
                     if (choice >= 0 && choice < modsList.size()) {
                         loadMod(modsList[choice])
                     }
@@ -3698,8 +3600,7 @@ object Session_local {
                 }
                 if (0 == idStr.Icmp(cmd, "inetConnect")) {
                     val s = guiMainMenu!!.State().GetString("inetGame")
-                    if (null == s || s.isEmpty()) {
-                        // don't put the menu away if there isn't a valid selection
+                    if (null == s || s.isEmpty()) { // don't put the menu away if there isn't a valid selection
                         continue
                     }
                     cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, Str.va("connect %s", s))
@@ -3708,49 +3609,46 @@ object Session_local {
                 if (0 == idStr.Icmp(cmd, "startMultiplayer")) {
                     val dedicated = guiActive!!.State().GetInt("dedicated")
                     cvarSystem.SetCVarBool("net_LANServer", guiActive!!.State().GetBool("server_type"))
-                    if (gui_configServerRate.GetInteger() > 0) {
-                        // guess the best rate for upstream, number of internet clients
+                    if (gui_configServerRate.GetInteger() > 0) { // guess the best rate for upstream, number of internet clients
                         if (gui_configServerRate.GetInteger() == 5 || cvarSystem.GetCVarBool("net_LANServer")) {
                             cvarSystem.SetCVarInteger("net_serverMaxClientRate", 25600)
-                        } else {
-                            // internet players
+                        } else { // internet players
                             var n_clients = cvarSystem.GetCVarInteger("si_maxPlayers")
                             if (0 == dedicated) {
                                 n_clients--
                             }
                             var maxclients = 0
                             when (gui_configServerRate.GetInteger()) {
-                                1 -> {
-                                    // 128 kbits
+                                1 -> { // 128 kbits
                                     cvarSystem.SetCVarInteger("net_serverMaxClientRate", 8000)
                                     maxclients = 2
                                 }
 
-                                2 -> {
-                                    // 256 kbits
+                                2 -> { // 256 kbits
                                     cvarSystem.SetCVarInteger("net_serverMaxClientRate", 9500)
                                     maxclients = 3
                                 }
 
-                                3 -> {
-                                    // 384 kbits
+                                3 -> { // 384 kbits
                                     cvarSystem.SetCVarInteger("net_serverMaxClientRate", 10500)
                                     maxclients = 4
                                 }
 
-                                4 -> {
-                                    // 512 and above..
+                                4 -> { // 512 and above..
                                     cvarSystem.SetCVarInteger("net_serverMaxClientRate", 14000)
                                     maxclients = 4
                                 }
                             }
                             if (n_clients > maxclients) {
                                 if (MessageBox(
-                                        msgBoxType_t.MSG_OKCANCEL, Str.va(
+                                        msgBoxType_t.MSG_OKCANCEL,
+                                        Str.va(
                                             Common.common.GetLanguageDict().GetString("#str_04315"),
                                             if (dedicated != 0) maxclients else Min(8, maxclients + 1)
-                                        ), Common.common.GetLanguageDict().GetString("#str_04316"), true, "OK"
-                                        // FIX: C++ checks `[0] == '\0'` meaning "result is empty" (user cancelled).
+                                        ),
+                                        Common.common.GetLanguageDict().GetString("#str_04316"),
+                                        true,
+                                        "OK" // FIX: C++ checks `[0] == '\0'` meaning "result is empty" (user cancelled).
                                         // Kotlin had `isNotEmpty()` which is the opposite.
                                     ).isEmpty()
                                 ) { //[0] == '\0') {
@@ -3765,9 +3663,8 @@ object Session_local {
                     if (0 == dedicated && !cvarSystem.GetCVarBool("net_LANServer") && cvarSystem.GetCVarInteger(
                             "si_maxPlayers"
                         ) > 4
-                    ) {
-                        // "Dedicated server mode is recommended for internet servers with more than 4 players. Continue in listen mode?"
-//				if ( !MessageBox( MSG_YESNO, common.GetLanguageDict().GetString ( "#str_00100625" ), common.GetLanguageDict().GetString ( "#str_00100626" ), true, "yes" )[0] ) {
+                    ) { // "Dedicated server mode is recommended for internet servers with more than 4 players. Continue in listen mode?"
+                        //				if ( !MessageBox( MSG_YESNO, common.GetLanguageDict().GetString ( "#str_00100625" ), common.GetLanguageDict().GetString ( "#str_00100626" ), true, "yes" )[0] ) {
                         if (MessageBox(
                                 msgBoxType_t.MSG_YESNO,
                                 Common.common.GetLanguageDict().GetString("#str_00100625"),
@@ -3784,8 +3681,7 @@ object Session_local {
                     } else {
                         cvarSystem.SetCVarInteger("net_serverDedicated", 0)
                     }
-                    ExitMenu()
-                    // may trigger a reloadEngine - APPEND
+                    ExitMenu() // may trigger a reloadEngine - APPEND
                     cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "SpawnServer\n")
                     return
                 }
@@ -3798,8 +3694,7 @@ object Session_local {
                     }
                     continue
                 }
-                if (0 == idStr.Icmp(cmd, "close")) {
-                    // if we aren't in a game, the menu can't be closed
+                if (0 == idStr.Icmp(cmd, "close")) { // if we aren't in a game, the menu can't be closed
                     if (mapSpawned) {
                         ExitMenu()
                     }
@@ -3845,8 +3740,7 @@ object Session_local {
                 // triggered from mainmenu or mpmain
                 if (0 == idStr.Icmp(cmd, "sound")) {
                     var vcmd = idStr()
-                    if (args.Argc() - icmd._val >= 1) {
-                        // FIX: C++ does `vcmd = args.Argv( icmd++ )` — post-increments icmd
+                    if (args.Argc() - icmd._val >= 1) { // FIX: C++ does `vcmd = args.Argv( icmd++ )` — post-increments icmd
                         vcmd = idStr(args.Argv(icmd.increment()))
                     }
                     if (0 == vcmd.Length() || 0 == vcmd.Icmp("speakers")) {
@@ -3860,8 +3754,7 @@ object Session_local {
                                     Common.common.GetLanguageDict().GetString("#str_04141"),
                                     true
                                 )
-                            } else {
-                                // a message that doesn't mention the windows control panel
+                            } else { // a message that doesn't mention the windows control panel
                                 MessageBox(
                                     msgBoxType_t.MSG_OK,
                                     Common.common.GetLanguageDict().GetString("#str_07230"),
@@ -3884,8 +3777,7 @@ object Session_local {
                                     )
 
                                 -1 -> {
-                                    cvarSystem.SetCVarBool("s_useEAXReverb", false)
-                                    // disabled
+                                    cvarSystem.SetCVarBool("s_useEAXReverb", false) // disabled
                                     MessageBox(
                                         msgBoxType_t.MSG_OK,
                                         Common.common.GetLanguageDict().GetString("#str_07233"),
@@ -3895,8 +3787,7 @@ object Session_local {
                                 }
 
                                 0 -> {
-                                    cvarSystem.SetCVarBool("s_useEAXReverb", false)
-                                    // not available
+                                    cvarSystem.SetCVarBool("s_useEAXReverb", false) // not available
                                     MessageBox(
                                         msgBoxType_t.MSG_OK,
                                         Common.common.GetLanguageDict().GetString("#str_07232"),
@@ -3905,8 +3796,7 @@ object Session_local {
                                     )
                                 }
                             }
-                        } else {
-                            // DG: dhewm3 removed s_useOpenAL toggle — always uses OpenAL
+                        } else { // DG: dhewm3 removed s_useOpenAL toggle — always uses OpenAL
                             // when you restart
                             MessageBox(
                                 msgBoxType_t.MSG_OK,
@@ -3996,8 +3886,10 @@ object Session_local {
                     guiActive!!.HandleNamedEvent("cvar read sound")
                     continue
                 }
-                if (0 == idStr.Icmp(cmd, "SetCDKey")) {
-                    // we can't do this from inside the HandleMainMenuCommands code, otherwise the message box stuff gets confused
+                if (0 == idStr.Icmp(
+                        cmd, "SetCDKey"
+                    )
+                ) { // we can't do this from inside the HandleMainMenuCommands code, otherwise the message box stuff gets confused
                     cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "promptKey\n")
                     continue
                 }
@@ -4010,8 +3902,7 @@ object Session_local {
                     continue
                 }
                 if (0 == idStr.Icmp(cmd, "checkKeys")) {
-                    if (ID_ENFORCE_KEY) {
-                        // not a strict check so you silently auth in the background without bugging the user
+                    if (ID_ENFORCE_KEY) { // not a strict check so you silently auth in the background without bugging the user
                         if (!Session.session.CDKeysAreValid(false)) {
                             cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "promptKey force")
                             cmdSystem.ExecuteCommandBuffer()
@@ -4025,8 +3916,7 @@ object Session_local {
                     var vcmd: idStr
                     if (args.Argc() - icmd._val >= 1) {
                         vcmd = idStr(args.Argv(icmd.increment()))
-                    }
-                    // filtering PB based on enabled/disabled
+                    } // filtering PB based on enabled/disabled
                     idAsyncNetwork.client.serverList.ApplyFilter()
                     SetPbMenuGuiVars()
                     continue
@@ -4035,12 +3925,13 @@ object Session_local {
         }
 
         private fun loadMod(modName: idStr) {
-            val d3xpMods = arrayOf(
-                // TODO: if there are more mods that need d3xp as base
+            val d3xpMods = arrayOf( // TODO: if there are more mods that need d3xp as base
                 // (and that are supported by dhewm3), add them here
-                "bloodmod_roe", "d3le", // The Lost Mission
-                "librecoopd3xp", "perfected_roe", "sikkmodd3xp",
-                // Doom 3: Phobos (they haven't released source yet, so it won't work yet,
+                "bloodmod_roe",
+                "d3le", // The Lost Mission
+                "librecoopd3xp",
+                "perfected_roe",
+                "sikkmodd3xp", // Doom 3: Phobos (they haven't released source yet, so it won't work yet,
                 //                 but ain't I ever the optimist..)
                 "tfphobos"
             )
@@ -4065,20 +3956,17 @@ object Session_local {
          Executes any commands returned by the gui
          ==============
          */
-        fun HandleChatMenuCommands(menuCommand: String?) {
-            // execute the command from the menu
+        fun HandleChatMenuCommands(menuCommand: String?) { // execute the command from the menu
             var i: Int
             val args = CmdArgs.idCmdArgs()
             args.TokenizeString(menuCommand, false)
             i = 0
             while (i < args.Argc()) {
                 val cmd = args.Argv(i++)
-                if (idStr.Icmp(cmd, "chatactive") == 0) {
-                    //chat.chatMode = CHAT_GLOBAL;
+                if (idStr.Icmp(cmd, "chatactive") == 0) { //chat.chatMode = CHAT_GLOBAL;
                     continue
                 }
-                if (idStr.Icmp(cmd, "chatabort") == 0) {
-                    //chat.chatMode = CHAT_NONE;
+                if (idStr.Icmp(cmd, "chatabort") == 0) { //chat.chatMode = CHAT_NONE;
                     continue
                 }
                 if (idStr.Icmp(cmd, "netready") == 0) {
@@ -4100,8 +3988,7 @@ object Session_local {
          Executes any commands returned by the gui
          ==============
          */
-        fun HandleIntroMenuCommands(menuCommand: String?) {
-            // execute the command from the menu
+        fun HandleIntroMenuCommands(menuCommand: String?) { // execute the command from the menu
             var i: Int
             val args = CmdArgs.idCmdArgs()
             args.TokenizeString(menuCommand, false)
@@ -4131,8 +4018,7 @@ object Session_local {
          ==============
          */
         @Throws(idException::class)
-        fun HandleRestartMenuCommands(menuCommand: String?) {
-            // execute the command from the menu
+        fun HandleRestartMenuCommands(menuCommand: String?) { // execute the command from the menu
             val icmd = CInt()
             val args = CmdArgs.idCmdArgs()
             args.TokenizeString(menuCommand, false)
@@ -4143,8 +4029,7 @@ object Session_local {
                     continue
                 }
                 if (0 == idStr.Icmp(cmd, "restart")) {
-                    if (com_disableAutoSaves.GetBool() || !LoadGame(GetAutoSaveName(mapSpawnData.serverInfo.GetString("si_map")))) {
-                        // If we can't load the autosave then just restart the map
+                    if (com_disableAutoSaves.GetBool() || !LoadGame(GetAutoSaveName(mapSpawnData.serverInfo.GetString("si_map")))) { // If we can't load the autosave then just restart the map
                         MoveToNewMap(mapSpawnData.serverInfo.GetString("si_map"))
                     }
                     continue
@@ -4169,10 +4054,8 @@ object Session_local {
         }
 
         fun HandleMsgCommands(menuCommand: String) {
-            assert(guiActive == guiMsg)
-            // "stop" works even on first frame
-            if (idStr.Icmp(menuCommand, "stop") == 0) {
-                // force hiding the current dialog
+            assert(guiActive == guiMsg) // "stop" works even on first frame
+            if (idStr.Icmp(menuCommand, "stop") == 0) { // force hiding the current dialog
                 guiActive = guiMsgRestore
                 guiMsgRestore = null
                 msgRunning = false
@@ -4355,23 +4238,23 @@ object Session_local {
             if (extended) {
                 guiTakeNotes = UserInterface.uiManager.FindGui("guis/takeNotes2.gui", true, false, true)
 
-//                final String[] people;
-//                if (false) {
-//                    people = new String[]{
-//                        "Nobody", "Adam", "Brandon", "David", "PHook", "Jay", "Jake",
-//                        "PatJ", "Brett", "Ted", "Darin", "Brian", "Sean"
-//                    };
-//                } else {
-//                    people = new String[]{
-//                        "Tim", "Kenneth", "Robert",
-//                        "Matt", "Mal", "Jerry", "Steve", "Pat",
-//                        "Xian", "Ed", "Fred", "James", "Eric", "Andy", "Seneca", "Patrick", "Kevin",
-//                        "MrElusive", "Jim", "Brian", "John", "Adrian", "Nobody"
-//                    };
-//                }
-//
-//                final int numPeople = PEOPLE.length;
-//
+                //                final String[] people;
+                //                if (false) {
+                //                    people = new String[]{
+                //                        "Nobody", "Adam", "Brandon", "David", "PHook", "Jay", "Jake",
+                //                        "PatJ", "Brett", "Ted", "Darin", "Brian", "Sean"
+                //                    };
+                //                } else {
+                //                    people = new String[]{
+                //                        "Tim", "Kenneth", "Robert",
+                //                        "Matt", "Mal", "Jerry", "Steve", "Pat",
+                //                        "Xian", "Ed", "Fred", "James", "Eric", "Andy", "Seneca", "Patrick", "Kevin",
+                //                        "MrElusive", "Jim", "Brian", "John", "Adrian", "Nobody"
+                //                    };
+                //                }
+                //
+                //                final int numPeople = PEOPLE.length;
+                //
                 val guiList_people = UserInterface.uiManager.AllocListGUI()
                 guiList_people.Config(guiTakeNotes!!, "person")
                 for (i in 0 until NUM_PEOPLE) {
@@ -4443,17 +4326,16 @@ object Session_local {
             } else {
                 guiMainMenu!!.SetStateString("inGame", "0")
             }
-            SetCDKeyGuiVars()
-            // DG: dhewm3 removed ID_DEMO_BUILD guard
+            SetCDKeyGuiVars() // DG: dhewm3 removed ID_DEMO_BUILD guard
             guiMainMenu!!.SetStateString(
                 "nightmare", if (cvarSystem.GetCVarBool("g_nightmare")) "1" else "0"
             )
             guiMainMenu!!.SetStateString("browser_levelshot", "guis/assets/splash/pdtempa")
-            SetMainMenuSkin()
-            // Mods Menu
+            SetMainMenuSkin() // Mods Menu
             SetModsMenuGuiVars()
-            guiMsg!!.SetStateString("visible_hasxp", if (FileSystem_h.fileSystem.HasD3XP()) "1" else "0")
-            // DG: dhewm3 removed platform-specific driver_prompt — always 0
+            guiMsg!!.SetStateString(
+                "visible_hasxp", if (FileSystem_h.fileSystem.HasD3XP()) "1" else "0"
+            ) // DG: dhewm3 removed platform-specific driver_prompt — always 0
             guiMainMenu!!.SetStateString("driver_prompt", "0")
             SetPbMenuGuiVars()
         }
@@ -4475,8 +4357,7 @@ object Session_local {
             FileSystem_h.fileSystem.FreeModList(list)
         }
 
-        fun SetMainMenuSkin() {
-            // skins
+        fun SetMainMenuSkin() { // skins
             var str: idStr = idStr(cvarSystem.GetCVarString("mod_validSkins"))
             val uiSkin = idStr(cvarSystem.GetCVarString("ui_skin"))
             var skin: idStr
@@ -4528,8 +4409,7 @@ object Session_local {
          we toggled some key state to CDKEY_CHECKING. send a standalone auth packet to validate
          ===============
          */
-        private fun EmitGameAuth() {
-            // make sure the auth reply is empty, we use it to indicate an auth reply
+        private fun EmitGameAuth() { // make sure the auth reply is empty, we use it to indicate an auth reply
             authMsg.Empty()
             if (idAsyncNetwork.client.SendAuthCheck(
                     if (cdkey_state == cdKeyState_t.CDKEY_CHECKING) ctos(cdkey) else null,
@@ -4538,8 +4418,7 @@ object Session_local {
             ) {
                 authEmitTimeout = win_shared.Sys_Milliseconds() + CDKEY_AUTH_TIMEOUT
                 Common.common.DPrintf("authing with the master..\n")
-            } else {
-                // net is not available
+            } else { // net is not available
                 Common.common.DPrintf("sendAuthCheck failed\n")
                 if (cdkey_state == cdKeyState_t.CDKEY_CHECKING) {
                     cdkey_state = cdKeyState_t.CDKEY_OK

@@ -133,8 +133,7 @@ object Winding2D {
                 assert(numPlanes < MAX_POINTS_ON_WINDING_2D)
                 planes[numPlanes++].set(plane)
                 i++
-            }
-            // DG: make sure planes[] isn't used uninitialized and with index -1 below
+            } // DG: make sure planes[] isn't used uninitialized and with index -1 below
             if (numPlanes == 0) {
                 return
             }
@@ -164,10 +163,7 @@ object Winding2D {
         // splits the winding into a front and back winding, the winding itself stays unchanged
         // returns a SIDE_
         fun Split(
-            plane: idVec3,
-            epsilon: Float,
-            front: Array<Array<idWinding2D>>,
-            back: Array<Array<idWinding2D>>
+            plane: idVec3, epsilon: Float, front: Array<Array<idWinding2D>>, back: Array<Array<idWinding2D>>
         ): Int {
             val dists = FloatArray(MAX_POINTS_ON_WINDING_2D)
             val sides = IntArray(MAX_POINTS_ON_WINDING_2D)
@@ -209,8 +205,7 @@ object Winding2D {
             if (0 == counts[SIDE_FRONT]) {
                 back[0][0] = Copy()
                 return SIDE_BACK
-            }
-            // if nothing at the back of the clipping plane
+            } // if nothing at the back of the clipping plane
             if (0 == counts[SIDE_BACK]) {
                 front[0][0] = Copy()
                 return SIDE_FRONT
@@ -390,8 +385,7 @@ object Winding2D {
             if (newNumPoints >= MAX_POINTS_ON_WINDING_2D) {
                 return true
             }
-            numPoints = newNumPoints
-            //	memcpy( p, newPoints, newNumPoints * sizeof(idVec2) );
+            numPoints = newNumPoints //	memcpy( p, newPoints, newNumPoints * sizeof(idVec2) );
             for (i in 0 until newNumPoints) {
                 p[i].set(newPoints[i])
             }
@@ -681,11 +675,7 @@ object Winding2D {
 
         //public	boolean			RayIntersection( final idVec2 start, final idVec2 dir, float scale1, float scale2) ;
         fun RayIntersection(
-            start: idVec2,
-            dir: idVec2,
-            scale1: CFloat,
-            scale2: CFloat,
-            edgeNums: IntArray?
+            start: idVec2, dir: idVec2, scale1: CFloat, scale2: CFloat, edgeNums: IntArray?
         ): Boolean {
             var i: Int
             var numEdges: Int

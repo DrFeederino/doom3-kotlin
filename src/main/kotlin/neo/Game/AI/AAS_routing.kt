@@ -56,8 +56,7 @@ object AAS_routing {
                 : Int
 
         // ~idRoutingCache( void );
-        fun Size(): Int {
-            // NOTE: C++ uses unsigned short for travelTimes; Kotlin uses Int for compatibility
+        fun Size(): Int { // NOTE: C++ uses unsigned short for travelTimes; Kotlin uses Int for compatibility
             return BYTES + size * java.lang.Byte.BYTES + size * java.lang.Short.BYTES
         }
 
@@ -76,10 +75,8 @@ object AAS_routing {
             startTravelTime = 0
             type = 0
             this.size = size
-            reachabilities = ByteArray(size)
-            //	memset( reachabilities, 0, size * sizeof( reachabilities[0] ) );
-            travelTimes = IntArray(size)
-            //	memset( travelTimes, 0, size * sizeof( travelTimes[0] ) );
+            reachabilities = ByteArray(size) //	memset( reachabilities, 0, size * sizeof( reachabilities[0] ) );
+            travelTimes = IntArray(size) //	memset( travelTimes, 0, size * sizeof( travelTimes[0] ) );
         }
     }
 

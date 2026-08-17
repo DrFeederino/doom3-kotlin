@@ -53,8 +53,7 @@ object Pvs {
     enum class pvsType_t {
         PVS_NORMAL,  //= 0,               // PVS through portals taking portal states into account
         PVS_ALL_PORTALS_OPEN,  //	= 1,	// PVS through portals assuming all portals are open
-        PVS_CONNECTED_AREAS
-        //	= 2	    // PVS considering all topologically connected areas visible
+        PVS_CONNECTED_AREAS //	= 2	    // PVS considering all topologically connected areas visible
     }
 
     class pvsHandle_t {
@@ -184,21 +183,17 @@ object Pvs {
         }
 
         fun Shutdown() {
-            if (connectedAreas != null) {
-//		delete connectedAreas;
+            if (connectedAreas != null) { //		delete connectedAreas;
                 connectedAreas = null
             }
-            if (areaQueue != null) {
-//		delete areaQueue;
+            if (areaQueue != null) { //		delete areaQueue;
                 areaQueue = null
             }
-            if (areaPVS != null) {
-//		delete areaPVS;
+            if (areaPVS != null) { //		delete areaPVS;
                 areaPVS = null
             }
             if (currentPVS != null) {
-                for (i in 0 until MAX_CURRENT_PVS) {
-//			delete currentPVS[i].pvs;
+                for (i in 0 until MAX_CURRENT_PVS) { //			delete currentPVS[i].pvs;
                     currentPVS[i].pvs = null
                 }
             }
@@ -232,16 +227,13 @@ object Pvs {
             var i: Int
             val handle: pvsHandle_t?
             handle = AllocCurrentPVS( /*reinterpret_cast<const unsigned int *>*/sourceArea)
-            if (sourceArea < 0 || sourceArea >= numAreas) {
-//		memset( currentPVS[handle.i].pvs, 0, areaVisBytes );
+            if (sourceArea < 0 || sourceArea >= numAreas) { //		memset( currentPVS[handle.i].pvs, 0, areaVisBytes );
                 Arrays.fill(currentPVS[handle.i].pvs, 0, areaVisBytes, 0.toByte())
                 return handle
             }
-            if (type != pvsType_t.PVS_CONNECTED_AREAS) {
-//		memcpy( currentPVS[handle.i].pvs, areaPVS + sourceArea * areaVisBytes, areaVisBytes );
+            if (type != pvsType_t.PVS_CONNECTED_AREAS) { //		memcpy( currentPVS[handle.i].pvs, areaPVS + sourceArea * areaVisBytes, areaVisBytes );
                 System.arraycopy(areaPVS, sourceArea * areaVisBytes, currentPVS[handle.i].pvs, 0, areaVisBytes)
-            } else {
-//		memset( currentPVS[handle.i].pvs, -1, areaVisBytes );
+            } else { //		memset( currentPVS[handle.i].pvs, -1, areaVisBytes );
 
                 currentPVS[handle.i].pvs!!.fill(-1, 0, areaVisBytes)
             }
@@ -249,7 +241,7 @@ object Pvs {
                 return handle
             }
 
-//	memset( connectedAreas, 0, numAreas * sizeof( *connectedAreas ) );
+            //	memset( connectedAreas, 0, numAreas * sizeof( *connectedAreas ) );
             Arrays.fill(connectedAreas, 0, numAreas, false)
             GetConnectedAreas(sourceArea, connectedAreas!!)
             i = 0
@@ -265,13 +257,10 @@ object Pvs {
 
 
         fun SetupCurrentPVS(
-            sourceAreas: IntArray,
-            numSourceAreas: Int,
-            type: pvsType_t? = pvsType_t.PVS_NORMAL /*= PVS_NORMAL*/
+            sourceAreas: IntArray, numSourceAreas: Int, type: pvsType_t? = pvsType_t.PVS_NORMAL /*= PVS_NORMAL*/
         ): pvsHandle_t {
             var i: Int
-            var j: Int
-            /*unsigned*/
+            var j: Int/*unsigned*/
             var h: Int
             val handle: pvsHandle_t
             h = 0
@@ -287,21 +276,13 @@ object Pvs {
             handle = AllocCurrentPVS(h)
             if (0 == numSourceAreas || sourceAreas[0] < 0 || sourceAreas[0] >= numAreas) {
                 Arrays.fill(
-                    currentPVS[handle.i].pvs,
-                    0,
-                    areaVisBytes,
-                    0.toByte()
+                    currentPVS[handle.i].pvs, 0, areaVisBytes, 0.toByte()
                 ) //memset(currentPVS[handle.i].pvs, 0, areaVisBytes);
                 return handle
             }
-            if (type != pvsType_t.PVS_CONNECTED_AREAS) {
-                // merge PVS of all areas the source is in
+            if (type != pvsType_t.PVS_CONNECTED_AREAS) { // merge PVS of all areas the source is in
                 System.arraycopy(
-                    areaPVS,
-                    sourceAreas[0] * areaVisBytes,
-                    currentPVS[handle.i].pvs,
-                    0,
-                    areaVisBytes
+                    areaPVS, sourceAreas[0] * areaVisBytes, currentPVS[handle.i].pvs, 0, areaVisBytes
                 ) //		memcpy( currentPVS[handle.i].pvs, areaPVS + sourceAreas[0] * areaVisBytes, areaVisBytes );
                 i = 1
                 while (i < numSourceAreas) {
@@ -316,17 +297,15 @@ object Pvs {
                     i++
                 }
             } else {
-                currentPVS[handle.i].pvs!!.fill(-1, 0, areaVisBytes)
-                //memset( currentPVS[handle.i].pvs, -1, areaVisBytes );
+                currentPVS[handle.i].pvs!!.fill(
+                    -1, 0, areaVisBytes
+                ) //memset( currentPVS[handle.i].pvs, -1, areaVisBytes );
             }
             if (type == pvsType_t.PVS_ALL_PORTALS_OPEN) {
                 return handle
             }
             Arrays.fill(
-                connectedAreas,
-                0,
-                numAreas,
-                false
+                connectedAreas, 0, numAreas, false
             ) //memset( connectedAreas, 0, numAreas * sizeof( *connectedAreas ) );
 
             // get all areas connected to any of the source areas
@@ -353,8 +332,7 @@ object Pvs {
         fun MergeCurrentPVS(pvs1: pvsHandle_t, pvs2: pvsHandle_t): pvsHandle_t {
             var i: Int
             val handle: pvsHandle_t?
-            if (pvs1.i < 0 || pvs1.i >= MAX_CURRENT_PVS || pvs1.h != currentPVS[pvs1.i].handle.h || pvs2.i < 0 || pvs2.i >= MAX_CURRENT_PVS || pvs2.h != currentPVS[pvs2.i].handle.h
-            ) {
+            if (pvs1.i < 0 || pvs1.i >= MAX_CURRENT_PVS || pvs1.h != currentPVS[pvs1.i].handle.h || pvs2.i < 0 || pvs2.i >= MAX_CURRENT_PVS || pvs2.h != currentPVS[pvs2.i].handle.h) {
                 idGameLocal.Error("idPVS::MergeCurrentPVS: invalid handle")
             }
             handle = AllocCurrentPVS(pvs1.h xor pvs2.h)
@@ -383,9 +361,7 @@ object Pvs {
                 idGameLocal.Error("idPVS::InCurrentPVS: invalid handle")
             }
             targetArea = Game_local.gameRenderWorld!!.PointInArea(target)
-            return if (targetArea == -1) {
-                false
-            } else currentPVS[handle.i].pvs!![targetArea shr 3].toInt() and (1 shl (targetArea and 7)) != 0
+            return targetArea != -1 && currentPVS[handle.i].pvs!![targetArea shr 3].toInt() and (1 shl (targetArea and 7)) != 0
         }
 
         fun InCurrentPVS(handle: pvsHandle_t, target: idBounds): Boolean {
@@ -410,9 +386,7 @@ object Pvs {
             if (handle.i < 0 || handle.i >= MAX_CURRENT_PVS || handle.h != currentPVS[handle.i].handle.h) {
                 idGameLocal.Error("idPVS::InCurrentPVS: invalid handle")
             }
-            return if (targetArea < 0 || targetArea >= numAreas) {
-                false
-            } else currentPVS[handle.i].pvs!![targetArea shr 3].toInt() and (1 shl (targetArea and 7)) != 0
+            return !(targetArea < 0 || targetArea >= numAreas) && currentPVS[handle.i].pvs!![targetArea shr 3].toInt() and (1 shl (targetArea and 7)) != 0
         }
 
         fun InCurrentPVS(handle: pvsHandle_t, targetAreas: IntArray, numTargetAreas: Int): Boolean {
@@ -686,8 +660,7 @@ object Pvs {
                 return
             }
             pvsPortals = arrayOfNulls(numPortals)
-            pvsAreas = arrayOfNulls(numAreas)
-            //	memset( pvsAreas, 0, numAreas * sizeof( *pvsAreas ) );
+            pvsAreas = arrayOfNulls(numAreas) //	memset( pvsAreas, 0, numAreas * sizeof( *pvsAreas ) );
             cp = 0
             i = 0
             while (i < numAreas) {
@@ -695,24 +668,21 @@ object Pvs {
                 pvsAreas!![i] = pvsArea_t()
                 area = pvsAreas!![i]
                 area!!.bounds.Clear()
-                n = Game_local.gameRenderWorld!!.NumPortalsInArea(i)
-                // each area gets its own portal pointer array (C++ used portalPtrs + cp offset)
+                n =
+                    Game_local.gameRenderWorld!!.NumPortalsInArea(i) // each area gets its own portal pointer array (C++ used portalPtrs + cp offset)
                 val areaPortalPtrs: Array<pvsPortal_t?> = arrayOfNulls(n)
                 j = 0
                 while (j < n) {
                     portal = Game_local.gameRenderWorld!!.GetPortal(i, j)
                     p = pvsPortal_t()
-                    pvsPortals!![cp++] = p
-                    // the winding goes counter clockwise seen from this area
+                    pvsPortals!![cp++] = p // the winding goes counter clockwise seen from this area
                     p.w = portal.w!!.Copy()
                     p.areaNum = portal.areas[1] // area[1] is always the area the portal leads to
                     p.vis = ByteArray(portalVisBytes)
                     p.mightSee = ByteArray(portalVisBytes)
                     p.w!!.GetBounds(p.bounds)
-                    p.w!!.GetPlane(p.plane)
-                    // plane normal points to outside the area
-                    p.plane.set(p.plane.unaryMinus())
-                    // no PVS calculated for this portal yet
+                    p.w!!.GetPlane(p.plane) // plane normal points to outside the area
+                    p.plane.set(p.plane.unaryMinus()) // no PVS calculated for this portal yet
                     p.done = false
                     areaPortalPtrs[area.numPortals++] = p
                     area.bounds.timesAssign(p.bounds)
@@ -723,42 +693,41 @@ object Pvs {
             }
         }
 
-        private fun DestroyPVSData() {
-//	int i;
+        private fun DestroyPVSData() { //	int i;
 
-//	int i;
+            //	int i;
             if (null == pvsAreas) {
                 return
             }
 
             // delete portal pointer array
-//	delete[] pvsAreas[0].portals;
+            //	delete[] pvsAreas[0].portals;
             // delete all areas
-//	delete[] pvsAreas;
+            //	delete[] pvsAreas;
 
             // delete portal pointer array
-//	delete[] pvsAreas[0].portals;
+            //	delete[] pvsAreas[0].portals;
             // delete all areas
-//	delete[] pvsAreas;
+            //	delete[] pvsAreas;
             pvsAreas = null
 
             // delete portal data
-//	for ( i = 0; i < numPortals; i++ ) {
-//		delete[] pvsPortals!![i].vis;
-//		delete[] pvsPortals!![i].mightSee;
-//		delete pvsPortals!![i].w!!;
-//	}
+            //	for ( i = 0; i < numPortals; i++ ) {
+            //		delete[] pvsPortals!![i].vis;
+            //		delete[] pvsPortals!![i].mightSee;
+            //		delete pvsPortals!![i].w!!;
+            //	}
             // delete portals
-//	delete[] pvsPortals;
+            //	delete[] pvsPortals;
 
             // delete portal data
-//	for ( i = 0; i < numPortals; i++ ) {
-//		delete[] pvsPortals!![i].vis;
-//		delete[] pvsPortals!![i].mightSee;
-//		delete pvsPortals!![i].w!!;
-//	}
+            //	for ( i = 0; i < numPortals; i++ ) {
+            //		delete[] pvsPortals!![i].vis;
+            //		delete[] pvsPortals!![i].mightSee;
+            //		delete pvsPortals!![i].w!!;
+            //	}
             // delete portals
-//	delete[] pvsPortals;
+            //	delete[] pvsPortals;
             pvsPortals = null
         }
 
@@ -767,8 +736,7 @@ object Pvs {
             var p: pvsPortal_t?
             i = 0
             while (i < numPortals) {
-                p = pvsPortals!![i]!!
-                //		memcpy( p.mightSee, p.vis, portalVisBytes );
+                p = pvsPortals!![i]!! //		memcpy( p.mightSee, p.vis, portalVisBytes );
                 System.arraycopy(p.vis, 0, p.mightSee, 0, portalVisBytes)
                 i++
             }
@@ -788,15 +756,13 @@ object Pvs {
                 if (0 == portal.mightSee!![n shr 3].toInt() and (1 shl (n and 7))) {
                     i++
                     continue
-                }
-                // don't flood through if already visited this portal
+                } // don't flood through if already visited this portal
                 if (portal.vis!![n shr 3].toInt() and (1 shl (n and 7)) != 0) {
                     i++
                     continue
-                }
-                // this portal might be visible
-                portal.vis!![n shr 3] = (portal.vis!![n shr 3].toInt() or (1 shl (n and 7))).toByte()
-                // flood through the portal
+                } // this portal might be visible
+                portal.vis!![n shr 3] =
+                    (portal.vis!![n shr 3].toInt() or (1 shl (n and 7))).toByte() // flood through the portal
                 FloodFrontPortalPVS_r(portal, p.areaNum)
                 i++
             }
@@ -833,8 +799,7 @@ object Pvs {
                         p2 = area.portals!![p]!!
 
                         // if we the whole area is not at the front we need to check
-                        if (areaSide != PLANESIDE_FRONT) {
-                            // if the second portal is completely at the back side of the first portal
+                        if (areaSide != PLANESIDE_FRONT) { // if the second portal is completely at the back side of the first portal
                             side1 = p2.bounds.PlaneSide(p1.plane)
                             if (side1 == PLANESIDE_BACK) {
                                 p++
@@ -850,8 +815,7 @@ object Pvs {
                         }
 
                         // if the second portal is not completely at the front of the first portal
-                        if (side1 != PLANESIDE_FRONT) {
-                            // more accurate check
+                        if (side1 != PLANESIDE_FRONT) { // more accurate check
                             k = 0
                             while (k < p2.w!!.GetNumPoints()) {
 
@@ -868,8 +832,7 @@ object Pvs {
                         }
 
                         // if the first portal is not completely at the back side of the second portal
-                        if (side2 != PLANESIDE_BACK) {
-                            // more accurate check
+                        if (side2 != PLANESIDE_BACK) { // more accurate check
                             k = 0
                             while (k < p1.w!!.GetNumPoints()) {
 
@@ -914,12 +877,10 @@ object Pvs {
             var passage: pvsPassage_t?
             var more: Int
             area = pvsAreas!![portal.areaNum]!!
-            stack = prevStack.next
-            // if no next stack entry allocated
-            if (null == stack) {
-//		stack = reinterpret_cast<pvsStack_t*>(new byte[sizeof(pvsStack_t) + portalVisBytes]);
-                stack = pvsStack_t()
-                //		stack.mightSee = (reinterpret_cast<byte *>(stack)) + sizeof(pvsStack_t);TODO:check this..very importante
+            stack = prevStack.next // if no next stack entry allocated
+            if (null == stack) { //		stack = reinterpret_cast<pvsStack_t*>(new byte[sizeof(pvsStack_t) + portalVisBytes]);
+                stack =
+                    pvsStack_t() //		stack.mightSee = (reinterpret_cast<byte *>(stack)) + sizeof(pvsStack_t);TODO:check this..very importante
                 stack.mightSee = ByteArray(portalVisBytes)
                 stack.next = null
                 prevStack.next = stack
@@ -952,31 +913,27 @@ object Pvs {
                 val passageVisArr = passage.canSee!!
                 val sourceVisArr = source.vis!!
                 val mightSeeArr = stack.mightSee!!
-                more = 0
-                // use the portal PVS if it has been calculated
+                more = 0 // use the portal PVS if it has been calculated
                 if (p.done) {
                     val portalVisArr = p.vis!!
                     j = 0
                     while (j < portalVisBytes) {
 
                         // get new PVS which is decreased by going through this passage
-                        val mByte = prevMightSeeArr[j].toInt() and passageVisArr[j].toInt() and portalVisArr[j].toInt()
-                        // check if anything might be visible through this passage that wasn't yet visible
-                        more = more or (mByte and sourceVisArr[j].toInt().inv())
-                        // store new PVS
+                        val mByte =
+                            prevMightSeeArr[j].toInt() and passageVisArr[j].toInt() and portalVisArr[j].toInt() // check if anything might be visible through this passage that wasn't yet visible
+                        more = more or (mByte and sourceVisArr[j].toInt().inv()) // store new PVS
                         mightSeeArr[j] = mByte.toByte()
                         j++
                     }
-                } else {
-                    // the p.mightSee is implicitely stored in the passageVis
+                } else { // the p.mightSee is implicitely stored in the passageVis
                     j = 0
                     while (j < portalVisBytes) {
 
                         // get new PVS which is decreased by going through this passage
-                        val mByte = prevMightSeeArr[j].toInt() and passageVisArr[j].toInt()
-                        // check if anything might be visible through this passage that wasn't yet visible
-                        more = more or (mByte and sourceVisArr[j].toInt().inv())
-                        // store new PVS
+                        val mByte =
+                            prevMightSeeArr[j].toInt() and passageVisArr[j].toInt() // check if anything might be visible through this passage that wasn't yet visible
+                        more = more or (mByte and sourceVisArr[j].toInt().inv()) // store new PVS
                         mightSeeArr[j] = mByte.toByte()
                         j++
                     }
@@ -1005,9 +962,8 @@ object Pvs {
             CreatePassages()
 
             // allocate first stack entry
-//	stack = reinterpret_cast<pvsStack_t*>(new byte[sizeof(pvsStack_t) + portalVisBytes]);
-            stack = pvsStack_t()
-            //	stack.mightSee = (reinterpret_cast<byte *>(stack)) + sizeof(pvsStack_t);
+            //	stack = reinterpret_cast<pvsStack_t*>(new byte[sizeof(pvsStack_t) + portalVisBytes]);
+            stack = pvsStack_t() //	stack.mightSee = (reinterpret_cast<byte *>(stack)) + sizeof(pvsStack_t);
             stack.mightSee = ByteArray(portalVisBytes)
             stack.next = null
 
@@ -1015,8 +971,9 @@ object Pvs {
             i = 0
             while (i < numPortals) {
                 source = pvsPortals!![i]!!
-                Arrays.fill(source.vis, 0, portalVisBytes, 0.toByte())
-                //		memcpy( stack.mightSee, source.mightSee, portalVisBytes );
+                Arrays.fill(
+                    source.vis, 0, portalVisBytes, 0.toByte()
+                ) //		memcpy( stack.mightSee, source.mightSee, portalVisBytes );
                 System.arraycopy(source.mightSee, 0, stack.mightSee, 0, portalVisBytes)
                 FloodPassagePVS_r(source, source, stack)
                 source.done = true
@@ -1086,13 +1043,11 @@ object Pvs {
                             continue
                         }
                         d = source[k].ToVec3().times(normal) - dist
-                        if (d < -ON_EPSILON) {
-                            // source is on the negative side, so we want all
+                        if (d < -ON_EPSILON) { // source is on the negative side, so we want all
                             // pass and target on the positive side
                             flipTest = false
                             break
-                        } else if (d > ON_EPSILON) {
-                            // source is on the positive side, so we want all
+                        } else if (d > ON_EPSILON) { // source is on the positive side, so we want all
                             // pass and target on the negative side
                             flipTest = true
                             break
@@ -1204,8 +1159,7 @@ object Pvs {
                     passage = source.passages!![j]
 
                     // if the source portal cannot see this portal
-                    if (0 == (source.mightSee!![n shr 3].toInt() and (1 shl (n and 7)))) {
-                        // not all portals in the area have to be visible because areas are not necesarily convex
+                    if (0 == (source.mightSee!![n shr 3].toInt() and (1 shl (n and 7)))) { // not all portals in the area have to be visible because areas are not necesarily convex
                         // also no passage has to be created for the portal which is the opposite of the source
                         passage!!.canSee = null
                         j++
@@ -1241,18 +1195,16 @@ object Pvs {
                             front = 0
                             l = 0
                             while (l < numBounds._val) {
-                                sides[l] = p.bounds.PlaneSide(passageBounds[l])
-                                // if completely at the back of the passage bounding plane
+                                sides[l] =
+                                    p.bounds.PlaneSide(passageBounds[l]) // if completely at the back of the passage bounding plane
                                 if (sides[l] == PLANESIDE_BACK) {
                                     break
-                                }
-                                // if completely at the front
+                                } // if completely at the front
                                 if (sides[l] == PLANESIDE_FRONT) {
                                     front++
                                 }
                                 l++
-                            }
-                            // if completely outside the passage
+                            } // if completely outside the passage
                             if (l < numBounds._val) {
                                 bitNum++
                                 continue
@@ -1268,16 +1220,13 @@ object Pvs {
                                     if (sides[l] != PLANESIDE_CROSS) {
                                         l++
                                         continue
-                                    }
-                                    // clip away the part at the back of the bounding plane
-                                    winding.ClipInPlace(passageBounds[l])
-                                    // if completely clipped away
+                                    } // clip away the part at the back of the bounding plane
+                                    winding.ClipInPlace(passageBounds[l]) // if completely clipped away
                                     if (0 == winding.GetNumPoints()) {
                                         break
                                     }
                                     l++
-                                }
-                                // if completely outside the passage
+                                } // if completely outside the passage
                                 if (l < numBounds._val) {
                                     bitNum++
                                     continue
@@ -1316,13 +1265,11 @@ object Pvs {
                 area = pvsAreas!![p.areaNum]!!
                 j = 0
                 while (j < area.numPortals) {
-                    if (p.passages!![j]!!.canSee != null) {
-//				delete[] p.passages!![j].canSee;
+                    if (p.passages!![j]!!.canSee != null) { //				delete[] p.passages!![j].canSee;
                         p.passages!![j]!!.canSee = null
                     }
                     j++
-                }
-                //		delete[] p.passages;
+                } //		delete[] p.passages;
                 p.passages = null
                 i++
             }
@@ -1344,8 +1291,7 @@ object Pvs {
             Arrays.fill(areaPVS, 0, numAreas * areaVisBytes, 0.toByte())
             i = 0
             while (i < numAreas) {
-                area = pvsAreas!![i]!!
-                //                pvs = areaPVS + i * areaVisBytes;
+                area = pvsAreas!![i]!! //                pvs = areaPVS + i * areaVisBytes;
                 pvs = i * areaVisBytes
 
                 // the area is visible to itself

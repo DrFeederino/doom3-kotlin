@@ -109,10 +109,7 @@ class Surface_Patch {
 
         @Throws(idException::class)
         fun Subdivide(
-            maxHorizontalError: Float,
-            maxVerticalError: Float,
-            maxLength: Float,
-            genNormals: Boolean = false
+            maxHorizontalError: Float, maxVerticalError: Float, maxLength: Float, genNormals: Boolean = false
         ) {
             var i: Int
             var j: Int
@@ -153,13 +150,11 @@ class Surface_Patch {
                             (verts[i * maxWidth + j].xyz[l] + verts[i * maxWidth + j + 1].xyz[l] * 2.0f + verts[i * maxWidth + j + 2].xyz[l]) * 0.25f
                         l++
                     }
-                    if (maxLength > 0.0f) {
-                        // if the span length is too long, force a subdivision
+                    if (maxLength > 0.0f) { // if the span length is too long, force a subdivision
                         if (prevxyz.LengthSqr() > maxLengthSqr || nextxyz.LengthSqr() > maxLengthSqr) {
                             break
                         }
-                    }
-                    // see if this midpoint is off far enough to subdivide
+                    } // see if this midpoint is off far enough to subdivide
                     delta.set(verts[i * maxWidth + j + 1].xyz - midxyz)
                     if (delta.LengthSqr() > maxHorizontalErrorSqr) {
                         break
@@ -212,13 +207,11 @@ class Surface_Patch {
                             (verts[j * maxWidth + i].xyz[l] + verts[(j + 1) * maxWidth + i].xyz[l] * 2.0f + verts[(j + 2) * maxWidth + i].xyz[l]) * 0.25f
                         l++
                     }
-                    if (maxLength > 0.0f) {
-                        // if the span length is too long, force a subdivision
+                    if (maxLength > 0.0f) { // if the span length is too long, force a subdivision
                         if (prevxyz.LengthSqr() > maxLengthSqr || nextxyz.LengthSqr() > maxLengthSqr) {
                             break
                         }
-                    }
-                    // see if this midpoint is off far enough to subdivide
+                    } // see if this midpoint is off far enough to subdivide
                     delta.set(verts[(j + 1) * maxWidth + i].xyz - midxyz)
                     if (delta.LengthSqr() > maxVerticalErrorSqr) {
                         break
@@ -276,10 +269,7 @@ class Surface_Patch {
 
         @Throws(idException::class)
         fun SubdivideExplicit(
-            horzSubdivisions: Int,
-            vertSubdivisions: Int,
-            genNormals: Boolean,
-            removeLinear: Boolean = false
+            horzSubdivisions: Int, vertSubdivisions: Int, genNormals: Boolean, removeLinear: Boolean = false
         ) {
             var i: Int
             var j: Int
@@ -323,7 +313,7 @@ class Surface_Patch {
                 i++
             }
 
-//	delete[] dv;
+            //	delete[] dv;
             maxWidth = outWidth
             width = maxWidth
             maxHeight = outHeight
@@ -358,8 +348,7 @@ class Surface_Patch {
             var j: Int
             val prev = idDrawVert()
             val next = idDrawVert()
-            assert(expanded == true)
-            // put all the approximating points on the curve
+            assert(expanded == true) // put all the approximating points on the curve
             i = 0
             while (i < width) {
                 j = 1
@@ -407,7 +396,9 @@ class Surface_Patch {
                 while (i < height) {
                     ProjectPointOntoVector(
                         verts[i * maxWidth + j].xyz,
-                        verts[i * maxWidth + j - 1].xyz, verts[i * maxWidth + j + 1].xyz, proj
+                        verts[i * maxWidth + j - 1].xyz,
+                        verts[i * maxWidth + j + 1].xyz,
+                        proj
                     )
                     dir.set(verts[i * maxWidth + j].xyz - proj)
                     len = dir.LengthSqr()
@@ -438,7 +429,9 @@ class Surface_Patch {
                 while (i < width) {
                     ProjectPointOntoVector(
                         verts[j * maxWidth + i].xyz,
-                        verts[(j - 1) * maxWidth + i].xyz, verts[(j + 1) * maxWidth + i].xyz, proj
+                        verts[(j - 1) * maxWidth + i].xyz,
+                        verts[(j + 1) * maxWidth + i].xyz,
+                        proj
                     )
                     dir.set(verts[j * maxWidth + i].xyz - proj)
                     len = dir.LengthSqr()
@@ -474,8 +467,7 @@ class Surface_Patch {
             }
             if (newHeight * newWidth > maxHeight * maxWidth) {
                 verts.SetNum(newHeight * newWidth)
-            }
-            // space out verts for new height and width
+            } // space out verts for new height and width
             j = maxHeight - 1
             while (j >= 0) {
                 i = maxWidth - 1
@@ -544,8 +536,7 @@ class Surface_Patch {
             val vec = idVec3()
             pVec.set(point - vStart)
             vec.set(vEnd - vStart)
-            vec.Normalize()
-            // project onto the directional vector for this segment
+            vec.Normalize() // project onto the directional vector for this segment
             vProj.set(vStart + vec * (pVec * vec))
         }
 
@@ -613,8 +604,7 @@ class Surface_Patch {
                     }
                     i++
                 }
-                if (i == width * height) {
-                    // all are coplanar
+                if (i == width * height) { // all are coplanar
                     i = 0
                     while (i < width * height) {
                         verts[i].normal.set(norm)
@@ -709,8 +699,7 @@ class Surface_Patch {
                         count++
                         k++
                     }
-                    if (count == 0) {
-                        //idLib::common->Printf("bad normal\n");
+                    if (count == 0) { //idLib::common->Printf("bad normal\n");
                         count = 1
                     }
                     verts[j * width + i].normal.set(sum)

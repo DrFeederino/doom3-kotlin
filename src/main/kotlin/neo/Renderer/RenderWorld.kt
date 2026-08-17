@@ -54,7 +54,7 @@ import neo.idlib.math.idVec3
 import neo.idlib.math.idVec4
 import neo.idlib.math.vec3_origin
 import neo.ui.UserInterface.idUserInterface
-import java.nio.*
+import java.nio.ByteBuffer
 import java.util.*
 
 object RenderWorld {
@@ -126,10 +126,8 @@ object RenderWorld {
             shader[0] = tr.primaryRenderView!!.globalMaterial
             return true
         }
-        if (r_materialOverride!!.GetString() != null && !r_materialOverride!!.GetString()!!
-                .isEmpty()
-        ) {
-            shader[0] = DeclManager.declManager.FindMaterial(r_materialOverride!!.GetString()!!)
+        if (r_materialOverride.GetString() != null && !r_materialOverride.GetString()!!.isEmpty()) {
+            shader[0] = DeclManager.declManager.FindMaterial(r_materialOverride.GetString()!!)
             return true
         }
         return false
@@ -149,8 +147,7 @@ object RenderWorld {
         if (!shader.IsDrawn()) {
             return shader
         }
-        if (customShader != null) {
-            // this is sort of a hack, but cause deformed surfaces to map to empty surfaces,
+        if (customShader != null) { // this is sort of a hack, but cause deformed surfaces to map to empty surfaces,
             // so the item highlight overlay doesn't highlight the autosprite surface
             if (shader.Deform() != null) {
                 return null
@@ -171,14 +168,12 @@ object RenderWorld {
         PS_BLOCK_VIEW,
 
         // = 1,
-        PS_BLOCK_LOCATION,
-        // = 2,  // game map location strings often stop in hallways
+        PS_BLOCK_LOCATION, // = 2,  // game map location strings often stop in hallways
         /**
          * padding
          */
         __3,
-        PS_BLOCK_AIR,
-        // = 4,       // windows between pressurized and unpresurized areas
+        PS_BLOCK_AIR, // = 4,       // windows between pressurized and unpresurized areas
         //
         /**
          * padding
@@ -666,8 +661,7 @@ object RenderWorld {
         var fov_x: Float = 0.0f
         var fov_y: Float = 0.0f
         var globalMaterial: idMaterial? = null // used to override everything draw
-        var shaderParms: FloatArray =
-            FloatArray(MAX_GLOBAL_SHADER_PARMS) // can be used in any way by shader
+        var shaderParms: FloatArray = FloatArray(MAX_GLOBAL_SHADER_PARMS) // can be used in any way by shader
 
         // time in milliseconds for shader effects and other time dependent rendering issues
         var time: Int = 0
@@ -857,9 +851,7 @@ object RenderWorld {
 
         // Creates overlays on dynamic models.
         abstract fun ProjectOverlay(
-            entityHandle: Int,
-            localTextureAxis: Array<idPlane?>? /*[2]*/,
-            material: idMaterial?
+            entityHandle: Int, localTextureAxis: Array<idPlane?>? /*[2]*/, material: idMaterial?
         )
 
         // Removes all decals and overlays from the given entity def.
@@ -921,30 +913,17 @@ object RenderWorld {
 
         // Traces vs the render model, possibly instantiating a dynamic version, and returns true if something was hit
         abstract fun ModelTrace(
-            trace: modelTrace_s,
-            entityHandle: Int,
-            start: idVec3,
-            end: idVec3,
-            radius: Float
+            trace: modelTrace_s, entityHandle: Int, start: idVec3, end: idVec3, radius: Float
         ): Boolean
 
         // Traces vs the whole rendered world. FIXME: we need some kind of material flags.
         abstract fun Trace(
-            trace: modelTrace_s,
-            start: idVec3,
-            end: idVec3,
-            radius: Float,
-            skipDynamic: Boolean,
-            skipPlayer: Boolean
+            trace: modelTrace_s, start: idVec3, end: idVec3, radius: Float, skipDynamic: Boolean, skipPlayer: Boolean
         ): Boolean
 
 
         fun Trace(
-            trace: modelTrace_s,
-            start: idVec3,
-            end: idVec3,
-            radius: Float,
-            skipDynamic: Boolean = true
+            trace: modelTrace_s, start: idVec3, end: idVec3, radius: Float, skipDynamic: Boolean = true
         ): Boolean {
             return Trace(trace, start, end, radius, skipDynamic, false)
         }
@@ -965,9 +944,7 @@ object RenderWorld {
         // demoTimeOffset will be set if a new map load command was processed before
         // the next renderScene
         abstract fun ProcessDemoCommand(
-            readDemo: idDemoFile?,
-            demoRenderView: renderView_s,
-            demoTimeOffset: CInt
+            readDemo: idDemoFile?, demoRenderView: renderView_s, demoTimeOffset: CInt
         ): Boolean
 
         // this is used to regenerate all interactions ( which is currently only done during influences ), there may be a less
@@ -978,11 +955,7 @@ object RenderWorld {
         // Line drawing for debug visualization
         abstract fun DebugClearLines(time: Int) // a time of 0 will clear all lines and text
         abstract fun DebugLine(
-            color: idVec4,
-            start: idVec3,
-            end: idVec3,
-            lifetime: Int,
-            depthTest: Boolean
+            color: idVec4, start: idVec3, end: idVec3, lifetime: Int, depthTest: Boolean
         )
 
 
@@ -996,12 +969,7 @@ object RenderWorld {
         }
 
         abstract fun DebugWinding(
-            color: idVec4,
-            w: idWinding,
-            origin: idVec3,
-            axis: idMat3,
-            lifetime: Int,
-            depthTest: Boolean
+            color: idVec4, w: idWinding, origin: idVec3, axis: idMat3, lifetime: Int, depthTest: Boolean
         )
 
 
@@ -1010,32 +978,18 @@ object RenderWorld {
         }
 
         abstract fun DebugCircle(
-            color: idVec4,
-            origin: idVec3,
-            dir: idVec3,
-            radius: Float,
-            numSteps: Int,
-            lifetime: Int,
-            depthTest: Boolean
+            color: idVec4, origin: idVec3, dir: idVec3, radius: Float, numSteps: Int, lifetime: Int, depthTest: Boolean
         )
 
 
         fun DebugCircle(
-            color: idVec4,
-            origin: idVec3,
-            dir: idVec3,
-            radius: Float,
-            numSteps: Int,
-            lifetime: Int = 0
+            color: idVec4, origin: idVec3, dir: idVec3, radius: Float, numSteps: Int, lifetime: Int = 0
         ) {
             DebugCircle(color, origin, dir, radius, numSteps, lifetime, false)
         }
 
         abstract fun DebugSphere(
-            color: idVec4,
-            sphere: idSphere,
-            lifetime: Int,
-            depthTest: Boolean
+            color: idVec4, sphere: idSphere, lifetime: Int, depthTest: Boolean
         )
 
 
@@ -1044,10 +998,7 @@ object RenderWorld {
         }
 
         abstract fun DebugBounds(
-            color: idVec4,
-            bounds: idBounds,
-            org: idVec3,
-            lifetime: Int
+            color: idVec4, bounds: idBounds, org: idVec3, lifetime: Int
         )
 
 
@@ -1061,10 +1012,7 @@ object RenderWorld {
         }
 
         abstract fun DebugFrustum(
-            color: idVec4,
-            frustum: idFrustum,
-            showFromOrigin: Boolean,
-            lifetime: Int
+            color: idVec4, frustum: idFrustum, showFromOrigin: Boolean, lifetime: Int
         )
 
 
@@ -1073,12 +1021,7 @@ object RenderWorld {
         }
 
         abstract fun DebugCone(
-            color: idVec4,
-            apex: idVec3,
-            dir: idVec3,
-            radius1: Float,
-            radius2: Float,
-            lifetime: Int
+            color: idVec4, apex: idVec3, dir: idVec3, radius1: Float, radius2: Float, lifetime: Int
         )
 
         fun DebugCone(color: idVec4, apex: idVec3, dir: idVec3, radius1: Float, radius2: Float) {
@@ -1090,10 +1033,7 @@ object RenderWorld {
         // Polygon drawing for debug visualization.
         abstract fun DebugClearPolygons(time: Int) // a time of 0 will clear all polygons
         abstract fun DebugPolygon(
-            color: idVec4,
-            winding: idWinding?,
-            lifeTime: Int,
-            depthTest: Boolean
+            color: idVec4, winding: idWinding?, lifeTime: Int, depthTest: Boolean
         )
 
 

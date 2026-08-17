@@ -77,8 +77,7 @@ class MarkerWindow {
                         currentMarker = i
                         gui!!.SetStateInt("currentMarker", md.time)
                         stopTime = md.time
-                        gui!!.GetDesktop()!!
-                            .SetChildWinVarVal(
+                        gui!!.GetDesktop()!!.SetChildWinVarVal(
                                 "markerText",
                                 "text",
                                 va("Marker set at %.2i:%.2i", md.time / 60 / 60, md.time / 60 % 60)
@@ -91,13 +90,11 @@ class MarkerWindow {
                     }
                     i++
                 }
-                if (i == c) {
-                    // no marker selected;
+                if (i == c) { // no marker selected;
                     currentMarker = -1
                     gui!!.SetStateInt("currentMarker", currentTime)
                     stopTime = currentTime
-                    gui!!.GetDesktop()!!
-                        .SetChildWinVarVal(
+                    gui!!.GetDesktop()!!.SetChildWinVarVal(
                             "markerText",
                             "text",
                             va("Marker set at %.2i:%.2i", currentTime / 60 / 60, currentTime / 60 % 60)
@@ -215,13 +212,13 @@ class MarkerWindow {
                 currentMarker = -1
                 currentTime = -1
                 stopTime = -1
-                statData!!.set(gui!!.State().GetString("statData"))
+                statData.set(gui!!.State().GetString("statData"))
                 numStats = 0
                 if (statData.Length() != 0) {
                     val file: idFile? = fileSystem.OpenFileRead(statData.toString())
                     if (file != null) {
-                        numStats = file.ReadInt()
-                        //                        file->Read(loggedStats, numStats * sizeof(loggedStats[0]));
+                        numStats =
+                            file.ReadInt() //                        file->Read(loggedStats, numStats * sizeof(loggedStats[0]));
                         i = 0
                         while (i < numStats) {
                             file.Read(loggedStats[i])
@@ -260,8 +257,7 @@ class MarkerWindow {
                         markerTimes.Append(md)
                         i++
                     }
-                    fileSystem.FreeFileList(markers)
-                    //                    memset(imageBuff, 0, 512 * 64 * 4);
+                    fileSystem.FreeFileList(markers) //                    memset(imageBuff, 0, 512 * 64 * 4);
                     Arrays.fill(imageBuff, 0, 512 * 64 * 4, 0)
                     val step = 511.0f / (numStats - 1)
                     var x1: Float
@@ -278,8 +274,9 @@ class MarkerWindow {
                         Line(x1, y1, x2, y2, imageBuff!!, -0xffff01)
                         y1 = 63.0f * (loggedStats[i].heartRate / RATE_MAX)
                         y2 = 63.0f * (loggedStats[i + 1].heartRate / RATE_MAX)
-                        Line(x1, y1, x2, y2, imageBuff!!, -0xff0100)
-                        // stamina not quite as high on graph so health does not get obscured with both at 100%
+                        Line(
+                            x1, y1, x2, y2, imageBuff!!, -0xff0100
+                        ) // stamina not quite as high on graph so health does not get obscured with both at 100%
                         y1 = 62.0f * (loggedStats[i].stamina.toFloat() / STAMINA_MAX)
                         y2 = 62.0f * (loggedStats[i + 1].stamina.toFloat() / STAMINA_MAX)
                         Line(x1, y1, x2, y2, imageBuff!!, -0x10000)
@@ -289,9 +286,9 @@ class MarkerWindow {
                         i++
                     }
                     val stage = background!!.GetStage(0)
-                    stage?.texture?.image?.get(0)
-                        ?.UploadScratch(wrapToNativeBuffer(intArrayToBytes(imageBuff!!)), 512, 64)
-                    //                    Mem_Free(imageBuff);
+                    stage?.texture?.image?.get(0)?.UploadScratch(
+                        wrapToNativeBuffer(intArrayToBytes(imageBuff!!)), 512, 64
+                    ) //                    Mem_Free(imageBuff);
                     imageBuff = null
                 }
             }
@@ -313,7 +310,7 @@ class MarkerWindow {
                 return true
             }
             if (Icmp(_name, "markerColor") == 0) {
-                ParseVec4(src, markerColor!!)
+                ParseVec4(src, markerColor)
                 return true
             }
             return super.ParseInternalVar(_name, src)

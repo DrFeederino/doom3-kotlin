@@ -87,8 +87,7 @@ object ModelOverlay {
          The material should be clamped, because entire triangles are added, some of which
          may extend well past the 0.0f to 1.0f texture range
          =====================
-         */
-        // Projects an overlay onto deformable geometry and can be added to
+         */ // Projects an overlay onto deformable geometry and can be added to
         // a render entity to allow decals on top of dynamic models.
         // This does not generate tangent vectors, so it can't be used with
         // light interaction shaders. Materials for overlays should always
@@ -152,8 +151,7 @@ object ModelOverlay {
                 val cullBits = ByteArray(stri.numVerts)
                 val texCoords: Array<idVec2> = Array(stri.numVerts) { idVec2() }
                 SIMDProcessor!!.OverlayPointCull(
-                    cullBits,
-                    texCoords as Array<idVec2>,
+                    cullBits, texCoords,
                     localTextureAxis as Array<idPlane>,
                     stri.verts as Array<DrawVert.idDrawVert>,
                     stri.numVerts
@@ -295,8 +293,9 @@ object ModelOverlay {
                     R_FreeStaticTriSurf(newSurf.geometry)
                     newSurf.geometry = R_AllocStaticTriSurf()
                     R_AllocStaticTriSurfVerts(newSurf.geometry!!, numVerts)
-                    R_AllocStaticTriSurfIndexes(newSurf.geometry!!, numIndexes)
-                    //SIMDProcessor!!.Memset(newSurf.geometry!!.verts as Array<Any>, 0, numVerts)
+                    R_AllocStaticTriSurfIndexes(
+                        newSurf.geometry!!, numIndexes
+                    ) //SIMDProcessor!!.Memset(newSurf.geometry!!.verts as Array<Any>, 0, numVerts)
                 } else {
                     R_FreeStaticTriSurfVertexCaches(newSurf.geometry!!)
                 }
@@ -315,12 +314,10 @@ object ModelOverlay {
                     }
 
                     // if the surface ids no longer match
-                    if (null == baseSurf || baseSurf.id != surf.surfaceId) {
-                        // find the surface with the correct id
+                    if (null == baseSurf || baseSurf.id != surf.surfaceId) { // find the surface with the correct id
                         if (staticModel.FindSurfaceWithId(surf.surfaceId, surf.surfaceNum)) {
                             baseSurf = staticModel.Surface(surf.surfaceNum._val)
-                        } else {
-                            // the surface with this id no longer exists
+                        } else { // the surface with this id no longer exists
                             FreeSurface(surf)
                             materials[k]!!.surfaces.RemoveIndex(i)
                             i--
@@ -341,17 +338,16 @@ object ModelOverlay {
                     j = 0
                     while (j < surf.numVerts) {
                         val overlayVert: overlayVertex_s? = surf.verts!![j]
-                        newTri!!.verts!![numVerts]!!.st[0] = overlayVert!!.st[0]
-                        newTri.verts!![numVerts]!!.st[1] = overlayVert.st[1]
-                        if (overlayVert.vertexNum >= baseSurf!!.geometry!!.numVerts) {
-                            // This can happen when playing a demofile and a model has been changed since it was recorded, so just issue a warning and go on.
+                        newTri!!.verts!![numVerts].st[0] = overlayVert!!.st[0]
+                        newTri.verts!![numVerts].st[1] = overlayVert.st[1]
+                        if (overlayVert.vertexNum >= baseSurf!!.geometry!!.numVerts) { // This can happen when playing a demofile and a model has been changed since it was recorded, so just issue a warning and go on.
                             Common.common.Warning("idRenderModelOverlay::AddOverlaySurfacesToModel: overlay vertex out of range.  Model has probably changed since generating the overlay.")
                             FreeSurface(surf)
                             materials[k]!!.surfaces.RemoveIndex(i)
                             staticModel.DeleteSurfaceWithId(newSurf.id)
                             return
                         }
-                        newTri.verts!![numVerts]!!.xyz.set(baseSurf.geometry!!.verts!![overlayVert.vertexNum]!!.xyz)
+                        newTri.verts!![numVerts].xyz.set(baseSurf.geometry!!.verts!![overlayVert.vertexNum].xyz)
                         numVerts++
                         j++
                     }
@@ -365,12 +361,10 @@ object ModelOverlay {
             }
         }
 
-        fun ReadFromDemoFile(f: idDemoFile?) {
-            // FIXME: implement
+        fun ReadFromDemoFile(f: idDemoFile?) { // FIXME: implement
         }
 
-        fun WriteToDemoFile(f: idDemoFile?) {
-            // FIXME: implement
+        fun WriteToDemoFile(f: idDemoFile?) { // FIXME: implement
         }
 
         //

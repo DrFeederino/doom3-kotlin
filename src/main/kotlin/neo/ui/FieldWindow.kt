@@ -42,8 +42,7 @@ class FieldWindow {
             }
             if (cursorPos > len) {
                 cursorPos = len
-            }
-            //            dc->DrawText(&text[paintOffset], scale, 0, foreColor, rect, false, ((flags & WIN_FOCUS) || showCursor) ? cursorPos - paintOffset : -1);
+            } //            dc->DrawText(&text[paintOffset], scale, 0, foreColor, rect, false, ((flags & WIN_FOCUS) || showCursor) ? cursorPos - paintOffset : -1);
             dc!!.DrawText(
                 text.data.toString().substring(paintOffset),
                 scale,

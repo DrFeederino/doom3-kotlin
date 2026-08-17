@@ -6,8 +6,7 @@ import kotlin.math.abs
 
 /**
  * 1x1 is too complex, so we'll skip to 2x2.
- */
-//===============================================================
+ */ //===============================================================
 //
 //	idMat2 - 2x2 matrix
 //
@@ -30,8 +29,7 @@ class idMat2 {
         mat[1].y = yy
     }
 
-    constructor(src: Array<FloatArray>) {
-//	memcpy( mat, src, 2 * 2 * sizeof( float ) );
+    constructor(src: Array<FloatArray>) { //	memcpy( mat, src, 2 * 2 * sizeof( float ) );
         mat[0] = idVec2(src[0][0], src[0][1])
         mat[1] = idVec2(src[1][0], src[1][1])
     }
@@ -47,24 +45,21 @@ class idMat2 {
     //public	idMat2			operator-() const;
     operator fun unaryMinus(): idMat2 {
         return idMat2(
-            -mat[0].x, -mat[0].y,
-            -mat[1].x, -mat[1].y
+            -mat[0].x, -mat[0].y, -mat[1].x, -mat[1].y
         )
     }
 
     //public	idMat2			operator*( const float a ) const;
     operator fun times(a: Float): idMat2 {
         return idMat2(
-            mat[0].x * a, mat[0].y * a,
-            mat[1].x * a, mat[1].y * a
+            mat[0].x * a, mat[0].y * a, mat[1].x * a, mat[1].y * a
         )
     }
 
     //public	idVec2			operator*( const idVec2 &vec ) const;
     operator fun times(vec: idVec2): idVec2 {
         return idVec2(
-            mat[0].x * vec.x + mat[0].y * vec.y,
-            mat[1].x * vec.x + mat[1].y * vec.y
+            mat[0].x * vec.x + mat[0].y * vec.y, mat[1].x * vec.x + mat[1].y * vec.y
         )
     }
 
@@ -81,15 +76,13 @@ class idMat2 {
     //public	idMat2			operator+( const idMat2 &a ) const;
     operator fun plus(a: idMat2): idMat2 {
         return idMat2(
-            mat[0].x + a.mat[0].x, mat[0].y + a.mat[0].y,
-            mat[1].x + a.mat[1].x, mat[1].y + a.mat[1].y
+            mat[0].x + a.mat[0].x, mat[0].y + a.mat[0].y, mat[1].x + a.mat[1].x, mat[1].y + a.mat[1].y
         )
     }
 
     operator fun minus(a: idMat2): idMat2 {
         return idMat2(
-            mat[0].x - a.mat[0].x, mat[0].y - a.mat[0].y,
-            mat[1].x - a.mat[1].x, mat[1].y - a.mat[1].y
+            mat[0].x - a.mat[0].x, mat[0].y - a.mat[0].y, mat[1].x - a.mat[1].x, mat[1].y - a.mat[1].y
         )
     }
 
@@ -140,14 +133,12 @@ class idMat2 {
     //public	friend idVec2 &	operator*=( idVec2 &vec, const idMat2 &mat );
     //public	bool			Compare( const idMat2 &a ) const;						// exact compare, no epsilon
     fun Compare(a: idMat2): Boolean { // exact compare, no epsilon
-        return (mat[0].Compare(a.mat[0])
-                && mat[1].Compare(a.mat[1]))
+        return (mat[0].Compare(a.mat[0]) && mat[1].Compare(a.mat[1]))
     }
 
     //public	bool			Compare( const idMat2 &a, const float epsilon ) const;	// compare with epsilon
     fun Compare(a: idMat2, epsilon: Float): Boolean { // compare with epsilon
-        return (mat[0].Compare(a.mat[0], epsilon)
-                && mat[1].Compare(a.mat[1], epsilon))
+        return (mat[0].Compare(a.mat[0], epsilon) && mat[1].Compare(a.mat[1], epsilon))
     }
 
     //public	bool			operator==( const idMat2 &a ) const;					// exact compare, no epsilon
@@ -199,8 +190,7 @@ class idMat2 {
 
 
     fun IsDiagonal(epsilon: Float): Boolean {
-        return (abs(mat[0].y) <= epsilon
-                && abs(mat[1].x) <= epsilon)
+        return (abs(mat[0].y) <= epsilon && abs(mat[1].x) <= epsilon)
     }
 
     fun Trace(): Float {
@@ -213,8 +203,7 @@ class idMat2 {
 
     fun Transpose(): idMat2 { // returns transpose
         return idMat2(
-            mat[0].x, mat[1].x,
-            mat[0].y, mat[1].y
+            mat[0].x, mat[1].x, mat[0].y, mat[1].y
         )
     }
 
@@ -236,7 +225,7 @@ class idMat2 {
     fun InverseSelf(): Boolean { // returns false if determinant is zero
         // 2+4 = 6 multiplications
         //		 1 division
-//	double det, invDet, a;
+        //	double det, invDet, a;
         val det: Float
         val invDet: Float
         val a: Float
@@ -261,7 +250,7 @@ class idMat2 {
     }
 
     fun InverseFastSelf(): Boolean { // returns false if determinant is zero
-//#if 1
+        //#if 1
         // 2+4 = 6 multiplications
         //		 1 division
         val det: Float
@@ -286,8 +275,7 @@ class idMat2 {
 
     fun ToFloatPtr(): FloatArray {
         return floatArrayOf(
-            mat[0][0], mat[0][1],
-            mat[1][0], mat[1][1]
+            mat[0][0], mat[0][1], mat[1][0], mat[1][1]
         )
     }
 

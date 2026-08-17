@@ -56,7 +56,7 @@ object tr_orderIndexes {
         var v1: Int
         var v2: Int
         var c_starts: Int
-        if (!r_orderIndexes!!.GetBool()) {
+        if (!r_orderIndexes.GetBool()) {
             return
         }
 
@@ -95,8 +95,7 @@ object tr_orderIndexes {
         // generate new indexes
         numIndexes = 0
         c_starts = 0
-        while (numIndexes != numOldIndexes) {
-            // find a triangle that hasn't been used
+        while (numIndexes != numOldIndexes) { // find a triangle that hasn't been used
             tri = 0
             while (tri < numTris) {
                 if (!triangleUsed[tri]) {
@@ -108,8 +107,7 @@ object tr_orderIndexes {
                 Common.common.Error("R_OrderIndexes: ran out of unused tris")
             }
             c_starts++
-            do {
-                // emit this tri
+            do { // emit this tri
                 base = oldIndexes
                 base_index = tri * 3
                 indexes[numIndexes + 0] = base[base_index + 0]
@@ -132,10 +130,7 @@ object tr_orderIndexes {
                         }
 
                         // if this triangle also uses v2, grab it
-                        if ((oldIndexes[tri * 3 + 0] == v2
-                                    ) || (oldIndexes[tri * 3 + 1] == v2
-                                    ) || (oldIndexes[tri * 3 + 2] == v2)
-                        ) {
+                        if ((oldIndexes[tri * 3 + 0] == v2) || (oldIndexes[tri * 3 + 1] == v2) || (oldIndexes[tri * 3 + 2] == v2)) {
                             break
                         }
                         vref = vref.next

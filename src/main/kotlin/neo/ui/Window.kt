@@ -314,8 +314,7 @@ object Window {
         val cstAnchor = idWinInt()
         val cstAnchorTo = idWinInt()        // for anchor transitions
         val cstAnchorFactor = idWinFloat()    // for anchor transitions
-        var cstNoClipBackground = false
-        //#modified-fva; END
+        var cstNoClipBackground = false //#modified-fva; END
 
         constructor(gui: idUserInterfaceLocal?) {
             dc = null
@@ -337,18 +336,15 @@ object Window {
         }
 
         fun SetDC(d: idDeviceContext?) {
-            dc = d
-            //if (flags & WIN_DESKTOP) {
-            dc!!.SetSize(forceAspectWidth, forceAspectHeight)
-            //}
+            dc = d //if (flags & WIN_DESKTOP) {
+            dc!!.SetSize(forceAspectWidth, forceAspectHeight) //}
 
             //#modified-fva; BEGIN
             if (parent != null && parent!!.cstAnchor.data != DeviceContext.CstAnchor.CST_ANCHOR_NONE.value) {
                 cstAnchor.set(parent!!.cstAnchor)
                 cstAnchorTo.set(parent!!.cstAnchorTo)
                 cstAnchorFactor.set(parent!!.cstAnchorFactor)
-            }
-            //#modified-fva; END
+            } //#modified-fva; END
 
             val c = children.Num()
             for (i in 0 until c) {
@@ -361,8 +357,9 @@ object Window {
         }
 
 
-        fun SetFocus(w: idWindow?, scripts: Boolean = false /*= true*/): idWindow? {
-            // only one child can have the focus
+        fun SetFocus(
+            w: idWindow?, scripts: Boolean = false /*= true*/
+        ): idWindow? { // only one child can have the focus
             var lastFocus: idWindow? = null
             if (w!!.flags and WIN_CANFOCUS != 0) {
                 lastFocus = gui!!.GetDesktop()!!.focusedChild
@@ -372,13 +369,10 @@ object Window {
                 }
 
                 //  call on lose focus
-                if (scripts && lastFocus != null) {
-                    // calling this broke all sorts of guis
+                if (scripts && lastFocus != null) { // calling this broke all sorts of guis
                     // lastFocus.RunScript(ON_MOUSEEXIT);
-                }
-                //  call on gain focus
-                if (scripts && w != null) {
-                    // calling this broke all sorts of guis
+                } //  call on gain focus
+                if (scripts && w != null) { // calling this broke all sorts of guis
                     // w.RunScript(ON_MOUSEENTER);
                 }
                 w.flags = w.flags or WIN_FOCUS
@@ -388,14 +382,12 @@ object Window {
             return lastFocus
         }
 
-        fun SetCapture(w: idWindow?): idWindow? {
-            // only one child can have the focus
+        fun SetCapture(w: idWindow?): idWindow? { // only one child can have the focus
             var last: idWindow? = null
             val c = children.Num()
             for (i in 0 until c) {
                 if (children[i]!!.flags and WIN_CAPTURE != 0) {
-                    last = children[i]
-                    //last.flags &= ~WIN_CAPTURE;
+                    last = children[i] //last.flags &= ~WIN_CAPTURE;
                     last!!.LoseCapture()
                     break
                 }
@@ -441,8 +433,7 @@ object Window {
             }
             val c = children.Num()
             for (i in 0 until c) {
-                if (children[i] == w) {
-                    // this is it move from i - 1 to 0 to i to 1 then shove this one into 0
+                if (children[i] == w) { // this is it move from i - 1 to 0 to i to 1 then shove this one into 0
                     for (j in i + 1 until c) {
                         children[j - 1] = children[j]
                     }
@@ -464,8 +455,7 @@ object Window {
             CalcClientRect(0.0f, 0.0f)
         }
 
-        fun SetupFromState() {
-//	idStr str;
+        fun SetupFromState() { //	idStr str;
             background = null
             SetupBackground()
             if (borderSize != 0.0f) {
@@ -483,7 +473,7 @@ object Window {
 
         fun SetupBackground() {
             if (backGroundName.Length() != 0) {
-                background = DeclManager.declManager.FindMaterial(backGroundName.data!!)
+                background = DeclManager.declManager.FindMaterial(backGroundName.data)
                 background!!.SetImageClassifications(1) // just for resource tracking
                 if (background != null && !background!!.TestMaterialFlag(Material.MF_DEFAULTED)) {
                     background!!.SetSort(Material.SS_GUI.toFloat())
@@ -535,8 +525,7 @@ object Window {
             r.y = actualY
 
             // DG: if cstAnchor is used, the coordinates must adjusted
-            if (cstAnchor.data != DeviceContext.CstAnchor.CST_ANCHOR_NONE.value) {
-                // adjust r like idDeviceContext does for drawing
+            if (cstAnchor.data != DeviceContext.CstAnchor.CST_ANCHOR_NONE.value) { // adjust r like idDeviceContext does for drawing
                 val scale = idVec2()
                 val offset = idVec2()
                 if (CstGetParams(cstAnchor.data, cstAnchorTo.data, cstAnchorFactor.data, scale, offset)) {
@@ -607,9 +596,7 @@ object Window {
         }
 
         open fun GetWinVarByName(
-            _name: String?,
-            fixup: Boolean /*= false*/,
-            owner: Array<drawWin_t?>? /*= NULL*/
+            _name: String?, fixup: Boolean /*= false*/, owner: Array<drawWin_t?>? /*= NULL*/
         ): idWinVar? {
             var retVar: idWinVar? = null
             if (owner != null) {
@@ -617,7 +604,7 @@ object Window {
             }
             if (Icmp(_name!!, "notime") == 0) {
                 retVar = noTime
-            }// FIXME: why does all this code not use "else if"?!
+            } // FIXME: why does all this code not use "else if"?!
             // You tell me lol
             if (Icmp(_name, "background") == 0) {
                 retVar = backGroundName
@@ -660,16 +647,14 @@ object Window {
             }
             if (Icmp(_name, "hidecursor") == 0) {
                 retVar = hideCursor
-            }
-            //#modified-fva; BEGIN
+            } //#modified-fva; BEGIN
             if (Icmp(_name, "cstAnchor") == 0) {
                 retVar = cstAnchor
             } else if (Icmp(_name, "cstAnchorTo") == 0) {
                 retVar = cstAnchorTo
             } else if (Icmp(_name, "cstAnchorFactor") == 0) {
                 retVar = cstAnchorFactor
-            }
-            //#modified-fva; END
+            } //#modified-fva; END
 
             val key = idStr(_name)
             val guiVar = key.Find(Winvar.VAR_GUIPREFIX) >= 0
@@ -743,8 +728,7 @@ object Window {
                 ret = TransiotonalDataOffset.FORECOLOR_OFFSET.offset
             }
 
-            if (wv === hoverColor) {
-                // TODO: Figure it out in the vanilla.
+            if (wv === hoverColor) { // TODO: Figure it out in the vanilla.
                 //ret = TransiotonalDataOffset.HOVERCOLOR_OFFSET.offset
             }
 
@@ -763,8 +747,7 @@ object Window {
             //#modified-fva; BEGIN
             if (wv === cstAnchorFactor) {
                 ret = TransiotonalDataOffset.CSTANCHORFACTOR_OFFSET.offset
-            }
-            //#modified-fva; END
+            } //#modified-fva; END
             if (ret != -1) {
                 owner.win = this
                 return ret
@@ -816,15 +799,9 @@ object Window {
                 dc!!.EnableClipping(false)
                 if (gui_debug.GetInteger() == 1) {
                     dc!!.DrawRect(
-                        drawRect.x,
-                        drawRect.y,
-                        drawRect.w,
-                        drawRect.h,
-                        1.0f,
-                        idDeviceContext.colorRed
+                        drawRect.x, drawRect.y, drawRect.w, drawRect.h, 1.0f, idDeviceContext.colorRed
                     )
-                } else if (gui_debug.GetInteger() == 2) {
-//			char out[1024];
+                } else if (gui_debug.GetInteger() == 2) { //			char out[1024];
                     var out: String //[1024];
                     val str: idStr
                     str = idStr(text.c_str()!!)
@@ -834,11 +811,7 @@ object Window {
                     out = String.format("Rect: %0.1f, %0.1f, %0.1f, %0.1f\n", rect.x(), rect.y(), rect.w(), rect.h())
                     buff += out
                     out = String.format(
-                        "Draw Rect: %0.1f, %0.1f, %0.1f, %0.1f\n",
-                        drawRect.x,
-                        drawRect.y,
-                        drawRect.w,
-                        drawRect.h
+                        "Draw Rect: %0.1f, %0.1f, %0.1f, %0.1f\n", drawRect.x, drawRect.y, drawRect.w, drawRect.h
                     )
                     buff += out
                     out = String.format(
@@ -867,8 +840,7 @@ object Window {
                 drawRect.x = rect.x() - rect.w()
                 drawRect.y = rect.y() - rect.h()
             }
-            if (flags and (WIN_HCENTER or WIN_VCENTER) != 0 && parent != null) {
-                // in this case treat xofs and yofs as absolute top left coords
+            if (flags and (WIN_HCENTER or WIN_VCENTER) != 0 && parent != null) { // in this case treat xofs and yofs as absolute top left coords
                 // and ignore the original positioning
                 if (flags and WIN_HCENTER != 0) {
                     drawRect.x = (parent!!.rect.w() - rect.w()) / 2
@@ -946,8 +918,7 @@ object Window {
             cstAnchor.set(DeviceContext.CstAnchor.CST_ANCHOR_NONE.value)
             cstAnchorTo.set(DeviceContext.CstAnchor.CST_ANCHOR_NONE.value)
             cstAnchorFactor.set(0.0f)
-            cstNoClipBackground = false
-            //#modified-fva; END
+            cstNoClipBackground = false //#modified-fva; END
         }
 
         fun CleanUp() {
@@ -956,7 +927,7 @@ object Window {
             i = 0
             while (i < c) {
 
-//		delete drawWindows[i].simp;
+                //		delete drawWindows[i].simp;
                 drawWindows[i] = null
                 i++
             }
@@ -979,7 +950,7 @@ object Window {
             i = 0
             while (i < ON.SCRIPT_COUNT.ordinal) {
 
-//		delete scripts[i];
+                //		delete scripts[i];
                 scripts[i] = null
                 i++
             }
@@ -1014,10 +985,8 @@ object Window {
         fun Contains(sr: idRectangle?, x: Float, y: Float): Boolean {
             val r = idRectangle(sr)
             r.x += actualX - drawRect.x
-            r.y += actualY - drawRect.y
-            // DG: if cstAnchor is used, the coordinates must adjusted
-            if (cstAnchor.data != DeviceContext.CstAnchor.CST_ANCHOR_NONE.value) {
-                // adjust r like idDeviceContext does for drawing
+            r.y += actualY - drawRect.y // DG: if cstAnchor is used, the coordinates must adjusted
+            if (cstAnchor.data != DeviceContext.CstAnchor.CST_ANCHOR_NONE.value) { // adjust r like idDeviceContext does for drawing
                 val scale = idVec2()
                 val offset = idVec2()
                 if (CstGetParams(cstAnchor.data, cstAnchorTo.data, cstAnchorFactor.data, scale, offset)) {
@@ -1053,14 +1022,13 @@ object Window {
             var ret = true
 
             // attach a window wrapper to the window if the gui editor is running
-//            if (ID_ALLOW_TOOLS) {
-//                if ((com_editors & EDITOR_GUI) != 0) {
-//                    new rvGEWindowWrapper(this, rvGEWindowWrapper.WT_NORMAL);
-//                }
-//            }
-//
-            while (!token.equals("}")) {
-                // track what was parsed so we can maintain it for the guieditor
+            //            if (ID_ALLOW_TOOLS) {
+            //                if ((com_editors & EDITOR_GUI) != 0) {
+            //                    new rvGEWindowWrapper(this, rvGEWindowWrapper.WT_NORMAL);
+            //                }
+            //            }
+            //
+            while (!token.equals("}")) { // track what was parsed so we can maintain it for the guieditor
                 src.SetMarker()
                 dwt = drawWin_t()
                 if (token.equals("windowDef") || token.equals("animationDef")) {
@@ -1207,8 +1175,7 @@ object Window {
                     dwt.win = win
                     drawWindows.Append(dwt)
                 } //
-                else if (token.equals("onNamedEvent")) {
-                    // Read the event name
+                else if (token.equals("onNamedEvent")) { // Read the event name
                     if (!src.ReadToken(token)) {
                         src.Error("Expected event name")
                         return false
@@ -1222,22 +1189,22 @@ object Window {
 
                     // If we are in the gui editor then add the internal var to the
                     // the wrapper
-//                    if (ID_ALLOW_TOOLS) {
-//                        if ((com_editors & EDITOR_GUI) != 0) {
-//                            idStr str = new idStr();
-//                            idStr out = new idStr();
-//
-//                            // Grab the string from the last marker
-//                            src.GetStringFromMarker(str, false);
-//
-//                            // Parse it one more time to knock unwanted tabs out
-//                            idLexer src2 = new idLexer(str.toString(), str.Length(), "", src.GetFlags());
-//                            src2.ParseBracedSectionExact(out, 1);
-//
-//                            // Save the script
-//                            rvGEWindowWrapper.GetWrapper(this).GetScriptDict().Set(va("onEvent %s", token.c_str()), out);
-//                        }
-//                    }
+                    //                    if (ID_ALLOW_TOOLS) {
+                    //                        if ((com_editors & EDITOR_GUI) != 0) {
+                    //                            idStr str = new idStr();
+                    //                            idStr out = new idStr();
+                    //
+                    //                            // Grab the string from the last marker
+                    //                            src.GetStringFromMarker(str, false);
+                    //
+                    //                            // Parse it one more time to knock unwanted tabs out
+                    //                            idLexer src2 = new idLexer(str.toString(), str.Length(), "", src.GetFlags());
+                    //                            src2.ParseBracedSectionExact(out, 1);
+                    //
+                    //                            // Save the script
+                    //                            rvGEWindowWrapper.GetWrapper(this).GetScriptDict().Set(va("onEvent %s", token.c_str()), out);
+                    //                        }
+                    //                    }
                     namedEvents.Append(ev)
                 } else if (token.equals("onTime")) {
                     val ev = idTimeLineEvent()
@@ -1257,22 +1224,22 @@ object Window {
                     // add the script to the wrappers script list
                     // If we are in the gui editor then add the internal var to the
                     // the wrapper
-//                    if (ID_ALLOW_TOOLS) {
-//                        if ((com_editors & EDITOR_GUI) != 0) {
-//                            idStr str = new idStr();
-//                            idStr out = new idStr();
-//
-//                            // Grab the string from the last marker
-//                            src.GetStringFromMarker(str, false);
-//
-//                            // Parse it one more time to knock unwanted tabs out
-//                            idLexer src2 = new idLexer(str.toString(), str.Length(), "", src.GetFlags());
-//                            src2.ParseBracedSectionExact(out, 1);
-//
-//                            // Save the script
-//                            rvGEWindowWrapper.GetWrapper(this).GetScriptDict().Set(va("onTime %d", ev.time), out);
-//                        }
-//                    }
+                    //                    if (ID_ALLOW_TOOLS) {
+                    //                        if ((com_editors & EDITOR_GUI) != 0) {
+                    //                            idStr str = new idStr();
+                    //                            idStr out = new idStr();
+                    //
+                    //                            // Grab the string from the last marker
+                    //                            src.GetStringFromMarker(str, false);
+                    //
+                    //                            // Parse it one more time to knock unwanted tabs out
+                    //                            idLexer src2 = new idLexer(str.toString(), str.Length(), "", src.GetFlags());
+                    //                            src2.ParseBracedSectionExact(out, 1);
+                    //
+                    //                            // Save the script
+                    //                            rvGEWindowWrapper.GetWrapper(this).GetScriptDict().Set(va("onTime %d", ev.time), out);
+                    //                        }
+                    //                    }
                     // this is a timeline event
                     ev.pending = true
                     timeLineEvents.Append(ev)
@@ -1292,15 +1259,15 @@ object Window {
                     regList.AddReg(work.toString(), (REGTYPE.FLOAT).ordinal, src, this, varf)
 
                     // If we are in the gui editor then add the float to the defines
-//                    if (ID_ALLOW_TOOLS) {
-//                        if ((com_editors & EDITOR_GUI) != 0) {
-//                            idStr str;
-//
-//                            // Grab the string from the last marker and save it in the wrapper
-//                            src.GetStringFromMarker(str, true);
-//                            rvGEWindowWrapper.GetWrapper(this).GetVariableDict().Set(va("definefloat\t\"%s\"", token.c_str()), str);
-//                        }
-//                    }
+                    //                    if (ID_ALLOW_TOOLS) {
+                    //                        if ((com_editors & EDITOR_GUI) != 0) {
+                    //                            idStr str;
+                    //
+                    //                            // Grab the string from the last marker and save it in the wrapper
+                    //                            src.GetStringFromMarker(str, true);
+                    //                            rvGEWindowWrapper.GetWrapper(this).GetVariableDict().Set(va("definefloat\t\"%s\"", token.c_str()), str);
+                    //                        }
+                    //                    }
                 } else if (token.equals("definevec4")) {
                     src.ReadToken(token)
                     work = token
@@ -1317,24 +1284,20 @@ object Window {
                     //definedVars.Append(var);
                     gui!!.GetDesktop()!!.definedVars.Append(`var`)
                     gui!!.GetDesktop()!!.regList.AddReg(
-                        work.toString(),
-                        (REGTYPE.VEC4).ordinal,
-                        src,
-                        gui!!.GetDesktop(),
-                        `var`
+                        work.toString(), (REGTYPE.VEC4).ordinal, src, gui!!.GetDesktop(), `var`
                     )
 
                     // store the original vec4 for the editor
                     // If we are in the gui editor then add the float to the defines
-//                    if (ID_ALLOW_TOOLS) {
-//                        if ((com_editors & EDITOR_GUI) != 0) {
-//                            idStr str = new idStr();
-//
-//                            // Grab the string from the last marker and save it in the wrapper
-//                            src.GetStringFromMarker(str, true);
-//                            rvGEWindowWrapper.GetWrapper(this).GetVariableDict().Set(va("definevec4\t\"%s\"", token.c_str()), str);
-//                        }
-//                    }
+                    //                    if (ID_ALLOW_TOOLS) {
+                    //                        if ((com_editors & EDITOR_GUI) != 0) {
+                    //                            idStr str = new idStr();
+                    //
+                    //                            // Grab the string from the last marker and save it in the wrapper
+                    //                            src.GetStringFromMarker(str, true);
+                    //                            rvGEWindowWrapper.GetWrapper(this).GetVariableDict().Set(va("definevec4\t\"%s\"", token.c_str()), str);
+                    //                        }
+                    //                    }
                 } else if (token.equals("float")) {
                     src.ReadToken(token)
                     work = token
@@ -1351,58 +1314,55 @@ object Window {
                     regList.AddReg(work.toString(), (REGTYPE.FLOAT).ordinal, src, this, varf)
 
                     // If we are in the gui editor then add the float to the defines
-//                    if (ID_ALLOW_TOOLS) {
-//                        if ((com_editors & EDITOR_GUI) != 0) {
-//                            idStr str;
-//
-//                            // Grab the string from the last marker and save it in the wrapper
-//                            src.GetStringFromMarker(str, true);
-//                            rvGEWindowWrapper.GetWrapper(this).GetVariableDict().Set(va("float\t\"%s\"", token.c_str()), str);
-//                        }
-//                    }
-                } else if (ParseScriptEntry(token.toString(), src)) {
-                    // add the script to the wrappers script list
+                    //                    if (ID_ALLOW_TOOLS) {
+                    //                        if ((com_editors & EDITOR_GUI) != 0) {
+                    //                            idStr str;
+                    //
+                    //                            // Grab the string from the last marker and save it in the wrapper
+                    //                            src.GetStringFromMarker(str, true);
+                    //                            rvGEWindowWrapper.GetWrapper(this).GetVariableDict().Set(va("float\t\"%s\"", token.c_str()), str);
+                    //                        }
+                    //                    }
+                } else if (ParseScriptEntry(token.toString(), src)) { // add the script to the wrappers script list
                     // If we are in the gui editor then add the internal var to the
                     // the wrapper
-//                    if (ID_ALLOW_TOOLS) {
-//                        if ((com_editors & EDITOR_GUI) != 0) {
-//                            idStr str = new idStr();
-//                            idStr out = new idStr();
-//
-//                            // Grab the string from the last marker
-//                            src.GetStringFromMarker(str, false);
-//
-//                            // Parse it one more time to knock unwanted tabs out
-//                            idLexer src2 = new idLexer(str.toString(), str.Length(), "", src.GetFlags());
-//                            src2.ParseBracedSectionExact(out, 1);
-//
-//                            // Save the script
-//                            rvGEWindowWrapper.GetWrapper(this).GetScriptDict().Set(token, out);
-//                        }
-//                    }
-                } else if (ParseInternalVar(token.toString(), src)) {
-                    // gui editor support
+                    //                    if (ID_ALLOW_TOOLS) {
+                    //                        if ((com_editors & EDITOR_GUI) != 0) {
+                    //                            idStr str = new idStr();
+                    //                            idStr out = new idStr();
+                    //
+                    //                            // Grab the string from the last marker
+                    //                            src.GetStringFromMarker(str, false);
+                    //
+                    //                            // Parse it one more time to knock unwanted tabs out
+                    //                            idLexer src2 = new idLexer(str.toString(), str.Length(), "", src.GetFlags());
+                    //                            src2.ParseBracedSectionExact(out, 1);
+                    //
+                    //                            // Save the script
+                    //                            rvGEWindowWrapper.GetWrapper(this).GetScriptDict().Set(token, out);
+                    //                        }
+                    //                    }
+                } else if (ParseInternalVar(token.toString(), src)) { // gui editor support
                     // If we are in the gui editor then add the internal var to the
                     // the wrapper
-//                    if (ID_ALLOW_TOOLS) {
-//                        if ((com_editors & EDITOR_GUI) != 0) {
-//                            idStr str = new idStr();
-//                            src.GetStringFromMarker(str);
-//                            rvGEWindowWrapper.GetWrapper(this).SetStateKey(token, str, false);
-//                        }
-//                    }
+                    //                    if (ID_ALLOW_TOOLS) {
+                    //                        if ((com_editors & EDITOR_GUI) != 0) {
+                    //                            idStr str = new idStr();
+                    //                            src.GetStringFromMarker(str);
+                    //                            rvGEWindowWrapper.GetWrapper(this).SetStateKey(token, str, false);
+                    //                        }
+                    //                    }
                 } else {
-                    ParseRegEntry(token.toString(), src)
-                    // hook into the main window parsing for the gui editor
+                    ParseRegEntry(token.toString(), src) // hook into the main window parsing for the gui editor
                     // If we are in the gui editor then add the internal var to the
                     // the wrapper
-//                    if (ID_ALLOW_TOOLS) {
-//                        if ((com_editors & EDITOR_GUI) != 0) {
-//                            idStr str;
-//                            src.GetStringFromMarker(str);
-//                            rvGEWindowWrapper.GetWrapper(this).SetStateKey(token, str, false);
-//                        }
-//                    }
+                    //                    if (ID_ALLOW_TOOLS) {
+                    //                        if ((com_editors & EDITOR_GUI) != 0) {
+                    //                            idStr str;
+                    //                            src.GetStringFromMarker(str);
+                    //                            rvGEWindowWrapper.GetWrapper(this).SetStateKey(token, str, false);
+                    //                        }
+                    //                    }
                 }
                 if (!src.ReadToken(token)) {
                     src.Error("Unexpected end of file")
@@ -1419,12 +1379,12 @@ object Window {
             // hook into the main window parsing for the gui editor
             // If we are in the gui editor then add the internal var to the
             // the wrapper
-//            if (ID_ALLOW_TOOLS) {
-//                if ((com_editors & EDITOR_GUI) != 0) {
-//                    rvGEWindowWrapper.GetWrapper(this).Finish();
-//                }
-//            }
-//
+            //            if (ID_ALLOW_TOOLS) {
+            //                if ((com_editors & EDITOR_GUI) != 0) {
+            //                    rvGEWindowWrapper.GetWrapper(this).Finish();
+            //                }
+            //            }
+            //
             return ret
         }
 
@@ -1454,9 +1414,9 @@ object Window {
                         }
                         var c = children.Num()
                         while (--c >= 0) {
-                            if (children[c]!!.visible.data
-                                && children[c]!!.Contains(children[c]!!.drawRect, gui!!.CursorX(), gui!!.CursorY())
-                                && !children[c]!!.noEvents.data
+                            if (children[c]!!.visible.data && children[c]!!.Contains(
+                                    children[c]!!.drawRect, gui!!.CursorX(), gui!!.CursorY()
+                                ) && !children[c]!!.noEvents.data
                             ) {
                                 val child = children[c]
                                 if (event.evValue2 != 0) {
@@ -1466,8 +1426,10 @@ object Window {
                                         SetCapture(child)
                                     }
                                 }
-                                if (child!!.Contains(child.clientRect, gui!!.CursorX(), gui!!.CursorY())) {
-                                    //if ((gui_edit.GetBool() && (child.flags & WIN_SELECTED)) || (!gui_edit.GetBool() && (child.flags & WIN_MOVABLE))) {
+                                if (child!!.Contains(
+                                        child.clientRect, gui!!.CursorX(), gui!!.CursorY()
+                                    )
+                                ) { //if ((gui_edit.GetBool() && (child.flags & WIN_SELECTED)) || (!gui_edit.GetBool() && (child.flags & WIN_MOVABLE))) {
                                     //	SetCapture(child);
                                     //}
                                     SetFocus(child)
@@ -1504,9 +1466,9 @@ object Window {
                         }
                         var c = children.Num()
                         while (--c >= 0) {
-                            if (children[c]!!.visible.data
-                                && children[c]!!.Contains(children[c]!!.drawRect, gui!!.CursorX(), gui!!.CursorY())
-                                && !children[c]!!.noEvents.data
+                            if (children[c]!!.visible.data && children[c]!!.Contains(
+                                    children[c]!!.drawRect, gui!!.CursorX(), gui!!.CursorY()
+                                ) && !children[c]!!.noEvents.data
                             ) {
                                 val child = children[c]
                                 if (event.evValue2 != 0) {
@@ -1514,9 +1476,7 @@ object Window {
                                     SetFocus(child)
                                 }
                                 if (child!!.Contains(
-                                        child.clientRect,
-                                        gui!!.CursorX(),
-                                        gui!!.CursorY()
+                                        child.clientRect, gui!!.CursorX(), gui!!.CursorY()
                                     ) || GetCaptureChild() === child
                                 ) {
                                     if (gui_edit.GetBool() && child.flags and WIN_SELECTED != 0 || !gui_edit.GetBool() && child.flags and WIN_MOVABLE != 0) {
@@ -1574,8 +1534,7 @@ object Window {
                                 }
                                 while (index < parent!!.GetChildCount() && index >= 0) {
                                     val testWindow = parent.GetChild(index)
-                                    if (testWindow === currentFocus) {
-                                        // we managed to wrap around and get back to our starting window
+                                    if (testWindow === currentFocus) { // we managed to wrap around and get back to our starting window
                                         foundFocus = true
                                         break
                                     }
@@ -1593,18 +1552,14 @@ object Window {
                                     }
                                     index += direction
                                 }
-                                if (foundFocus) {
-                                    // We found a child to focus on
+                                if (foundFocus) { // We found a child to focus on
                                     break
-                                } else if (recurse) {
-                                    // We found a child with children
+                                } else if (recurse) { // We found a child with children
                                     continue
-                                } else {
-                                    // We didn't find anything, so go back up to our parent
+                                } else { // We didn't find anything, so go back up to our parent
                                     child = parent
                                     parent = child.GetParent()
-                                    if (parent === gui!!.GetDesktop()) {
-                                        // We got back to the desktop, so wrap around but don't actually go to the desktop
+                                    if (parent === gui!!.GetDesktop()) { // We got back to the desktop, so wrap around but don't actually go to the desktop
                                         parent = null
                                         child = null
                                     }
@@ -1687,7 +1642,7 @@ object Window {
 
         fun Redraw(x: Float, y: Float) {
             var str: idStr
-            if (r_skipGuiShaders!!.GetInteger() == 1 || dc == null) {
+            if (r_skipGuiShaders.GetInteger() == 1 || dc == null) {
                 return
             }
             val time = gui!!.GetTime()
@@ -1700,8 +1655,7 @@ object Window {
 
             // DG: allow scaling menus to 4:3
             var fixupFor43 = false
-            if (flags and WIN_DESKTOP != 0) {
-                // only scale desktop windows (will automatically scale its sub-windows)
+            if (flags and WIN_DESKTOP != 0) { // only scale desktop windows (will automatically scale its sub-windows)
                 // that EITHER have the scaleto43 flag set OR are fullscreen menus and r_scaleMenusTo43 is 1
                 if ((flags and WIN_SCALETO43 != 0) || ((flags and WIN_MENUGUI) != 0 && r_scaleMenusTo43.GetBool() && (flags and WIN_NO_SCALETO43) == 0)) {
                     fixupFor43 = true
@@ -1712,9 +1666,7 @@ object Window {
             if (flags and WIN_SHOWTIME != 0) {
                 dc!!.DrawText(
                     va(
-                        " %0.1f seconds\n%s",
-                        (time - timeLine).toFloat() / 1000,
-                        gui!!.State().GetString("name")
+                        " %0.1f seconds\n%s", (time - timeLine).toFloat() / 1000, gui!!.State().GetString("name")
                     ), 0.35f, 0, idDeviceContext.colorWhite, idRectangle(100.0f, 0.0f, 80.0f, 80.0f), false
                 )
             }
@@ -1730,12 +1682,7 @@ object Window {
                     )
                 )
                 dc!!.DrawText(
-                    str.toString(),
-                    0.25f,
-                    0,
-                    idDeviceContext.colorWhite,
-                    idRectangle(0.0f, 0.0f, 100.0f, 20.0f),
-                    false
+                    str.toString(), 0.25f, 0, idDeviceContext.colorWhite, idRectangle(0.0f, 0.0f, 100.0f, 20.0f), false
                 )
                 dc!!.EnableClipping(true)
             }
@@ -1762,14 +1709,12 @@ object Window {
             }
             if (!cst_hudAdjustAspect.GetBool() || cstAnchor.data == DeviceContext.CstAnchor.CST_ANCHOR_NONE.value) {
                 dc?.SetSize(forceAspectWidth, forceAspectHeight)
-            } else {
-                // DG: if this Window uses anchors, it already is aspect-ratio-aware
+            } else { // DG: if this Window uses anchors, it already is aspect-ratio-aware
                 //     so a potentially active menuscalefix must be disabled
                 //    (else it's "fixed" twice => wrong ratio in other direction)
                 dc?.SetMenuScaleFix(false)
                 dc?.CstSetSize(cstAnchor.data, cstAnchorTo.data, cstAnchorFactor.data)
-            }
-            //#modified-fva; END
+            } //#modified-fva; END
 
             //FIXME: go to screen coord tracking
             drawRect.Offset(x, y)
@@ -1785,8 +1730,7 @@ object Window {
             //#modified-fva; BEGIN
             if (cstNoClipBackground) {
                 dc?.EnableClipping(false)
-            }
-            //#modified-fva; END
+            } //#modified-fva; END
 
             DrawBackground(drawRect)
 
@@ -1794,14 +1738,13 @@ object Window {
             //#modified-fva; BEGIN
             if (cstNoClipBackground) {
                 dc?.EnableClipping(true)
-            }
-            //#modified-fva; END
+            } //#modified-fva; END
 
             DrawBorderAndCaption(drawRect)
             if (0 == flags and WIN_NOCLIP) {
                 dc!!.PushClipRect(clientRect)
             }
-            if (r_skipGuiShaders!!.GetInteger() < 5) {
+            if (r_skipGuiShaders.GetInteger() < 5) {
                 Draw(time, x, y)
             }
             if (gui_debug.GetInteger() != 0) {
@@ -1821,10 +1764,7 @@ object Window {
             if (0 == flags and WIN_NOCLIP) {
                 dc!!.PopClipRect()
             }
-            if (gui_edit.GetBool()
-                || (flags and WIN_DESKTOP != 0 && 0 == flags and WIN_NOCURSOR && !hideCursor.data
-                        && (gui!!.Active() || flags and WIN_MENUGUI != 0))
-            ) {
+            if (gui_edit.GetBool() || (flags and WIN_DESKTOP != 0 && 0 == flags and WIN_NOCURSOR && !hideCursor.data && (gui!!.Active() || flags and WIN_MENUGUI != 0))) {
                 dc!!.SetTransformInfo(vec3_origin, getMat3_identity())
                 gui!!.DrawCursor()
             }
@@ -1832,12 +1772,7 @@ object Window {
                 dc!!.EnableClipping(false)
                 str = idStr(String.format("x: %.1f y: %.1f", gui!!.CursorX(), gui!!.CursorY()))
                 dc!!.DrawText(
-                    str.toString(),
-                    0.25f,
-                    0,
-                    idDeviceContext.colorWhite,
-                    idRectangle(0.0f, 0.0f, 100.0f, 20.0f),
-                    false
+                    str.toString(), 0.25f, 0, idDeviceContext.colorWhite, idRectangle(0.0f, 0.0f, 100.0f, 20.0f), false
                 )
                 dc!!.DrawText(
                     gui!!.GetSourceFile(),
@@ -1860,8 +1795,7 @@ object Window {
         }
 
 
-        fun ArchiveToDictionary(dict: idDict?, useNames: Boolean = true /*= true*/) {
-            //FIXME: rewrite without state
+        fun ArchiveToDictionary(dict: idDict?, useNames: Boolean = true /*= true*/) { //FIXME: rewrite without state
             val c = children.Num()
             for (i in 0 until c) {
                 children[i]!!.ArchiveToDictionary(dict)
@@ -1869,8 +1803,7 @@ object Window {
         }
 
 
-        fun InitFromDictionary(dict: idDict?, byName: Boolean = true /*= true*/) {
-            //FIXME: rewrite without state
+        fun InitFromDictionary(dict: idDict?, byName: Boolean = true /*= true*/) { //FIXME: rewrite without state
             val c = children.Num()
             for (i in 0 until c) {
                 children[i]!!.InitFromDictionary(dict)
@@ -1916,7 +1849,7 @@ object Window {
                 return
             }
             if (textShadow.code != 0) {
-                val shadowText = idStr(text.data!!)
+                val shadowText = idStr(text.data)
                 val shadowRect = idRectangle(textRect)
                 shadowText.RemoveColors()
                 shadowRect.x += textShadow.code.toFloat()
@@ -1983,8 +1916,7 @@ object Window {
             if (background != null && matColor.w() != 0.0f) {
                 val scalex: Float
                 val scaley: Float
-                if (flags and WIN_NATURALMAT != 0) {
-                    // DG: now also multiplied with matScalex/y, don't see a reason not to support that
+                if (flags and WIN_NATURALMAT != 0) { // DG: now also multiplied with matScalex/y, don't see a reason not to support that
                     //     (it allows scaling a tiled background image)
                     scalex = (drawRect.w / background!!.GetImageWidth()) * matScalex
                     scaley = (drawRect.h / background!!.GetImageHeight()) * matScaley
@@ -1993,22 +1925,14 @@ object Window {
                     scaley = matScaley
                 }
                 dc!!.DrawMaterial(
-                    drawRect.x,
-                    drawRect.y,
-                    drawRect.w,
-                    drawRect.h,
-                    background,
-                    matColor.data,
-                    scalex,
-                    scaley
+                    drawRect.x, drawRect.y, drawRect.w, drawRect.h, background, matColor.data, scalex, scaley
                 )
             }
         }
 
         open fun RouteMouseCoords(xd: Float, yd: Float): String? {
             var str: String
-            if (GetCaptureChild() != null) {
-                //FIXME: unkludge this whole mechanism
+            if (GetCaptureChild() != null) { //FIXME: unkludge this whole mechanism
                 return GetCaptureChild()!!.RouteMouseCoords(xd, yd)
             }
             if (xd == -2000.0f || yd == -2000.0f) {
@@ -2018,9 +1942,7 @@ object Window {
             while (c > 0) {
                 val child = children[--c]
                 if (child!!.visible.data && !child.noEvents.data && child.Contains(
-                        child.drawRect,
-                        gui!!.CursorX(),
-                        gui!!.CursorY()
+                        child.drawRect, gui!!.CursorX(), gui!!.CursorY()
                     )
                 ) {
                     dc!!.SetCursor(child.cursor.code)
@@ -2093,8 +2015,7 @@ object Window {
             assert(WRITE_GUIS)
         }
 
-        fun WriteToDemoFile(f: idDemoFile?) {
-            // should never hit unless we re-enable WRITE_GUIS
+        fun WriteToDemoFile(f: idDemoFile?) { // should never hit unless we re-enable WRITE_GUIS
             assert(WRITE_GUIS)
         }
 
@@ -2182,8 +2103,7 @@ object Window {
             cstAnchor.WriteToSaveGame(savefile)
             cstAnchorTo.WriteToSaveGame(savefile)
             cstAnchorFactor.WriteToSaveGame(savefile)
-            savefile.WriteBool(cstNoClipBackground)
-            //#modified-fva; END
+            savefile.WriteBool(cstNoClipBackground) //#modified-fva; END
 
             // Defined Vars
             i = 0
@@ -2219,7 +2139,7 @@ object Window {
                     savefile.WriteBool(timeLineEvents[i]!!.pending)
                     savefile.WriteInt(timeLineEvents[i]!!.time)
                     if (timeLineEvents[i]!!.event != null) {
-                        timeLineEvents[i]!!.event!!.WriteToSaveGame(savefile)
+                        timeLineEvents[i]!!.event.WriteToSaveGame(savefile)
                     }
                 }
                 i++
@@ -2240,7 +2160,7 @@ object Window {
                 if (namedEvents[i] != null) {
                     WriteSaveGameString(namedEvents[i]!!.mName.toString(), savefile)
                     if (namedEvents[i]!!.mEvent != null) {
-                        namedEvents[i]!!.mEvent!!.WriteToSaveGame(savefile)
+                        namedEvents[i]!!.mEvent.WriteToSaveGame(savefile)
                     }
                 }
                 i++
@@ -2400,7 +2320,7 @@ object Window {
                     timeLineEvents[i]!!.pending = savefile.ReadBool()
                     timeLineEvents[i]!!.time = savefile.ReadInt()
                     if (timeLineEvents[i]!!.event != null) {
-                        timeLineEvents[i]!!.event!!.ReadFromSaveGame(savefile)
+                        timeLineEvents[i]!!.event.ReadFromSaveGame(savefile)
                     }
                 }
                 i++
@@ -2426,7 +2346,7 @@ object Window {
                 if (namedEvents[i] != null) {
                     ReadSaveGameString(namedEvents[i]!!.mName, savefile)
                     if (namedEvents[i]!!.mEvent != null) {
-                        namedEvents[i]!!.mEvent!!.ReadFromSaveGame(savefile)
+                        namedEvents[i]!!.mEvent.ReadFromSaveGame(savefile)
                     }
                 }
                 i++
@@ -2477,8 +2397,7 @@ object Window {
                         } //#modified-fva; BEGIN
                         else if (transitions[i].offset == TransiotonalDataOffset.CSTANCHORFACTOR_OFFSET.offset) {
                             transitions[i].data = dw.win?.cstAnchorFactor
-                        }
-                        //#modified-fva; END
+                        } //#modified-fva; END
                     } else {
                         if (transitions[i].offset == TransiotonalDataOffset.RECT_OFFSET.offset) {
                             transitions[i].data = dw.simp?.rect
@@ -2494,12 +2413,10 @@ object Window {
                             transitions[i].data = dw.simp?.textScale
                         } else if (transitions[i].offset == TransiotonalDataOffset.ROTATE_OFFSET.offset) {
                             transitions[i].data = dw.simp?.rotate
-                        }
-                        //#modified-fva; BEGIN
+                        } //#modified-fva; BEGIN
                         else if (transitions[i].offset == TransiotonalDataOffset.CSTANCHORFACTOR_OFFSET.offset) {
                             transitions[i].data = dw.simp?.cstAnchorFactor
-                        }
-                        //#modified-fva; END
+                        } //#modified-fva; END
                     }
                 }
                 if (transitions[i].data == null) {
@@ -2535,20 +2452,19 @@ object Window {
             c = timeLineEvents.Num()
             i = 0
             while (i < c) {
-                timeLineEvents[i]!!.event!!.FixupParms(this)
+                timeLineEvents[i]!!.event.FixupParms(this)
                 i++
             }
             c = namedEvents.Num()
             i = 0
             while (i < c) {
-                namedEvents[i]!!.mEvent!!.FixupParms(this)
+                namedEvents[i]!!.mEvent.FixupParms(this)
                 i++
             }
             c = ops.Num()
             i = 0
             while (i < c) {
-                if (ops[i].b == -2) {
-                    // need to fix this up
+                if (ops[i].b == -2) { // need to fix this up
                     val p = ops[i].a!!.c_str()
                     val `var` = GetWinVarByName(p, true)
                     ops[i].a =  /*(int)*/`var`
@@ -2679,8 +2595,7 @@ object Window {
                     ParseScript(src, gs.ifList, null)
                     if (src.ReadToken(token)) {
                         if (token.equals("else")) {
-                            gs.elseList = idGuiScriptList()
-                            // pass true to indicate we are parsing an else condition
+                            gs.elseList = idGuiScriptList() // pass true to indicate we are parsing an else condition
                             ParseScript(src, gs.elseList, null, true)
                         } else {
                             src.UnreadToken(token)
@@ -2700,8 +2615,7 @@ object Window {
 
                 // empty { } is not allowed
                 if (token.equals("{")) {
-                    src.Error("Unexpected {")
-                    //			 delete gs;
+                    src.Error("Unexpected {") //			 delete gs;
                     return false
                 }
                 gs.Parse(src)
@@ -2710,9 +2624,7 @@ object Window {
         }
 
         fun RunScript(n: Int): Boolean {
-            return if (n >= ON.ON_MOUSEENTER.ordinal && n < ON.SCRIPT_COUNT.ordinal) {
-                RunScriptList(scripts[n])
-            } else false
+            return n >= ON.ON_MOUSEENTER.ordinal && n < ON.SCRIPT_COUNT.ordinal && RunScriptList(scripts[n])
         }
 
         fun RunScript(n: Enum<*>?): Boolean {
@@ -3015,11 +2927,15 @@ object Window {
                     continue
                 }
                 val src = idParser(
-                    kv.GetValue().toString(), kv.GetValue().Length(), "",
+                    kv.GetValue().toString(),
+                    kv.GetValue().Length(),
+                    "",
                     LEXFL_NOFATALERRORS or LEXFL_NOSTRINGCONCAT or LEXFL_ALLOWMULTICHARLITERALS or LEXFL_ALLOWBACKSLASHSTRINGCONCAT
                 )
-                if (!ParseInternalVar(kv.GetKey().toString(), src)) {
-                    // Kill the old register since the parse reg entry will add a new one
+                if (!ParseInternalVar(
+                        kv.GetKey().toString(), src
+                    )
+                ) { // Kill the old register since the parse reg entry will add a new one
                     if (!ParseRegEntry(kv.GetKey().toString(), src)) {
                         i++
                         continue
@@ -3093,9 +3009,9 @@ object Window {
             hoverColor.set(idVec4(1, 1, 1, 1))
             matColor.set(idVec4(1, 1, 1, 1))
             borderColor.Zero()
-            text.data!!.set("")
+            text.data.set("")
             background = null
-            backGroundName.data!!.set("")
+            backGroundName.data.set("")
         }
 
         ////
@@ -3121,9 +3037,7 @@ object Window {
                     return false
                 }
             }
-            return if (timeLineEvents.Num() != 0) {
-                false
-            } else namedEvents.Num() == 0
+            return timeLineEvents.Num() == 0 && namedEvents.Num() == 0
         }
 
         protected fun UpdateWinVars() {
@@ -3168,9 +3082,7 @@ object Window {
                             ?: r!!.set(data.interp.GetCurrentValue(gui!!.GetTime().toFloat()))
                     } else {
                         Common.common.Warning(
-                            "Invalid transitional data for window %s in gui %s",
-                            GetName(),
-                            gui!!.GetSourceFile()
+                            "Invalid transitional data for window %s in gui %s", GetName(), gui!!.GetSourceFile()
                         )
                     }
                 }
@@ -3199,8 +3111,7 @@ object Window {
                     }
                 }
             }
-            if (gui!!.Active() && cmd.Length() > 0) {
-                // DG: can't just append the command, must separate commands with " ; "
+            if (gui!!.Active() && cmd.Length() > 0) { // DG: can't just append the command, must separate commands with " ; "
                 val pend = gui!!.GetPendingCmd()
                 if (pend.Length() > 0) {
                     pend.plusAssign(" ; ")
@@ -3210,8 +3121,7 @@ object Window {
         }
 
         protected fun RunTimeEvents(time: Int): Boolean {
-            if (time - lastTimeRun < USERCMD_MSEC) {
-                //common->Printf("Skipping gui time events at %d\n", time);
+            if (time - lastTimeRun < USERCMD_MSEC) { //common->Printf("Skipping gui time events at %d\n", time);
                 return false
             }
             lastTimeRun = time
@@ -3242,31 +3152,30 @@ object Window {
          */
         @Deprecated("")
         protected fun Dump() {
-            throw UnsupportedOperationException()
-            //            page_s pg;
-//
-//            for (pg = smallFirstUsedPage; pg; pg = pg.next) {
-//                idcommon.Printf("%p  bytes %-8d  (in use by small heap)\n", pg.data, pg.dataSize);
-//            }
-//
-//            if (smallCurPage) {
-//                pg = smallCurPage;
-//                idcommon.Printf("%p  bytes %-8d  (small heap active page)\n", pg.data, pg.dataSize);
-//            }
-//
-//            for (pg = mediumFirstUsedPage; pg; pg = pg.next) {
-//                idcommon.Printf("%p  bytes %-8d  (completely used by medium heap)\n", pg.data, pg.dataSize);
-//            }
-//
-//            for (pg = mediumFirstFreePage; pg; pg = pg.next) {
-//                idcommon.Printf("%p  bytes %-8d  (partially used by medium heap)\n", pg.data, pg.dataSize);
-//            }
-//
-//            for (pg = largeFirstUsedPage; pg; pg = pg.next) {
-//                idcommon.Printf("%p  bytes %-8d  (fully used by large heap)\n", pg.data, pg.dataSize);
-//            }
-//
-//            idcommon.Printf("pages allocated : %d\n", pagesAllocated);
+            throw UnsupportedOperationException() //            page_s pg;
+            //
+            //            for (pg = smallFirstUsedPage; pg; pg = pg.next) {
+            //                idcommon.Printf("%p  bytes %-8d  (in use by small heap)\n", pg.data, pg.dataSize);
+            //            }
+            //
+            //            if (smallCurPage) {
+            //                pg = smallCurPage;
+            //                idcommon.Printf("%p  bytes %-8d  (small heap active page)\n", pg.data, pg.dataSize);
+            //            }
+            //
+            //            for (pg = mediumFirstUsedPage; pg; pg = pg.next) {
+            //                idcommon.Printf("%p  bytes %-8d  (completely used by medium heap)\n", pg.data, pg.dataSize);
+            //            }
+            //
+            //            for (pg = mediumFirstFreePage; pg; pg = pg.next) {
+            //                idcommon.Printf("%p  bytes %-8d  (partially used by medium heap)\n", pg.data, pg.dataSize);
+            //            }
+            //
+            //            for (pg = largeFirstUsedPage; pg; pg = pg.next) {
+            //                idcommon.Printf("%p  bytes %-8d  (fully used by large heap)\n", pg.data, pg.dataSize);
+            //            }
+            //
+            //            idcommon.Printf("pages allocated : %d\n", pagesAllocated);
         }
 
         protected fun ExpressionTemporary(): Int {
@@ -3285,17 +3194,13 @@ object Window {
                 Common.common.Warning("expressionOp: gui %s hit MAX_EXPRESSION_OPS", gui!!.GetSourceFile())
                 return ops[0]
             }
-            val wop = wexpOp_t()
-            //	memset(&wop, 0, sizeof(wexpOp_t));
+            val wop = wexpOp_t() //	memset(&wop, 0, sizeof(wexpOp_t));
             val i = ops.Append(wop)
             return ops[i]
         }
 
         protected fun EmitOp(
-            a: idWinVar?,
-            b: Int,
-            opType: wexpOpType_t?,
-            opp: Array<wexpOp_t?>? = null /*= NULL*/
+            a: idWinVar?, b: Int, opType: wexpOpType_t?, opp: Array<wexpOp_t?>? = null /*= NULL*/
         ): Int {
             val op: wexpOp_t
             op = ExpressionOp()
@@ -3310,11 +3215,7 @@ object Window {
         }
 
         protected fun ParseEmitOp(
-            src: idParser,
-            a: idWinVar?,
-            opType: wexpOpType_t?,
-            priority: Int,
-            opp: Array<wexpOp_t?>? = null /*= NULL*/
+            src: idParser, a: idWinVar?, opType: wexpOpType_t?, priority: Int, opp: Array<wexpOp_t?>? = null /*= NULL*/
         ): Int {
             val b = ParseExpressionPriority(src, priority)
             return EmitOp(a, b, opType, opp)
@@ -3358,8 +3259,7 @@ object Window {
             // see if it is a table name
             val table = DeclManager.declManager.FindType(declType_t.DECL_TABLE, token, false) as idDeclTable?
             if (table != null) {
-                a = idWinInt(table.Index())
-                // parse a table expression
+                a = idWinInt(table.Index()) // parse a table expression
                 src.ExpectTokenString("[")
                 b = ParseExpression(src)
                 src.ExpectTokenString("]")
@@ -3369,8 +3269,7 @@ object Window {
                 `var` = GetWinVarByName(token.toString(), true)
             }
             return if (`var` != null) {
-                a =  /*(int)*/`var`
-                //assert(dynamic_cast<idWinVec4*>(var));
+                a =  /*(int)*/`var` //assert(dynamic_cast<idWinVec4*>(var));
                 `var`.Init(token.toString(), this)
                 b = component
                 if (`var` is idWinVec4) { // if (dynamic_cast < idWinVec4 > (var)) {
@@ -3395,11 +3294,9 @@ object Window {
                     src.Warning("Var expression not vec4, float or int '%s'", token)
                 }
                 0
-            } else {
-                // ugly but used for post parsing to fixup named vars
-                val p = token.toString() //new char[token.Length() + 1];
-                //                strcpy(p, token);
-//                a = (int) p;
+            } else { // ugly but used for post parsing to fixup named vars
+                val p =
+                    token.toString() //new char[token.Length() + 1]; //                strcpy(p, token); //                a = (int) p;
                 a = idWinStr(p)
                 b = -2
                 EmitOp(a, b, wexpOpType_t.WOP_TYPE_VAR)
@@ -3414,10 +3311,7 @@ object Window {
          =================
          */
         protected fun ParseExpressionPriority(
-            src: idParser,
-            priority: Int,
-            `var`: idWinVar? = null /*= NULL*/,
-            component: Int = 0 /*= 0*/
+            src: idParser, priority: Int, `var`: idWinVar? = null /*= NULL*/, component: Int = 0 /*= 0*/
         ): Int {
             val token = idToken()
             val a: idWinInt
@@ -3425,8 +3319,7 @@ object Window {
                 return ParseTerm(src, `var`, component)
             }
             a = idWinInt(ParseExpressionPriority(src, priority - 1, `var`, component))
-            if (!src.ReadToken(token)) {
-                // we won't get EOF in a real file, but we can
+            if (!src.ReadToken(token)) { // we won't get EOF in a real file, but we can
                 // when parsing from generated strings
                 return a.data
             }
@@ -3492,8 +3385,7 @@ object Window {
             var b: Int
             var op: wexpOp_t
             val erc = expressionRegisters.Num()
-            val oc = ops.Num()
-            // copy the constants
+            val oc = ops.Num() // copy the constants
             i = (wexpRegister_t.WEXP_REG_NUM_PREDEFINED).ordinal
             while (i < erc) {
                 registers[i] = expressionRegisters[i]
@@ -3562,8 +3454,7 @@ object Window {
                     wexpOpType_t.WOP_TYPE_VAR -> {
                         if (op.a == null) {
                             registers[op.c] = 0.0f
-                        } else if (op.b >= 0 && registers[op.b] >= 0 && registers[op.b] < 4) {
-                            // grabs vector components
+                        } else if (op.b >= 0 && registers[op.b] >= 0 && registers[op.b] < 4) { // grabs vector components
                             val `var` = op.a as idWinVec4?
                             registers[op.c] = `var`!!.data[registers[op.b].toInt()]
                         } else {
@@ -3594,7 +3485,7 @@ object Window {
 
                     wexpOpType_t.WOP_TYPE_VARB -> if (op.a != null) {
                         val `var` = op.a as idWinBool
-                        registers[op.c] = (`var`!!.data).toInt().toFloat()
+                        registers[op.c] = (`var`.data).toInt().toFloat()
                     } else {
                         registers[op.c] = 0.0f
                     }
@@ -3606,15 +3497,15 @@ object Window {
         }
 
         protected fun SaveExpressionParseState() {
-            saveTemps = BooleanArray(MAX_EXPRESSION_REGISTERS)
-            //	memcpy(saveTemps, registerIsTemporary, MAX_EXPRESSION_REGISTERS * sizeof(bool));
+            saveTemps =
+                BooleanArray(MAX_EXPRESSION_REGISTERS) //	memcpy(saveTemps, registerIsTemporary, MAX_EXPRESSION_REGISTERS * sizeof(bool));
             System.arraycopy(registerIsTemporary, 0, saveTemps, 0, MAX_EXPRESSION_REGISTERS)
         }
 
-        protected fun RestoreExpressionParseState() {
-//	memcpy(registerIsTemporary, saveTemps, MAX_EXPRESSION_REGISTERS * sizeof(bool));
-            System.arraycopy(saveTemps, 0, registerIsTemporary, 0, MAX_EXPRESSION_REGISTERS)
-            //            Mem_Free(saveTemps);
+        protected fun RestoreExpressionParseState() { //	memcpy(registerIsTemporary, saveTemps, MAX_EXPRESSION_REGISTERS * sizeof(bool));
+            System.arraycopy(
+                saveTemps, 0, registerIsTemporary, 0, MAX_EXPRESSION_REGISTERS
+            ) //            Mem_Free(saveTemps);
             saveTemps = null
         }
 
@@ -3626,8 +3517,7 @@ object Window {
 
         protected fun ParseScriptEntry(name: String?, src: idParser): Boolean {
             for (i in 0 until ON.SCRIPT_COUNT.ordinal) {
-                if (Icmp(name!!, ScriptNames[i]) == 0) {
-                    // delete scripts[i];
+                if (Icmp(name!!, ScriptNames[i]) == 0) { // delete scripts[i];
                     scripts[i] = idGuiScriptList()
                     return ParseScript(src, scripts[i])
                 }
@@ -3700,8 +3590,7 @@ object Window {
                     flags = flags or WIN_SHOWCOORDS
                 }
                 return true
-            }
-            // DG: added this window flag for Windows that should be scaled to 4:3
+            } // DG: added this window flag for Windows that should be scaled to 4:3
             //     (with "empty" bars left/right or above/below)
             if (Icmp(_name, "scaleto43") == 0) {
                 val scaleTo43 = src.ParseInt()
@@ -3711,8 +3600,7 @@ object Window {
                     flags = flags or WIN_NO_SCALETO43
                 }
                 return true
-            }
-            // DG end
+            } // DG end
             if (Icmp(_name, "forceaspectwidth") == 0) {
                 forceAspectWidth = src.ParseFloat()
                 return true
@@ -3833,8 +3721,7 @@ object Window {
             if (Icmp(_name, "cstNoClipBackground") == 0) {
                 cstNoClipBackground = src.ParseBool()
                 return true
-            }
-            //#modified-fva; END
+            } //#modified-fva; END
 
             return false
         }
@@ -3914,16 +3801,14 @@ object Window {
                 idRegEntry("cvar", REGTYPE.STRING),
                 idRegEntry("choices", REGTYPE.STRING),
                 idRegEntry("choiceVar", REGTYPE.STRING),
-                idRegEntry("bind", REGTYPE.STRING),
-                //#modified-fva; BEGIN - FIXME: why not at the end of the list?
+                idRegEntry("bind", REGTYPE.STRING), //#modified-fva; BEGIN - FIXME: why not at the end of the list?
                 idRegEntry("cstLayer", REGTYPE.INT),
                 idRegEntry("cstPseudoBit", REGTYPE.INT),
                 idRegEntry("cstResetScrollbar", REGTYPE.BOOL),
                 idRegEntry("cstWriteTop", REGTYPE.BOOL),
                 idRegEntry("cstAnchor", REGTYPE.INT),
                 idRegEntry("cstAnchorTo", REGTYPE.INT),
-                idRegEntry("cstAnchorFactor", REGTYPE.FLOAT),
-                //#modified-fva; END
+                idRegEntry("cstAnchorFactor", REGTYPE.FLOAT), //#modified-fva; END
                 idRegEntry("modelRotate", REGTYPE.VEC4),
                 idRegEntry("modelOrigin", REGTYPE.VEC4),
                 idRegEntry("lightOrigin", REGTYPE.VEC4),

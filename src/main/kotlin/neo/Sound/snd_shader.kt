@@ -22,8 +22,7 @@ object snd_shader {
      SOUND SHADER DECL
 
      ===============================================================================
-     */
-    // unfortunately, our minDistance / maxDistance is specified in meters, and
+     */ // unfortunately, our minDistance / maxDistance is specified in meters, and
     // we have far too many of them to change at this time.
     const val DOOM_TO_METERS = 0.0254f // doom to meters
     const val METERS_TO_DOOM = 1.0f / DOOM_TO_METERS // meters to doom
@@ -115,8 +114,7 @@ object snd_shader {
             return if (true) { //fileSystem->ReadFile( wavname, NULL ) != -1 ) {
                 val generated = StringBuffer(2048)
                 idStr.snPrintf(
-                    generated, generated.capacity(),
-                    """
+                    generated, generated.capacity(), """
                         sound %s // IMPLICITLY GENERATED
                         {
                         %s
@@ -251,8 +249,7 @@ object snd_shader {
             while (i < numLeadins) {
                 if (leadins[i]!!.objectInfo.wFormatTag == snd_local.WAVE_FORMAT_TAG_OGG) {
                     Common.common.Warning(
-                        "sound shader '%s' has shakes and uses OGG file '%s'",
-                        GetName(), leadins[i]!!.name
+                        "sound shader '%s' has shakes and uses OGG file '%s'", GetName(), leadins[i]!!.name
                     )
                     ret = true
                 }
@@ -262,8 +259,7 @@ object snd_shader {
             while (i < numEntries) {
                 if (entries[i]!!.objectInfo.wFormatTag == snd_local.WAVE_FORMAT_TAG_OGG) {
                     Common.common.Warning(
-                        "sound shader '%s' has shakes and uses OGG file '%s'",
-                        GetName(), entries[i]!!.name
+                        "sound shader '%s' has shakes and uses OGG file '%s'", GetName(), entries[i]!!.name
                     )
                     ret = true
                 }
@@ -340,8 +336,7 @@ object snd_shader {
                         src.FreeSource()
                         return false
                     }
-                    src.ParseFloat()
-                    // no longer supported
+                    src.ParseFloat() // no longer supported
                 } // volume
                 else if (0 == token.Icmp("volume")) {
                     parms.volume = src.ParseFloat()
@@ -380,8 +375,7 @@ object snd_shader {
                     }
                     altSound = DeclManager.declManager.FindSound(token)
                 } // ordered
-                else if (0 == token.Icmp("ordered")) {
-                    // no longer supported
+                else if (0 == token.Icmp("ordered")) { // no longer supported
                 } // no_dups
                 else if (0 == token.Icmp("no_dups")) {
                     parms.soundShaderFlags = parms.soundShaderFlags or SSF_NO_DUPS
@@ -389,8 +383,7 @@ object snd_shader {
                 else if (0 == token.Icmp("no_flicker")) {
                     parms.soundShaderFlags = parms.soundShaderFlags or SSF_NO_FLICKER
                 } // plain
-                else if (0 == token.Icmp("plain")) {
-                    // no longer supported
+                else if (0 == token.Icmp("plain")) { // no longer supported
                 } // looping
                 else if (0 == token.Icmp("looping")) {
                     parms.soundShaderFlags = parms.soundShaderFlags or SSF_LOOPING
@@ -416,12 +409,10 @@ object snd_shader {
                 else if (0 == token.Icmp("omnidirectional")) {
                     parms.soundShaderFlags = parms.soundShaderFlags or SSF_OMNIDIRECTIONAL
                 } // onDemand can't be a parms, because we must track all references and overrides would confuse it
-                else if (0 == token.Icmp("onDemand")) {
-                    // no longer loading sounds on demand
+                else if (0 == token.Icmp("onDemand")) { // no longer loading sounds on demand
                     //onDemand = true;
                 } // the wave files
-                else if (0 == token.Icmp("leadin")) {
-                    // add to the leadin list
+                else if (0 == token.Icmp("leadin")) { // add to the leadin list
                     if (!src.ReadToken(token)) {
                         src.Warning("Expected sound after leadin")
                         return false
@@ -430,8 +421,7 @@ object snd_shader {
                         leadins[numLeadins] = snd_system.soundSystemLocal.soundCache!!.FindSound(token, onDemand)
                         numLeadins++
                     }
-                } else if (token.Find(".wav", false) != -1 || token.Find(".ogg", false) != -1) {
-                    // add to the wav list
+                } else if (token.Find(".wav", false) != -1 || token.Find(".ogg", false) != -1) { // add to the wav list
                     if (snd_system.soundSystemLocal.soundCache != null && numEntries < maxSamples) {
                         token.BackSlashesToSlashes()
                         val lang = CVarSystem.cvarSystem.GetCVarString("sys_lang")
@@ -440,8 +430,7 @@ object snd_shader {
                             val localizedPath = "sound/vo/$lang/$stripped"
                             if (FileSystem_h.fileSystem.ReadFile(localizedPath, null, null) > 0) {
                                 token.set(localizedPath)
-                            } else {
-                                // also try to find it with the .ogg extension
+                            } else { // also try to find it with the .ogg extension
                                 val oggPath = localizedPath.substringBeforeLast('.') + ".ogg"
                                 if (FileSystem_h.fileSystem.ReadFile(oggPath, null, null) > 0) {
                                     token.set(oggPath)

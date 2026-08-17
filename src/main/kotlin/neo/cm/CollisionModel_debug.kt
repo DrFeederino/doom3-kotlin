@@ -119,32 +119,19 @@ Speed test code
 ===============================================================================
 */
 
-val cm_testCollision: idCVar =
-    idCVar("cm_testCollision", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
-val cm_testRotation: idCVar =
-    idCVar("cm_testRotation", "1", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
-val cm_testModel: idCVar =
-    idCVar("cm_testModel", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER, "")
-val cm_testTimes: idCVar =
-    idCVar("cm_testTimes", "1000", CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER, "")
-val cm_testRandomMany: idCVar =
-    idCVar("cm_testRandomMany", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
-val cm_testOrigin: idCVar =
-    idCVar("cm_testOrigin", "0 0 0", CVarSystem.CVAR_GAME, "")
-val cm_testReset: idCVar =
-    idCVar("cm_testReset", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
-val cm_testBox: idCVar =
-    idCVar("cm_testBox", "-16 -16 0 16 16 64", CVarSystem.CVAR_GAME, "")
-val cm_testBoxRotation: idCVar =
-    idCVar("cm_testBoxRotation", "0 0 0", CVarSystem.CVAR_GAME, "")
-val cm_testWalk: idCVar =
-    idCVar("cm_testWalk", "1", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
-val cm_testLength: idCVar =
-    idCVar("cm_testLength", "1024", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
-val cm_testRadius: idCVar =
-    idCVar("cm_testRadius", "64", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
-val cm_testAngle: idCVar =
-    idCVar("cm_testAngle", "60", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
+val cm_testCollision: idCVar = idCVar("cm_testCollision", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
+val cm_testRotation: idCVar = idCVar("cm_testRotation", "1", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
+val cm_testModel: idCVar = idCVar("cm_testModel", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER, "")
+val cm_testTimes: idCVar = idCVar("cm_testTimes", "1000", CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER, "")
+val cm_testRandomMany: idCVar = idCVar("cm_testRandomMany", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
+val cm_testOrigin: idCVar = idCVar("cm_testOrigin", "0 0 0", CVarSystem.CVAR_GAME, "")
+val cm_testReset: idCVar = idCVar("cm_testReset", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
+val cm_testBox: idCVar = idCVar("cm_testBox", "-16 -16 0 16 16 64", CVarSystem.CVAR_GAME, "")
+val cm_testBoxRotation: idCVar = idCVar("cm_testBoxRotation", "0 0 0", CVarSystem.CVAR_GAME, "")
+val cm_testWalk: idCVar = idCVar("cm_testWalk", "1", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
+val cm_testLength: idCVar = idCVar("cm_testLength", "1024", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
+val cm_testRadius: idCVar = idCVar("cm_testRadius", "64", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
+val cm_testAngle: idCVar = idCVar("cm_testAngle", "60", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
 
 // NOTE: C++ uses unsigned int for timing stats. Kotlin uses signed Int which is
 // sufficient since these are millisecond timings that won't exceed Int.MAX_VALUE.

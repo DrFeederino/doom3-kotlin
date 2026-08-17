@@ -43,7 +43,8 @@ import neo.idlib.math.idMath.Sin
 import neo.idlib.math.idVec2
 import neo.idlib.math.idVec3
 import neo.idlib.math.idVec4
-import java.nio.*
+import java.nio.ByteBuffer
+import java.nio.CharBuffer
 import kotlin.math.abs
 
 object Model_ma {
@@ -83,11 +84,7 @@ object Model_ma {
 
     @Throws(idException::class)
     fun MA_ParseHeaderIndex(
-        header: maAttribHeader_t,
-        minIndex: IntArray,
-        maxIndex: IntArray,
-        headerType: String?,
-        skipString: String?
+        header: maAttribHeader_t, minIndex: IntArray, maxIndex: IntArray, headerType: String?, skipString: String?
     ): Boolean {
         val miniParse = idParser()
         val token = idToken()
@@ -95,8 +92,7 @@ object Model_ma {
         if (skipString != null) {
             miniParse.SkipUntilString(skipString)
         }
-        if (!miniParse.SkipUntilString("[")) {
-            //This was just a header
+        if (!miniParse.SkipUntilString("[")) { //This was just a header
             return false
         }
         minIndex[0] = miniParse.ParseInt()
@@ -139,9 +135,7 @@ object Model_ma {
     }
 
     fun IsNodeComplete(token: idToken): Boolean {
-        return (0 == token.Icmp("createNode")
-                ) || (0 == token.Icmp("connectAttr")
-                ) || (0 == token.Icmp("select"))
+        return (0 == token.Icmp("createNode")) || (0 == token.Icmp("connectAttr")) || (0 == token.Icmp("select"))
     }
 
     @Throws(idException::class)
@@ -185,8 +179,7 @@ object Model_ma {
                 }
             }
         }
-        if (header.parent.isNotEmpty()) {
-            //Find the parent
+        if (header.parent.isNotEmpty()) { //Find the parent
             val parent: Array<maTransform_s?> = arrayOfNulls(1)
             maGlobal!!.model!!.transforms.Get(header.parent, parent)
             if (parent != null) {
@@ -211,8 +204,7 @@ object Model_ma {
         //Get the start and end index for this attribute
         val minIndex = IntArray(1)
         val maxIndex = IntArray(1)
-        if (!MA_ParseHeaderIndex(header, minIndex, maxIndex, "VertexHeader", null)) {
-            //This was just a header
+        if (!MA_ParseHeaderIndex(header, minIndex, maxIndex, "VertexHeader", null)) { //This was just a header
             return true
         }
 
@@ -243,8 +235,7 @@ object Model_ma {
         //Get the start and end index for this attribute
         val minIndex = IntArray(1)
         val maxIndex = IntArray(1)
-        if (!MA_ParseHeaderIndex(header, minIndex, maxIndex, "VertexTransformHeader", null)) {
-            //This was just a header
+        if (!MA_ParseHeaderIndex(header, minIndex, maxIndex, "VertexTransformHeader", null)) { //This was just a header
             return true
         }
         parser.ReadToken(token)
@@ -286,8 +277,7 @@ object Model_ma {
         //Get the start and end index for this attribute
         val minIndex = IntArray(1)
         val maxIndex = IntArray(1)
-        if (!MA_ParseHeaderIndex(header, minIndex, maxIndex, "EdgeHeader", null)) {
-            //This was just a header
+        if (!MA_ParseHeaderIndex(header, minIndex, maxIndex, "EdgeHeader", null)) { //This was just a header
             return true
         }
 
@@ -314,8 +304,7 @@ object Model_ma {
         //Get the start and end index for this attribute
         val minIndex = IntArray(1)
         val maxIndex = IntArray(1)
-        if (!MA_ParseHeaderIndex(header, minIndex, maxIndex, "NormalHeader", null)) {
-            //This was just a header
+        if (!MA_ParseHeaderIndex(header, minIndex, maxIndex, "NormalHeader", null)) { //This was just a header
             return true
         }
         parser.ReadToken(token)
@@ -360,8 +349,7 @@ object Model_ma {
         //Get the start and end index for this attribute
         val minIndex = IntArray(1)
         val maxIndex = IntArray(1)
-        if (!MA_ParseHeaderIndex(header, minIndex, maxIndex, "FaceHeader", null)) {
-            //This was just a header
+        if (!MA_ParseHeaderIndex(header, minIndex, maxIndex, "FaceHeader", null)) { //This was just a header
             return true
         }
 
@@ -376,8 +364,7 @@ object Model_ma {
                 val count: Int = parser.ParseInt()
                 if (count != 3) {
                     throw idException(va("Maya Loader '%s': Face is not a triangle.", parser.GetFileName()))
-                }
-                //Increment the face number because a new face always starts with an "f" token
+                } //Increment the face number because a new face always starts with an "f" token
                 currentFace++
 
                 //We cannot reorder edges until later because the normal processing
@@ -388,10 +375,8 @@ object Model_ma {
 
                 //Some more init stuff
                 pMesh.faces!![currentFace]!!.vertexColors[2] = -1
-                pMesh.faces!![currentFace]!!.vertexColors[1] =
-                    pMesh.faces!![currentFace]!!.vertexColors[2]
-                pMesh.faces!![currentFace]!!.vertexColors[0] =
-                    pMesh.faces!![currentFace]!!.vertexColors[1]
+                pMesh.faces!![currentFace]!!.vertexColors[1] = pMesh.faces!![currentFace]!!.vertexColors[2]
+                pMesh.faces!![currentFace]!!.vertexColors[0] = pMesh.faces!![currentFace]!!.vertexColors[1]
             } else if (0 == token.Icmp("mu")) {
                 parser.ParseInt()
                 val count: Int = parser.ParseInt()
@@ -434,8 +419,7 @@ object Model_ma {
         //Get the start and end index for this attribute
         val minIndex = IntArray(1)
         val maxIndex = IntArray(1)
-        if (!MA_ParseHeaderIndex(header, minIndex, maxIndex, "ColorHeader", null)) {
-            //This was just a header
+        if (!MA_ParseHeaderIndex(header, minIndex, maxIndex, "ColorHeader", null)) { //This was just a header
             return true
         }
 
@@ -468,8 +452,7 @@ object Model_ma {
         //Get the start and end index for this attribute
         val minIndex = IntArray(1)
         val maxIndex = IntArray(1)
-        if (!MA_ParseHeaderIndex(header, minIndex, maxIndex, "TextureCoordHeader", "uvsp")) {
-            //This was just a header
+        if (!MA_ParseHeaderIndex(header, minIndex, maxIndex, "TextureCoordHeader", "uvsp")) { //This was just a header
             return true
         }
         parser.ReadToken(token)
@@ -505,8 +488,7 @@ object Model_ma {
             if (edge < 0) {
                 edge = (abs(edge.toFloat()) - 1).toInt()
             }
-            if (pMesh.edges!![edge].z == 1.0f && (pMesh.edges!![edge].x == vertNum.toFloat() || pMesh.edges!![edge].y == vertNum.toFloat())
-            ) {
+            if (pMesh.edges!![edge].z == 1.0f && (pMesh.edges!![edge].x == vertNum.toFloat() || pMesh.edges!![edge].y == vertNum.toFloat())) {
                 return true
             }
         }
@@ -525,8 +507,7 @@ object Model_ma {
             if (edge < 0) {
                 edge = (abs(edge.toFloat()) - 1).toInt()
             }
-            if (pMesh.edges!![edge].z == 1.0f && (pMesh.edges!![edge].x == vertNum.toFloat() || pMesh.edges!![edge].y == vertNum.toFloat())
-            ) {
+            if (pMesh.edges!![edge].z == 1.0f && (pMesh.edges!![edge].x == vertNum.toFloat() || pMesh.edges!![edge].y == vertNum.toFloat())) {
                 for (i in 0 until faceIndex) {
                     for (j in 0..2) {
                         if (pMesh.faces!![i]!!.vertexNum[j] == vertNum) {
@@ -556,8 +537,7 @@ object Model_ma {
         MA_ParseNodeHeader(parser, nodeHeader)
 
         //Find my parent
-        if (nodeHeader.parent.isNotEmpty()) {
-            //Find the parent
+        if (nodeHeader.parent.isNotEmpty()) { //Find the parent
             val parent: Array<maTransform_s?> = arrayOfNulls(1)
             maGlobal!!.model!!.transforms.Get(nodeHeader.parent, parent)
             if (parent[0] != null) {
@@ -621,14 +601,10 @@ object Model_ma {
                     if (MA_QuickIsVertShared(i, j)) {
                         MA_GetSharedFace(i, j, sharedFace, sharedVert)
                     }
-                    if (sharedFace[0] != -1) {
-                        //Get the normal from the share
-                        pMesh.faces!![i]!!.vertexNormals[j]!!
-                            .set((pMesh.faces!![sharedFace[0]]!!.vertexNormals[sharedVert[0]])!!)
-                    } else {
-                        //The vertex is not shared so get the next normal
-                        if (pMesh.nextNormal >= pMesh.numNormals) {
-                            //We are using more normals than exist
+                    if (sharedFace[0] != -1) { //Get the normal from the share
+                        pMesh.faces!![i]!!.vertexNormals[j]!!.set((pMesh.faces!![sharedFace[0]]!!.vertexNormals[sharedVert[0]])!!)
+                    } else { //The vertex is not shared so get the next normal
+                        if (pMesh.nextNormal >= pMesh.numNormals) { //We are using more normals than exist
                             throw idException(va("Maya Loader '%s': Invalid Normals Index.", parser.GetFileName()))
                         }
                         pMesh.faces!![i]!!.vertexNormals[j]!!.set(pMesh.normals!![pMesh.nextNormal])
@@ -659,9 +635,10 @@ object Model_ma {
             val idx = pMesh.vertTransforms!![i].w.toInt()
             if (idx < 0 || idx >= pMesh.numVertexes) {
                 Common.common.Warning(
-                    "Model %s tried to set an out-of-bounds vertex transform " +
-                            "(%d, but max vert. index is %d)!",
-                    parser.GetFileName().toString(), idx, pMesh.numVertexes - 1
+                    "Model %s tried to set an out-of-bounds vertex transform " + "(%d, but max vert. index is %d)!",
+                    parser.GetFileName().toString(),
+                    idx,
+                    pMesh.numVertexes - 1
                 )
                 continue
             }
@@ -810,11 +787,9 @@ object Model_ma {
                 }
             }
         }
-        if (srcType.Find("iog") != -1) {
-            //Is this an attribute for one of our meshes
+        if (srcType.Find("iog") != -1) { //Is this an attribute for one of our meshes
             for (i in 0 until maGlobal!!.model!!.objects.Num()) {
-                if ((maGlobal!!.model!!.objects[i]!!.name == srcName.toString())) {
-                    //maGlobal.model.objects.get(i).materialRef = MA_AddMaterial(destName);
+                if ((maGlobal!!.model!!.objects[i]!!.name == srcName.toString())) { //maGlobal.model.objects.get(i).materialRef = MA_AddMaterial(destName);
                     maGlobal!!.model!!.objects[i]!!.materialName = destName.toString()
                     break
                 }
@@ -923,8 +898,7 @@ object Model_ma {
 
         //Resolve The Materials
         for (i in 0 until maGlobal!!.model!!.objects.Num()) {
-            maGlobal!!.model!!.objects[i]!!.materialRef =
-                MA_AddMaterial(maGlobal!!.model!!.objects[i]!!.materialName)
+            maGlobal!!.model!!.objects[i]!!.materialRef = MA_AddMaterial(maGlobal!!.model!!.objects[i]!!.materialName)
         }
 
         //Apply Transformation

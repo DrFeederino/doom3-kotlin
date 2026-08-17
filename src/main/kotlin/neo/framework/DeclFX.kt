@@ -112,8 +112,7 @@ class DeclFX {
          * ===================
          * idDeclFX::Size
          * ===================
-         */
-        // NOTE: Differs from C++ — JVM has no sizeof(); returns 0L as stub
+         */ // NOTE: Differs from C++ — JVM has no sizeof(); returns 0L as stub
         override fun Size(): Long = 0L
 
         /*
@@ -194,8 +193,7 @@ class DeclFX {
             val list = this
 
             Common.common.Printf("%d events\n", list.events.Num())
-            for (i in 0 until list.events.Num()) {
-                // FIX: C++ uses switch(type) which falls through on -1; Kotlin !! would NPE on null
+            for (i in 0 until list.events.Num()) { // FIX: C++ uses switch(type) which falls through on -1; Kotlin !! would NPE on null
                 when (list.events[i].type) {
                     fx_enum.FX_LIGHT -> Common.common.Printf("FX_LIGHT %s\n", list.events[i].data.toString())
                     fx_enum.FX_PARTICLE -> Common.common.Printf("FX_PARTICLE %s\n", list.events[i].data.toString())
@@ -204,13 +202,11 @@ class DeclFX {
                     fx_enum.FX_DECAL -> Common.common.Printf("FX_DECAL %s\n", list.events[i].data.toString())
                     fx_enum.FX_SHAKE -> Common.common.Printf("FX_SHAKE %s\n", list.events[i].data.toString())
                     fx_enum.FX_ATTACHLIGHT -> Common.common.Printf(
-                        "FX_ATTACHLIGHT %s\n",
-                        list.events[i].data.toString()
+                        "FX_ATTACHLIGHT %s\n", list.events[i].data.toString()
                     )
 
                     fx_enum.FX_ATTACHENTITY -> Common.common.Printf(
-                        "FX_ATTACHENTITY %s\n",
-                        list.events[i].data.toString()
+                        "FX_ATTACHENTITY %s\n", list.events[i].data.toString()
                     )
 
                     fx_enum.FX_LAUNCH -> Common.common.Printf("FX_LAUNCH %s\n", list.events[i].data.toString())

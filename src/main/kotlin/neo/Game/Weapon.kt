@@ -212,8 +212,7 @@ object Weapon {
                         brassDef.dict.GetString("clipmodel", "", clipModelName)
                         if (clipModelName.IsEmpty()) {
                             clipModelName.set(brassDef.dict.GetString("model")) // use the visual model
-                        }
-                        // load the trace model
+                        } // load the trace model
                         collisionModelManager.TrmFromModel(clipModelName, trm)
                     }
                 }
@@ -227,8 +226,7 @@ object Weapon {
 
          Ammo
 
-         ***********************************************************************/
-            /*
+         ***********************************************************************//*
              ================
              idWeapon::GetAmmoNumForName
              ================
@@ -244,8 +242,10 @@ object Weapon {
                 if (ammoname.isEmpty()) {
                     return 0
                 }
-                if (!ammoDict!!.GetInt(ammoname, "-1", num)) {
-                    // D3XP: fallback to game-specific ammo_types_<gamedir> defs
+                if (!ammoDict!!.GetInt(
+                        ammoname, "-1", num
+                    )
+                ) { // D3XP: fallback to game-specific ammo_types_<gamedir> defs
                     if (isD3XP) {
                         var found = false
                         for (i in 0..1) {
@@ -268,9 +268,7 @@ object Weapon {
                 }
                 if (num._val < 0 || num._val >= AMMO_NUMTYPES) {
                     idGameLocal.Error(
-                        "Ammo type '%s' value out of range.  Maximum ammo types is %d.\n",
-                        ammoname,
-                        AMMO_NUMTYPES
+                        "Ammo type '%s' value out of range.  Maximum ammo types is %d.\n", ammoname, AMMO_NUMTYPES
                     )
                 }
                 return num._val
@@ -360,8 +358,7 @@ object Weapon {
 
             init {
                 eventCallbacks.putAll(idAnimatedEntity.getEventCallBacks())
-                eventCallbacks[EV_Weapon_Clear] =
-                    eventCallback_t0<idWeapon> { obj: idWeapon -> obj.Event_Clear() }
+                eventCallbacks[EV_Weapon_Clear] = eventCallback_t0<idWeapon> { obj: idWeapon -> obj.Event_Clear() }
                 eventCallbacks[EV_Weapon_GetOwner] =
                     eventCallback_t0<idWeapon> { obj: idWeapon -> obj.Event_GetOwner() }
                 eventCallbacks[EV_Weapon_State] =
@@ -395,15 +392,13 @@ object Weapon {
                 eventCallbacks[AI_PlayAnim] =
                     eventCallback_t2<idWeapon> { obj: idWeapon, _channel: idEventArg<*>?, _animname: idEventArg<*>? ->
                         obj.Event_PlayAnim(
-                            _channel as idEventArg<Int>,
-                            _animname as idEventArg<String>
+                            _channel as idEventArg<Int>, _animname as idEventArg<String>
                         )
                     }
                 eventCallbacks[AI_PlayCycle] =
                     eventCallback_t2<idWeapon> { obj: idWeapon, _channel: idEventArg<*>?, _animname: idEventArg<*>? ->
                         obj.Event_PlayCycle(
-                            _channel as idEventArg<Int>,
-                            _animname as idEventArg<String>
+                            _channel as idEventArg<Int>, _animname as idEventArg<String>
                         )
                     }
                 eventCallbacks[AI_SetBlendFrames] =
@@ -417,12 +412,10 @@ object Weapon {
                 eventCallbacks[AI_AnimDone] =
                     eventCallback_t2<idWeapon> { obj: idWeapon, channel: idEventArg<*>?, blendFrames: idEventArg<*>? ->
                         obj.Event_AnimDone(
-                            channel as idEventArg<Int>,
-                            blendFrames as idEventArg<Int>
+                            channel as idEventArg<Int>, blendFrames as idEventArg<Int>
                         )
                     }
-                eventCallbacks[EV_Weapon_Next] =
-                    eventCallback_t0<idWeapon> { obj: idWeapon -> obj.Event_Next() }
+                eventCallbacks[EV_Weapon_Next] = eventCallback_t0<idWeapon> { obj: idWeapon -> obj.Event_Next() }
                 eventCallbacks[EV_SetSkin] =
                     eventCallback_t1<idWeapon> { obj: idWeapon, _skinname: idEventArg<*>? -> obj.Event_SetSkin(_skinname as idEventArg<String?>) }
                 eventCallbacks[EV_Weapon_Flashlight] =
@@ -436,11 +429,7 @@ object Weapon {
                         obj.Event_SetLightParm(_parmnum as idEventArg<Int>, _value as idEventArg<Float>)
                     }
                 eventCallbacks[EV_Light_SetLightParms] =
-                    eventCallback_t4<idWeapon> { obj: idWeapon,
-                                                 parm0: idEventArg<*>?,
-                                                 parm1: idEventArg<*>?,
-                                                 parm2: idEventArg<*>?,
-                                                 parm3: idEventArg<*>? ->
+                    eventCallback_t4<idWeapon> { obj: idWeapon, parm0: idEventArg<*>?, parm1: idEventArg<*>?, parm2: idEventArg<*>?, parm3: idEventArg<*>? ->
                         obj.Event_SetLightParms(
                             parm0 as idEventArg<Float>,
                             parm1 as idEventArg<Float>,
@@ -449,10 +438,7 @@ object Weapon {
                         )
                     }
                 eventCallbacks[EV_Weapon_LaunchProjectiles] =
-                    eventCallback_t5<idWeapon> { obj: idWeapon, _num_projectiles: idEventArg<*>?, _spread: idEventArg<*>?,
-                                                 fuseOffset: idEventArg<*>?,
-                                                 launchPower: idEventArg<*>?,
-                                                 _dmgPower: idEventArg<*>? ->
+                    eventCallback_t5<idWeapon> { obj: idWeapon, _num_projectiles: idEventArg<*>?, _spread: idEventArg<*>?, fuseOffset: idEventArg<*>?, launchPower: idEventArg<*>?, _dmgPower: idEventArg<*>? ->
                         obj.Event_LaunchProjectiles(
                             _num_projectiles as idEventArg<Int>, _spread as idEventArg<Float>,
                             fuseOffset as idEventArg<Float>,
@@ -464,8 +450,7 @@ object Weapon {
                     eventCallback_t0<idWeapon> { obj: idWeapon -> obj.Event_CreateProjectile() }
                 eventCallbacks[EV_Weapon_EjectBrass] =
                     eventCallback_t0<idWeapon> { obj: idWeapon -> obj.Event_EjectBrass() }
-                eventCallbacks[EV_Weapon_Melee] =
-                    eventCallback_t0<idWeapon> { obj: idWeapon -> obj.Event_Melee() }
+                eventCallbacks[EV_Weapon_Melee] = eventCallback_t0<idWeapon> { obj: idWeapon -> obj.Event_Melee() }
                 eventCallbacks[EV_Weapon_GetWorldModel] =
                     eventCallback_t0<idWeapon> { obj: idWeapon -> obj.Event_GetWorldModel() }
                 eventCallbacks[EV_Weapon_AllowDrop] =
@@ -493,19 +478,13 @@ object Weapon {
                 eventCallbacks[EV_Weapon_LaunchProjectilesEllipse] =
                     eventCallback_t5<idWeapon> { obj: idWeapon, num: idEventArg<*>, spreada: idEventArg<*>, spreadb: idEventArg<*>, fuseOffset: idEventArg<*>, power: idEventArg<*> ->
                         obj.Event_LaunchProjectilesEllipse(
-                            num,
-                            spreada,
-                            spreadb,
-                            fuseOffset,
-                            power
+                            num, spreada, spreadb, fuseOffset, power
                         )
                     }
                 eventCallbacks[EV_Weapon_LaunchPowerup] =
                     eventCallback_t3<idWeapon> { obj: idWeapon, powerup: idEventArg<*>, duration: idEventArg<*>, useAmmo: idEventArg<*> ->
                         obj.Event_LaunchPowerup(
-                            powerup,
-                            duration,
-                            useAmmo
+                            powerup, duration, useAmmo
                         )
                     }
                 eventCallbacks[EV_Weapon_StartWeaponSmoke] =
@@ -730,12 +709,10 @@ object Weapon {
          */
         override fun Spawn() {
             super.Spawn()
-            if (!Game_local.gameLocal.isClient) {
-                // setup the world model
+            if (!Game_local.gameLocal.isClient) { // setup the world model
                 worldModel.oSet(
                     Game_local.gameLocal.SpawnEntityType(
-                        idAnimatedEntity.Type,
-                        null
+                        idAnimatedEntity.Type, null
                     ) as idAnimatedEntity
                 )
                 worldModel.GetEntity()!!.fl.networkSync = true
@@ -746,7 +723,7 @@ object Weapon {
 
             // D3XP: Initialize the grabber
             if (isD3XP) {
-                grabber!!.Initialize()
+                grabber.Initialize()
             }
         }
 
@@ -782,8 +759,7 @@ object Weapon {
          Called during idEntity::Spawn to see if it should construct the script object or not.
          Overridden by subclasses that need to spawn the script object themselves.
          ================
-         */
-        // FIX: Method name was corrupted from "Construct" to "finalruct"
+         */ // FIX: Method name was corrupted from "Construct" to "finalruct"
         override fun ShouldConstructScriptObjectAtSpawn(): Boolean {
             return false
         }
@@ -792,8 +768,7 @@ object Weapon {
          ================
          idWeapon::Save
          ================
-         */
-        // save games
+         */ // save games
         override fun Save(savefile: idSaveGame) {                    // archives object for save game file
             super.Save(savefile)
             savefile.WriteInt((status).ordinal)
@@ -889,7 +864,7 @@ object Weapon {
             // D3XP save
             if (isD3XP) {
                 if (grabber != null) {
-                    savefile.WriteStaticObject(grabber!!)
+                    savefile.WriteStaticObject(grabber)
                 }
                 savefile.WriteInt(grabberState)
                 savefile.WriteJoint(smokeJointView)
@@ -987,20 +962,17 @@ object Weapon {
             brassDelay = savefile.ReadInt()
             savefile.ReadString(icon)
             guiLightHandle = savefile.ReadInt()
-            savefile.ReadRenderLight(guiLight)
-            // FIX: Get fresh light handle after loading (dhewm3 fix — stale handles point to wrong lights)
+            savefile.ReadRenderLight(guiLight) // FIX: Get fresh light handle after loading (dhewm3 fix — stale handles point to wrong lights)
             if (guiLightHandle != -1) {
                 guiLightHandle = Game_local.gameRenderWorld!!.AddLightDef(guiLight)
             }
             muzzleFlashHandle = savefile.ReadInt()
-            savefile.ReadRenderLight(muzzleFlash)
-            // FIX: Get fresh light handle after loading (dhewm3 fix)
+            savefile.ReadRenderLight(muzzleFlash) // FIX: Get fresh light handle after loading (dhewm3 fix)
             if (muzzleFlashHandle != -1) {
                 muzzleFlashHandle = Game_local.gameRenderWorld!!.AddLightDef(muzzleFlash)
             }
             worldMuzzleFlashHandle = savefile.ReadInt()
-            savefile.ReadRenderLight(worldMuzzleFlash)
-            // FIX: Get fresh light handle after loading (dhewm3 fix)
+            savefile.ReadRenderLight(worldMuzzleFlash) // FIX: Get fresh light handle after loading (dhewm3 fix)
             if (worldMuzzleFlashHandle != -1) {
                 worldMuzzleFlashHandle = Game_local.gameRenderWorld!!.AddLightDef(worldMuzzleFlash)
             }
@@ -1047,13 +1019,11 @@ object Weapon {
             nozzleFxFade = savefile.ReadInt()
             lastAttack = savefile.ReadInt()
             nozzleGlowHandle = savefile.ReadInt()
-            savefile.ReadRenderLight(nozzleGlow)
-            // FIX: Get fresh light handle after loading (dhewm3 fix)
+            savefile.ReadRenderLight(nozzleGlow) // FIX: Get fresh light handle after loading (dhewm3 fix)
             if (nozzleGlowHandle != -1) {
                 nozzleGlowHandle = Game_local.gameRenderWorld!!.AddLightDef(nozzleGlow)
             }
-            savefile.ReadVec3(nozzleGlowColor)
-            // FIX: nozzleGlowShader may be null; create temp object for ReadMaterial which requires non-null
+            savefile.ReadVec3(nozzleGlowColor) // FIX: nozzleGlowShader may be null; create temp object for ReadMaterial which requires non-null
             nozzleGlowShader = savefile.ReadMaterial()
             nozzleGlowRadius = savefile.ReadFloat()
             weaponAngleOffsetAverages = savefile.ReadInt()
@@ -1118,8 +1088,7 @@ object Weapon {
 
          Weapon definition management
 
-         ***********************************************************************/
-        /*
+         ***********************************************************************//*
          ================
          idWeapon::Clear
          ================
@@ -1131,8 +1100,7 @@ object Weapon {
             WEAPON_ATTACK.Unlink()
             WEAPON_RELOAD.Unlink()
             WEAPON_NETRELOAD.Unlink()
-            WEAPON_NETENDRELOAD.Unlink()
-            // FIX: Added IsLinked() guard — WEAPON_NETFIRING is not linked in demo mode
+            WEAPON_NETENDRELOAD.Unlink() // FIX: Added IsLinked() guard — WEAPON_NETFIRING is not linked in demo mode
             if (WEAPON_NETFIRING.IsLinked()) {
                 WEAPON_NETFIRING.Unlink()
             }
@@ -1181,8 +1149,7 @@ object Weapon {
 
             // setting diversity to 0 results in no random sound.  -1 indicates random.
             refSound.diversity = -1.0f
-            if (owner != null) {
-                // don't spatialize the weapon sounds
+            if (owner != null) { // don't spatialize the weapon sounds
                 refSound.listenerId = owner!!.GetListenerId()
             }
 
@@ -1234,7 +1201,7 @@ object Weapon {
             if (isD3XP) {
                 grabberState = -1
                 if (owner != null) {
-                    grabber?.Update(owner!!, true)
+                    grabber.Update(owner!!, true)
                 }
             }
 
@@ -1406,8 +1373,8 @@ object Weapon {
                 if (null == projectileDef) {
                     Game_local.gameLocal.Warning("Unknown projectile '%s' in weapon '%s'", projectileName, objectName)
                 } else {
-                    val spawnclass = projectileDef.dict.GetString("spawnclass")
-                    // NOTE: Differs from C++ — original uses idClass::GetClass(spawnclass)->IsType() to check
+                    val spawnclass =
+                        projectileDef.dict.GetString("spawnclass") // NOTE: Differs from C++ — original uses idClass::GetClass(spawnclass)->IsType() to check
                     // type metadata without constructing an entity. Kotlin creates a throwaway entity via GetEntity().
                     val spawnEntity: idEntity = GetClass(spawnclass)!!.createInstance.invoke() as idEntity
                     if (spawnEntity !is idProjectile) {
@@ -1502,14 +1469,12 @@ object Weapon {
                 Game_local.gameLocal.Warning("Unknown ammotype in object '%s'", objectName)
             }
             ammoClip = ammoinclip
-            if (ammoClip < 0 || ammoClip > clipSize) {
-                // first time using this weapon so have it fully loaded to start
+            if (ammoClip < 0 || ammoClip > clipSize) { // first time using this weapon so have it fully loaded to start
                 ammoClip = clipSize
                 ammoAvail = owner!!.inventory.HasAmmo(ammoType, ammoRequired)
                 if (ammoClip > ammoAvail) {
                     ammoClip = ammoAvail
-                }
-                // D3XP: deduct ammo immediately for shared-ammo weapons
+                } // D3XP: deduct ammo immediately for shared-ammo weapons
                 if (isD3XP) {
                     owner!!.inventory.UseAmmo(ammoType, ammoClip)
                 }
@@ -1651,8 +1616,7 @@ object Weapon {
 
          GUIs
 
-         ***********************************************************************/
-        /*
+         ***********************************************************************//*
          ================
          idWeapon::Icon
          ================
@@ -1673,12 +1637,10 @@ object Weapon {
             if (status == weaponStatus_t.WP_HOLSTERED) {
                 return
             }
-            if (owner!!.weaponGone) {
-                // dropping weapons was implemented wierd, so we have to not update the gui when it happens or we'll get a negative ammo count
+            if (owner!!.weaponGone) { // dropping weapons was implemented wierd, so we have to not update the gui when it happens or we'll get a negative ammo count
                 return
             }
-            if (Game_local.gameLocal.localClientNum != owner!!.entityNumber) {
-                // if updating the hud for a followed client
+            if (Game_local.gameLocal.localClientNum != owner!!.entityNumber) { // if updating the hud for a followed client
                 if (Game_local.gameLocal.localClientNum >= 0 && Game_local.gameLocal.entities[Game_local.gameLocal.localClientNum] != null && Game_local.gameLocal.entities[Game_local.gameLocal.localClientNum] is idPlayer) {
                     val p = Game_local.gameLocal.entities[Game_local.gameLocal.localClientNum] as idPlayer
                     if (!p.spectating || p.spectator != owner!!.entityNumber) {
@@ -1690,26 +1652,20 @@ object Weapon {
             }
             val inclip = AmmoInClip()
             val ammoamount = AmmoAvailable()
-            if (ammoamount < 0) {
-                // show infinite ammo
+            if (ammoamount < 0) { // show infinite ammo
                 renderEntity!!.gui[0]!!.SetStateString("player_ammo", "")
-            } else {
-                // show remaining ammo
+            } else { // show remaining ammo
                 renderEntity!!.gui[0]!!.SetStateString(
-                    "player_totalammo",
-                    if (isD3XP) Str.va("%d", ammoamount) else Str.va("%d", ammoamount - inclip)
+                    "player_totalammo", if (isD3XP) Str.va("%d", ammoamount) else Str.va("%d", ammoamount - inclip)
                 )
                 renderEntity!!.gui[0]!!.SetStateString(
-                    "player_ammo",
-                    if (ClipSize() != 0) Str.va("%d", inclip) else "--"
+                    "player_ammo", if (ClipSize() != 0) Str.va("%d", inclip) else "--"
                 )
                 renderEntity!!.gui[0]!!.SetStateString(
-                    "player_clips",
-                    if (ClipSize() != 0) Str.va("%d", ammoamount / ClipSize()) else "--"
+                    "player_clips", if (ClipSize() != 0) Str.va("%d", ammoamount / ClipSize()) else "--"
                 )
                 renderEntity!!.gui[0]!!.SetStateString(
-                    "player_allammo",
-                    if (isD3XP) Str.va("%d/%d", inclip, ammoamount)
+                    "player_allammo", if (isD3XP) Str.va("%d/%d", inclip, ammoamount)
                     else Str.va("%d/%d", inclip, ammoamount - inclip)
                 )
             }
@@ -1758,19 +1714,15 @@ object Weapon {
          */
         fun GetGlobalJointTransform(
             viewModel: Boolean,    /*jointHandle_t*/
-            jointHandle: Int,
-            offset: idVec3,
-            axis: idMat3
+            jointHandle: Int, offset: idVec3, axis: idMat3
         ): Boolean {
-            if (viewModel) {
-                // view model
+            if (viewModel) { // view model
                 if (animator.GetJointTransform(jointHandle, Game_local.gameLocal.time, offset, axis)) {
                     offset.set(offset * viewWeaponAxis + viewWeaponOrigin)
                     axis.set(axis * viewWeaponAxis)
                     return true
                 }
-            } else {
-                // world model
+            } else { // world model
                 if (worldModel.GetEntity() != null && worldModel.GetEntity()!!.GetAnimator()
                         .GetJointTransform(jointHandle, Game_local.gameLocal.time, offset, axis)
                 ) {
@@ -1822,14 +1774,12 @@ object Weapon {
 
          State control/player interface
 
-         ***********************************************************************/
-        /*
+         ***********************************************************************//*
          ================
          idWeapon::Think
          ================
          */
-        override fun Think() {
-            // do nothing because the present is called from the player through PresentWeapon
+        override fun Think() { // do nothing because the present is called from the player through PresentWeapon
         }
 
         /*
@@ -1966,7 +1916,7 @@ object Weapon {
 
                 // D3XP: update grabber on owner death
                 if (isD3XP && grabberState != -1) {
-                    grabber?.Update(owner!!, hide)
+                    grabber.Update(owner!!, hide)
                 }
             }
             Hide()
@@ -2117,8 +2067,7 @@ object Weapon {
 
          Script state management
 
-         ***********************************************************************/
-        /*
+         ***********************************************************************//*
          ================
          idWeapon::ConstructScriptObject
 
@@ -2152,8 +2101,7 @@ object Weapon {
          Can be overridden by subclasses when a thread doesn't need to be allocated.
          Not called during idGameLocal::MapShutdown.
          ================
-         */
-        // FIX: Method name was corrupted from "Deconstruct" to "Definalruct"
+         */ // FIX: Method name was corrupted from "Deconstruct" to "Definalruct"
         override fun DeconstructScriptObject() {
             val destructor: function_t?
             if (null == thread) {
@@ -2168,8 +2116,7 @@ object Weapon {
 
             // call script object's destructor
             destructor = scriptObject.GetDestructor()
-            if (destructor != null) {
-                // start a thread that will run immediately and end
+            if (destructor != null) { // start a thread that will run immediately and end
                 thread!!.CallFunction(this, destructor, true)
                 thread!!.Execute()
                 thread!!.EndThread()
@@ -2193,9 +2140,7 @@ object Weapon {
             if (null == func) {
                 assert(false)
                 idGameLocal.Error(
-                    "Can't find function '%s' in object '%s'",
-                    statename,
-                    scriptObject.GetTypeName()
+                    "Can't find function '%s' in object '%s'", statename, scriptObject.GetTypeName()
                 )
                 return
             }
@@ -2229,8 +2174,7 @@ object Weapon {
 
             // update script state, which may call Event_LaunchProjectiles, among other things
             count = 10
-            while ((thread!!.Execute() || idealState.Length() != 0) && count-- != 0) {
-                // happens for weapons with no clip (like grenades)
+            while ((thread!!.Execute() || idealState.Length() != 0) && count-- != 0) { // happens for weapons with no clip (like grenades)
                 if (idealState.Length() != 0) {
                     SetState(idealState.toString(), animBlendFrames)
                 }
@@ -2251,8 +2195,7 @@ object Weapon {
                 WEAPON_ATTACK.underscore(false)
                 WEAPON_RELOAD.underscore(false)
                 WEAPON_NETRELOAD.underscore(false)
-                WEAPON_NETENDRELOAD.underscore(false)
-                // FIX: Added IsLinked() guard — WEAPON_NETFIRING is not linked in demo mode
+                WEAPON_NETENDRELOAD.underscore(false) // FIX: Added IsLinked() guard — WEAPON_NETFIRING is not linked in demo mode
                 if (WEAPON_NETFIRING.IsLinked()) {
                     WEAPON_NETFIRING.underscore(false)
                 }
@@ -2261,7 +2204,7 @@ object Weapon {
 
                 // D3XP: release grabber during cinematics
                 if (isD3XP) {
-                    grabber?.Update(owner!!, true)
+                    grabber.Update(owner!!, true)
                 }
             }
             disabled = true
@@ -2298,8 +2241,7 @@ object Weapon {
 
          Visual presentation
 
-         ***********************************************************************/
-        /*
+         ***********************************************************************//*
          ================
          idWeapon::PresentWeapon
          ================
@@ -2357,8 +2299,9 @@ object Weapon {
             } else {
                 FreeModelDef()
             }
-            if (worldModel.GetEntity() != null && worldModel.GetEntity()!!.GetRenderEntity() != null) {
-                // deal with the third-person visible world model
+            if (worldModel.GetEntity() != null && worldModel.GetEntity()!!
+                    .GetRenderEntity() != null
+            ) { // deal with the third-person visible world model
                 // don't show shadows of the world model in first person
                 if (Game_local.gameLocal.isMultiplayer || SysCvar.g_showPlayerShadow.GetBool() || SysCvar.pm_thirdPerson.GetBool()) {
                     worldModel.GetEntity()!!.GetRenderEntity()!!.suppressShadowInViewID = 0
@@ -2373,18 +2316,15 @@ object Weapon {
             }
 
             // muzzle smoke
-            if (showViewModel && !disabled && weaponSmoke != null && weaponSmokeStartTime != 0) {
-                // D3XP: use smokeJointView if set, otherwise fall back to barrelJointView
+            if (showViewModel && !disabled && weaponSmoke != null && weaponSmokeStartTime != 0) { // D3XP: use smokeJointView if set, otherwise fall back to barrelJointView
                 if (isD3XP && smokeJointView != Model.INVALID_JOINT) {
                     GetGlobalJointTransform(true, smokeJointView, muzzleOrigin, muzzleAxis)
                 } else if (barrelJointView != Model.INVALID_JOINT) {
                     GetGlobalJointTransform(true, barrelJointView, muzzleOrigin, muzzleAxis)
-                } else {
-                    // default to going straight out the view
+                } else { // default to going straight out the view
                     muzzleOrigin.set(playerViewOrigin)
                     muzzleAxis.set(playerViewAxis)
-                }
-                // spit out a particle
+                } // spit out a particle
                 if (!Game_local.gameLocal.smokeParticles!!.EmitSmoke(
                         weaponSmoke,
                         weaponSmokeStartTime,
@@ -2397,8 +2337,7 @@ object Weapon {
                     weaponSmokeStartTime = if (continuousSmoke) Game_local.gameLocal.time else 0
                 }
             }
-            if (showViewModel && strikeSmoke != null && strikeSmokeStartTime != 0) {
-                // spit out a particle
+            if (showViewModel && strikeSmoke != null && strikeSmokeStartTime != 0) { // spit out a particle
                 if (!Game_local.gameLocal.smokeParticles!!.EmitSmoke(
                         strikeSmoke,
                         strikeSmokeStartTime,
@@ -2414,8 +2353,7 @@ object Weapon {
 
             // D3XP: weapon particles, weapon lights, grabber
             if (isD3XP) {
-                if (showViewModel && !hide) {
-                    // Update weapon particles
+                if (showViewModel && !hide) { // Update weapon particles
                     for (i in 0 until weaponParticles.Num()) {
                         val part = weaponParticles.GetIndex(i) ?: continue
                         if (part.active) {
@@ -2429,14 +2367,15 @@ object Weapon {
                                 if (!Game_local.gameLocal.smokeParticles!!.EmitSmoke(
                                         part.particle, part.startTime,
                                         Game_local.gameLocal.random.RandomFloat(),
-                                        muzzleOrigin, muzzleAxis, timeGroup
+                                        muzzleOrigin,
+                                        muzzleAxis,
+                                        timeGroup
                                     )
                                 ) {
                                     part.active = false
                                     part.startTime = 0
                                 }
-                            } else {
-                                // Manually update the position of the emitter so it follows the weapon
+                            } else { // Manually update the position of the emitter so it follows the weapon
                                 if (part.emitter != null) {
                                     val rendEnt = part.emitter!!.GetRenderEntity()
                                     GetGlobalJointTransform(true, part.jointHandle, rendEnt!!.origin, rendEnt.axis)
@@ -2466,7 +2405,7 @@ object Weapon {
 
                 // Update the grabber effects
                 if (grabberState != -1) {
-                    grabberState = grabber!!.Update(owner!!, hide)
+                    grabberState = grabber.Update(owner!!, hide)
                 }
             }
 
@@ -2566,9 +2505,7 @@ object Weapon {
             localOrigin.plusAssign(2, Game_local.gameLocal.random.RandomFloat() * -2.0f)
             normal.set(
                 idVec3(
-                    Game_local.gameLocal.random.CRandomFloat(),
-                    -Game_local.gameLocal.random.RandomFloat(),
-                    -1.0f
+                    Game_local.gameLocal.random.CRandomFloat(), -Game_local.gameLocal.random.RandomFloat(), -1.0f
                 )
             )
             normal.Normalize()
@@ -2737,8 +2674,7 @@ object Weapon {
                 EVENT_CHANGESKIN -> {
                     val index = Game_local.gameLocal.ClientRemapDecl(declType_t.DECL_SKIN, msg.ReadLong())
                     renderEntity!!.customSkin = if (index != -1) DeclManager.declManager.DeclByIndex(
-                        declType_t.DECL_SKIN,
-                        index
+                        declType_t.DECL_SKIN, index
                     ) as idDeclSkin else null
                     UpdateVisuals()
                     if (worldModel.GetEntity() != null) {
@@ -2766,8 +2702,7 @@ object Weapon {
          ================
          idWeapon::AlertMonsters
          ================
-         */
-        // flashlight
+         */ // flashlight
         private fun AlertMonsters() {
             val tr = trace_s()
             var ent: idEntity?
@@ -2822,8 +2757,7 @@ object Weapon {
          ================
          idWeapon::InitWorldModel
          ================
-         */
-        // Visual presentation
+         */ // Visual presentation
         private fun InitWorldModel(def: idDeclEntityDef) {
             val ent: idEntity
             ent = worldModel.GetEntity()!!
@@ -2849,8 +2783,7 @@ object Weapon {
                 if (worldModelRenderEntity != null) {
                     worldModelRenderEntity.suppressSurfaceInViewID = owner!!.entityNumber + 1
                     worldModelRenderEntity.suppressShadowInViewID = owner!!.entityNumber + 1
-                    worldModelRenderEntity.suppressShadowInLightID =
-                        LIGHTID_VIEW_MUZZLE_FLASH + owner!!.entityNumber
+                    worldModelRenderEntity.suppressShadowInLightID = LIGHTID_VIEW_MUZZLE_FLASH + owner!!.entityNumber
                 }
             } else {
                 ent.SetModel("")
@@ -2876,8 +2809,7 @@ object Weapon {
             UpdateFlashPosition()
 
             // these will be different each fire
-            muzzleFlash.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                -MS2SEC(Game_local.gameLocal.time.toFloat())
+            muzzleFlash.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(Game_local.gameLocal.time.toFloat())
             muzzleFlash.shaderParms[RenderWorld.SHADERPARM_DIVERSITY] =
                 renderEntity!!.shaderParms[RenderWorld.SHADERPARM_DIVERSITY]
             worldMuzzleFlash.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
@@ -2968,8 +2900,7 @@ object Weapon {
                 nozzleGlow.lightRadius.z = nozzleGlowRadius
                 nozzleGlow.shader = nozzleGlowShader
                 nozzleGlow.shaderParms[RenderWorld.SHADERPARM_TIMESCALE] = 1.0f
-                nozzleGlow.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                    -MS2SEC(Game_local.gameLocal.time.toFloat())
+                nozzleGlow.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(Game_local.gameLocal.time.toFloat())
                 GetGlobalJointTransform(true, ventLightJointView, nozzleGlow.origin, nozzleGlow.axis)
                 nozzleGlowHandle = Game_local.gameRenderWorld!!.AddLightDef(nozzleGlow)
             }
@@ -2985,16 +2916,16 @@ object Weapon {
          idWeapon::UpdateFlashPosition
          ================
          */
-        private fun UpdateFlashPosition() {
-            // the flash has an explicit joint for locating it
+        private fun UpdateFlashPosition() { // the flash has an explicit joint for locating it
             GetGlobalJointTransform(true, flashJointView, muzzleFlash.origin, muzzleFlash.axis)
 
             // if the desired point is inside or very close to a wall, back it up until it is clear
             val start = idVec3(muzzleFlash.origin - playerViewAxis[0] * 16)
             val end = idVec3(muzzleFlash.origin + playerViewAxis[0] * 8)
             val tr = trace_s()
-            Game_local.gameLocal.clip.TracePoint(tr, start, end, Game_local.MASK_SHOT_RENDERMODEL, owner)
-            // be at least 8 units away from a solid
+            Game_local.gameLocal.clip.TracePoint(
+                tr, start, end, Game_local.MASK_SHOT_RENDERMODEL, owner
+            ) // be at least 8 units away from a solid
             muzzleFlash.origin.set(tr.endpos - playerViewAxis[0] * 8)
 
             // put the world muzzle flash on the end of the joint, no matter what
@@ -3005,8 +2936,7 @@ object Weapon {
 
          Script events
 
-         ***********************************************************************/
-        /*
+         ***********************************************************************//*
          ===============
          idWeapon::Event_Clear
          ===============
@@ -3036,9 +2966,7 @@ object Weapon {
             if (null == func) {
                 assert(false)
                 idGameLocal.Error(
-                    "Can't find function '%s' in object '%s'",
-                    statename,
-                    scriptObject.GetTypeName()
+                    "Can't find function '%s' in object '%s'", statename, scriptObject.GetTypeName()
                 )
             }
             idealState.set(statename)
@@ -3172,8 +3100,7 @@ object Weapon {
             } else {
                 if (ammoClip > ammoAvail) {
                     ammoClip = ammoAvail
-                }
-                // D3XP: consume ammo from inventory when loading clip (shared ammo system)
+                } // D3XP: consume ammo from inventory when loading clip (shared ammo system)
                 val usedAmmo = ammoClip - oldAmmo
                 owner!!.inventory.UseAmmo(ammoType, usedAmmo)
             }
@@ -3195,8 +3122,9 @@ object Weapon {
          ===============
          */
         private fun Event_AmmoAvailable() {
-            var ammoAvail = owner!!.inventory.HasAmmo(ammoType, ammoRequired)
-            // D3XP: include clip ammo since it was already consumed from inventory
+            var ammoAvail = owner!!.inventory.HasAmmo(
+                ammoType, ammoRequired
+            ) // D3XP: include clip ammo since it was already consumed from inventory
             if (isD3XP) {
                 ammoAvail += AmmoInClip()
             }
@@ -3316,8 +3244,7 @@ object Weapon {
          idWeapon::Event_Next
          ================
          */
-        private fun Event_Next() {
-            // change to another weapon if possible
+        private fun Event_Next() { // change to another weapon if possible
             owner!!.NextBestWeapon()
         }
 
@@ -3345,9 +3272,7 @@ object Weapon {
                 msg.Init(msgBuf, Game_local.MAX_EVENT_PARAM_SIZE)
                 msg.WriteLong(
                     if (skinDecl != null) Game_local.gameLocal.ServerRemapDecl(
-                        -1,
-                        declType_t.DECL_SKIN,
-                        skinDecl.Index()
+                        -1, declType_t.DECL_SKIN, skinDecl.Index()
                     ) else -1
                 )
                 ServerSendEvent(EVENT_CHANGESKIN, msg, false, -1)
@@ -3404,10 +3329,7 @@ object Weapon {
          ================
          */
         private fun Event_SetLightParms(
-            parm0: idEventArg<Float>,
-            parm1: idEventArg<Float>,
-            parm2: idEventArg<Float>,
-            parm3: idEventArg<Float>
+            parm0: idEventArg<Float>, parm1: idEventArg<Float>, parm2: idEventArg<Float>, parm3: idEventArg<Float>
         ) {
             muzzleFlash.shaderParms[RenderWorld.SHADERPARM_RED] = parm0.value
             muzzleFlash.shaderParms[RenderWorld.SHADERPARM_GREEN] = parm1.value
@@ -3474,8 +3396,7 @@ object Weapon {
 
                 // if this is a power ammo weapon ( currently only the bfg ) then make sure
                 // we only fire as much power as available in each clip
-                if (powerAmmo) {
-                    // power comes in as a float from zero to max
+                if (powerAmmo) { // power comes in as a float from zero to max
                     // if we use this on more than the bfg will need to define the max
                     // in the .def as opposed to just in the script so proper calcs
                     // can be done here.
@@ -3490,13 +3411,11 @@ object Weapon {
                     owner!!.inventory.UseAmmo(ammoType, (if (powerAmmo) dmgPower else ammoRequired).toInt())
                 }
 
-                if (clipSize != 0 && ammoRequired != 0) {
-                    // D3XP: decrement clip by ammoRequired instead of 1
+                if (clipSize != 0 && ammoRequired != 0) { // D3XP: decrement clip by ammoRequired instead of 1
                     ammoClip -= if (powerAmmo) dmgPower.toInt() else if (isD3XP) ammoRequired else 1
                 }
             }
-            if (!silent_fire) {
-                // wake up nearby monsters
+            if (!silent_fire) { // wake up nearby monsters
                 Game_local.gameLocal.AlertAI(owner)
             }
 
@@ -3507,21 +3426,17 @@ object Weapon {
                 -MS2SEC(Game_local.gameLocal.realClientTime.toFloat())
             if (worldModel.GetEntity() != null) {
                 worldModel.GetEntity()!!.SetShaderParm(
-                    RenderWorld.SHADERPARM_DIVERSITY,
-                    renderEntity!!.shaderParms[RenderWorld.SHADERPARM_DIVERSITY]
+                    RenderWorld.SHADERPARM_DIVERSITY, renderEntity!!.shaderParms[RenderWorld.SHADERPARM_DIVERSITY]
                 )
                 worldModel.GetEntity()!!.SetShaderParm(
-                    RenderWorld.SHADERPARM_TIMEOFFSET,
-                    renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET]
+                    RenderWorld.SHADERPARM_TIMEOFFSET, renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET]
                 )
             }
 
             // calculate the muzzle position
-            if (barrelJointView != Model.INVALID_JOINT && projectileDict.GetBool("launchFromBarrel")) {
-                // there is an explicit joint for the muzzle
+            if (barrelJointView != Model.INVALID_JOINT && projectileDict.GetBool("launchFromBarrel")) { // there is an explicit joint for the muzzle
                 GetGlobalJointTransform(true, barrelJointView, muzzleOrigin, muzzleAxis)
-            } else {
-                // go straight out of the view
+            } else { // go straight out of the view
                 muzzleOrigin.set(playerViewOrigin)
                 muzzleAxis.set(playerViewAxis)
             }
@@ -3562,11 +3477,7 @@ object Weapon {
                         )
                         if (tr.fraction < 1.0f) {
                             idProjectile.ClientPredictionCollide(
-                                this,
-                                projectileDict,
-                                tr,
-                                vec3_origin,
-                                true
+                                this, projectileDict, tr, vec3_origin, true
                             )
                         }
                         i++
@@ -3599,8 +3510,7 @@ object Weapon {
                         val projectileName = weaponDef!!.dict.GetString("def_projectile")
                         idGameLocal.Error("'%s' is not an idProjectile", projectileName)
                     }
-                    if (projectileDict.GetBool("net_instanthit")) {
-                        // don't synchronize this on top of the already predicted effect
+                    if (projectileDict.GetBool("net_instanthit")) { // don't synchronize this on top of the already predicted effect
                         ent[0]!!.fl.networkSync = false
                     }
                     proj = ent[0] as idProjectile
@@ -3609,17 +3519,14 @@ object Weapon {
 
                     // make sure the projectile starts inside the bounding box of the owner
                     if (i == 0) {
-                        muzzle_pos.set(muzzleOrigin + playerViewAxis[0] * 2.0f)
-                        // DG: sometimes the assertion in idBounds::operator-(const idBounds&) triggers
+                        muzzle_pos.set(muzzleOrigin + playerViewAxis[0] * 2.0f) // DG: sometimes the assertion in idBounds::operator-(const idBounds&) triggers
                         //     (would get bounding box with negative volume)
                         //     => check that before doing ownerBounds - projBounds (equivalent to the check in the assertion)
                         val obDiff = ownerBounds[1] - ownerBounds[0]
                         val pbDiff = projBounds[1] - projBounds[0]
                         val boundsSubLegal = obDiff.x > pbDiff.x && obDiff.y > pbDiff.y && obDiff.z > pbDiff.z
                         if (boundsSubLegal && (ownerBounds - projBounds).RayIntersection(
-                                muzzle_pos,
-                                playerViewAxis[0],
-                                distance
+                                muzzle_pos, playerViewAxis[0], distance
                             )
                         ) {
                             start.set(muzzle_pos + playerViewAxis[0] * distance._val)
@@ -3754,10 +3661,7 @@ object Weapon {
                     Game_local.gameRenderWorld!!.DebugLine(colorYellow, start, end, 100)
                     if (ent != null) {
                         Game_local.gameRenderWorld!!.DebugBounds(
-                            colorRed,
-                            ent.GetPhysics().GetBounds(),
-                            ent.GetPhysics().GetOrigin(),
-                            100
+                            colorRed, ent.GetPhysics().GetBounds(), ent.GetPhysics().GetOrigin(), 100
                         )
                     }
                 }
@@ -3773,11 +3677,9 @@ object Weapon {
                     ent.ApplyImpulse(this, tr.c.id, tr.c.point, impulse)
 
                     // weapon stealing - do this before damaging so weapons are not dropped twice
-                    if (Game_local.gameLocal.isMultiplayer
-                        && weaponDef != null && weaponDef!!.dict.GetBool("stealing")
-                        && ent is idPlayer
-                        && !owner!!.PowerUpActive(Player.BERSERK)
-                        && (Game_local.gameLocal.gameType != gameType_t.GAME_TDM || Game_local.gameLocal.serverInfo.GetBool(
+                    if (Game_local.gameLocal.isMultiplayer && weaponDef != null && weaponDef!!.dict.GetBool("stealing") && ent is idPlayer && !owner!!.PowerUpActive(
+                            Player.BERSERK
+                        ) && (Game_local.gameLocal.gameType != gameType_t.GAME_TDM || Game_local.gameLocal.serverInfo.GetBool(
                             "si_teamDamage"
                         ) || owner!!.team != ent.team)
                     ) {
@@ -3787,19 +3689,13 @@ object Weapon {
                         val kickDir = idVec3()
                         val globalKickDir = idVec3()
                         meleeDef!!.dict.GetVector("kickDir", "0 0 0", kickDir)
-                        globalKickDir.set(muzzleAxis.times(kickDir))
-                        // D3XP: invulnerability boss gets reduced melee damage
+                        globalKickDir.set(muzzleAxis.times(kickDir)) // D3XP: invulnerability boss gets reduced melee damage
                         var meleeMod = owner!!.PowerUpModifier(Player.MELEE_DAMAGE)
                         if (isD3XP && ent.GetEntityDefName() == "monster_hunter_invul") {
                             meleeMod *= 0.25f
                         }
                         ent.Damage(
-                            owner,
-                            owner,
-                            globalKickDir,
-                            meleeDefName.toString(),
-                            meleeMod,
-                            tr.c.id
+                            owner, owner, globalKickDir, meleeDefName.toString(), meleeMod, tr.c.id
                         )
                         hit = true
                     }
@@ -3821,17 +3717,11 @@ object Weapon {
                                 hitSound = meleeDef!!.dict.GetString("snd_metal")
                             }
                             if (Game_local.gameLocal.time > nextStrikeFx) {
-                                val decal: String?
-                                // project decal
+                                val decal: String? // project decal
                                 decal = weaponDef!!.dict.GetString("mtr_strike")
                                 if (decal.isNotEmpty()) {
                                     Game_local.gameLocal.ProjectDecal(
-                                        tr.c.point,
-                                        tr.c.normal.unaryMinus(),
-                                        8.0f,
-                                        true,
-                                        6.0f,
-                                        decal
+                                        tr.c.point, tr.c.normal.unaryMinus(), 8.0f, true, 6.0f, decal
                                     )
                                 }
                                 nextStrikeFx = Game_local.gameLocal.time + 200
@@ -3946,7 +3836,7 @@ object Weapon {
 
         private fun Event_GrabberSetGrabDistance(dist: idEventArg<*>) {
             if (!isD3XP) return
-            grabber?.SetDragDistance(dist.value as Float)
+            grabber.SetDragDistance(dist.value as Float)
         }
 
         private fun Event_LaunchProjectilesEllipse(
@@ -3995,12 +3885,10 @@ object Weapon {
             renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(Game_local.gameLocal.time.toFloat())
             if (worldModel.GetEntity() != null) {
                 worldModel.GetEntity()!!.SetShaderParm(
-                    RenderWorld.SHADERPARM_DIVERSITY,
-                    renderEntity!!.shaderParms[RenderWorld.SHADERPARM_DIVERSITY]
+                    RenderWorld.SHADERPARM_DIVERSITY, renderEntity!!.shaderParms[RenderWorld.SHADERPARM_DIVERSITY]
                 )
                 worldModel.GetEntity()!!.SetShaderParm(
-                    RenderWorld.SHADERPARM_TIMEOFFSET,
-                    renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET]
+                    RenderWorld.SHADERPARM_TIMEOFFSET, renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET]
                 )
             }
 
@@ -4051,9 +3939,7 @@ object Weapon {
                         val pbDiff = projBounds[1] - projBounds[0]
                         val boundsSubLegal = obDiff.x > pbDiff.x && obDiff.y > pbDiff.y && obDiff.z > pbDiff.z
                         if (boundsSubLegal && (ownerBounds - projBounds).RayIntersection(
-                                muzzle_pos,
-                                playerViewAxis[0],
-                                distance
+                                muzzle_pos, playerViewAxis[0], distance
                             )
                         ) {
                             start.set(muzzle_pos + playerViewAxis[0] * distance._val)
@@ -4061,9 +3947,13 @@ object Weapon {
                             start.set(ownerBounds.GetCenter())
                         }
                         Game_local.gameLocal.clip.Translation(
-                            tr, start, muzzle_pos,
-                            proj.GetPhysics().GetClipModel(), proj.GetPhysics().GetClipModel()!!.GetAxis(),
-                            Game_local.MASK_SHOT_RENDERMODEL, owner
+                            tr,
+                            start,
+                            muzzle_pos,
+                            proj.GetPhysics().GetClipModel(),
+                            proj.GetPhysics().GetClipModel()!!.GetAxis(),
+                            Game_local.MASK_SHOT_RENDERMODEL,
+                            owner
                         )
                         muzzle_pos.set(tr.endpos)
                     }
@@ -4099,12 +3989,10 @@ object Weapon {
             renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(Game_local.gameLocal.time.toFloat())
             if (worldModel.GetEntity() != null) {
                 worldModel.GetEntity()!!.SetShaderParm(
-                    RenderWorld.SHADERPARM_DIVERSITY,
-                    renderEntity!!.shaderParms[RenderWorld.SHADERPARM_DIVERSITY]
+                    RenderWorld.SHADERPARM_DIVERSITY, renderEntity!!.shaderParms[RenderWorld.SHADERPARM_DIVERSITY]
                 )
                 worldModel.GetEntity()!!.SetShaderParm(
-                    RenderWorld.SHADERPARM_TIMEOFFSET,
-                    renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET]
+                    RenderWorld.SHADERPARM_TIMEOFFSET, renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET]
                 )
             }
 

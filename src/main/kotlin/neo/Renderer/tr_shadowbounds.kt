@@ -103,16 +103,16 @@ object tr_shadowbounds {
     // make a unit cube
     fun PolyhedronFromBounds(b: idBounds): polyhedron {
 
-//       3----------2
-//       |\        /|
-//       | \      / |
-//       |   7--6   |
-//       |   |  |   |
-//       |   4--5   |
-//       |  /    \  |
-//       | /      \ |
-//       0----------1
-//
+        //       3----------2
+        //       |\        /|
+        //       | \      / |
+        //       |   7--6   |
+        //       |   |  |   |
+        //       |   4--5   |
+        //       |  /    \  |
+        //       | /      \ |
+        //       0----------1
+        //
         if (p.e.size() == 0) {
             p.v.push_back(idVec4(-1, -1, 1, 1))
             p.v.push_back(idVec4(1, -1, 1, 1))
@@ -277,10 +277,7 @@ object tr_shadowbounds {
 
     fun make_idMat4(m: FloatArray): idMat4 {
         return idMat4(
-            m[0], m[4], m[8], m[12],
-            m[1], m[5], m[9], m[13],
-            m[2], m[6], m[10], m[14],
-            m[3], m[7], m[11], m[15]
+            m[0], m[4], m[8], m[12], m[1], m[5], m[9], m[13], m[2], m[6], m[10], m[14], m[3], m[7], m[11], m[15]
         )
     }
 
@@ -311,32 +308,25 @@ object tr_shadowbounds {
         val view = idVec4()
         i = 0
         while (i < 4) {
-            view[i] = (global[0] * viewDef.worldSpace.modelViewMatrix[i + 0 * 4]
-                    ) + (global[1] * viewDef.worldSpace.modelViewMatrix[i + 1 * 4]
-                    ) + (global[2] * viewDef.worldSpace.modelViewMatrix[i + 2 * 4]
-                    ) + (global[3] * viewDef.worldSpace.modelViewMatrix[i + 3 * 4])
+            view[i] =
+                (global[0] * viewDef.worldSpace.modelViewMatrix[i + 0 * 4]) + (global[1] * viewDef.worldSpace.modelViewMatrix[i + 1 * 4]) + (global[2] * viewDef.worldSpace.modelViewMatrix[i + 2 * 4]) + (global[3] * viewDef.worldSpace.modelViewMatrix[i + 3 * 4])
             i++
         }
         i = 0
         while (i < 4) {
-            clip[i] = (view[0] * viewDef.projectionMatrix[i + 0 * 4]
-                    ) + (view[1] * viewDef.projectionMatrix[i + 1 * 4]
-                    ) + (view[2] * viewDef.projectionMatrix[i + 2 * 4]
-                    ) + (view[3] * viewDef.projectionMatrix[i + 3 * 4])
+            clip[i] =
+                (view[0] * viewDef.projectionMatrix[i + 0 * 4]) + (view[1] * viewDef.projectionMatrix[i + 1 * 4]) + (view[2] * viewDef.projectionMatrix[i + 2 * 4]) + (view[3] * viewDef.projectionMatrix[i + 3 * 4])
             i++
         }
     }
 
     fun R_CalcIntersectionScissor(
-        lightDef: idRenderLightLocal,
-        entityDef: idRenderEntityLocal,
-        viewDef: viewDef_s
+        lightDef: idRenderLightLocal, entityDef: idRenderEntityLocal, viewDef: viewDef_s
     ): idScreenRect {
         val omodel: idMat4 = make_idMat4(entityDef.modelMatrix)
 
         // compute light polyhedron
-        val lvol: polyhedron = PolyhedronFromBounds(lightDef.frustumTris!!.bounds)
-        // transform it into world space
+        val lvol: polyhedron = PolyhedronFromBounds(lightDef.frustumTris!!.bounds) // transform it into world space
         //lvol.transform( lmodel );
 
         // debug //
@@ -357,10 +347,7 @@ object tr_shadowbounds {
 
         // transform light position into world space
         val lightpos = idVec4(
-            lightDef.globalLightOrigin.x,
-            lightDef.globalLightOrigin.y,
-            lightDef.globalLightOrigin.z,
-            1.0f
+            lightDef.globalLightOrigin.x, lightDef.globalLightOrigin.y, lightDef.globalLightOrigin.z, 1.0f
         )
 
         // generate shadow volume "polyhedron"
@@ -369,13 +356,11 @@ object tr_shadowbounds {
         val out_segs = MySegments()
 
         // get shadow volume edges
-        polyhedron_edges(sv, in_segs)
-        // clip them against light bounds planes
+        polyhedron_edges(sv, in_segs) // clip them against light bounds planes
         clip_segments(lvol, in_segs, out_segs)
 
         // get light bounds edges
-        polyhedron_edges(lvol, in_segs)
-        // clip them by the shadow volume
+        polyhedron_edges(lvol, in_segs) // clip them by the shadow volume
         clip_segments(sv, in_segs, out_segs)
 
         // debug //
@@ -491,8 +476,7 @@ object tr_shadowbounds {
 
     class MyArrayPoly : MyArray<poly> {
         constructor() : super(9)
-        constructor(src: MyArrayPoly) : super(9) {
-            // Deep copy: each poly must be independently copied
+        constructor(src: MyArrayPoly) : super(9) { // Deep copy: each poly must be independently copied
             s = src.s
             for (i in 0 until s) {
                 v[i] = poly(src.v[i]!!)
@@ -529,16 +513,13 @@ object tr_shadowbounds {
 
         constructor()
 
-        constructor(src: polyhedron) {
-            // Deep copy v (idVec4 elements are mutable, need independent copies)
+        constructor(src: polyhedron) { // Deep copy v (idVec4 elements are mutable, need independent copies)
             v = MyArrayVec4()
             v.s = src.v.s
             for (i in 0 until src.v.s) {
                 v.v[i] = if (src.v.v[i] != null) idVec4(src.v.v[i]!!) else null
-            }
-            // Deep copy p (poly elements contain mutable sub-arrays)
-            p = MyArrayPoly(src.p)
-            // Deep copy e (edge elements contain IntArrays)
+            } // Deep copy p (poly elements contain mutable sub-arrays)
+            p = MyArrayPoly(src.p) // Deep copy e (edge elements contain IntArrays)
             e = MyArrayEdge(src.e)
         }
 
@@ -563,8 +544,7 @@ object tr_shadowbounds {
             e.empty()
             discard_neighbor_info()
             var found: Boolean
-            val P: Int = p.size()
-            // for each polygon
+            val P: Int = p.size() // for each polygon
             for (i in 0 until (P - 1)) {
                 val vi: MyArrayInt = p[i]!!.vi
                 val ni: MyArrayInt = p[i]!!.ni
@@ -579,8 +559,7 @@ object tr_shadowbounds {
                     if (ni[ii] != -1) {
                         continue
                     }
-                    found = false
-                    // check all remaining polygons
+                    found = false // check all remaining polygons
                     for (j in i + 1 until P) {
                         val vj: MyArrayInt = p[j]!!.vi
                         val nj: MyArrayInt = p[j]!!.ni
@@ -611,14 +590,11 @@ object tr_shadowbounds {
             }
         }
 
-        fun recompute_planes() {
-            // for each polygon
+        fun recompute_planes() { // for each polygon
             for (i in 0 until p.size()) {
                 p[i]!!.plane.set(
                     compute_homogeneous_plane(
-                        v[p[i]!!.vi[0]!!]!!,
-                        v[p[i]!!.vi[1]!!]!!,
-                        v[p[i]!!.vi[2]!!]!!
+                        v[p[i]!!.vi[0]!!]!!, v[p[i]!!.vi[1]!!]!!, v[p[i]!!.vi[2]!!]!!
                     )
                 )
             }

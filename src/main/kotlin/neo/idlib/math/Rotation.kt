@@ -10,7 +10,7 @@ class idRotation {
     val vec: idVec3 = idVec3()    // normalized vector to rotate around
     var angle: Float = 0.0f       // angle of rotation in degrees
     val axis: idMat3 = idMat3()   // rotation axis
-    var axisValid: Boolean = false// true if rotation axis is valid
+    var axisValid: Boolean = false // true if rotation axis is valid
 
     constructor()
 

@@ -161,8 +161,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
      ================
      idCollisionModelManagerLocal::LoadMap
      ================
-     */
-    // load collision models from a map file
+     */ // load collision models from a map file
     override fun LoadMap(mapFile: idMapFile?) {
         if (mapFile == null) {
             Common.common.Error("idCollisionModelManagerLocal::LoadMap: null mapFile")
@@ -212,8 +211,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
      ================
      idCollisionModelManagerLocal::FreeMap
      ================
-     */
-    // frees all the collision models
+     */ // frees all the collision models
     override fun FreeMap() {
         var i: Int
         if (!loaded) {
@@ -239,8 +237,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
      ================
      idCollisionModelManagerLocal::LoadModel
      ================
-     */
-    // get clip handle for model
+     */ // get clip handle for model
     override fun LoadModel(modelName: idStr, precache: Boolean): Int {
         var handle: Int
         handle = FindModel(modelName)
@@ -286,36 +283,30 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          Trace models (item boxes, etc) are converted to collision models on the fly, using the last model slot
          as a reusable temporary buffer
          ================
-         */
-    // sets up a trace model for collision with other trace models
+         */ // sets up a trace model for collision with other trace models
     override fun SetupTrmModel(trm: idTraceModel, material: Array<idMaterial?>): Int {
         var j: Int
         val vertex: Array<cm_vertex_s>?
         var poly: cm_polygon_s
         val model: cm_model_s
         val trmPoly: Array<traceModelPoly_t>
-        assert(models != null)
-        // probably not the best fix for null pointer assignment?
+        assert(models != null) // probably not the best fix for null pointer assignment?
         if (material[0] == null) { // material == null
             material[0] = trmMaterial // material = trmMaterial <- modification of input parameter by pointer, oof
         }
         model = models?.get(MAX_SUBMODELS)!!
         model.node?.brushes = null
-        model.node?.polygons = null
-        // if not a valid trace model
+        model.node?.polygons = null // if not a valid trace model
         if (trm.type == traceModel_t.TRM_INVALID || 0 == trm.numPolys) {
             return TRACE_MODEL_HANDLE
-        }
-        // vertices
+        } // vertices
         model.numVertices = trm.numVerts
         vertex = model.vertices
         for (i in 0 until trm.numVerts) {
             vertex?.get(i)!!.p.set(trm.verts[i])
             vertex[i].sideSet = 0
-        }
-        // edges
-        model.numEdges = trm.numEdges
-        // FIX: C++ uses `edge = model->edges + 1` and `const trmEdge = trm.edges + 1`
+        } // edges
+        model.numEdges = trm.numEdges // FIX: C++ uses `edge = model->edges + 1` and `const trmEdge = trm.edges + 1`
         // Both pointers are offset by +1 (edges are 1-based in the collision model).
         // The original Kotlin created a reference alias `trmEdge = trm.edges` then did
         // `trmEdge[i] = trm.edges[i + 1]` which CORRUPTED the cached trace model's edges
@@ -329,8 +320,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             model.edges!![i + 1].normal.set(trmE.normal)
             model.edges!![i + 1].internal = false
             model.edges!![i + 1].sideSet = 0
-        }
-        // polygons
+        } // polygons
         model.numPolygons = trm.numPolys
         trmPoly = trm.polys
         for (i in 0 until trm.numPolys) {
@@ -344,26 +334,20 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             poly.plane.SetNormal(trmPoly[i].normal)
             poly.plane.SetDist(trmPoly[i].dist)
             poly.bounds.set(trmPoly[i].bounds)
-            poly.material = material[0]
-            // link polygon at node
+            poly.material = material[0] // link polygon at node
             trmPolygons[i]?.next = model.node!!.polygons
             model.node!!.polygons = trmPolygons[i]
-        }
-        // if the trace model is convex
-        if (trm.isConvex) {
-            // setup brush for position test
+        } // if the trace model is convex
+        if (trm.isConvex) { // setup brush for position test
             trmBrushes[0]?.b!!.numPlanes = trm.numPolys
             for (i in 0 until trm.numPolys) {
                 trmBrushes[0]?.b!!.planes[i] = trmPolygons[i]?.p!!.plane
             }
-            trmBrushes[0]?.b!!.bounds.set(trm.bounds)
-            // link brush at node
+            trmBrushes[0]?.b!!.bounds.set(trm.bounds) // link brush at node
             trmBrushes[0]?.next = model.node!!.brushes
             model.node!!.brushes = trmBrushes[0]
-        }
-        // model bounds
-        model.bounds.set(trm.bounds)
-        // convex
+        } // model bounds
+        model.bounds.set(trm.bounds) // convex
         model.isConvex = trm.isConvex
         return TRACE_MODEL_HANDLE
     }
@@ -372,8 +356,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
      ================
      idCollisionModelManagerLocal::TrmFromModel
      ================
-     */
-    // create trace model from a collision model, returns true if successful
+     */ // create trace model from a collision model, returns true if successful
     override fun TrmFromModel(modelName: idStr, trm: idTraceModel): Boolean {/*cmHandle_t*/
         val handle: Int
         handle = LoadModel(modelName, false)
@@ -388,8 +371,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
      ================
      idCollisionModelManagerLocal::GetModelName
      ================
-     */
-    // name of the model
+     */ // name of the model
     override fun GetModelName( /*cmHandle_t*/
                                model: Int
     ): String {
@@ -407,8 +389,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
      ================
      idCollisionModelManagerLocal::GetModelBounds
      ================
-     */
-    // bounds of the model
+     */ // bounds of the model
     override fun GetModelBounds(model: Int, bounds: idBounds): Boolean {
         if (model < 0 || model > MAX_SUBMODELS || model >= numModels || null == models?.get(
                 model
@@ -425,8 +406,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
      ================
      idCollisionModelManagerLocal::GetModelContents
      ================
-     */
-    // all contents flags of brushes and polygons ored together
+     */ // all contents flags of brushes and polygons ored together
     override fun GetModelContents(model: Int, contents: CInt): Boolean {
         if (model < 0 || model > MAX_SUBMODELS || model >= numModels || null == models?.get(
                 model
@@ -443,8 +423,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
      ================
      idCollisionModelManagerLocal::GetModelVertex
      ================
-     */
-    // get the vertex of a model
+     */ // get the vertex of a model
     override fun GetModelVertex(model: Int, vertexNum: Int, vertex: idVec3): Boolean {
         if (model < 0 || model > MAX_SUBMODELS || model >= numModels || null == models?.get(
                 model
@@ -465,8 +444,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
      ================
      idCollisionModelManagerLocal::GetModelEdge
      ================
-     */
-    // get the edge of a model
+     */ // get the edge of a model
     override fun GetModelEdge(model: Int, edgeNum: Int, start: idVec3, end: idVec3): Boolean {
         var currentEdgeNum = edgeNum
         if (model < 0 || model > MAX_SUBMODELS || model >= numModels || null == models?.get(
@@ -490,8 +468,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
      ================
      idCollisionModelManagerLocal::GetModelPolygon
      ================
-     */
-    // get the polygon of a model
+     */ // get the polygon of a model
     override fun GetModelPolygon(model: Int, polygonNum: Int, winding: idFixedWinding): Boolean {
         return false
     }
@@ -502,13 +479,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          Collision detection for translational motion
 
          ===============================================================================
-         */
-    /*
+         *//*
      ================
      idCollisionModelManagerLocal::Translation
      ================
-     */
-    // translates a trm and reports the first collision if any
+     */ // translates a trm and reports the first collision if any
     override fun Translation(
         results: trace_s,
         start: idVec3,
@@ -572,8 +547,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
         // if optimized point trace
         if (null == trm || trm.bounds[1][0] - trm.bounds[0][0] <= 0.0f && trm.bounds[1][1] - trm.bounds[0][1] <= 0.0f && trm.bounds[1][2] - trm.bounds[0][2] <= 0.0f) {
-            if (model_rotated) {
-                // rotate trace instead of model
+            if (model_rotated) { // rotate trace instead of model
                 tw.start.timesAssign(invModelAxis)
                 tw.end.timesAssign(invModelAxis)
                 tw.dir.timesAssign(invModelAxis)
@@ -597,23 +571,19 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             // setup trace heart planes
             SetupTranslationHeartPlanes()
             tw.maxDistFromHeartPlane1 = CM_BOX_EPSILON
-            tw.maxDistFromHeartPlane2 = CM_BOX_EPSILON
-            // collision with single point
+            tw.maxDistFromHeartPlane2 = CM_BOX_EPSILON // collision with single point
             tw.numVerts = 1
             tw.vertices[0].p.set(tw.start)
             tw.vertices[0].endp.set(tw.vertices[0].p + tw.dir)
             tw.vertices[0].pl.FromRay(tw.vertices[0].p, tw.dir)
             tw.numPolys = 0
             tw.numEdges = tw.numPolys
-            tw.pointTrace = true
-            // trace through the model
-            TraceThroughModel(tw)
-            // store results
+            tw.pointTrace = true // trace through the model
+            TraceThroughModel(tw) // store results
             results.set(tw.trace)
             results.endpos.set(start + (end - start) * results.fraction)
             results.endAxis.set(idMat3.getMat3_identity())
-            if (results.fraction < 1.0f) {
-                // rotate trace plane normal if there was a collision with a rotated model
+            if (results.fraction < 1.0f) { // rotate trace plane normal if there was a collision with a rotated model
                 if (model_rotated) {
                     results.c.normal.timesAssign(modelAxis)
                     results.c.point.timesAssign(modelAxis)
@@ -632,15 +602,19 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             results.endAxis.set(trmAxis)
             results.c.normal.set(vec3_origin)
             results.c.material = null
-            results.c.point.set(start)
-            // FIX: C++ checks if ( session->rw ) before calling. rw is lateinit and may not be initialized.
+            results.c.point.set(start) // FIX: C++ checks if ( session->rw ) before calling. rw is lateinit and may not be initialized.
             try {
                 Session.session.rw.DebugArrow(colorRed, start, end, 1)
             } catch (_: UninitializedPropertyAccessException) {
             }
             Common.common.Printf(
                 "idCollisionModelManagerLocal::Translation: huge translation from (%.2f %.2f %.2f) to (%.2f %.2f %.2f)\n",
-                start.x, start.y, start.z, end.x, end.y, end.z
+                start.x,
+                start.y,
+                start.z,
+                end.x,
+                end.y,
+                end.z
             )
             return
         }
@@ -687,8 +661,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             tw.start.plusAssign(trm.offset)
             tw.end.plusAssign(trm.offset)
         }
-        if (model_rotated) {
-            // rotate trace instead of model
+        if (model_rotated) { // rotate trace instead of model
             tw.start.timesAssign(invModelAxis)
             tw.end.timesAssign(invModelAxis)
             tw.dir.timesAssign(invModelAxis)
@@ -719,11 +692,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         // setup trm polygons
         i = 0
         while (i < tw.numPolys) {
-            poly = tw.polys[i]
-            // if the trm poly plane is facing in the movement direction
+            poly = tw.polys[i] // if the trm poly plane is facing in the movement direction
             dist = poly.plane.Normal().times(tw.dir)
-            if (dist > 0.0f || !trm.isConvex && dist == 0.0f) {
-                // this trm poly and it's edges and vertices need to be used for collision
+            if (dist > 0.0f || !trm.isConvex && dist == 0.0f) { // this trm poly and it's edges and vertices need to be used for collision
                 poly.used = true
                 j = 0
                 while (j < poly.numEdges) {
@@ -744,12 +715,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             if (!vert.used) {
                 i++
                 continue
-            }
-            // get axial trm size after rotations
-            tw.size.AddPoint(vert.p - (tw.start))
-            // calculate the end position of each vertex for a full trace
-            vert.endp.set(vert.p + (tw.dir))
-            // pluecker coordinate for vertex movement line
+            } // get axial trm size after rotations
+            tw.size.AddPoint(vert.p - (tw.start)) // calculate the end position of each vertex for a full trace
+            vert.endp.set(vert.p + (tw.dir)) // pluecker coordinate for vertex movement line
             vert.pl.FromRay(vert.p, tw.dir)
             i++
         }
@@ -761,17 +729,16 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             if (!edge.used) {
                 i++
                 continue
-            }
-            // edge start, end and pluecker coordinate
+            } // edge start, end and pluecker coordinate
             edge.start.set(tw.vertices[edge.vertexNum[0]].p)
             edge.end.set(tw.vertices[edge.vertexNum[1]].p)
-            edge.pl.FromLine(edge.start, edge.end)
-            // calculate normal of plane through movement plane created by the edge
+            edge.pl.FromLine(
+                edge.start, edge.end
+            ) // calculate normal of plane through movement plane created by the edge
             dir.set(edge.start - (edge.end))
             edge.cross[0] = dir[0] * tw.dir[1] - dir[1] * tw.dir[0]
             edge.cross[1] = dir[0] * tw.dir[2] - dir[2] * tw.dir[0]
-            edge.cross[2] = dir[1] * tw.dir[2] - dir[2] * tw.dir[1]
-            // bit for vertex sidedness bit cache
+            edge.cross[2] = dir[1] * tw.dir[2] - dir[2] * tw.dir[1] // bit for vertex sidedness bit cache
             edge.bitNum = i.toShort()
             i++
         }
@@ -807,8 +774,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         // setup trace heart planes
         SetupTranslationHeartPlanes()
         tw.maxDistFromHeartPlane1 = 0.0f
-        tw.maxDistFromHeartPlane2 = 0.0f
-        // calculate maximum trm vertex distance from both heart planes
+        tw.maxDistFromHeartPlane2 = 0.0f // calculate maximum trm vertex distance from both heart planes
         i = 0
         while (i < tw.numVerts) {
             vert = tw.vertices[i]
@@ -825,8 +791,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 tw.maxDistFromHeartPlane2 = dist
             }
             i++
-        }
-        // for epsilons
+        } // for epsilons
         tw.maxDistFromHeartPlane1 += CM_BOX_EPSILON
         tw.maxDistFromHeartPlane2 += CM_BOX_EPSILON
 
@@ -834,8 +799,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         TraceThroughModel(tw)
 
         // if we're getting contacts
-        if (tw.getContacts) {
-            // move all contacts to world space
+        if (tw.getContacts) { // move all contacts to world space
             if (model_rotated) {
                 i = 0
                 while (i < tw.numContacts) {
@@ -853,17 +817,14 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 }
             }
             numContacts = tw.numContacts
-        } else {
-            // store results
+        } else { // store results
             results.set(tw.trace)
             results.endpos.set(start + (end - start) * results.fraction)
             results.endAxis.set(trmAxis)
-            if (results.fraction < 1.0f) {
-                // if the fraction is tiny the actual movement could end up zero
+            if (results.fraction < 1.0f) { // if the fraction is tiny the actual movement could end up zero
                 if (results.fraction > 0.0f && results.endpos.Compare(start)) {
                     results.fraction = 0.0f
-                }
-                // rotate trace plane normal if there was a collision with a rotated model
+                } // rotate trace plane normal if there was a collision with a rotated model
                 if (model_rotated) {
                     results.c.normal.timesAssign(modelAxis)
                     results.c.point.timesAssign(modelAxis)
@@ -872,11 +833,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 results.c.dist += modelOrigin.times(results.c.normal)
             }
         }
-        if (_DEBUG) {
-            // test for collisions
+        if (_DEBUG) { // test for collisions
             if (cm_debugCollision.GetBool()) {
-                if (!getContacts) {
-                    // if the trm is stuck in the model
+                if (!getContacts) { // if the trm is stuck in the model
                     if (Contents(
                             results.endpos, trm, trmAxis, -1, model, modelOrigin, modelAxis
                         ) and contentMask != 0
@@ -884,8 +843,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                         val tr = trace_s()
 
                         // test where the trm is stuck in the model
-                        Contents(results.endpos, trm, trmAxis, -1, model, modelOrigin, modelAxis)
-                        // re-run collision detection to find out where it failed
+                        Contents(
+                            results.endpos, trm, trmAxis, -1, model, modelOrigin, modelAxis
+                        ) // re-run collision detection to find out where it failed
                         Translation(tr, start, end, trm, trmAxis, contentMask, model, modelOrigin, modelAxis)
                     }
                 }
@@ -897,8 +857,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
      ================
      idCollisionModelManagerLocal::Rotation
      ================
-     */
-    // rotates a trm and reports the first collision if any
+     */ // rotates a trm and reports the first collision if any
     override fun Rotation(
         results: trace_s,
         start: idVec3,
@@ -952,10 +911,8 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     model,
                     modelOrigin,
                     modelAxis
-                )
-                // if there is a collision
-                if (results.fraction < 1.0f) {
-                    // fraction of total rotation
+                ) // if there is a collision
+                if (results.fraction < 1.0f) { // fraction of total rotation
                     results.fraction = (lasta + stepa * results.fraction) / rotation.GetAngle()
                     return
                 }
@@ -979,10 +936,8 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             modelOrigin,
             modelAxis
         )
-        if (_DEBUG) {
-            // test for collisions
-            if (cm_debugCollision.GetBool()) {
-                // if the trm is stuck in the model
+        if (_DEBUG) { // test for collisions
+            if (cm_debugCollision.GetBool()) { // if the trm is stuck in the model
                 if (Contents(
                         results.endpos, trm, results.endAxis, -1, model, modelOrigin, modelAxis
                     ) and contentMask != 0
@@ -990,8 +945,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     val tr = trace_s()
 
                     // test where the trm is stuck in the model
-                    Contents(results.endpos, trm, results.endAxis, -1, model, modelOrigin, modelAxis)
-                    // re-run collision detection to find out where it failed
+                    Contents(
+                        results.endpos, trm, results.endAxis, -1, model, modelOrigin, modelAxis
+                    ) // re-run collision detection to find out where it failed
                     Rotation(tr, start, rotation, trm, trmAxis, contentMask, model, modelOrigin, modelAxis)
                 }
             }
@@ -1002,8 +958,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
      ================
      idCollisionModelManagerLocal::Contents
      ================
-     */
-    // returns the contents the trm is stuck in or 0 if the trm is in free space
+     */ // returns the contents the trm is stuck in or 0 if the trm is in free space
     override fun Contents(
         start: idVec3,
         trm: idTraceModel?,
@@ -1031,13 +986,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          Retrieving contacts
 
          ===============================================================================
-         */
-    /*
+         *//*
      ================
      idCollisionModelManagerLocal::Contacts
      ================
-     */
-    // stores all contact points of the trm with the model, returns the number of contacts
+     */ // stores all contact points of the trm with the model, returns the number of contacts
     override fun Contacts(
         contacts: Array<contactInfo_t>,
         maxContacts: Int,
@@ -1062,8 +1015,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
         end.set(start + dir.SubVec3(0) * depth)
         Translation(results, start, end, trm, trmAxis, contentMask, model, origin, modelAxis)
-        if (dir.SubVec3(1).LengthSqr() != 0.0f) {
-            // FIXME: rotational contacts
+        if (dir.SubVec3(1).LengthSqr() != 0.0f) { // FIXME: rotational contacts
         }
         this.getContacts = false
         this.maxContacts = 0
@@ -1075,8 +1027,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
      ================
      idCollisionModelManagerLocal::DebugOutput
      ================
-     */
-    // test collision detection
+     */ // test collision detection
     override fun DebugOutput(origin: idVec3) {
         var i: Int
         var k: Int
@@ -1128,20 +1079,19 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             sscanf.nextFloat(),
             sscanf.nextFloat(),
             sscanf.nextFloat()
-        )
-        //	sscanf( cm_testBox.GetString(), "%f %f %f %f %f %f", &bounds[0][0], &bounds[0][1], &bounds[0][2],
-//										&bounds[1][0], &bounds[1][1], &bounds[1][2] );
+        ) //	sscanf( cm_testBox.GetString(), "%f %f %f %f %f %f", &bounds[0][0], &bounds[0][1], &bounds[0][2],
+        //										&bounds[1][0], &bounds[1][1], &bounds[1][2] );
         sscanf = Scanner(cm_testBoxRotation.GetString())
         sscanf.useLocale(Locale.US)
-        boxAngles.set(sscanf.nextFloat(), sscanf.nextFloat(), sscanf.nextFloat())
-        //	sscanf( cm_testBoxRotation.GetString(), "%f %f %f", &boxAngles[0], &boxAngles[1], &boxAngles[2] );
+        boxAngles.set(
+            sscanf.nextFloat(), sscanf.nextFloat(), sscanf.nextFloat()
+        ) //	sscanf( cm_testBoxRotation.GetString(), "%f %f %f", &boxAngles[0], &boxAngles[1], &boxAngles[2] );
         boxAxis = boxAngles.ToMat3()
         modelAxis.Identity()
         val itm = idTraceModel(bounds)
         val random = idRandom(0)
         val timer = idTimer()
-        if (cm_testRandomMany.GetBool()) {
-            // if many traces in one random direction
+        if (cm_testRandomMany.GetBool()) { // if many traces in one random direction
             i = 0
             while (i < 3) {
                 testend!![0][i] = start[i] + random.CRandomFloat() * cm_testLength.GetFloat()
@@ -1152,8 +1102,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 testend!![k].set(testend!![0])
                 k++
             }
-        } else {
-            // many traces each in a different random direction
+        } else { // many traces each in a different random direction
             k = 0
             while (k < cm_testTimes.GetInteger()) {
                 i = 0
@@ -1206,8 +1155,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             max_translation,
             total_translation / num_translation
         )
-        if (cm_testRandomMany.GetBool()) {
-            // if many traces in one random direction
+        if (cm_testRandomMany.GetBool()) { // if many traces in one random direction
             i = 0
             while (i < 3) {
                 testend!![0][i] = start[i] + random.CRandomFloat() * cm_testRadius.GetFloat()
@@ -1218,8 +1166,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 testend!![k].set(testend!![0])
                 k++
             }
-        } else {
-            // many traces each in a different random direction
+        } else { // many traces each in a different random direction
             k = 0
             while (k < cm_testTimes.GetInteger()) {
                 i = 0
@@ -1230,8 +1177,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 k++
             }
         }
-        if (cm_testRotation.GetBool()) {
-            // rotational collision detection
+        if (cm_testRotation.GetBool()) { // rotational collision detection
             val vec = idVec3(random.CRandomFloat(), random.CRandomFloat(), random.RandomFloat())
             vec.Normalize()
             val rotation = idRotation(vec3_origin, vec, cm_testAngle.GetFloat())
@@ -1285,8 +1231,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
      ================
      idCollisionModelManagerLocal::DrawModel
      ================
-     */
-    // draw a model
+     */ // draw a model
     override fun DrawModel( /*cmHandle_t*/
                             handle: Int, modelOrigin: idVec3, modelAxis: idMat3, viewOrigin: idVec3, radius: Float
     ) {
@@ -1305,8 +1250,8 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             )
             cm_drawColor.ClearModified()
         }
-        model = models?.get(handle)
-        // FIX: Operator precedence — C++ is (viewOrigin - modelOrigin) * modelAxis.Transpose()
+        model =
+            models?.get(handle) // FIX: Operator precedence — C++ is (viewOrigin - modelOrigin) * modelAxis.Transpose()
         viewPos.set((viewOrigin - modelOrigin) * modelAxis.Transpose())
         checkCount++
         DrawNodePolygons(model!!, model.node!!, modelOrigin, modelAxis, viewPos, radius)
@@ -1316,8 +1261,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
      ================
      idCollisionModelManagerLocal::ModelInfo
      ================
-     */
-    // print model information, use -1 handle for accumulated model info
+     */ // print model information, use -1 handle for accumulated model info
     override fun ModelInfo( /*cmHandle_t*/
                             model: Int
     ) {
@@ -1342,8 +1286,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
      ================
      idCollisionModelManagerLocal::ListModels
      ================
-     */
-    // list all loaded models
+     */ // list all loaded models
     override fun ListModels() {
         var i: Int
         var totalMemory: Int
@@ -1361,8 +1304,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
      ================
      idCollisionModelManagerLocal::WriteCollisionModelForMapEntity
      ================
-     */
-    // write a collision model file for the map entity
+     */ // write a collision model file for the map entity
     override fun WriteCollisionModelForMapEntity(
         mapEnt: idMapEntity, filename: String, testTraceModel: Boolean
     ): Boolean {
@@ -1374,8 +1316,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         name = idStr(filename)
         model!!.name.set(name)
         name.SetFileExtension(CM_FILE_EXT)
-        Common.common.Printf("writing %s\n", name)
-        // FIX: Use name (with .cm extension) instead of original filename
+        Common.common.Printf("writing %s\n", name) // FIX: Use name (with .cm extension) instead of original filename
         fp = FileSystem_h.fileSystem.OpenFileWrite(name.toString(), "fs_devpath")
         if (null == fp) {
             Common.common.Printf(
@@ -1386,8 +1327,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
 
         // write file id and version
-        fp.WriteFloatString("%s \"%s\"\n\n", CM_FILEID, CM_FILEVERSION)
-        // write the map file crc
+        fp.WriteFloatString("%s \"%s\"\n\n", CM_FILEID, CM_FILEVERSION) // write the map file crc
         fp.WriteFloatString("%u\n\n", 0)
 
         // write the collision model
@@ -1407,8 +1347,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
          calculates fraction of the translation completed at which the edges collide
          ================
-         */
-    // CollisionMap_translate.cpp
+         */ // CollisionMap_translate.cpp
     private fun TranslateEdgeThroughEdge(
         cross: idVec3, l1: idPluecker, l2: idPluecker, fraction: CFloat
     ): Boolean {
@@ -1513,17 +1452,14 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
              */
         d = l2[4] * cross[0] + l2[5] * cross[1] + l2[2] * cross[2]
         if (d == 0.0f) {
-            fraction._val = (1.0f)
-            // no collision ever
+            fraction._val = (1.0f) // no collision ever
             return false
         }
-        t = -l1.PermutedInnerProduct(l2)
-        // if the lines cross each other to begin with
+        t = -l1.PermutedInnerProduct(l2) // if the lines cross each other to begin with
         if (t == 0.0f) {
             fraction._val = (0.0f)
             return true
-        }
-        // fraction of movement at the time the lines cross each other
+        } // fraction of movement at the time the lines cross each other
         fraction._val = (t / d)
         return true
     }
@@ -1554,31 +1490,26 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         i = 0
         while (i < poly.numEdges) {
             edgeNum = poly.edges[i]
-            edge = tw.model!!.edges!![abs(edgeNum)]
-            // if this edge is already checked
+            edge = tw.model!!.edges!![abs(edgeNum)] // if this edge is already checked
             if (edge.checkcount == checkCount) {
                 i++
                 continue
-            }
-            // can never collide with internal edges
+            } // can never collide with internal edges
             if (edge.internal) {
                 i++
                 continue
             }
-            pl = tw.polygonEdgePlueckerCache[i]
-            // get the sides at which the trm edge vertices pass the polygon edge
+            pl = tw.polygonEdgePlueckerCache[i] // get the sides at which the trm edge vertices pass the polygon edge
             CM_SetEdgeSidedness(
                 edge, pl, tw.vertices[trmEdge.vertexNum[0]].pl, trmEdge.vertexNum[0]
             )
             CM_SetEdgeSidedness(
                 edge, pl, tw.vertices[trmEdge.vertexNum[1]].pl, trmEdge.vertexNum[1]
-            )
-            // if the trm edge start and end vertex do not pass the polygon edge at different sides
+            ) // if the trm edge start and end vertex do not pass the polygon edge at different sides
             if (0L == edge.side shr trmEdge.vertexNum[0] xor (edge.side shr trmEdge.vertexNum[1]) and 1) {
                 i++
                 continue
-            }
-            // get the sides at which the polygon edge vertices pass the trm edge
+            } // get the sides at which the polygon edge vertices pass the trm edge
             v1 = tw.model!!.vertices!![edge.vertexNum[INTSIGNBITSET(edgeNum)]]
             CM_SetVertexSidedness(
                 v1, tw.polygonVertexPlueckerCache[i], trmEdge.pl, trmEdge.bitNum.toInt()
@@ -1586,18 +1517,15 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             v2 = tw.model!!.vertices!![edge.vertexNum[INTSIGNBITNOTSET(edgeNum)]]
             CM_SetVertexSidedness(
                 v2, tw.polygonVertexPlueckerCache[i + 1], trmEdge.pl, trmEdge.bitNum.toInt()
-            )
-            // if the polygon edge start and end vertex do not pass the trm edge at different sides
+            ) // if the polygon edge start and end vertex do not pass the trm edge at different sides
             if (0L == v1.side xor v2.side and (1L shl trmEdge.bitNum.toInt())) {
                 i++
                 continue
-            }
-            // if there is no possible collision between the trm edge and the polygon edge
+            } // if there is no possible collision between the trm edge and the polygon edge
             if (!TranslateEdgeThroughEdge(trmEdge.cross, trmEdge.pl, pl, f1)) {
                 i++
                 continue
-            }
-            // if moving away from edge
+            } // if moving away from edge
             if (f1._val < 0.0f) {
                 i++
                 continue
@@ -1607,13 +1535,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             epsPl.FromLine(
                 tw.model!!.vertices!![edge.vertexNum[0]].p + (edge.normal.times(CM_CLIP_EPSILON)),
                 tw.model!!.vertices!![edge.vertexNum[1]].p + (edge.normal.times(CM_CLIP_EPSILON))
-            )
-            // calculate collision fraction with epsilon expanded edge
+            ) // calculate collision fraction with epsilon expanded edge
             if (!TranslateEdgeThroughEdge(trmEdge.cross, trmEdge.pl, epsPl, f2)) {
                 i++
                 continue
-            }
-            // if no collision with epsilon edge or moving away from edge
+            } // if no collision with epsilon edge or moving away from edge
             if (f2._val > 1.0f || f1._val < f2._val) {
                 i++
                 continue
@@ -1622,15 +1548,13 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 f2._val = (0.0f)
             }
             if (f2._val < tw.trace.fraction) {
-                tw.trace.fraction = f2._val
-                // create plane with normal vector orthogonal to both the polygon edge and the trm edge
+                tw.trace.fraction =
+                    f2._val // create plane with normal vector orthogonal to both the polygon edge and the trm edge
                 start.set(tw.model!!.vertices!![edge.vertexNum[0]].p)
                 end.set(tw.model!!.vertices!![edge.vertexNum[1]].p)
-                tw.trace.c.normal.set((end - start).Cross(trmEdge.end - trmEdge.start))
-                // FIXME: do this normalize when we know the first collision
+                tw.trace.c.normal.set((end - start).Cross(trmEdge.end - trmEdge.start)) // FIXME: do this normalize when we know the first collision
                 tw.trace.c.normal.Normalize()
-                tw.trace.c.dist = tw.trace.c.normal.times(start)
-                // make sure the collision plane faces the trace model
+                tw.trace.c.dist = tw.trace.c.normal.times(start) // make sure the collision plane faces the trace model
                 if (tw.trace.c.normal.times(trmEdge.start) - tw.trace.c.dist < 0.0f) {
                     tw.trace.c.normal.set(-tw.trace.c.normal)
                     tw.trace.c.dist = -tw.trace.c.dist
@@ -1639,21 +1563,18 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 tw.trace.c.material = poly.material
                 tw.trace.c.type = contactType_t.CONTACT_EDGE
                 tw.trace.c.modelFeature = edgeNum
-                tw.trace.c.trmFeature = tw.edges.indexOf(trmEdge)
-                // calculate collision point
+                tw.trace.c.trmFeature = tw.edges.indexOf(trmEdge) // calculate collision point
                 normal[0] = trmEdge.cross[2]
                 normal[1] = -trmEdge.cross[1]
                 normal[2] = trmEdge.cross[0]
                 dist = normal.times(trmEdge.start)
                 d1 = normal.times(start) - dist
-                d2 = normal.times(end) - dist
-                // DG: d1 - d2 was 0 in some weird case, which caused f1 to be INF,
+                d2 = normal.times(end) - dist // DG: d1 - d2 was 0 in some weird case, which caused f1 to be INF,
                 //     which caused NaN mayhem all over the place
                 val d1d2diff = d1 - d2
-                f1._val = if (abs(d1d2diff) > idMath.FLT_EPSILON) d1 / d1d2diff else 0.0f
-                //assert( f1 >= 0.0f && f1 <= 1.0f );
-                tw.trace.c.point.set(start + (end - start) * f1._val)
-                // if retrieving contacts
+                f1._val =
+                    if (abs(d1d2diff) > idMath.FLT_EPSILON) d1 / d1d2diff else 0.0f //assert( f1 >= 0.0f && f1 <= 1.0f );
+                tw.trace.c.point.set(start + (end - start) * f1._val) // if retrieving contacts
                 if (tw.getContacts) {
                     CM_AddContact(tw)
                 }
@@ -1689,8 +1610,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             if (f < 0.0f) {
                 f = 0.0f
             }
-            tw.trace.fraction = f
-            // collision plane is the polygon plane
+            tw.trace.fraction = f // collision plane is the polygon plane
             tw.trace.c.normal.set(poly.plane.Normal())
             tw.trace.c.dist = poly.plane.Dist()
             tw.trace.c.contents = poly.contents
@@ -1698,11 +1618,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             tw.trace.c.type = contactType_t.CONTACT_TRMVERTEX
             tw.trace.c.modelFeature = poly.hashCode()
             tw.trace.c.trmFeature = tw.vertices.indexOf(v)
-            tw.trace.c.point.set(v.p + tw.trace.fraction * (v.endp - v.p))
-            // if retrieving contacts
+            tw.trace.c.point.set(v.p + tw.trace.fraction * (v.endp - v.p)) // if retrieving contacts
             if (tw.getContacts) {
-                CM_AddContact(tw)
-                // no need to store the trm vertex more than once as a contact
+                CM_AddContact(tw) // no need to store the trm vertex more than once as a contact
                 v.used = false //false;
             }
         }
@@ -1724,8 +1642,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             i = 0
             while (i < poly.numEdges) {
                 edgeNum = poly.edges[i]
-                edge = tw.model!!.edges!![abs(edgeNum)]
-                // if we didn't yet calculate the sidedness for this edge
+                edge = tw.model!!.edges!![abs(edgeNum)] // if we didn't yet calculate the sidedness for this edge
                 if (edge.checkcount != checkCount) {
                     var fl: Float
                     edge.checkcount = checkCount
@@ -1734,8 +1651,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     )
                     fl = v.pl.PermutedInnerProduct(pl)
                     edge.side = FLOATSIGNBITSET(fl).toLong()
-                }
-                // if the point passes the edge at the wrong side
+                } // if the point passes the edge at the wrong side
                 //if ( (edgeNum > 0) == edge.side ) {
                 if (INTSIGNBITSET(edgeNum) xor edge.side.toInt() != 0) {
                     return
@@ -1745,8 +1661,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             if (f < 0.0f) {
                 f = 0.0f
             }
-            tw.trace.fraction = f
-            // collision plane is the polygon plane
+            tw.trace.fraction = f // collision plane is the polygon plane
             tw.trace.c.normal.set(poly.plane.Normal())
             tw.trace.c.dist = poly.plane.Dist()
             tw.trace.c.contents = poly.contents
@@ -1754,11 +1669,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             tw.trace.c.type = contactType_t.CONTACT_TRMVERTEX
             tw.trace.c.modelFeature = poly.hashCode() // need to check
             tw.trace.c.trmFeature = tw.vertices.indexOf(v)
-            tw.trace.c.point.set(v.p + tw.trace.fraction * (v.endp - v.p))
-            // if retrieving contacts
+            tw.trace.c.point.set(v.p + tw.trace.fraction * (v.endp - v.p)) // if retrieving contacts
             if (tw.getContacts) {
-                CM_AddContact(tw)
-                // no need to store the trm vertex more than once as a contact
+                CM_AddContact(tw) // no need to store the trm vertex more than once as a contact
                 v.used = false //false;
             }
         }
@@ -1791,19 +1704,17 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             if (f < 0.0f) {
                 f = 0.0f
             }
-            tw.trace.fraction = f
-            // collision plane is the inverse trm polygon plane
+            tw.trace.fraction = f // collision plane is the inverse trm polygon plane
             tw.trace.c.normal.set(-trmpoly.plane.Normal())
             tw.trace.c.dist = -trmpoly.plane.Dist()
             tw.trace.c.contents = poly.contents
             tw.trace.c.material = poly.material
-            tw.trace.c.type = contactType_t.CONTACT_MODELVERTEX
-            // FIX: C++ uses pointer arithmetic (v - tw->model->vertices) to get vertex index.
+            tw.trace.c.type =
+                contactType_t.CONTACT_MODELVERTEX // FIX: C++ uses pointer arithmetic (v - tw->model->vertices) to get vertex index.
             // Kotlin had poly.hashCode() which is completely wrong — must be the vertex index.
             tw.trace.c.modelFeature = tw.model!!.vertices!!.indexOf(v)
             tw.trace.c.trmFeature = tw.polys.indexOf(trmpoly)
-            tw.trace.c.point.set(v.p + tw.trace.fraction * (endp - v.p))
-            // if retrieving contacts
+            tw.trace.c.point.set(v.p + tw.trace.fraction * (endp - v.p)) // if retrieving contacts
             if (tw.getContacts) {
                 CM_AddContact(tw)
             }
@@ -1889,25 +1800,22 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             i = 0
             while (i < p.numEdges) {
                 edgeNum = p.edges[i]
-                e = tw.model!!.edges!![abs(edgeNum)]
-                // reset sidedness cache if this is the first time we encounter this edge during this trace
+                e =
+                    tw.model!!.edges!![abs(edgeNum)] // reset sidedness cache if this is the first time we encounter this edge during this trace
                 if (e.checkcount != checkCount) {
                     e.sideSet = 0
-                }
-                // pluecker coordinate for edge
+                } // pluecker coordinate for edge
                 tw.polygonEdgePlueckerCache[i].FromLine(
                     tw.model!!.vertices!![e.vertexNum[0]].p, tw.model!!.vertices!![e.vertexNum[1]].p
                 )
-                v = tw.model!!.vertices!![e.vertexNum[INTSIGNBITSET(edgeNum)]]
-                // reset sidedness cache if this is the first time we encounter this vertex during this trace
+                v =
+                    tw.model!!.vertices!![e.vertexNum[INTSIGNBITSET(edgeNum)]] // reset sidedness cache if this is the first time we encounter this vertex during this trace
                 if (v.checkcount != checkCount) {
                     v.sideSet = 0
-                }
-                // pluecker coordinate for vertex movement vector
+                } // pluecker coordinate for vertex movement vector
                 tw.polygonVertexPlueckerCache[i].FromRay(v.p, -tw.dir)
                 i++
-            }
-            // copy first to last so we can easily cycle through for the edges
+            } // copy first to last so we can easily cycle through for the edges
             tw.polygonVertexPlueckerCache[p.numEdges].Set(tw.polygonVertexPlueckerCache[0])
 
             // trace trm vertices through polygon
@@ -1938,24 +1846,20 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 if (e.checkcount == checkCount) {
                     i++
                     continue
-                }
-                // set edge check count
-                e.checkcount = checkCount
-                // can never collide with internal edges
+                } // set edge check count
+                e.checkcount = checkCount // can never collide with internal edges
                 if (e.internal) {
                     i++
                     continue
-                }
-                // got to check both vertices because we skip internal edges
+                } // got to check both vertices because we skip internal edges
                 k = 0
                 while (k < 2) {
-                    v = tw.model!!.vertices!![e.vertexNum[k xor INTSIGNBITSET(edgeNum)]]
-                    // if this vertex is already checked
+                    v =
+                        tw.model!!.vertices!![e.vertexNum[k xor INTSIGNBITSET(edgeNum)]] // if this vertex is already checked
                     if (v.checkcount == checkCount) {
                         k++
                         continue
-                    }
-                    // set vertex check count
+                    } // set vertex check count
                     v.checkcount = checkCount
 
                     // if the vertex is outside the trace bounds
@@ -1965,8 +1869,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     }
 
                     // vertex end point after movement
-                    endp.set(v.p - (tw.dir))
-                    // pluecker coordinate for vertex movement vector
+                    endp.set(v.p - (tw.dir)) // pluecker coordinate for vertex movement vector
                     pl = tw.polygonVertexPlueckerCache[i + k]
                     j = 0
                     while (j < tw.numPolys) {
@@ -1985,8 +1888,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         // if there was a collision with this polygon and we are not retrieving contacts
         if (tw.trace.fraction < fraction && !tw.getContacts) {
             fraction = tw.trace.fraction
-            endp.set(tw.start + (tw.dir.times(fraction)))
-            // decrease bounds
+            endp.set(tw.start + (tw.dir.times(fraction))) // decrease bounds
             i = 0
             while (i < 3) {
                 if (tw.start[i] < endp[i]) {
@@ -2036,8 +1938,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             tw.vertices[i].p.set(trm.verts[i])
             tw.vertices[i].used = false //false;
             i++
-        }
-        // edges
+        } // edges
         tw.numEdges = trm.numEdges
         i = 1
         while (i <= trm.numEdges) {
@@ -2045,8 +1946,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             tw.edges[i].vertexNum[1] = trm.edges[i].v[1]
             tw.edges[i].used = false
             i++
-        }
-        // polygons
+        } // polygons
         tw.numPolys = trm.numPolys
         i = 0
         while (i < trm.numPolys) {
@@ -2055,8 +1955,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             tw.polys[i].plane.SetNormal(trm.polys[i].normal)
             tw.polys[i].used = false
             i++
-        }
-        // is the trace model convex or not
+        } // is the trace model convex or not
         tw.isConvex = trm.isConvex
     }
 
@@ -2067,8 +1966,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          verifies if the collision of two edges occurs between the edge bounds
          also calculates the collision point and collision plane normal if the collision occurs between the bounds
          ================
-         */
-    // CollisionMap_rotate.cpp
+         */ // CollisionMap_rotate.cpp
     private fun CollisionBetweenEdgeBounds(
         tw: cm_traceWork_s,
         va: idVec3,
@@ -2146,8 +2044,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          */
     private fun RotateEdgeThroughEdge(
         tw: cm_traceWork_s, pl1: idPluecker, vc: idVec3, vd: idVec3, minTan: Float, tanHalfAngle: CFloat
-    ): Boolean {
-        // FIX: C++ uses double for all these variables - precision-critical quadratic solver
+    ): Boolean { // FIX: C++ uses double for all these variables - precision-critical quadratic solver
         val v0: Double
         val v1: Double
         val v2: Double
@@ -2263,8 +2160,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         // transform rotation axis to z-axis
         ct.set((vc - tw.origin) * tw.matrix)
         dt.set((vd - tw.origin) * tw.matrix)
-        pl2.FromLine(ct, dt)
-        // FIX: All computations in Double to match C++ double precision
+        pl2.FromLine(ct, dt) // FIX: All computations in Double to match C++ double precision
         v0 = (pl2[0] * pl1[4] + pl2[4] * pl1[0]).toDouble()
         v1 = (pl2[1] * pl1[2] - pl2[2] * pl1[1] + pl2[5] * pl1[3] - pl2[3] * pl1[5]).toDouble()
         v2 = (pl2[1] * pl1[5] + pl2[2] * pl1[3] + pl2[5] * pl1[1] + pl2[3] * pl1[2]).toDouble()
@@ -2320,8 +2216,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          */
     private fun EdgeFurthestFromEdge(
         tw: cm_traceWork_s, pl1: idPluecker, vc: idVec3, vd: idVec3, tanHalfAngle: CFloat, dir: CFloat
-    ): Boolean {
-        // FIX: C++ uses double for all these variables - precision-critical quadratic solver
+    ): Boolean { // FIX: C++ uses double for all these variables - precision-critical quadratic solver
         val v0: Double
         val v1: Double
         val v2: Double
@@ -2363,8 +2258,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         // transform rotation axis to z-axis
         ct.set((vc - tw.origin) * tw.matrix)
         dt.set((vd - tw.origin) * tw.matrix)
-        pl2.FromLine(ct, dt)
-        // FIX: All computations in Double to match C++ double precision
+        pl2.FromLine(ct, dt) // FIX: All computations in Double to match C++ double precision
         v0 = (pl2[0] * pl1[4] + pl2[4] * pl1[0]).toDouble()
         v1 = (pl2[1] * pl1[2] - pl2[2] * pl1[1] + pl2[5] * pl1[3] - pl2[3] * pl1[5]).toDouble()
         v2 = (pl2[1] * pl1[5] + pl2[2] * pl1[3] + pl2[5] * pl1[1] + pl2[3] * pl1[2]).toDouble()
@@ -2383,8 +2277,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             } else {
                 dir._val = v1.toFloat()
             }
-        }
-        // negative direction means the edges move towards each other at the initial position
+        } // negative direction means the edges move towards each other at the initial position
         if (dir._val <= 0.0f) {
             return true
         }
@@ -2454,8 +2347,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         val bounds = idBounds()
 
         // if the trm is convex and the rotation axis intersects the trm
-        if (tw.isConvex && tw.axisIntersectsTrm) {
-            // if both points are behind the polygon the edge cannot collide within a 180 degrees rotation
+        if (tw.isConvex && tw.axisIntersectsTrm) { // if both points are behind the polygon the edge cannot collide within a 180 degrees rotation
             if (tw.vertices[trmEdge.vertexNum[0]].polygonSide and tw.vertices[trmEdge.vertexNum[1]].polygonSide != 0) {
                 return
             }
@@ -2525,15 +2417,12 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     i++
                     continue
                 }
-                if (dir._val <= 0.0f) {
-                    // moving towards the polygon edge so stop immediately
+                if (dir._val <= 0.0f) { // moving towards the polygon edge so stop immediately
                     tanHalfAngle._val = (0.0f)
-                } else if (abs(startTan._val) >= tw.maxTan) {
-                    // never going to get beyond the start tangent during the current rotation
+                } else if (abs(startTan._val) >= tw.maxTan) { // never going to get beyond the start tangent during the current rotation
                     i++
                     continue
-                } else {
-                    // collide with the epsilon expanded edge
+                } else { // collide with the epsilon expanded edge
                     if (!RotateEdgeThroughEdge(
                             tw, trmEdge.plzaxis, v1.p + (epsDir), v2.p + (epsDir), abs(startTan._val), tanHalfAngle
                         )
@@ -2541,8 +2430,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                         tanHalfAngle._val = (startTan._val)
                     }
                 }
-            } else {
-                // collide with the epsilon expanded edge
+            } else { // collide with the epsilon expanded edge
                 epsDir.set(edge.normal.times(CM_CLIP_EPSILON))
                 if (!RotateEdgeThroughEdge(
                         tw, trmEdge.plzaxis, v1.p + (epsDir), v2.p + (epsDir), 0.0f, tanHalfAngle
@@ -2577,8 +2465,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             tw.maxTan = abs(tanHalfAngle._val)
             tw.trace.c.normal.set(collisionNormal)
             tw.trace.c.normal.Normalize()
-            tw.trace.c.dist = tw.trace.c.normal.times(v1.p)
-            // make sure the collision plane faces the trace model
+            tw.trace.c.dist = tw.trace.c.normal.times(v1.p) // make sure the collision plane faces the trace model
             if (tw.trace.c.normal.times(trmEdge.start) - tw.trace.c.dist < 0) {
                 tw.trace.c.normal.set(-tw.trace.c.normal)
                 tw.trace.c.dist = -tw.trace.c.dist
@@ -2588,8 +2475,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             tw.trace.c.type = contactType_t.CONTACT_EDGE
             tw.trace.c.modelFeature = edgeNum
             tw.trace.c.trmFeature = tw.edges.indexOf(trmEdge)
-            tw.trace.c.point.set(collisionPoint)
-            // if no collision can be closer
+            tw.trace.c.point.set(collisionPoint) // if no collision can be closer
             if (tw.maxTan == 0.0f) {
                 break
             }
@@ -2606,8 +2492,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          */
     private fun RotatePointThroughPlane(
         tw: cm_traceWork_s, point: idVec3, plane: idPlane, angle: Float, minTan: Float, tanHalfAngle: CFloat
-    ): Boolean {
-        // FIX: C++ uses double for all these variables - precision-critical quadratic solver
+    ): Boolean { // FIX: C++ uses double for all these variables - precision-critical quadratic solver
         val v0: Double
         val v1: Double
         val v2: Double
@@ -2657,8 +2542,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
              */tanHalfAngle._val = (tw.maxTan)
 
         // transform rotation axis to z-axis
-        p.set((point - tw.origin) * tw.matrix)
-        // FIX: d is Double now, convert plane distance to Double
+        p.set((point - tw.origin) * tw.matrix) // FIX: d is Double now, convert plane distance to Double
         d = (plane[3] + plane.Normal() * tw.origin).toDouble()
         normal.set(plane.Normal() * tw.matrix)
         v0 = normal[2] * p[2] + d
@@ -2716,8 +2600,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          */
     private fun PointFurthestFromPlane(
         tw: cm_traceWork_s, point: idVec3, plane: idPlane, angle: Float, tanHalfAngle: CFloat, dir: CFloat
-    ): Boolean {
-        // FIX: C++ uses double for all these variables - precision-critical quadratic solver
+    ): Boolean { // FIX: C++ uses double for all these variables - precision-critical quadratic solver
         val v1: Double
         val v2: Double
         val a: Double
@@ -2744,8 +2627,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             dir._val = (-v1).toFloat()
         } else {
             dir._val = v1.toFloat()
-        }
-        // negative direction means the point moves towards the plane at the initial position
+        } // negative direction means the point moves towards the plane at the initial position
         if (dir._val <= 0.0f) {
             return true
         }
@@ -2827,20 +2709,16 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         startDir.set((point - origin).Cross(tw.axis))
         if (angle < 0.0f) {
             startDir.set(-startDir)
-        }
-        // if moving away from plane at start position
-        if (startDir * epsPlane.Normal() >= 0.0f) {
-            // if end position is outside epsilon range
+        } // if moving away from plane at start position
+        if (startDir * epsPlane.Normal() >= 0.0f) { // if end position is outside epsilon range
             d = epsPlane.Distance(endPoint)
             if (d >= 0.0f) {
                 return false // no collision
-            }
-            // calculate direction of motion at vertex end position
+            } // calculate direction of motion at vertex end position
             endDir.set((endPoint - origin).Cross(tw.axis))
             if (angle < 0.0f) {
                 endDir.set(-endDir)
-            }
-            // if also moving away from plane at end position
+            } // if also moving away from plane at end position
             if (endDir * epsPlane.Normal() > 0.0f) {
                 return false // no collision
             }
@@ -2854,14 +2732,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             if (!PointFurthestFromPlane(tw, point, plane, angle, startTan, dir)) {
                 return false
             }
-            if (dir._val <= 0.0f) {
-                // moving towards the polygon plane so stop immediately
+            if (dir._val <= 0.0f) { // moving towards the polygon plane so stop immediately
                 tanHalfAngle._val = (0.0f)
-            } else if (abs(startTan._val) >= tw.maxTan) {
-                // never going to get beyond the start tangent during the current rotation
+            } else if (abs(startTan._val) >= tw.maxTan) { // never going to get beyond the start tangent during the current rotation
                 return false
-            } else {
-                // calculate collision with epsilon expanded plane
+            } else { // calculate collision with epsilon expanded plane
                 if (!RotatePointThroughPlane(
                         tw, point, epsPlane, angle, abs(startTan._val), tanHalfAngle
                     )
@@ -2869,8 +2744,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     tanHalfAngle._val = (startTan._val)
                 }
             }
-        } else {
-            // calculate collision with epsilon expanded plane
+        } else { // calculate collision with epsilon expanded plane
             if (!RotatePointThroughPlane(tw, point, epsPlane, angle, 0.0f, tanHalfAngle)) {
                 return false
             }
@@ -2880,8 +2754,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         collisionPoint.set(point)
         if (tanHalfAngle._val != 0.0f) {
             CM_RotatePoint(collisionPoint, tw.origin, tw.axis, tanHalfAngle._val)
-        }
-        // calculate direction of motion at collision point
+        } // calculate direction of motion at collision point
         endDir.set((collisionPoint - origin).Cross(tw.axis))
         if (angle < 0.0f) {
             endDir.set(-endDir)
@@ -2925,8 +2798,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         ) {
             return
         }
-        if (abs(tanHalfAngle._val) < tw.maxTan) {
-            // verify if 'collisionPoint' moving along 'endDir' moves between polygon edges
+        if (abs(tanHalfAngle._val) < tw.maxTan) { // verify if 'collisionPoint' moving along 'endDir' moves between polygon edges
             pl.FromRay(collisionPoint, endDir)
             i = 0
             while (i < poly.numEdges) {
@@ -2941,15 +2813,13 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 }
                 i++
             }
-            tw.maxTan = abs(tanHalfAngle._val)
-            // collision plane is the polygon plane
+            tw.maxTan = abs(tanHalfAngle._val) // collision plane is the polygon plane
             tw.trace.c.normal.set(poly.plane.Normal())
             tw.trace.c.dist = poly.plane.Dist()
             tw.trace.c.contents = poly.contents
             tw.trace.c.material = poly.material
             tw.trace.c.type = contactType_t.CONTACT_TRMVERTEX
-            tw.trace.c.modelFeature = poly.hashCode()
-            //tw.trace.c.modelFeature = vertexNum;
+            tw.trace.c.modelFeature = poly.hashCode() //tw.trace.c.modelFeature = vertexNum;
             tw.trace.c.trmFeature = tw.vertices.indexOf(v)
             tw.trace.c.point.set(collisionPoint)
         }
@@ -3000,8 +2870,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         ) {
             return
         }
-        if (abs(tanHalfAngle._val) < tw.maxTan) {
-            // verify if 'collisionPoint' moving along 'endDir' moves between polygon edges
+        if (abs(tanHalfAngle._val) < tw.maxTan) { // verify if 'collisionPoint' moving along 'endDir' moves between polygon edges
             pl.FromRay(collisionPoint, endDir)
             i = 0
             while (i < trmpoly.numEdges) {
@@ -3018,8 +2887,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 }
                 i++
             }
-            tw.maxTan = abs(tanHalfAngle._val)
-            // collision plane is the flipped trm polygon plane
+            tw.maxTan = abs(tanHalfAngle._val) // collision plane is the flipped trm polygon plane
             tw.trace.c.normal.set(-trmpoly.plane.Normal())
             tw.trace.c.dist = tw.trace.c.normal.times(v.p)
             tw.trace.c.contents = poly.contents
@@ -3068,14 +2936,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
 
         // back face culling
-        if (tw.isConvex) {
-            // if the center of the convex trm is behind the polygon plane
-            if (p.plane.Distance(tw.start) < 0.0f) {
-                // if the rotation axis intersects the trace model
+        if (tw.isConvex) { // if the center of the convex trm is behind the polygon plane
+            if (p.plane.Distance(tw.start) < 0.0f) { // if the rotation axis intersects the trace model
                 if (tw.axisIntersectsTrm) {
                     return false
-                } else {
-                    // if the direction of motion at the start and end position of the
+                } else { // if the direction of motion at the start and end position of the
                     // center of the trm both go towards or away from the polygon plane
                     // or if the intersections of the rotation axis with the expanded heart planes
                     // are both in front of the polygon plane
@@ -3102,8 +2967,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
         i = 0
         while (i < tw.numVerts) {
-            bv = tw.vertices[i]
-            // calculate polygon side this vertex is on
+            bv = tw.vertices[i] // calculate polygon side this vertex is on
             d = p.plane.Distance(bv.p)
             bv.polygonSide = FLOATSIGNBITSET(d)
             i++
@@ -3122,15 +2986,13 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             // calculate rotation origin projected into rotation plane through the vertex
             tw.polygonRotationOriginCache[i] = tw.origin + (tw.axis.times(tw.axis.times(v.p - (tw.origin))))
             i++
-        }
-        // copy first to last so we can easily cycle through
+        } // copy first to last so we can easily cycle through
         tw.polygonRotationOriginCache[p.numEdges] = tw.polygonRotationOriginCache[0]
 
         // fast point rotation
         if (tw.pointTrace) {
             RotateTrmVertexThroughPolygon(tw, p, tw.vertices[0])
-        } else {
-            // rotate trm vertices through polygon
+        } else { // rotate trm vertices through polygon
             i = 0
             while (i < tw.numVerts) {
                 bv = tw.vertices[i]
@@ -3158,15 +3020,12 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 if (e.checkcount == checkCount) {
                     i++
                     continue
-                }
-                // set edge check count
-                e.checkcount = checkCount
-                // can never collide with internal edges
+                } // set edge check count
+                e.checkcount = checkCount // can never collide with internal edges
                 if (e.internal) {
                     i++
                     continue
-                }
-                // got to check both vertices because we skip internal edges
+                } // got to check both vertices because we skip internal edges
                 k = 0
                 while (k < 2) {
                     v = tw.model!!.vertices!![e.vertexNum[k xor INTSIGNBITSET(edgeNum)]]
@@ -3175,8 +3034,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     if (v.checkcount == checkCount) {
                         k++
                         continue
-                    }
-                    // set vertex check count
+                    } // set vertex check count
                     v.checkcount = checkCount
 
                     // if the vertex is outside the trm rotation bounds
@@ -3232,8 +3090,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             } else {
                 bounds[0, i] = start[i]
                 bounds[1, i] = end[i]
-            }
-            // expand for epsilons
+            } // expand for epsilons
             bounds[0].minusAssign(i, CM_BOX_EPSILON)
             bounds[1].plusAssign(i, CM_BOX_EPSILON)
             i++
@@ -3301,19 +3158,16 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         initialTan = abs(tan((idMath.PI / 360.0f * tw.angle)))
         tw.maxTan = initialTan
         tw.model = models?.get(model)
-        tw.start.set(start - modelOrigin)
-        // rotation axis, axis is assumed to be normalized
+        tw.start.set(start - modelOrigin) // rotation axis, axis is assumed to be normalized
         tw.axis.set(axis)
         assert(
             tw.axis[0] * tw.axis[0] + tw.axis[1] * tw.axis[1] + tw.axis[2] * tw.axis[2] > 0.99
-        )
-        // rotation origin projected into rotation plane through tw.start
+        ) // rotation origin projected into rotation plane through tw.start
         tw.origin.set(rorg - (modelOrigin))
         d = tw.axis.times(tw.origin) - tw.axis.times(tw.start)
-        tw.origin.set(tw.origin - d * tw.axis)
-        // radius of rotation
-        tw.radius = (tw.start - tw.origin).Length()
-        // maximum error of the circle approximation traced through the axial BSP tree
+        tw.origin.set(tw.origin - d * tw.axis) // radius of rotation
+        tw.radius =
+            (tw.start - tw.origin).Length() // maximum error of the circle approximation traced through the axial BSP tree
         d = tw.radius * tw.radius - CIRCLE_APPROXIMATION_LENGTH * CIRCLE_APPROXIMATION_LENGTH * 0.25f
         maxErr = if (d > 0.0f) {
             (tw.radius - sqrt(d))
@@ -3343,16 +3197,13 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
         // if optimized point trace
         if (null == trm || trm.bounds[1][0] - trm.bounds[0][0] <= 0.0f && trm.bounds[1][1] - trm.bounds[0][1] <= 0.0f && trm.bounds[1][2] - trm.bounds[0][2] <= 0.0f) {
-            if (model_rotated) {
-                // rotate trace instead of model
+            if (model_rotated) { // rotate trace instead of model
                 tw.start.timesAssign(invModelAxis)
             }
-            tw.end.set(tw.start)
-            // if we start at a specific angle
+            tw.end.set(tw.start) // if we start at a specific angle
             if (startAngle != 0.0f) {
                 startRotation.RotatePoint(tw.start)
-            }
-            // calculate end position of rotation
+            } // calculate end position of rotation
             endRotation.RotatePoint(tw.end)
 
             // calculate rotation origin projected into rotation plane through the vertex
@@ -3365,8 +3216,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             )
             BoundsForRotation(
                 tw.vertices[0].rotationOrigin, tw.axis, tw.start, tw.end, tw.vertices[0].rotationBounds
-            )
-            // rotation bounds
+            ) // rotation bounds
             tw.bounds.set(tw.vertices[0].rotationBounds)
             tw.numPolys = 0
             tw.numEdges = tw.numPolys
@@ -3397,8 +3247,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             endRotation.Set(rorg, axis, startAngle + (endAngle - startAngle) * results.fraction)
             endRotation.RotatePoint(results.endpos)
             results.endAxis.Identity()
-            if (results.fraction < 1.0f) {
-                // rotate trace plane normal if there was a collision with a rotated model
+            if (results.fraction < 1.0f) { // rotate trace plane normal if there was a collision with a rotated model
                 if (model_rotated) {
                     results.c.normal.timesAssign(modelAxis)
                     results.c.point.timesAssign(modelAxis)
@@ -3442,8 +3291,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         while (i < tw.numVerts) {
             tw.vertices[i].endp.set(tw.vertices[i].p)
             i++
-        }
-        // if we start at a specific angle
+        } // if we start at a specific angle
         if (startAngle != 0.0f) {
             i = 0
             while (i < tw.numVerts) {
@@ -3464,29 +3312,24 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             tw.start.plusAssign(trm.offset.times(trmAxis))
         } else {
             tw.start.plusAssign(trm.offset)
-        }
-        // if the model is rotated
-        if (model_rotated) {
-            // rotate trace instead of model
+        } // if the model is rotated
+        if (model_rotated) { // rotate trace instead of model
             tw.start.timesAssign(invModelAxis)
         }
-        tw.end.set(tw.start)
-        // if we start at a specific angle
+        tw.end.set(tw.start) // if we start at a specific angle
         if (startAngle != 0.0f) {
             startRotation.RotatePoint(tw.start)
-        }
-        // calculate end position of rotation
+        } // calculate end position of rotation
         endRotation.RotatePoint(tw.end)
 
         // setup trm vertices
         i = 0
         while (i < tw.numVerts) {
-            vert = tw.vertices[i]
-            // calculate rotation origin projected into rotation plane through the vertex
-            vert.rotationOrigin.set(tw.origin + tw.axis * (tw.axis * (vert.p - tw.origin)))
-            // calculate rotation bounds for this vertex
-            BoundsForRotation(vert.rotationOrigin, tw.axis, vert.p, vert.endp, vert.rotationBounds)
-            // if the rotation axis goes through the vertex then the vertex is not used
+            vert = tw.vertices[i] // calculate rotation origin projected into rotation plane through the vertex
+            vert.rotationOrigin.set(tw.origin + tw.axis * (tw.axis * (vert.p - tw.origin))) // calculate rotation bounds for this vertex
+            BoundsForRotation(
+                vert.rotationOrigin, tw.axis, vert.p, vert.endp, vert.rotationBounds
+            ) // if the rotation axis goes through the vertex then the vertex is not used
             d = (vert.p - vert.rotationOrigin).LengthSqr()
             if (d > ROTATION_AXIS_EPSILON * ROTATION_AXIS_EPSILON) {
                 vert.used = true
@@ -3497,23 +3340,18 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         // setup trm edges
         i = 1
         while (i <= tw.numEdges) {
-            edge = tw.edges[i]
-            // if the rotation axis goes through both the edge vertices then the edge is not used
+            edge = tw.edges[i] // if the rotation axis goes through both the edge vertices then the edge is not used
             if (tw.vertices[edge.vertexNum[0]].used or tw.vertices[edge.vertexNum[1]].used) {
                 edge.used = true
-            }
-            // edge start, end and pluecker coordinate
+            } // edge start, end and pluecker coordinate
             edge.start.set(tw.vertices[edge.vertexNum[0]].p)
             edge.end.set(tw.vertices[edge.vertexNum[1]].p)
-            edge.pl.FromLine(edge.start, edge.end)
-            // pluecker coordinate for edge being rotated about the z-axis
+            edge.pl.FromLine(edge.start, edge.end) // pluecker coordinate for edge being rotated about the z-axis
             val at = idVec3((edge.start - tw.origin) * tw.matrix)
             val bt = idVec3((edge.end - tw.origin) * tw.matrix)
-            edge.plzaxis.FromLine(at, bt)
-            // get edge rotation bounds from the rotation bounds of both vertices
+            edge.plzaxis.FromLine(at, bt) // get edge rotation bounds from the rotation bounds of both vertices
             edge.rotationBounds.set(tw.vertices[edge.vertexNum[0]].rotationBounds)
-            edge.rotationBounds.AddBounds(tw.vertices[edge.vertexNum[1]].rotationBounds)
-            // used to calculate if the rotation axis intersects the trm
+            edge.rotationBounds.AddBounds(tw.vertices[edge.vertexNum[1]].rotationBounds) // used to calculate if the rotation axis intersects the trm
             edge.bitNum = 0
             i++
         }
@@ -3545,10 +3383,8 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         i = 0
         while (i < tw.numPolys) {
             poly = tw.polys[i]
-            poly.used = true
-            // set trm polygon plane distance
-            poly.plane.FitThroughPoint(tw.edges[abs(poly.edges[0])].start)
-            // get polygon bounds from edge bounds
+            poly.used = true // set trm polygon plane distance
+            poly.plane.FitThroughPoint(tw.edges[abs(poly.edges[0])].start) // get polygon bounds from edge bounds
             poly.rotationBounds.Clear()
             j = 0
             while (j < poly.numEdges) {
@@ -3557,8 +3393,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 edge = tw.edges[abs(poly.edges[j])]
                 poly.rotationBounds.AddBounds(edge.rotationBounds)
                 j++
-            }
-            // get trace bounds from polygon bounds
+            } // get trace bounds from polygon bounds
             tw.bounds.AddBounds(poly.rotationBounds)
             i++
         }
@@ -3580,23 +3415,19 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         if (tw.isConvex) {
             if (tw.start == tw.origin) {
                 tw.axisIntersectsTrm = true
-            } else {
-                // determine if the rotation axis intersects the trm
-                plaxis.FromRay(tw.origin, tw.axis)
-                // FIX: Restructured loop to avoid out-of-bounds array access.
+            } else { // determine if the rotation axis intersects the trm
+                plaxis.FromRay(tw.origin, tw.axis) // FIX: Restructured loop to avoid out-of-bounds array access.
                 // Original C++ uses for-loop with poly++ in loop increment:
                 //   for ( poly = tw.polys, i = 0; i < tw.numPolys; i++, poly++ )
                 // The old Kotlin while-loop accessed tw.polys[i] after i++ but before
                 // the while condition check, causing IndexOutOfBoundsException.
                 i = 0
                 while (i < tw.numPolys) {
-                    poly = tw.polys[i]
-                    // back face cull polygons
+                    poly = tw.polys[i] // back face cull polygons
                     if (poly.plane.Normal().times(tw.axis) > 0.0f) {
                         i++
                         continue
-                    }
-                    // test if the axis goes between the polygon edges
+                    } // test if the axis goes between the polygon edges
                     j = 0
                     while (j < poly.numEdges) {
                         edgeNum = poly.edges[j]
@@ -3651,8 +3482,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         endRotation.Set(rorg, axis, startAngle + (endAngle - startAngle) * results.fraction)
         endRotation.RotatePoint(results.endpos)
         results.endAxis.set(trmAxis.times(endRotation.ToMat3()))
-        if (results.fraction < 1.0f) {
-            // rotate trace plane normal if there was a collision with a rotated model
+        if (results.fraction < 1.0f) { // rotate trace plane normal if there was a collision with a rotated model
             if (model_rotated) {
                 results.c.normal.timesAssign(modelAxis)
                 results.c.point.timesAssign(modelAxis)
@@ -3668,8 +3498,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
          returns true if any of the trm vertices is inside the brush
          ================
-         */
-    // CollisionMap_contents.cpp
+         */ // CollisionMap_contents.cpp
     private fun TestTrmVertsInBrush(tw: cm_traceWork_s, b: cm_brush_s): Boolean {
         var i: Int
         var j: Int
@@ -3784,21 +3613,18 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
 
         // if the trace model is convex
-        if (tw.isConvex) {
-            // test if any polygon vertices are inside the trm
+        if (tw.isConvex) { // test if any polygon vertices are inside the trm
             i = 0
             while (i < p.numEdges) {
                 edgeNum = p.edges[i]
-                edge = tw.model!!.edges!![abs(edgeNum)]
-                // if this edge is already tested
+                edge = tw.model!!.edges!![abs(edgeNum)] // if this edge is already tested
                 if (edge.checkcount == checkCount) {
                     i++
                     continue
                 }
                 j = 0
                 while (j < 2) {
-                    v = tw.model!!.vertices!![edge.vertexNum[j]]
-                    // if this vertex is already tested
+                    v = tw.model!!.vertices!![edge.vertexNum[j]] // if this vertex is already tested
                     if (v.checkcount == checkCount) {
                         j++
                         continue
@@ -3837,17 +3663,16 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         i = 0
         while (i < p.numEdges) {
             edgeNum = p.edges[i]
-            edge = tw.model!!.edges!![abs(edgeNum)]
-            // reset sidedness cache if this is the first time we encounter this edge
+            edge =
+                tw.model!!.edges!![abs(edgeNum)] // reset sidedness cache if this is the first time we encounter this edge
             if (edge.checkcount != checkCount) {
                 edge.sideSet = 0
-            }
-            // pluecker coordinate for edge
+            } // pluecker coordinate for edge
             tw.polygonEdgePlueckerCache[i].FromLine(
                 tw.model!!.vertices!![edge.vertexNum[0]].p, tw.model!!.vertices!![edge.vertexNum[1]].p
             )
-            v = tw.model!!.vertices!![edge.vertexNum[INTSIGNBITSET(edgeNum)]]
-            // reset sidedness cache if this is the first time we encounter this vertex
+            v =
+                tw.model!!.vertices!![edge.vertexNum[INTSIGNBITSET(edgeNum)]] // reset sidedness cache if this is the first time we encounter this vertex
             if (v.checkcount != checkCount) {
                 v.sideSet = 0
             }
@@ -3871,10 +3696,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             if (sides[tw.edges[i].vertexNum[0]] == sides[tw.edges[i].vertexNum[1]]) {
                 i++
                 continue
-            }
-            // check from which side to which side the trm edge goes
-            flip = INTSIGNBITSET(sides[tw.edges[i].vertexNum[0]])
-            // test if trm edge goes through the polygon between the polygon edges
+            } // check from which side to which side the trm edge goes
+            flip =
+                INTSIGNBITSET(sides[tw.edges[i].vertexNum[0]]) // test if trm edge goes through the polygon between the polygon edges
             j = 0
             while (j < p.numEdges) {
                 edgeNum = p.edges[j]
@@ -3917,14 +3741,15 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 v1 = tw.model!!.vertices!![edge.vertexNum[0]]
                 CM_SetTrmPolygonSidedness(v1, tw.polys[j].plane, j)
                 v2 = tw.model!!.vertices!![edge.vertexNum[1]]
-                CM_SetTrmPolygonSidedness(v2, tw.polys[j].plane, j)
-                // if the polygon edge does not cross the trm polygon plane
+                CM_SetTrmPolygonSidedness(
+                    v2, tw.polys[j].plane, j
+                ) // if the polygon edge does not cross the trm polygon plane
                 if (0L == v1.side xor v2.side shr j and 1) {
                     j++
                     continue
                 }
-                flip = ((v1.side shr j) and 1).toInt()
-                // test if polygon edge goes through the trm polygon between the trm polygon edges
+                flip =
+                    ((v1.side shr j) and 1).toInt() // test if polygon edge goes through the trm polygon between the trm polygon edges
                 k = 0
                 while (k < tw.polys[j].numEdges) {
                     trmEdgeNum = tw.polys[j].edges[k]
@@ -3993,8 +3818,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         node = PointNode(p, models!![model]!!)
         bref = node.brushes
         while (bref != null) {
-            b = bref.b!!
-            // test if the point is within the brush bounds
+            b = bref.b!! // test if the point is within the brush bounds
             i = 0
             while (i < 3) {
                 if (p[i] < b.bounds[0][i]) {
@@ -4008,8 +3832,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             if (i < 3) {
                 bref = bref.next
                 continue
-            }
-            // test if the point is inside the brush
+            } // test if the point is inside the brush
             i = 0
             while (i < b.numPlanes) {
                 d = b.planes[i].Distance(p)
@@ -4034,8 +3857,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     private fun TransformedPointContents(
         p: idVec3,  /*cmHandle_t*/
         model: Int, origin: idVec3, modelAxis: idMat3
-    ): Int {
-        // subtract origin offset
+    ): Int { // subtract origin offset
         val p_l = idVec3(p - (origin))
         if (modelAxis.IsRotated()) {
             p_l.timesAssign(modelAxis)
@@ -4125,8 +3947,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             tw.start.plusAssign(trm.offset)
             tw.end.plusAssign(trm.offset)
         }
-        if (model_rotated) {
-            // rotate trace instead of model
+        if (model_rotated) { // rotate trace instead of model
             tw.start.timesAssign(invModelAxis)
             tw.end.timesAssign(invModelAxis)
         }
@@ -4212,8 +4033,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          Trace through the spatial subdivision
 
          ===============================================================================
-         */
-    // CollisionMap_trace.cpp
+         */ // CollisionMap_trace.cpp
     /*
     ================
     idCollisionModelManagerLocal::TraceTrmThroughNode
@@ -4224,25 +4044,21 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         var bref: cm_brushRef_s?
 
         // position test
-        if (tw.positionTest) {
-            // if already stuck in solid
+        if (tw.positionTest) { // if already stuck in solid
             if (tw.trace.fraction == 0.0f) {
                 return
-            }
-            // test if any of the trm vertices is inside a brush
+            } // test if any of the trm vertices is inside a brush
             bref = node.brushes
             while (bref != null) {
                 if (TestTrmVertsInBrush(tw, bref.b!!)) {
                     return
                 }
                 bref = bref.next
-            }
-            // if just testing a point we're done
+            } // if just testing a point we're done
             if (tw.pointTrace) {
                 return
             }
-            var modelFeature = 0
-            // test if the trm is stuck in any polygons
+            var modelFeature = 0 // test if the trm is stuck in any polygons
             pref = node.polygons
             while (pref != null) {
                 if (TestTrmInPolygon(tw, pref.p!!, modelFeature++)) {
@@ -4250,8 +4066,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 }
                 pref = pref.next
             }
-        } else if (tw.rotation) {
-            // rotate through all polygons in this leaf
+        } else if (tw.rotation) { // rotate through all polygons in this leaf
             pref = node.polygons
             while (pref != null) {
                 if (RotateTrmThroughPolygon(tw, pref.p!!)) {
@@ -4259,8 +4074,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 }
                 pref = pref.next
             }
-        } else {
-            // trace through all polygons in this leaf
+        } else { // trace through all polygons in this leaf
             pref = node.polygons
             while (pref != null) {
                 if (TranslateTrmThroughPolygon(tw, pref.p!!)) {
@@ -4299,15 +4113,12 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
 
         // if we need to test this node for collisions
-        if (node.polygons != null || tw.positionTest && node.brushes != null) {
-            // trace through node with collision data
+        if (node.polygons != null || tw.positionTest && node.brushes != null) { // trace through node with collision data
             TraceTrmThroughNode(tw, node)
-        }
-        // if already stuck in solid
+        } // if already stuck in solid
         if (tw.positionTest && tw.trace.fraction == 0.0f) {
             return
-        }
-        // if this is a leaf node
+        } // if this is a leaf node
         if (node.planeType == -1) {
             return
         }
@@ -4315,13 +4126,10 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             TraceThroughAxialBSPTree_r(tw, node.children[0], p1f, p2f, p1, p2)
             TraceThroughAxialBSPTree_r(tw, node.children[1], p1f, p2f, p1, p2)
             return
-        }
-        // distance from plane for trace start and end
+        } // distance from plane for trace start and end
         t1 = p1[node.planeType] - node.planeDist
-        t2 = p2[node.planeType] - node.planeDist
-        // adjust the plane distance appropriately for mins/maxs
-        offset = tw.extents[node.planeType]
-        // see which sides we need to consider
+        t2 = p2[node.planeType] - node.planeDist // adjust the plane distance appropriately for mins/maxs
+        offset = tw.extents[node.planeType] // see which sides we need to consider
         if (t1 >= offset && t2 >= offset) {
             TraceThroughAxialBSPTree_r(tw, node.children[0], p1f, p2f, p1, p2)
             return
@@ -4383,30 +4191,24 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         val start = idVec3()
         val end = idVec3()
         val rot = idRotation()
-        if (!tw.rotation) {
-            // trace through spatial subdivision and then through leafs
+        if (!tw.rotation) { // trace through spatial subdivision and then through leafs
             TraceThroughAxialBSPTree_r(tw, tw.model!!.node, 0.0f, 1.0f, tw.start, tw.end)
-        } else {
-            // approximate the rotation with a series of straight line movements
+        } else { // approximate the rotation with a series of straight line movements
             // total length covered along circle
-            d = tw.radius * DEG2RAD(tw.angle)
-            // if more than one step
-            if (d > CIRCLE_APPROXIMATION_LENGTH) {
-                // number of steps for the approximation
-                numSteps = (CIRCLE_APPROXIMATION_LENGTH / d).toInt()
-                // start of approximation
-                start.set(tw.start)
-                // trace circle approximation steps through the BSP tree
+            d = tw.radius * DEG2RAD(tw.angle) // if more than one step
+            if (d > CIRCLE_APPROXIMATION_LENGTH) { // number of steps for the approximation
+                numSteps = (CIRCLE_APPROXIMATION_LENGTH / d).toInt() // start of approximation
+                start.set(tw.start) // trace circle approximation steps through the BSP tree
                 i = 0
                 while (i < numSteps) {
 
                     // calculate next point on approximated circle
                     // FIX: C++ uses (float)(i+1) to force float division. Kotlin (i+1)/numSteps is integer division.
                     rot.Set(tw.origin, tw.axis, tw.angle * ((i + 1).toFloat() / numSteps))
-                    end.set(rot.times(start))
-                    // trace through spatial subdivision and then through leafs
-                    TraceThroughAxialBSPTree_r(tw, tw.model!!.node, 0.0f, 1.0f, start, end)
-                    // no need to continue if something was hit already
+                    end.set(rot.times(start)) // trace through spatial subdivision and then through leafs
+                    TraceThroughAxialBSPTree_r(
+                        tw, tw.model!!.node, 0.0f, 1.0f, start, end
+                    ) // no need to continue if something was hit already
                     if (tw.trace.fraction < 1.0f) {
                         return
                     }
@@ -4415,8 +4217,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 }
             } else {
                 start.set(tw.start)
-            }
-            // last step of the approximation
+            } // last step of the approximation
             TraceThroughAxialBSPTree_r(tw, tw.model!!.node, 0.0f, 1.0f, start, tw.end)
         }
     }
@@ -4428,8 +4229,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          Free map
 
          ===============================================================================
-         */
-    // CollisionMap_load.cpp
+         */ // CollisionMap_load.cpp
     /*
     ================
     idCollisionModelManagerLocal::Clear
@@ -4486,13 +4286,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             pref = currentNode.polygons
             while (pref != null) {
                 if (pref.p == p) {
-                    pref.p = null
-                    // cannot return here because we can have links down the tree due to polygon merging
+                    pref.p = null // cannot return here because we can have links down the tree due to polygon merging
                     //return;
                 }
                 pref = pref.next
-            }
-            // if leaf node
+            } // if leaf node
             if (currentNode.planeType == -1) {
                 break
             }
@@ -4523,8 +4321,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     return
                 }
                 bref = bref.next
-            }
-            // if leaf node
+            } // if leaf node
             if (currentNode.planeType == -1) {
                 break
             }
@@ -4576,27 +4373,23 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         pref = node.polygons
         while (pref != null) {
             p = pref.p
-            if (p != null) {
-                // remove all other references to this polygon
+            if (p != null) { // remove all other references to this polygon
                 RemovePolygonReferences_r(headNode, p)
                 FreePolygon(model, p)
             }
             node.polygons = pref.next
             pref = node.polygons
-        }
-        // free all brushes at this node
+        } // free all brushes at this node
         bref = node.brushes
         while (bref != null) {
             b = bref.b
-            if (b != null) {
-                // remove all other references to this brush
+            if (b != null) { // remove all other references to this brush
                 RemoveBrushReferences_r(headNode, b)
                 FreeBrush(model, b)
             }
             node.brushes = bref.next
             bref = node.brushes
-        }
-        // recurse down the tree
+        } // recurse down the tree
         if (node.planeType != -1) {
             FreeTree_r(model, headNode, node.children[0]!!)
             node.children[0] = null
@@ -4621,28 +4414,22 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         // free the tree structure
         if (model.node != null) {
             FreeTree_r(model, model.node!!, model.node!!)
-        }
-        // free blocks with polygon references
+        } // free blocks with polygon references
         polygonRefBlock = model.polygonRefBlocks
         while (polygonRefBlock != null) {
             nextPolygonRefBlock = polygonRefBlock.next
             polygonRefBlock = nextPolygonRefBlock
-        }
-        // free blocks with brush references
+        } // free blocks with brush references
         brushRefBlock = model.brushRefBlocks
         while (brushRefBlock != null) {
-            nextBrushRefBlock = brushRefBlock.next
-            //Mem_Free(brushRefBlock);
+            nextBrushRefBlock = brushRefBlock.next //Mem_Free(brushRefBlock);
             brushRefBlock = nextBrushRefBlock
-        }
-        // free blocks with nodes
+        } // free blocks with nodes
         nodeBlock = model.nodeBlocks
         while (nodeBlock != null) {
-            nextNodeBlock = nodeBlock.next
-            //Mem_Free(nodeBlock);
+            nextNodeBlock = nodeBlock.next //Mem_Free(nodeBlock);
             nodeBlock = nextNodeBlock
-        }
-        // free block allocated polygons
+        } // free block allocated polygons
         model.polygonBlock = null //Mem_Free(model.polygonBlock);
         // free block allocated brushes
         model.brushBlock = null //Mem_Free(model.brushBlock);
@@ -4664,8 +4451,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
          does not allow for a node to have multiple references to the same polygon
          =============
-         */
-    // merging polygons
+         */ // merging polygons
     private fun ReplacePolygons(
         model: cm_model_s, node: cm_node_s, p1: cm_polygon_s, p2: cm_polygon_s, newp: cm_polygon_s
     ) {
@@ -4680,12 +4466,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             lastpref = null
             pref = currentNode.polygons
             while (pref != null) {
-                nextpref = pref.next
-                //
-                p = pref.p
-                // if this polygon reference should change
-                if (p == p1 || p == p2) {
-                    // if the new polygon is already linked at this node
+                nextpref = pref.next //
+                p = pref.p // if this polygon reference should change
+                if (p == p1 || p == p2) { // if the new polygon is already linked at this node
                     if (linked) {
                         if (lastpref != null) {
                             lastpref.next = nextpref
@@ -4702,8 +4485,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     lastpref = pref
                 }
                 pref = nextpref
-            }
-            // if leaf node
+            } // if leaf node
             if (currentNode.planeType == -1) {
                 break
             }
@@ -4711,8 +4493,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 currentNode = currentNode.children[0]!!
             } else if (p1.bounds[1][currentNode.planeType] < currentNode.planeDist && p2.bounds[1][currentNode.planeType] < currentNode.planeDist) {
                 currentNode = currentNode.children[1]!!
-            } else {
-                // FIX: C++ recurses into children[1] before iterating children[0].
+            } else { // FIX: C++ recurses into children[1] before iterating children[0].
                 // Kotlin was missing the recursive call, leaving stale polygon references in back subtree.
                 ReplacePolygons(model, currentNode.children[1]!!, p1, p2, newp)
                 currentNode = currentNode.children[0]!!
@@ -4768,8 +4549,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 return null
             }
             i++
-        }
-        // this allows for merging polygons with multiple shared edges
+        } // this allows for merging polygons with multiple shared edges
         // polygons with multiple shared edges probably never occur tho ;)
         p2AfterShare = -1
         p2BeforeShare = p2AfterShare
@@ -4780,12 +4560,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             nexti = (i + 1) % p1.numEdges
             j = 0
             while (j < p2.numEdges) {
-                prevj = (j + p2.numEdges - 1) % p2.numEdges
-                //
-                if (abs(p1.edges[i]) != abs(p2.edges[j])) {
-                    // if the next edge of p1 and the previous edge of p2 are the same
-                    if (abs(p1.edges[nexti]) == abs(p2.edges[prevj])) {
-                        // if both polygons don't use the edge in the same direction
+                prevj = (j + p2.numEdges - 1) % p2.numEdges //
+                if (abs(p1.edges[i]) != abs(p2.edges[j])) { // if the next edge of p1 and the previous edge of p2 are the same
+                    if (abs(p1.edges[nexti]) == abs(p2.edges[prevj])) { // if both polygons don't use the edge in the same direction
                         if (p1.edges[nexti] != p2.edges[prevj]) {
                             p1BeforeShare = i
                             p2AfterShare = j
@@ -4793,8 +4570,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                         break
                     }
                 } // if both polygons don't use the edge in the same direction
-                else if (p1.edges[i] != p2.edges[j]) {
-                    // if the next edge of p1 and the previous edge of p2 are not the same
+                else if (p1.edges[i] != p2.edges[j]) { // if the next edge of p1 and the previous edge of p2 are not the same
                     if (abs(p1.edges[nexti]) != abs(p2.edges[prevj])) {
                         p1AfterShare = nexti
                         p2BeforeShare = prevj
@@ -4881,8 +4657,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             if (newEdgeNum2[0] == 0) {
                 keep2 = true
             }
-        }
-        // set edges for new polygon
+        } // set edges for new polygon
         newNumEdges = 0
         if (!keep2) {
             newEdges[newNumEdges++] = newEdgeNum2[0]
@@ -4932,8 +4707,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         newp.edges = allocatedEdges
         System.arraycopy(newEdges, 0, newp.edges, 0, newNumEdges)
         newp.numEdges = newNumEdges
-        newp.checkcount = 0
-        // increase usage count for the edges of this polygon
+        newp.checkcount = 0 // increase usage count for the edges of this polygon
         i = 0
         while (i < newp.numEdges) {
             if (!keep1 && newp.edges[i] == newEdgeNum1[0]) {
@@ -4946,8 +4720,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             }
             model.edges!![abs(newp.edges[i])].numUsers++
             i++
-        }
-        // create new bounds from the merged polygons
+        } // create new bounds from the merged polygons
         newp.bounds.set(p1.bounds + p2.bounds)
         return newp
     }
@@ -4968,20 +4741,17 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         while (true) {
             pref = currentNode.polygons
             while (pref != null) {
-                p = pref.p!!
-                //
+                p = pref.p!! //
                 if (p == polygon) {
                     pref = pref.next
                     continue
-                }
-                //
-                newp = TryMergePolygons(model, polygon, p)
-                // if polygons were merged
+                } //
+                newp = TryMergePolygons(model, polygon, p) // if polygons were merged
                 if (newp != null) {
-                    model.numMergedPolys++
-                    // replace links to the merged polygons with links to the new polygon
-                    ReplacePolygons(model, model.node!!, polygon, p, newp)
-                    // decrease usage count for edges of both merged polygons
+                    model.numMergedPolys++ // replace links to the merged polygons with links to the new polygon
+                    ReplacePolygons(
+                        model, model.node!!, polygon, p, newp
+                    ) // decrease usage count for edges of both merged polygons
                     i = 0
                     while (i < polygon.numEdges) {
                         model.edges!![abs(polygon.edges[i])].numUsers--
@@ -4991,15 +4761,13 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     while (i < p.numEdges) {
                         model.edges!![abs(p.edges[i])].numUsers--
                         i++
-                    }
-                    // free merged polygons
+                    } // free merged polygons
                     FreePolygon(model, polygon)
                     FreePolygon(model, p)
                     return true
                 }
                 pref = pref.next
-            }
-            // if leaf node
+            } // if leaf node
             if (currentNode.planeType == -1) {
                 break
             }
@@ -5034,22 +4802,19 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 merge = false
                 pref = currentNode.polygons
                 while (pref != null) {
-                    p = pref.p
-                    // if we checked this polygon already
+                    p = pref.p // if we checked this polygon already
                     if (p!!.checkcount == checkCount) {
                         pref = pref.next
                         continue
                     }
-                    p.checkcount = checkCount
-                    // try to merge this polygon with other polygons in the tree
+                    p.checkcount = checkCount // try to merge this polygon with other polygons in the tree
                     if (MergePolygonWithTreePolygons(model, model.node!!, p)) {
                         merge = true
                         break
                     }
                     pref = pref.next
                 }
-            } while (merge)
-            // if leaf node
+            } while (merge) // if leaf node
             if (currentNode.planeType == -1) {
                 break
             }
@@ -5078,8 +4843,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          if (this edge if fully inside the winding of the other polygon)
          then this edge is an internal edge
 
-         */
-    // finding internal edges
+         */ // finding internal edges
     /*
     ================
     idCollisionModelManagerLocal::PointInsidePolygon
@@ -5097,8 +4861,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         i = 0
         while (i < p.numEdges) {
             edgeNum = p.edges[i]
-            edge = model.edges!![abs(edgeNum)]
-            //
+            edge = model.edges!![abs(edgeNum)] //
             v1.set(model.vertices!![edge.vertexNum[INTSIGNBITSET(edgeNum)]].p)
             v2.set(model.vertices!![edge.vertexNum[INTSIGNBITNOTSET(edgeNum)]].p)
             dir1.set(v2 - (v1))
@@ -5139,23 +4902,19 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 return
             }
             i++
-        }
-        //
+        } //
         // FIXME: doubled geometry causes problems
         //
         i = 0
         while (i < p1.numEdges) {
             edgeNum = p1.edges[i]
-            edge = model.edges!![abs(edgeNum)]
-            // if already an internal edge
+            edge = model.edges!![abs(edgeNum)] // if already an internal edge
             if (edge.internal) {
                 i++
                 continue
-            }
-            //
+            } //
             v1.set(model.vertices!![edge.vertexNum[INTSIGNBITSET(edgeNum)]].p)
-            v2.set(model.vertices!![edge.vertexNum[INTSIGNBITNOTSET(edgeNum)]].p)
-            // if either of the two vertices is outside the bounds of the other polygon
+            v2.set(model.vertices!![edge.vertexNum[INTSIGNBITNOTSET(edgeNum)]].p) // if either of the two vertices is outside the bounds of the other polygon
             k = 0
             while (k < 3) {
                 d = p2.bounds[1][k] + VERTEX_EPSILON
@@ -5171,8 +4930,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             if (k < 3) {
                 i++
                 continue
-            }
-            //
+            } //
             k = abs(edgeNum)
             j = 0
             while (j < p2.numEdges) {
@@ -5180,24 +4938,18 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     break
                 }
                 j++
-            }
-            // if the edge is shared between the two polygons
-            if (j < p2.numEdges) {
-                // if the edge is used by more than 2 polygons
-                if (edge.numUsers > 2) {
-                    // could still be internal but we'd have to test all polygons using the edge
+            } // if the edge is shared between the two polygons
+            if (j < p2.numEdges) { // if the edge is used by more than 2 polygons
+                if (edge.numUsers > 2) { // could still be internal but we'd have to test all polygons using the edge
                     i++
                     continue
-                }
-                // if the edge goes in the same direction for both polygons
-                if (edgeNum == p2.edges[j]) {
-                    // the polygons can lay ontop of each other or one can obscure the other
+                } // if the edge goes in the same direction for both polygons
+                if (edgeNum == p2.edges[j]) { // the polygons can lay ontop of each other or one can obscure the other
                     i++
                     continue
                 }
             } // the edge was not shared
-            else {
-                // both vertices should be on the plane of the other polygon
+            else { // both vertices should be on the plane of the other polygon
                 d = p2.plane.Distance(v1)
                 if (abs(d) > VERTEX_EPSILON) {
                     i++
@@ -5208,17 +4960,13 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     i++
                     continue
                 }
-            }
-            // the two polygon plane normals should face towards each other
+            } // the two polygon plane normals should face towards each other
             dir1.set(v2 - (v1))
             dir2.set(p1.plane.Normal().Cross(dir1))
-            if (p2.plane.Normal().times(dir2) < 0) {
-                //continue;
+            if (p2.plane.Normal().times(dir2) < 0) { //continue;
                 break
-            }
-            // if the edge was not shared
-            if (j >= p2.numEdges) {
-                // both vertices of the edge should be inside the winding of the other polygon
+            } // if the edge was not shared
+            if (j >= p2.numEdges) { // both vertices of the edge should be inside the winding of the other polygon
                 if (!PointInsidePolygon(model, p2, v1)) {
                     i++
                     continue
@@ -5227,8 +4975,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     i++
                     continue
                 }
-            }
-            // we got another internal edge
+            } // we got another internal edge
             edge.internal = true //true;
             model.numInternalEdges++
             i++
@@ -5250,8 +4997,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         while (true) {
             pref = currentNode.polygons
             while (pref != null) {
-                p = pref.p!!
-                //
+                p = pref.p!! //
                 // FIXME: use some sort of additional checkcount because currently
                 //			polygons can be checked multiple times
                 //
@@ -5266,12 +5012,10 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 }
                 FindInternalEdgesOnPolygon(model, polygon, p)
                 pref = pref.next
-            }
-            // if leaf node
+            } // if leaf node
             if (currentNode.planeType == -1) {
                 break
-            }
-            // FIX: First condition must test bounds[0] (min), not bounds[1] (max).
+            } // FIX: First condition must test bounds[0] (min), not bounds[1] (max).
             // C++: polygon->bounds[0][node->planeType] > node->planeDist
             currentNode = if (polygon.bounds[0][currentNode.planeType] > currentNode.planeDist) {
                 currentNode.children[0]!!
@@ -5296,8 +5040,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         while (true) {
             pref = currentNode.polygons
             while (pref != null) {
-                p = pref.p!!
-                // if we checked this polygon already
+                p = pref.p!! // if we checked this polygon already
                 if (p.checkcount == checkCount) {
                     pref = pref.next
                     continue
@@ -5305,8 +5048,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 p.checkcount = checkCount
                 FindInternalPolygonEdges(model, model.node!!, p)
                 pref = pref.next
-            }
-            // if leaf node
+            } // if leaf node
             if (currentNode.planeType == -1) {
                 break
             }
@@ -5321,8 +5063,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          Proc BSP tree for data pruning
 
          ===============================================================================
-         */
-    // loading of proc BSP tree
+         */ // loading of proc BSP tree
     /*
     ================
     idCollisionModelManagerLocal::ParseProcNodes
@@ -5360,8 +5101,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
         // load it
         filename = idStr(name)
-        filename.SetFileExtension(RenderWorld.PROC_FILE_EXT)
-        // FIX: C++ passes `filename` (with .proc extension) to idLexer, not original `name`.
+        filename.SetFileExtension(RenderWorld.PROC_FILE_EXT) // FIX: C++ passes `filename` (with .proc extension) to idLexer, not original `name`.
         src = idLexer(filename.toString(), Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_NODOLLARPRECOMPILE)
         if (!src.IsLoaded()) {
             Common.common.Warning(
@@ -5402,7 +5142,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             src.Error("idCollisionModelManagerLocal::LoadProcBSP: bad token \"%s\"", token.toString())
         }
 
-//	delete src;
+        //	delete src;
     }
 
     /*
@@ -5411,8 +5151,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          Optimisation, removal of polygons contained within brushes or solid
 
          ===============================================================================
-         */
-    // removal of contained polygons
+         */ // removal of contained polygons
     /*
     ================
     idCollisionModelManagerLocal::R_ChoppedAwayByProcBSP
@@ -5440,19 +5179,16 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 node.children[0]
             } else if (res == SIDE_BACK) {
                 node.children[1]
-            } else if (res == SIDE_ON) {
-                // continue with the side the winding faces
+            } else if (res == SIDE_ON) { // continue with the side the winding faces
                 if (node.plane.Normal().times(normal) > 0.0f) {
                     node.children[0]
                 } else {
                     node.children[1]
                 }
-            } else {
-                // if either node is not solid
+            } else { // if either node is not solid
                 if (node.children[0] < 0 || node.children[1] < 0) {
                     return false
-                }
-                // only recurse if the node is not solid
+                } // only recurse if the node is not solid
                 if (node.children[1] > 0) {
                     if (!R_ChoppedAwayByProcBSP(node.children[1], back, normal, origin, radius)) {
                         return false
@@ -5478,20 +5214,16 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         // if the .proc file has no BSP tree
         if (procNodes == null) {
             return false
-        }
-        // don't chop if the polygon is not solid
+        } // don't chop if the polygon is not solid
         if (0 == contents and Material.CONTENTS_SOLID) {
             return false
-        }
-        // make a local copy of the winding
+        } // make a local copy of the winding
         neww = idFixedWinding(w)
-        neww.GetBounds(bounds)
-        // FIX: C++ is (bounds[1] - bounds[0]) * 0.5f — must subtract first, then scale.
+        neww.GetBounds(bounds) // FIX: C++ is (bounds[1] - bounds[0]) * 0.5f — must subtract first, then scale.
         // Kotlin had bounds[1] - bounds[0] * 0.5f which scales bounds[0] first (wrong).
         origin.set((bounds[1] - bounds[0]) * 0.5f)
         radius = origin.Length() + CHOP_EPSILON
-        origin.set(bounds[0] + (origin))
-        //
+        origin.set(bounds[0] + (origin)) //
         return R_ChoppedAwayByProcBSP(0, neww, plane.Normal(), origin, radius)
     }
 
@@ -5548,8 +5280,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             startPlane = 0
             bestNumWindings = 1 + b.numPlanes
             chopped = false
-            do {
-                // FIX: C++ `front = list->w[k]` copies the winding by value (stack object).
+            do { // FIX: C++ `front = list->w[k]` copies the winding by value (stack object).
                 // Kotlin was aliasing the reference, so Split() would modify the original in the list.
                 front = idFixedWinding(list.w[k]!!)
                 cm_tmpList!!.numWindings = 0
@@ -5562,15 +5293,14 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     res = sidedness[planeNum]
                     if (res == SIDE_CROSS) {
                         plane.set(b.planes[planeNum].unaryMinus())
-                        res = front!!.Split(back, plane, CHOP_EPSILON)
+                        res = front.Split(back, plane, CHOP_EPSILON)
                     }
 
                     // NOTE:	disabling this can create gaps at places where Z-fighting occurs
                     //			Z-fighting should not occur but what if there is a decal brush side
                     //			with exactly the same size as another brush side ?
                     // only leave windings on a brush if the winding plane and brush side plane face the same direction
-                    if (res == SIDE_ON && list.primitiveNum >= 0 && list.normal.times(b.planes[planeNum].Normal()) > 0) {
-                        // return because all windings in the list will be on this brush side plane
+                    if (res == SIDE_ON && list.primitiveNum >= 0 && list.normal.times(b.planes[planeNum].Normal()) > 0) { // return because all windings in the list will be on this brush side plane
                         return
                     }
                     if (res == SIDE_BACK) {
@@ -5581,8 +5311,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                                 MAX_WINDING_LIST
                             )
                             return
-                        }
-                        // winding and brush didn't intersect, store the original winding
+                        } // winding and brush didn't intersect, store the original winding
                         cm_outList!!.w[cm_outList!!.numWindings] = list.w[k]
                         cm_outList!!.numWindings++
                         chopped = false
@@ -5596,8 +5325,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                                 MAX_WINDING_LIST
                             )
                             return
-                        }
-                        // store the back winding in the temporary list
+                        } // store the back winding in the temporary list
                         // FIX: Must copy — C++ value-copies into the array, Kotlin would alias
                         cm_tmpList!!.w[cm_tmpList!!.numWindings] = idFixedWinding(back)
                         cm_tmpList!!.numWindings++
@@ -5614,8 +5342,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
                 // find the best start plane to get the least number of fragments outside the brush
                 if (cm_tmpList!!.numWindings < bestNumWindings) {
-                    bestNumWindings = cm_tmpList!!.numWindings
-                    // store windings from temporary list in the out list
+                    bestNumWindings = cm_tmpList!!.numWindings // store windings from temporary list in the out list
                     i = 0
                     while (i < cm_tmpList!!.numWindings) {
                         if (cm_outList!!.numWindings + i >= MAX_WINDING_LIST) {
@@ -5628,8 +5355,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                         }
                         cm_outList!!.w[cm_outList!!.numWindings + i] = cm_tmpList!!.w[i]
                         i++
-                    }
-                    // if only one winding left then we can't do any better
+                    } // if only one winding left then we can't do any better
                     if (bestNumWindings == 1) {
                         break
                     }
@@ -5637,8 +5363,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
                 // try the next start plane
                 startPlane++
-            } while (chopped && startPlane < b.numPlanes)
-            //
+            } while (chopped && startPlane < b.numPlanes) //
             if (chopped) {
                 cm_outList!!.numWindings += bestNumWindings
             }
@@ -5665,24 +5390,20 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         while (true) {
             bref = currentNode.brushes
             while (bref != null) {
-                b = bref.b!!
-                // if we checked this brush already
+                b = bref.b!! // if we checked this brush already
                 if (b.checkcount == checkCount) {
                     bref = bref.next
                     continue
                 }
-                b.checkcount = checkCount
-                // if the windings in the list originate from this brush
+                b.checkcount = checkCount // if the windings in the list originate from this brush
                 if (b.primitiveNum == list.primitiveNum) {
                     bref = bref.next
                     continue
-                }
-                // if brush has a different contents
+                } // if brush has a different contents
                 if (b.contents != list.contents) {
                     bref = bref.next
                     continue
-                }
-                // brush bounds and winding list bounds should overlap
+                } // brush bounds and winding list bounds should overlap
                 i = 0
                 while (i < 3) {
                     if (list.bounds[0][i] > b.bounds[1][i]) {
@@ -5696,16 +5417,13 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 if (i < 3) {
                     bref = bref.next
                     continue
-                }
-                // chop windings in the list with brush
-                ChopWindingListWithBrush(list, b)
-                // if all windings are chopped away we're done
+                } // chop windings in the list with brush
+                ChopWindingListWithBrush(list, b) // if all windings are chopped away we're done
                 if (0 == list.numWindings) {
                     return
                 }
                 bref = bref.next
-            }
-            // if leaf node
+            } // if leaf node
             if (currentNode.planeType == -1) {
                 break
             }
@@ -5743,8 +5461,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         while (i < w.GetNumPoints()) {
             cm_windingList!!.bounds.AddPoint(w[i].ToVec3())
             i++
-        }
-        // FIX: C++ is (bounds[1] - bounds[0]) * 0.5 — subtract first, then scale.
+        } // FIX: C++ is (bounds[1] - bounds[0]) * 0.5 — subtract first, then scale.
         cm_windingList!!.origin.set(
             (cm_windingList!!.bounds[1] - cm_windingList!!.bounds[0]) * 0.5f
         )
@@ -5764,22 +5481,18 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         cm_windingList!!.numWindings = 1
         cm_windingList!!.normal.set(plane.Normal())
         cm_windingList!!.contents = contents
-        cm_windingList!!.primitiveNum = patch
-        //
+        cm_windingList!!.primitiveNum = patch //
         checkCount++
-        R_ChopWindingListWithTreeBrushes(cm_windingList!!, headNode)
-        //
+        R_ChopWindingListWithTreeBrushes(cm_windingList!!, headNode) //
         if (0 == cm_windingList!!.numWindings) {
             return null
         }
         if (cm_windingList!!.numWindings == 1) {
             return cm_windingList!!.w[0]
-        }
-        // if not the world model
+        } // if not the world model
         if (numModels != 0) {
             return w
-        }
-        // check if winding fragments would be chopped away by the proc BSP tree
+        } // check if winding fragments would be chopped away by the proc BSP tree
         windingLeft = -1
         i = 0
         while (i < cm_windingList!!.numWindings) {
@@ -5802,8 +5515,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          Trace model to general collision model
 
          ===============================================================================
-         */
-    // creation of axial BSP tree
+         */ // creation of axial BSP tree
     /*
     ================
     idCollisionModelManagerLocal::AllocModel
@@ -6007,19 +5719,16 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         // setup model
         model = AllocModel()
         assert(models != null)
-        models?.set(MAX_SUBMODELS, model)
-        // create node to hold the collision data
+        models?.set(MAX_SUBMODELS, model) // create node to hold the collision data
         node = AllocNode(model, 1)
         node.planeType = -1
-        model.node = node
-        // allocate vertex and edge arrays
+        model.node = node // allocate vertex and edge arrays
         model.numVertices = 0
         model.maxVertices = TraceModel.MAX_TRACEMODEL_VERTS
         model.vertices = cm_vertex_s.generateArray(model.maxVertices)
         model.numEdges = 0
         model.maxEdges = TraceModel.MAX_TRACEMODEL_EDGES + 1
-        model.edges = cm_edge_s.generateArray(model.maxEdges)
-        // create a material for the trace model polygons
+        model.edges = cm_edge_s.generateArray(model.maxEdges) // create a material for the trace model polygons
         trmMaterial = DeclManager.declManager.FindMaterial("_tracemodel", false)
         if (null == trmMaterial) {
             Common.common.FatalError("_tracemodel material not found")
@@ -6037,8 +5746,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             trmPolygons[i]!!.p!!.material = trmMaterial
             trmPolygons[i]!!.p!!.numEdges = 0
             i++
-        }
-        // allocate brush for position test
+        } // allocate brush for position test
         trmBrushes[0] = AllocBrushReference(model, 1)
         trmBrushes[0]!!.b = AllocBrush(model, TraceModel.MAX_TRACEMODEL_POLYS)
         trmBrushes[0]!!.b!!.primitiveNum = 0
@@ -6132,42 +5840,33 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         if (!CM_FindSplitter(node, bounds, planeType, planeDist)) {
             node.planeType = -1
             return node
-        }
-        // create two child nodes
+        } // create two child nodes
         frontNode = AllocNode(
             model, NODE_BLOCK_SIZE_LARGE
         ) //	memset( frontNode, 0, sizeof(cm_node_t) );
         frontNode.parent = node
-        frontNode.planeType = -1
-        //
+        frontNode.planeType = -1 //
         backNode = AllocNode(
             model, NODE_BLOCK_SIZE_LARGE
         ) //	memset( backNode, 0, sizeof(cm_node_t) );
         backNode.parent = node
-        backNode.planeType = -1
-        //
-        model.numNodes += 2
-        // set front node bounds
+        backNode.planeType = -1 //
+        model.numNodes += 2 // set front node bounds
         frontBounds = idBounds(bounds)
-        frontBounds[0][planeType._val] = planeDist._val
-        // set back node bounds
+        frontBounds[0][planeType._val] = planeDist._val // set back node bounds
         backBounds = idBounds(bounds)
-        backBounds[1][planeType._val] = planeDist._val
-        //
+        backBounds[1][planeType._val] = planeDist._val //
         node.planeType = planeType._val
         node.planeDist = planeDist._val
         node.children[0] = frontNode
-        node.children[1] = backNode
-        // filter polygons and brushes down the tree if necesary
+        node.children[1] = backNode // filter polygons and brushes down the tree if necesary
         n = node
         while (n != null) {
             prevpref = null
             pref = n.polygons
             while (pref != null) {
-                nextpref = pref.next
-                // if polygon is not inside all children
-                if (!CM_R_InsideAllChildren(n, pref.p!!.bounds)) {
-                    // filter polygon down the tree
+                nextpref = pref.next // if polygon is not inside all children
+                if (!CM_R_InsideAllChildren(n, pref.p!!.bounds)) { // filter polygon down the tree
                     R_FilterPolygonIntoTree(model, n, pref, pref.p!!)
                     if (prevpref != null) {
                         prevpref.next = nextpref
@@ -6182,10 +5881,8 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             prevbref = null
             bref = n.brushes
             while (bref != null) {
-                nextbref = bref.next
-                // if brush is not inside all children
-                if (!CM_R_InsideAllChildren(n, bref.b!!.bounds)) {
-                    // filter brush down the tree
+                nextbref = bref.next // if brush is not inside all children
+                if (!CM_R_InsideAllChildren(n, bref.b!!.bounds)) { // filter brush down the tree
                     R_FilterBrushIntoTree(model, n, bref, bref.b!!)
                     if (prevbref != null) {
                         prevbref.next = nextbref
@@ -6239,8 +5936,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          Raw polygon and brush data
 
          ===============================================================================
-         */
-    // creation of raw polygons
+         */ // creation of raw polygons
     /*
     ================
     idCollisionModelManagerLocal::SetupHash
@@ -6252,8 +5948,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
         if (null == cm_edgeHash) {
             cm_edgeHash = idHashIndex(EDGE_HASH_SIZE, 1024)
-        }
-        // init variables used during loading and optimization
+        } // init variables used during loading and optimization
         if (null == cm_windingList) {
             cm_windingList = cm_windingList_s()
         }
@@ -6320,8 +6015,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     ================
     */
     private fun HashVec(vec: idVec3, hash: CInt, althash: CInt): Int {
-        val offs = idVec3(vec.x - cm_modelBounds[0].x, vec.y - cm_modelBounds[0].y, vec.z - cm_modelBounds[0].z)
-        // in the original calculation for the "real" hash, 0.38 is added before casting to int etc
+        val offs = idVec3(
+            vec.x - cm_modelBounds[0].x, vec.y - cm_modelBounds[0].y, vec.z - cm_modelBounds[0].z
+        ) // in the original calculation for the "real" hash, 0.38 is added before casting to int etc
         // do two checks here: 0.38 +/- 0.1 (VERTEX_EPSILON)
         val checkOffs = arrayOf(idVec3(0.28f, 0.28f, 0.28f), idVec3(0.48f, 0.48f, 0.48f))
         val xs = IntArray(2)
@@ -6338,8 +6034,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         if (hashes[0] == hashes[1]) {
             hash._val = hashes[0]
             return 1
-        } else {
-            // this should be rare
+        } else { // this should be rare
             var numDiff = 0
             if (xs[0] != xs[1]) numDiff++
             if (ys[0] != ys[1]) numDiff++
@@ -6353,8 +6048,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 hash._val = realHash
                 althash._val = if (realHash == hashes[0]) hashes[1] else hashes[0]
                 return 2
-            }
-            // if the hash-part is different for more than one coordinate
+            } // if the hash-part is different for more than one coordinate
             // (this should be even rarer), return 3 so if needed all model vertices are checked
             hash._val = realHash
             return 3
@@ -6385,8 +6079,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         val numHashCandidates = HashVec(vert, hashKey, altHashKey)
         vn = cm_vertexHash!!.First(hashKey._val)
         while (vn >= 0) {
-            p.set(model.vertices!![vn].p)
-            // first compare z-axis because hash is based on x-y plane
+            p.set(model.vertices!![vn].p) // first compare z-axis because hash is based on x-y plane
             if (abs(vert[2] - p[2]) < VERTEX_EPSILON && abs(
                     vert[0] - p[0]
                 ) < VERTEX_EPSILON && abs(vert[1] - p[1]) < VERTEX_EPSILON
@@ -6395,13 +6088,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 return true
             }
             vn = cm_vertexHash!!.Next(vn)
-        }
-        // DG: points that are really close to each other can still have different hashes
+        } // DG: points that are really close to each other can still have different hashes
         if (numHashCandidates == 2) {
             vn = cm_vertexHash!!.First(altHashKey._val)
             while (vn >= 0) {
-                p.set(model.vertices!![vn].p)
-                // first compare z-axis because hash is based on x-y plane
+                p.set(model.vertices!![vn].p) // first compare z-axis because hash is based on x-y plane
                 if (abs(vert[2] - p[2]) < VERTEX_EPSILON && abs(
                         vert[0] - p[0]
                     ) < VERTEX_EPSILON && abs(vert[1] - p[1]) < VERTEX_EPSILON
@@ -6411,11 +6102,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 }
                 vn = cm_vertexHash!!.Next(vn)
             }
-        } else if (numHashCandidates > 2) {
-            // more than two potential hashes for vert? just check all of model's vertices
+        } else if (numHashCandidates > 2) { // more than two potential hashes for vert? just check all of model's vertices
             for (j in 0 until model.numVertices) {
-                p.set(model.vertices!![j].p)
-                // first compare z-axis because hash is based on x-y plane
+                p.set(model.vertices!![j].p) // first compare z-axis because hash is based on x-y plane
                 if (abs(vert[2] - p[2]) < VERTEX_EPSILON && abs(
                         vert[0] - p[0]
                     ) < VERTEX_EPSILON && abs(vert[1] - p[1]) < VERTEX_EPSILON
@@ -6429,18 +6118,15 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
             // resize vertex array
             model.maxVertices = (model.maxVertices * 1.5 + 1).toInt()
-            val oldVertices: Array<cm_vertex_s> = model.vertices!!
-            // TODO: Check source code
+            val oldVertices: Array<cm_vertex_s> = model.vertices!! // TODO: Check source code
             model.vertices = cm_vertex_s.generateArray(model.maxVertices)
             System.arraycopy(oldVertices, 0, model.vertices, 0, model.numVertices)
             cm_vertexHash!!.ResizeIndex(model.maxVertices)
         }
         model.vertices!![model.numVertices].p.set(vert)
         model.vertices!![model.numVertices].checkcount = 0
-        vertexNum._val = (model.numVertices)
-        // add vertice to hash
-        cm_vertexHash!!.Add(hashKey._val, model.numVertices)
-        //
+        vertexNum._val = (model.numVertices) // add vertice to hash
+        cm_vertexHash!!.Add(hashKey._val, model.numVertices) //
         model.numVertices++
         return false
     }
@@ -6467,19 +6153,13 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         if (model.numEdges == 0) {
             model.numEdges = 1
         }
-        found = if (v1num._val != -1) {
-            true
-        } else {
-            GetVertex(model, v1, v1num)
-        }
-        found = found and GetVertex(model, v2, v2num)
-        // if both vertices are the same or snapped onto each other
+        found = v1num._val != -1 || GetVertex(model, v1, v1num)
+        found = found and GetVertex(model, v2, v2num) // if both vertices are the same or snapped onto each other
         if (v1num._val == v2num._val) {
             edgeNum[edgeOffset] = 0
             return true
         }
-        hashKey = cm_edgeHash!!.GenerateKey(v1num._val, v2num._val)
-        // if both vertices where already stored
+        hashKey = cm_edgeHash!!.GenerateKey(v1num._val, v2num._val) // if both vertices where already stored
         if (found) {
             e = cm_edgeHash!!.First(hashKey)
             while (e >= 0) {
@@ -6491,40 +6171,34 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 }
                 vertexNum = model.edges!![e].vertexNum
                 if (vertexNum[0] == v2num._val) {
-                    if (vertexNum[1] == v1num._val) {
-                        // negative for a reversed edge
+                    if (vertexNum[1] == v1num._val) { // negative for a reversed edge
                         edgeNum[edgeOffset] = -e
                         break
                     }
                 }
                 e = cm_edgeHash!!.Next(e)
-            }
-            // if edge found in hash
+            } // if edge found in hash
             if (e >= 0) {
                 model.edges!![e].numUsers++
                 return true
             }
         }
         if (model.numEdges >= model.maxEdges) {
-            var oldEdges: Array<cm_edge_s>?
-            // resize edge array
+            var oldEdges: Array<cm_edge_s>? // resize edge array
             model.maxEdges = (model.maxEdges * 1.5 + 1).toInt()
             oldEdges = model.edges
             model.edges = cm_edge_s.generateArray(model.maxEdges)
             System.arraycopy(oldEdges, 0, model.edges, 0, model.numEdges)
             oldEdges = null
             cm_edgeHash!!.ResizeIndex(model.maxEdges)
-        }
-        // setup edge
+        } // setup edge
         model.edges!![model.numEdges].vertexNum[0] = v1num._val
         model.edges!![model.numEdges].vertexNum[1] = v2num._val
         model.edges!![model.numEdges].internal = false
         model.edges!![model.numEdges].checkcount = 0
         model.edges!![model.numEdges].numUsers = 1 // used by one polygon atm
-        model.edges!![model.numEdges].normal.Zero()
-        //
-        edgeNum[edgeOffset] = model.numEdges
-        // add edge to hash
+        model.edges!![model.numEdges].normal.Zero() //
+        edgeNum[edgeOffset] = model.numEdges // add edge to hash
         cm_edgeHash!!.Add(hashKey, model.numEdges)
         model.numEdges++
         return false
@@ -6560,22 +6234,18 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 j = 0
             }
             GetEdge(model, w[i].ToVec3(), w[j].ToVec3(), polyEdges, numPolyEdges, v1num)
-            if (polyEdges[numPolyEdges] != 0) {
-                // last vertex of this edge is the first vertex of the next edge
+            if (polyEdges[numPolyEdges] != 0) { // last vertex of this edge is the first vertex of the next edge
                 v1num._val = (model.edges!![abs(polyEdges[numPolyEdges])].vertexNum[INTSIGNBITNOTSET(
                     polyEdges[numPolyEdges]
-                )])
-                // this edge is valid so keep it
+                )]) // this edge is valid so keep it
                 numPolyEdges++
             }
             i++
             j++
-        }
-        // should have at least 3 edges
+        } // should have at least 3 edges
         if (numPolyEdges < 3) {
             return
-        }
-        // the polygon is invalid if some edge is found twice
+        } // the polygon is invalid if some edge is found twice
         i = 0
         while (i < numPolyEdges) {
             j = i + 1
@@ -6586,8 +6256,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 j++
             }
             i++
-        }
-        // don't overflow max edges
+        } // don't overflow max edges
         if (numPolyEdges > CM_MAX_POLYGON_EDGES) {
             Common.common.Warning(
                 "idCollisionModelManagerLocal::CreatePolygon: polygon has more than %d edges", numPolyEdges
@@ -6626,8 +6295,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         contents = material.GetContentFlags()
 
         // if this polygon is part of the world model
-        if (numModels == 0) {
-            // if the polygon is fully chopped away by the proc bsp tree
+        if (numModels == 0) { // if the polygon is fully chopped away by the proc bsp tree
             if (ChoppedAwayByProcBSP(currentW!!, plane, contents)) {
                 model.numRemovedPolys++
                 return
@@ -6675,8 +6343,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         while (true) {
             pref = currentNode.polygons
             while (pref != null) {
-                p = pref.p!!
-                // if we checked this polygon already
+                p = pref.p!! // if we checked this polygon already
                 if (p.checkcount == checkCount) {
                     pref = pref.next
                     continue
@@ -6686,28 +6353,24 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 while (i < p.numEdges) {
                     edgeNum = p.edges[i]
                     edge = model.edges!![abs(edgeNum)]
-                    if (edge.normal[0] == 0.0f && edge.normal[1] == 0.0f && edge.normal[2] == 0.0f) {
-                        // if the edge is only used by this polygon
+                    if (edge.normal[0] == 0.0f && edge.normal[1] == 0.0f && edge.normal[2] == 0.0f) { // if the edge is only used by this polygon
                         if (edge.numUsers.toInt() == 1) {
                             dir.set(model.vertices!![edge.vertexNum[if (edgeNum < 0) 1 else 0]].p - (model.vertices!![edge.vertexNum[if (edgeNum > 0) 1 else 0]].p))
                             edge.normal.set(p.plane.Normal().Cross(dir))
                             edge.normal.Normalize()
-                        } else {
-                            // the edge is used by more than one polygon
+                        } else { // the edge is used by more than one polygon
                             edge.normal.set(p.plane.Normal())
                         }
                     } else {
-                        dot = edge.normal.times(p.plane.Normal())
-                        // if the two planes make a very sharp edge
-                        if (dot < SHARP_EDGE_DOT) {
-                            // max length normal pointing outside both polygons
+                        dot = edge.normal.times(p.plane.Normal()) // if the two planes make a very sharp edge
+                        if (dot < SHARP_EDGE_DOT) { // max length normal pointing outside both polygons
                             dir.set(model.vertices!![edge.vertexNum[if (edgeNum > 0) 1 else 0]].p - (model.vertices!![edge.vertexNum[if (edgeNum < 0) 1 else 0]].p))
                             edge.normal.set(edge.normal.Cross(dir) + (p.plane.Normal().Cross(-dir)))
                             edge.normal.timesAssign(0.5f / (0.5f + 0.5f * SHARP_EDGE_DOT) / edge.normal.Length())
                             model.numSharpEdges++
                         } else {
-                            s = 0.5f / (0.5f + 0.5f * dot)
-                            // FIX: C++ is s * (edge->normal + p->plane.Normal()) — s scales entire sum.
+                            s =
+                                0.5f / (0.5f + 0.5f * dot) // FIX: C++ is s * (edge->normal + p->plane.Normal()) — s scales entire sum.
                             // Kotlin had edge.normal + planeNormal * s which only scales planeNormal.
                             edge.normal.set((edge.normal + p.plane.Normal()) * s)
                         }
@@ -6715,8 +6378,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     i++
                 }
                 pref = pref.next
-            }
-            // if leaf node
+            } // if leaf node
             if (currentNode.planeType == -1) {
                 break
             }
@@ -6757,8 +6419,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 plane.SetNormal(d1.Cross(d2))
                 if (plane.Normalize() != 0.0f) {
                     plane.FitThroughPoint(mesh[v1].xyz)
-                    dot = plane.Distance(mesh[v4].xyz)
-                    // if we can turn it into a quad
+                    dot = plane.Distance(mesh[v4].xyz) // if we can turn it into a quad
                     if (abs(dot) < 0.1f) {
                         w.Clear()
                         w.plusAssign(mesh[v1].xyz)
@@ -6768,16 +6429,14 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                         PolygonFromWinding(model, w, plane, material, -primitiveNum)
                         j++
                         continue
-                    } else {
-                        // create one of the triangles
+                    } else { // create one of the triangles
                         w.Clear()
                         w.plusAssign(mesh[v1].xyz)
                         w.plusAssign(mesh[v2].xyz)
                         w.plusAssign(mesh[v3].xyz)
                         PolygonFromWinding(model, w, plane, material, -primitiveNum)
                     }
-                }
-                // create the other triangle
+                } // create the other triangle
                 d1.set(mesh[v3].xyz - (mesh[v1].xyz))
                 d2.set(mesh[v4].xyz - (mesh[v1].xyz))
                 plane.SetNormal(d1.Cross(d2))
@@ -6922,8 +6581,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
         if (0 == contents) {
             return
-        }
-        // create brush for position test
+        } // create brush for position test
         brush = AllocBrush(model, mapBrush.GetNumSides())
         brush.checkcount = 0
         brush.contents = contents
@@ -6944,8 +6602,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     idCollisionModelManagerLocal::PrintModelInfo
     ================
     */
-    private fun PrintModelInfo(model: cm_model_s) {
-        // FIX: Added sizeof multipliers — were commented out, producing wrong KB values
+    private fun PrintModelInfo(model: cm_model_s) { // FIX: Added sizeof multipliers — were commented out, producing wrong KB values
         Common.common.Printf(
             "%6d vertices (%d KB)\n", model.numVertices, model.numVertices * cm_vertex_s.BYTES shr 10
         )
@@ -7009,8 +6666,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         while (true) {
             pref = currentNode.polygons
             while (pref != null) {
-                p = pref.p!!
-                // if we checked this polygon already
+                p = pref.p!! // if we checked this polygon already
                 if (p.checkcount == checkCount) {
                     pref = pref.next
                     continue
@@ -7062,8 +6718,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             remap[model.edges!![i].vertexNum[0]] = 1 //true;
             remap[model.edges!![i].vertexNum[1]] = 1 //true;
             i++
-        }
-        // create remap index and move vertices
+        } // create remap index and move vertices
         newNumVertices = 0
         i = 0
         while (i < model.numVertices) {
@@ -7074,8 +6729,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             }
             i++
         }
-        model.numVertices = newNumVertices
-        // change edge vertex indexes
+        model.numVertices = newNumVertices // change edge vertex indexes
         i = 1
         while (i < model.numEdges) {
             v = model.edges!![i].vertexNum
@@ -7096,12 +6750,10 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 newNumEdges++
             }
             i++
-        }
-        // change polygon edge indexes
+        } // change polygon edge indexes
         checkCount++
         RemapEdges(model.node!!, remap)
-        model.numEdges = newNumEdges
-        //Mem_Free(remap);
+        model.numEdges = newNumEdges //Mem_Free(remap);
 
         // realloc vertices
         oldVertices = model.vertices
@@ -7123,26 +6775,20 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     idCollisionModelManagerLocal::FinishModel
     ================
     */
-    private fun FinishModel(model: cm_model_s) {
-        // try to merge polygons
+    private fun FinishModel(model: cm_model_s) { // try to merge polygons
         checkCount++
-        MergeTreePolygons(model, model.node!!)
-        // find internal edges (no mesh can ever collide with internal edges)
+        MergeTreePolygons(model, model.node!!) // find internal edges (no mesh can ever collide with internal edges)
         checkCount++
-        FindInternalEdges(model, model.node!!)
-        // calculate edge normals
+        FindInternalEdges(model, model.node!!) // calculate edge normals
         checkCount++
         CalculateEdgeNormals(model, model.node!!)
 
         //common.Printf( "%s vertex hash spread is %d\n", model.name.c_str(), cm_vertexHash.GetSpread() );
         //common.Printf( "%s edge hash spread is %d\n", model.name.c_str(), cm_edgeHash.GetSpread() );
         // remove all unused vertices and edges
-        OptimizeArrays(model)
-        // get model bounds from brush and polygon bounds
-        CM_GetNodeBounds(model.bounds, model.node!!)
-        // get model contents
-        model.contents = CM_GetNodeContents(model.node!!)
-        // total memory used by this model
+        OptimizeArrays(model) // get model bounds from brush and polygon bounds
+        CM_GetNodeBounds(model.bounds, model.node!!) // get model contents
+        model.contents = CM_GetNodeContents(model.node!!) // total memory used by this model
         model.usedMemory =
             (model.numVertices * cm_vertex_s.BYTES + model.numEdges * cm_edge_s.BYTES + model.polygonMemory + model.brushMemory + model.numNodes * cm_node_s.BYTES + model.numPolygonRefs * cm_polygonRef_s.BYTES + model.numBrushRefs * cm_brushRef_s.BYTES)
     }
@@ -7214,8 +6860,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 break
             }
             i++
-        }
-        // if the model is already loaded
+        } // if the model is already loaded
         return if (i < numModels) {
             i
         } else -1
@@ -7243,8 +6888,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         if (name[0].isNullOrEmpty()) {
             mapEnt.epairs.GetString("name", "", name)
             if (name[0].isNullOrEmpty()) {
-                if (0 == numModels) {
-                    // first model is always the world
+                if (0 == numModels) { // first model is always the world
                     name[0] = "worldMap"
                 } else {
                     name[0] = "unnamed inline model"
@@ -7368,18 +7012,15 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
         i = 0
         while (i < renderModel.NumSurfaces()) {
-            surf = renderModel.Surface(i)
-            // if this surface has no contents
+            surf = renderModel.Surface(i) // if this surface has no contents
             if (0 == surf!!.shader!!.GetContentFlags() and Material.CONTENTS_REMOVE_UTIL) {
                 i++
                 continue
-            }
-            // if the model has a collision surface and this surface is not a collision surface
-            if (collisionSurface && 0 == surf!!.shader!!.GetSurfaceFlags() and Material.SURF_COLLISION) {
+            } // if the model has a collision surface and this surface is not a collision surface
+            if (collisionSurface && 0 == surf.shader!!.GetSurfaceFlags() and Material.SURF_COLLISION) {
                 i++
                 continue
-            }
-            // get max verts and edges
+            } // get max verts and edges
             model.maxVertices += surf.geometry!!.numVerts
             model.maxEdges += surf.geometry!!.numIndexes
             i++
@@ -7394,13 +7035,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         ClearHash(bounds)
         i = 0
         while (i < renderModel.NumSurfaces()) {
-            surf = renderModel.Surface(i)
-            // if this surface has no contents
+            surf = renderModel.Surface(i) // if this surface has no contents
             if (0 == surf!!.shader!!.GetContentFlags() and Material.CONTENTS_REMOVE_UTIL) {
                 i++
                 continue
-            }
-            // if the model has a collision surface and this surface is not a collision surface
+            } // if the model has a collision surface and this surface is not a collision surface
             if (collisionSurface && 0 == surf.shader!!.GetSurfaceFlags() and Material.SURF_COLLISION) {
                 i++
                 continue
@@ -7408,9 +7047,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             j = 0
             while (j < surf.geometry!!.numIndexes) {
                 w.Clear()
-                w.plusAssign(surf.geometry!!.verts!![surf.geometry!!.indexes!![j + 2]]!!.xyz)
-                w.plusAssign(surf.geometry!!.verts!![surf.geometry!!.indexes!![j + 1]]!!.xyz)
-                w.plusAssign(surf.geometry!!.verts!![surf.geometry!!.indexes!![j]]!!.xyz)
+                w.plusAssign(surf.geometry!!.verts!![surf.geometry!!.indexes!![j + 2]].xyz)
+                w.plusAssign(surf.geometry!!.verts!![surf.geometry!!.indexes!![j + 1]].xyz)
+                w.plusAssign(surf.geometry!!.verts!![surf.geometry!!.indexes!![j]].xyz)
                 w.GetPlane(plane)
                 plane.set(plane.unaryMinus())
                 PolygonFromWinding(model, w, plane, surf.shader!!, 1)
@@ -7451,13 +7090,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 p.checkcount = checkCount
                 if (trm.numPolys >= TraceModel.MAX_TRACEMODEL_POLYS) {
                     return false
-                }
-                // copy polygon properties
+                } // copy polygon properties
                 trm.polys[trm.numPolys].bounds.set(p.bounds)
                 trm.polys[trm.numPolys].normal.set(p.plane.Normal())
                 trm.polys[trm.numPolys].dist = p.plane.Dist()
-                trm.polys[trm.numPolys].numEdges = p.numEdges
-                // copy edge index
+                trm.polys[trm.numPolys].numEdges = p.numEdges // copy edge index
                 i = 0
                 while (i < p.numEdges) {
                     trm.polys[trm.numPolys].edges[i] = p.edges[i]
@@ -7538,8 +7175,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             trm.edges[i].v[0] = model.edges!![i].vertexNum[0]
             trm.edges[i].v[1] = model.edges!![i].vertexNum[1]
             i++
-        }
-        // minus one because the collision model accounts for the first unused edge
+        } // minus one because the collision model accounts for the first unused edge
         trm.numEdges = model.numEdges - 1
 
         // each edge should be used exactly twice
@@ -7566,8 +7202,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
 
         // assume convex
-        trm.isConvex = true
-        // check if really convex
+        trm.isConvex = true // check if really convex
         i = 0
         while (i < trm.numPolys) {
 
@@ -7598,8 +7233,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          Writing of collision model file
 
          ===============================================================================
-         */
-    // CollisionMap_files.cpp
+         */ // CollisionMap_files.cpp
     // writing
     /*
     ================
@@ -7763,8 +7397,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         var i: Int
         val polygonMemory: Int
         val brushMemory: Int
-        fp.WriteFloatString("collisionModel \"%s\" {\n", model.name)
-        // vertices
+        fp.WriteFloatString("collisionModel \"%s\" {\n", model.name) // vertices
         fp.WriteFloatString("\tvertices { /* numVertices = */ %d\n", model.numVertices)
         i = 0
         while (i < model.numVertices) {
@@ -7777,8 +7410,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             )
             i++
         }
-        fp.WriteFloatString("\t}\n")
-        // edges
+        fp.WriteFloatString("\t}\n") // edges
         fp.WriteFloatString("\tedges { /* numEdges = */ %d\n", model.numEdges)
         i = 0
         while (i < model.numEdges) {
@@ -7792,26 +7424,22 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             )
             i++
         }
-        fp.WriteFloatString("\t}\n")
-        // nodes
+        fp.WriteFloatString("\t}\n") // nodes
         fp.WriteFloatString("\tnodes {\n")
         WriteNodes(fp, model.node!!)
-        fp.WriteFloatString("\t}\n")
-        // polygons
+        fp.WriteFloatString("\t}\n") // polygons
         checkCount++
         polygonMemory = CountPolygonMemory(model.node!!)
         fp.WriteFloatString("\tpolygons /* polygonMemory = */ %d {\n", polygonMemory)
         checkCount++
         WritePolygons(fp, model.node!!)
-        fp.WriteFloatString("\t}\n")
-        // brushes
+        fp.WriteFloatString("\t}\n") // brushes
         checkCount++
         brushMemory = CountBrushMemory(model.node!!)
         fp.WriteFloatString("\tbrushes /* brushMemory = */ %d {\n", brushMemory)
         checkCount++
         WriteBrushes(fp, model.node!!)
-        fp.WriteFloatString("\t}\n")
-        // closing brace
+        fp.WriteFloatString("\t}\n") // closing brace
         fp.WriteFloatString("}\n")
     }
 
@@ -7826,8 +7454,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         val name: idStr
         name = idStr(filename)
         name.SetFileExtension(CM_FILE_EXT)
-        Common.common.Printf("writing %s\n", name.toString())
-        // _D3XP was saving to fs_cdpath
+        Common.common.Printf("writing %s\n", name.toString()) // _D3XP was saving to fs_cdpath
         fp = FileSystem_h.fileSystem.OpenFileWrite(name.toString(), "fs_devpath")
         if (null == fp) {
             Common.common.Warning(
@@ -7837,8 +7464,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
 
         // write file id and version
-        fp.WriteFloatString("%s \"%s\"\n\n", CM_FILEID, CM_FILEVERSION)
-        // write the map file crc
+        fp.WriteFloatString("%s \"%s\"\n\n", CM_FILEID, CM_FILEVERSION) // write the map file crc
         fp.WriteFloatString("%u\n\n", mapFileCRC)
 
         // write the collision models
@@ -7856,8 +7482,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          Loading of collision model file
 
          ===============================================================================
-         */
-    // loading
+         */ // loading
     /*
     ================
     idCollisionModelManagerLocal::ParseNodes
@@ -7950,8 +7575,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             model.polygonBlock!!.next = cm_polygonBlock_s()
         }
         src.ExpectTokenString("{")
-        while (!src.CheckTokenString("}")) {
-            // parse polygon
+        while (!src.CheckTokenString("}")) { // parse polygon
             numEdges = src.ParseInt()
             p = AllocPolygon(model, numEdges)
             p.numEdges = numEdges
@@ -7967,12 +7591,10 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             p.plane.SetDist(src.ParseFloat())
             src.Parse1DMatrix(3, p.bounds[0])
             src.Parse1DMatrix(3, p.bounds[1])
-            src.ExpectTokenType(Token.TT_STRING, 0, token)
-            // get material
+            src.ExpectTokenType(Token.TT_STRING, 0, token) // get material
             p.material = DeclManager.declManager.FindMaterial(token)
             p.contents = p.material!!.GetContentFlags()
-            p.checkcount = 0
-            // filter polygon into tree
+            p.checkcount = 0 // filter polygon into tree
             R_FilterPolygonIntoTree(model, model.node!!, null, p)
         }
     }
@@ -7994,8 +7616,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             model.brushBlock!!.next = cm_brushBlock_s()
         }
         src.ExpectTokenString("{")
-        while (!src.CheckTokenString("}")) {
-            // parse brush
+        while (!src.CheckTokenString("}")) { // parse brush
             numPlanes = src.ParseInt()
             b = AllocBrush(model, numPlanes)
             b.numPlanes = numPlanes
@@ -8018,8 +7639,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 b.contents = ContentsFromString(token.toString())
             }
             b.checkcount = 0
-            b.primitiveNum = 0
-            // filter brush into tree
+            b.primitiveNum = 0 // filter brush into tree
             R_FilterBrushIntoTree(model, model.node!!, null, b)
         }
     }
@@ -8038,8 +7658,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
         model = AllocModel()
         models!![numModels] = model
-        numModels++
-        // parse the file
+        numModels++ // parse the file
         src.ExpectTokenType(Token.TT_STRING, 0, token)
         model.name.set(token)
         src.ExpectTokenString("{")
@@ -8068,15 +7687,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 continue
             }
             src.Error("ParseCollisionModel: bad token \"%s\"", token.toString())
-        }
-        // calculate edge normals
+        } // calculate edge normals
         checkCount++
-        CalculateEdgeNormals(model, model.node!!)
-        // get model bounds from brush and polygon bounds
-        CM_GetNodeBounds(model.bounds, model.node!!)
-        // get model contents
-        model.contents = CM_GetNodeContents(model.node!!)
-        // total memory used by this model
+        CalculateEdgeNormals(model, model.node!!) // get model bounds from brush and polygon bounds
+        CM_GetNodeBounds(model.bounds, model.node!!) // get model contents
+        model.contents = CM_GetNodeContents(model.node!!) // total memory used by this model
         model.usedMemory =
             (model.numVertices * cm_vertex_s.BYTES + model.numEdges * cm_edge_s.BYTES + model.polygonMemory + model.brushMemory + model.numNodes * cm_node_s.BYTES + model.numPolygonRefs * cm_polygonRef_s.BYTES + model.numBrushRefs * cm_brushRef_s.BYTES)
         return true
@@ -8118,8 +7733,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
         crc = token.GetUnsignedLongValue()
         if (mapFileCRC != 0L && crc != mapFileCRC) {
-            Common.common.Printf("%s is out of date\n", fileName)
-            // Removed non-C++ debug warning about CRC values
+            Common.common.Printf("%s is out of date\n", fileName) // Removed non-C++ debug warning about CRC values
             src = null
             return false
         }
@@ -8331,8 +7945,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             pref = currentNode.polygons
             while (pref != null) {
                 p = pref.p!!
-                if (radius != 0.0f) {
-                    // polygon bounds should overlap with trace bounds
+                if (radius != 0.0f) { // polygon bounds should overlap with trace bounds
                     i = 0
                     while (i < 3) {
                         if (p.bounds[0][i] > viewOrigin[i] + radius) {
@@ -8381,8 +7994,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
              Collision detection for rotational motion
 
              ===============================================================================
-             */
-        // epsilon for round-off errors in epsilon calculations
+             */ // epsilon for round-off errors in epsilon calculations
         const val CM_PL_RANGE_EPSILON = 1e-4f
         const val CONTINUOUS_EPSILON = 0.005f
         const val NORMAL_EPSILON = 0.01f

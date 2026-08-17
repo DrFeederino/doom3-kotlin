@@ -15,10 +15,13 @@ import neo.Sound.snd_system.idSoundSystemLocal.Companion.useEFXReverb
 import neo.Sound.sound.SCHANNEL_ANY
 import neo.Sound.sound.idSoundEmitter
 import neo.Sound.sound.idSoundWorld
-import neo.framework.*
+import neo.framework.Common
+import neo.framework.DeclManager
 import neo.framework.DemoFile.demoSystem_t
 import neo.framework.DemoFile.idDemoFile
+import neo.framework.FileSystem_h
 import neo.framework.File_h.idFile
+import neo.framework.Session
 import neo.idlib.BV.idBounds
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
@@ -162,8 +165,7 @@ class snd_world {
 
          this is called from the main thread
          ===================
-         */
-        // get a new emitter that can play sounds in this world
+         */ // get a new emitter that can play sounds in this world
         override fun AllocSoundEmitter(): idSoundEmitter {
             val emitter = AllocLocalSoundEmitter()
             if (idSoundSystemLocal.s_showStartSound.GetInteger() != 0) {
@@ -192,8 +194,7 @@ class snd_world {
 
          this is called from the main thread
          ===================
-         */
-        // query data from all emitters in the world
+         */ // query data from all emitters in the world
         override fun CurrentShakeAmplitudeForPosition(time: Int, listererPosition: idVec3): Float {
             var amp = 0.0f
             val localTime: Int
@@ -217,8 +218,7 @@ class snd_world {
 
          this is called by the main thread
          ===================
-         */
-        // where is the camera/microphone
+         */ // where is the camera/microphone
         // listenerId allows listener-private sounds to be added
         override fun PlaceListener(origin: idVec3, axis: idMat3, listenerId: Int, gameTime: Int, areaName: idStr) {
             val current44kHzTime: Int
@@ -247,11 +247,9 @@ class snd_world {
                 OffsetSoundTime((-(gameTime - gameMsec) * 0.001f * 44100.0f).toInt())
             }
             gameMsec = gameTime
-            game44kHz = if (fpa[0] != null) {
-                // exactly 30 fps so the wave file can be used for exact video frames
+            game44kHz = if (fpa[0] != null) { // exactly 30 fps so the wave file can be used for exact video frames
                 idMath.FtoiFast(gameMsec * (1000.0f / 60.0f / 16.0f) * 0.001f * 44100.0f)
-            } else {
-                // the normal 16 msec / frame
+            } else { // the normal 16 msec / frame
                 idMath.FtoiFast(gameMsec * 0.001f * 44100.0f)
             }
             listenerPrivateId = listenerId
@@ -287,14 +285,11 @@ class snd_world {
             val length44kHz = snd_system.soundSystemLocal.MillisecondsToSamples((over * 1000).toInt())
 
             // if it is already fading to this volume at this rate, don't change it
-            if (fade.fadeEndVolume == to
-                && fade.fadeEnd44kHz - fade.fadeStart44kHz == length44kHz
-            ) {
+            if (fade.fadeEndVolume == to && fade.fadeEnd44kHz - fade.fadeStart44kHz == length44kHz) {
                 return
             }
             val start44kHz: Int
-            start44kHz = if (fpa[0] != null) {
-                // if we are recording an AVI demo, don't use hardware time
+            start44kHz = if (fpa[0] != null) { // if we are recording an AVI demo, don't use hardware time
                 lastAVI44kHz + MIXBUFFER_SAMPLES
             } else {
                 snd_system.soundSystemLocal.GetCurrent44kHzTime() + MIXBUFFER_SAMPLES
@@ -341,8 +336,7 @@ class snd_world {
 
          this is called from the main thread
          ===================
-         */
-        // read a sound command from a demo file
+         */ // read a sound command from a demo file
         override fun ProcessDemoCommand(readDemo: idDemoFile) {
             val index: Int
             var def: idSoundEmitterLocal?
@@ -355,8 +349,7 @@ class snd_world {
             }
             val dc = soundDemoCommand_t.values()[_dc]
             when (dc) {
-                soundDemoCommand_t.SCMD_STATE -> {
-                    // we need to protect this from the async thread
+                soundDemoCommand_t.SCMD_STATE -> { // we need to protect this from the async thread
                     // other instances of calling idSoundWorldLocal::ReadFromSaveGame do this while the sound code is muted
                     // setting muted and going right in may not be good enough here, as we async thread may already be in an async tick (in which case we could still race to it)
                     Sys_EnterCriticalSection()
@@ -382,8 +375,7 @@ class snd_world {
                     if (index < 1 || index > emitters.Num()) {
                         Common.common.Error("idSoundWorldLocal::ProcessDemoCommand: bad emitter number")
                     }
-                    if (index == emitters.Num()) {
-                        // append a brand new one
+                    if (index == emitters.Num()) { // append a brand new one
                         def = idSoundEmitterLocal()
                         emitters.Append(def)
                     }
@@ -479,10 +471,7 @@ class snd_world {
             }
             val diversity = rnd.RandomFloat()
             localSound!!.StartSound(
-                shader,
-                if (channel == -1) sound.SCHANNEL_ONE else channel,
-                diversity,
-                snd_shader.SSF_GLOBAL
+                shader, if (channel == -1) sound.SCHANNEL_ONE else channel, diversity, snd_shader.SSF_GLOBAL
             )
 
             // in case we are at the console without a game doing updates, force an update
@@ -537,8 +526,7 @@ class snd_world {
 
          this is called by the main thread
          ===================
-         */
-        // avidump
+         */ // avidump
         override fun AVIOpen(path: String, name: String) {
             aviDemoPath.set(path)
             aviDemoName.set(name)
@@ -575,8 +563,7 @@ class snd_world {
                 }
                 i++
             }
-            if (idSoundSystemLocal.s_numberOfSpeakers.GetInteger() == 2) {
-                // convert it to a wave file
+            if (idSoundSystemLocal.s_numberOfSpeakers.GetInteger() == 2) { // convert it to a wave file
                 val rL: idFile?
                 val lL: idFile?
                 val wO: idFile?
@@ -668,8 +655,7 @@ class snd_world {
             while (i < emitters.Num()) {
                 val def = emitters[i]
                 if (def.removeStatus != snd_emitter.REMOVE_STATUS_ALIVE) {
-                    val skip = -1
-                    //                    savefile.Write(skip, sizeof(skip));
+                    val skip = -1 //                    savefile.Write(skip, sizeof(skip));
                     savefile.WriteInt(skip)
                     i++
                     continue
@@ -804,14 +790,12 @@ class snd_world {
                         Common.common.Error("idSoundWorldLocal::ReadFromSaveGame: channel > SOUND_MAX_CHANNELS")
                     }
                     val chan = def.channels[channel]
-                    if (chan.decoder == null) {
-                        // The pointer in the save file is not valid, so we grab a new one
+                    if (chan.decoder == null) { // The pointer in the save file is not valid, so we grab a new one
                         chan.decoder = idSampleDecoder.Alloc()
                     }
                     savefile.ReadString(soundShader)
                     chan.soundShader = DeclManager.declManager.FindSound(soundShader)
-                    savefile.ReadString(soundShader)
-                    // load savegames with s_noSound 1
+                    savefile.ReadString(soundShader) // load savegames with s_noSound 1
                     if (snd_system.soundSystemLocal.soundCache != null) {
                         chan.leadinSample = snd_system.soundSystemLocal.soundCache!!.FindSound(soundShader, false)
                     } else {
@@ -823,8 +807,8 @@ class snd_world {
 
                     // make sure we start up the hardware voice if needed
                     chan.triggered = chan.triggerState
-                    chan.openalStreamingOffset = currentSoundTime - chan.trigger44kHzTime
-                    // DG: round up openalStreamingOffset to multiple of 8, so it still has an even number
+                    chan.openalStreamingOffset =
+                        currentSoundTime - chan.trigger44kHzTime // DG: round up openalStreamingOffset to multiple of 8, so it still has an even number
                     //  if we calculate "how many 11kHz stereo samples do we need to decode" and don't
                     //  run into a "I need one more sample apparently, so decode 0 stereo samples"
                     //  situation that could cause an endless loop.. (44kHz/11kHz = 4; *2 for stereo => 8)
@@ -955,7 +939,7 @@ class snd_world {
             i = 0
             while (i < emitters.Num()) {
                 if (emitters[i] != null) {
-                    emitters[i]!!.Clear() // C++ delete calls destructor -> Clear() -> ALStop() on all channels
+                    emitters[i].Clear() // C++ delete calls destructor -> Clear() -> ALStop() on all channels
                     emitters[i] = idSoundEmitterLocal()
                 }
                 i++
@@ -1020,21 +1004,24 @@ class snd_world {
                         listenerFilters[0] = EXTEfx.AL_FILTER_NULL
                         listenerFilters[1] = EXTEfx.AL_FILTER_NULL
                     } else {
-                        EXTEfx.alFilteri(listenerFilters[0], EXTEfx.AL_FILTER_TYPE, EXTEfx.AL_FILTER_LOWPASS)
-                        // original EAX occlusion value was -1150
+                        EXTEfx.alFilteri(
+                            listenerFilters[0], EXTEfx.AL_FILTER_TYPE, EXTEfx.AL_FILTER_LOWPASS
+                        ) // original EAX occlusion value was -1150
                         // pow(10.0, (-1150*0.25*1.0)/2000.0)
-                        EXTEfx.alFilterf(listenerFilters[0], EXTEfx.AL_LOWPASS_GAIN, 0.718208f)
-                        // pow(10.0, (-1150*1.0)/2000.0)
+                        EXTEfx.alFilterf(
+                            listenerFilters[0], EXTEfx.AL_LOWPASS_GAIN, 0.718208f
+                        ) // pow(10.0, (-1150*1.0)/2000.0)
                         EXTEfx.alFilterf(listenerFilters[0], EXTEfx.AL_LOWPASS_GAINHF, 0.266073f)
 
-                        EXTEfx.alFilteri(listenerFilters[1], EXTEfx.AL_FILTER_TYPE, EXTEfx.AL_FILTER_LOWPASS)
-                        // original EAX occlusion value was -1150
+                        EXTEfx.alFilteri(
+                            listenerFilters[1], EXTEfx.AL_FILTER_TYPE, EXTEfx.AL_FILTER_LOWPASS
+                        ) // original EAX occlusion value was -1150
                         // pow(10.0, (-1150*(0.25+1.5-1.0))/2000.0)
-                        EXTEfx.alFilterf(listenerFilters[1], EXTEfx.AL_LOWPASS_GAIN, 0.370467f)
-                        // pow(10.0, (-1150*1.5)/2000.0)
+                        EXTEfx.alFilterf(
+                            listenerFilters[1], EXTEfx.AL_LOWPASS_GAIN, 0.370467f
+                        ) // pow(10.0, (-1150*1.5)/2000.0)
                         EXTEfx.alFilterf(listenerFilters[1], EXTEfx.AL_LOWPASS_GAINHF, 0.137246f)
-                    }
-                    // allow reducing the gain effect globally via s_alReverbGain CVar
+                    } // allow reducing the gain effect globally via s_alReverbGain CVar
                     listenerSlotReverbGain = idSoundSystemLocal.s_alReverbGain.GetFloat()
                     EXTEfx.alAuxiliaryEffectSlotf(listenerSlot, EXTEfx.AL_EFFECTSLOT_GAIN, listenerSlotReverbGain)
                 }
@@ -1127,11 +1114,7 @@ class snd_world {
                         val textPos = idVec3(def.origin)
                         textPos.minusAssign(2, 8.0f)
                         rw!!.DrawText(
-                            Str.va("%d", def.index),
-                            textPos,
-                            0.1f,
-                            idVec4(1.0f, 0.0f, 0.0f, 1.0f),
-                            listenerAxis
+                            Str.va("%d", def.index), textPos, 0.1f, idVec4(1.0f, 0.0f, 0.0f, 1.0f), listenerAxis
                         )
                         textPos.plusAssign(2, 8.0f)
 
@@ -1146,7 +1129,7 @@ class snd_world {
                                 continue
                             }
 
-//					char	[]text = new char[1024];
+                            //					char	[]text = new char[1024];
                             var text: String
                             val min = chan.parms!!.minDistance
                             val max = chan.parms!!.maxDistance
@@ -1236,8 +1219,7 @@ class snd_world {
                 }
                 i++
             }
-            if (index == -1) {
-                // append a brand new one
+            if (index == -1) { // append a brand new one
                 def = idSoundEmitterLocal()
 
                 // we need to protect this from the async thread
@@ -1396,16 +1378,14 @@ class snd_world {
             val spatializedOriginInMeters = channelSpatializedOriginInMeters
             if (!global) {
                 val dlen: Float
-                dlen = if (noOcclusion) {
-                    // use the real origin and distance
+                dlen = if (noOcclusion) { // use the real origin and distance
                     spatializedOriginInMeters.set(
                         sound.origin.x * snd_shader.DOOM_TO_METERS,
                         sound.origin.y * snd_shader.DOOM_TO_METERS,
                         sound.origin.z * snd_shader.DOOM_TO_METERS
                     )
                     sound.realDistance
-                } else {
-                    // use the possibly portal-occluded origin and distance
+                } else { // use the possibly portal-occluded origin and distance
                     spatializedOriginInMeters.set(
                         sound.spatializedOrigin.x * snd_shader.DOOM_TO_METERS,
                         sound.spatializedOrigin.y * snd_shader.DOOM_TO_METERS,
@@ -1423,8 +1403,7 @@ class snd_world {
                         frac *= frac
                     }
                     volume *= frac
-                } else if (minD > 0.0f) {
-                    // we tweak the spatialization bias when you are inside the minDistance
+                } else if (minD > 0.0f) { // we tweak the spatialization bias when you are inside the minDistance
                     spatialize = dlen / minD
                 }
             }
@@ -1468,9 +1447,8 @@ class snd_world {
             //
             // fetch the sound from the cache as 44kHz, 16 bit samples
             //
-            val offset = current44kHz - chan.trigger44kHzTime
-            //            float[] inputSamples = new float[MIXBUFFER_SAMPLES * 2 + 16];
-//            float[] alignedInputSamples = (float[]) ((((int) inputSamples) + 15) & ~15);
+            val offset =
+                current44kHz - chan.trigger44kHzTime //            float[] inputSamples = new float[MIXBUFFER_SAMPLES * 2 + 16]; //            float[] alignedInputSamples = (float[]) ((((int) inputSamples) + 15) & ~15);
             val alignedInputSamples = mixInputSamples
 
             // allocate and initialize hardware source
@@ -1504,8 +1482,7 @@ class snd_world {
                             -spatializedOriginInMeters.x.toFloat()
                         )
                         AL10.alSourcef(chan.openalSource, AL10.AL_GAIN, min(volume.toFloat(), 1.0f))
-                    }
-                    // FIX: dhewm3 — looping sounds with a leadin can't use HW buffer + AL_LOOPING
+                    } // FIX: dhewm3 — looping sounds with a leadin can't use HW buffer + AL_LOOPING
                     // because we need to switch from leadin to the looped sound
                     // See https://github.com/dhewm/dhewm3/issues/291
                     val haveLeadin = chan.soundShader!!.numLeadins > 0
@@ -1527,11 +1504,7 @@ class snd_world {
                         if (enviroSuitActive) {
                             AL10.alSourcei(chan.openalSource, EXTEfx.AL_DIRECT_FILTER, listenerFilters[0])
                             alSource3i(
-                                chan.openalSource,
-                                EXTEfx.AL_AUXILIARY_SEND_FILTER,
-                                listenerSlot,
-                                0,
-                                listenerFilters[1]
+                                chan.openalSource, EXTEfx.AL_AUXILIARY_SEND_FILTER, listenerSlot, 0, listenerFilters[1]
                             )
                         } else {
                             AL10.alSourcei(chan.openalSource, EXTEfx.AL_DIRECT_FILTER, EXTEfx.AL_FILTER_NULL)
@@ -1545,8 +1518,7 @@ class snd_world {
                         }
                     }
 
-                    if (!looping && chan.leadinSample!!.hardwareBuffer || looping && !haveLeadin && chan.soundShader!!.entries[0]!!.hardwareBuffer) {
-                        // handle uncompressed (non streaming) single shot and looping sounds
+                    if (!looping && chan.leadinSample!!.hardwareBuffer || looping && !haveLeadin && chan.soundShader!!.entries[0]!!.hardwareBuffer) { // handle uncompressed (non streaming) single shot and looping sounds
                         if (chan.triggered) {
                             AL10.alSourcei(
                                 chan.openalSource,
@@ -1572,8 +1544,7 @@ class snd_world {
                             finishedbuffers = 3
                         } else {
                             finishedbuffers = AL10.alGetSourcei(
-                                chan.openalSource,
-                                AL10.AL_BUFFERS_PROCESSED
+                                chan.openalSource, AL10.AL_BUFFERS_PROCESSED
                             )
                             for (i in 0 until finishedbuffers) { //jake2
                                 buffers[i] = AL10.alSourceUnqueueBuffers(chan.openalSource)
@@ -1587,9 +1558,7 @@ class snd_world {
                         while (j < finishedbuffers) {
                             mixInputSamplesBuffer.clear()
                             chan.GatherChannelSamples(
-                                chan.openalStreamingOffset * sample.objectInfo.nChannels,
-                                length,
-                                mixInputSamplesBuffer
+                                chan.openalStreamingOffset * sample.objectInfo.nChannels, length, mixInputSamplesBuffer
                             )
                             streamingSampleBytes.clear()
                             streamingSampleBytes.limit(length * java.lang.Short.BYTES)
@@ -1627,8 +1596,7 @@ class snd_world {
                 if (slowmoActive && !chan.disallowSlow) {
                     val slow = sound.GetSlowChannel(chan)
                     slow.AttachSoundChannel(chan)
-                    if (sample.objectInfo.nChannels == 2) {
-                        // need to add a stereo path, but very few samples go through this
+                    if (sample.objectInfo.nChannels == 2) { // need to add a stereo path, but very few samples go through this
                         alignedInputSamples.fill(0.0f, 0, MIXBUFFER_SAMPLES * 2)
                     } else {
                         slow.GatherChannelSamples(offset, MIXBUFFER_SAMPLES, alignedInputSamples)
@@ -1638,13 +1606,10 @@ class snd_world {
                     sound.ResetSlowChannel(chan)
 
                     // if we are getting a stereo sample adjust accordingly
-                    if (sample.objectInfo.nChannels == 2) {
-                        // we should probably check to make sure any looping is also to a stereo sample...
+                    if (sample.objectInfo.nChannels == 2) { // we should probably check to make sure any looping is also to a stereo sample...
                         mixInputSamplesBuffer.clear()
                         chan.GatherChannelSamples(
-                            offset * 2,
-                            MIXBUFFER_SAMPLES * 2,
-                            mixInputSamplesBuffer
+                            offset * 2, MIXBUFFER_SAMPLES * 2, mixInputSamplesBuffer
                         )
                     } else {
                         mixInputSamplesBuffer.clear()
@@ -1656,8 +1621,7 @@ class snd_world {
                 // work out the left / right ear values
                 //
                 val ears = mixEars
-                if (global || omni) {
-                    // same for all speakers
+                if (global || omni) { // same for all speakers
                     for (i in 0..5) {
                         ears[i] = idSoundSystemLocal.s_globalFraction.GetFloat() * volume
                     }
@@ -1672,8 +1636,7 @@ class snd_world {
                 // if the mask is 0, it really means do every channel
                 if (0 == mask) {
                     mask = 255
-                }
-                // cleared mask bits set the mix volume to zero
+                } // cleared mask bits set the mix volume to zero
                 for (i in 0..5) {
                     if (0 == mask and (1 shl i)) {
                         ears[i] = 0.0f
@@ -1703,37 +1666,21 @@ class snd_world {
                 if (numSpeakers == 6) {
                     if (sample.objectInfo.nChannels == 1) {
                         SIMDProcessor!!.MixSoundSixSpeakerMono(
-                            finalMixBuffer,
-                            alignedInputSamples,
-                            MIXBUFFER_SAMPLES,
-                            chan.lastV,
-                            ears
+                            finalMixBuffer, alignedInputSamples, MIXBUFFER_SAMPLES, chan.lastV, ears
                         )
                     } else {
                         SIMDProcessor!!.MixSoundSixSpeakerStereo(
-                            finalMixBuffer,
-                            alignedInputSamples,
-                            MIXBUFFER_SAMPLES,
-                            chan.lastV,
-                            ears
+                            finalMixBuffer, alignedInputSamples, MIXBUFFER_SAMPLES, chan.lastV, ears
                         )
                     }
                 } else {
                     if (sample.objectInfo.nChannels == 1) {
                         SIMDProcessor!!.MixSoundTwoSpeakerMono(
-                            finalMixBuffer,
-                            alignedInputSamples,
-                            MIXBUFFER_SAMPLES,
-                            chan.lastV,
-                            ears
+                            finalMixBuffer, alignedInputSamples, MIXBUFFER_SAMPLES, chan.lastV, ears
                         )
                     } else {
                         SIMDProcessor!!.MixSoundTwoSpeakerStereo(
-                            finalMixBuffer,
-                            alignedInputSamples,
-                            MIXBUFFER_SAMPLES,
-                            chan.lastV,
-                            ears
+                            finalMixBuffer, alignedInputSamples, MIXBUFFER_SAMPLES, chan.lastV, ears
                         )
                     }
                 }
@@ -1820,8 +1767,7 @@ class snd_world {
             // debugging option to mute all but a single soundEmitter
             if (idSoundSystemLocal.s_singleEmitter.GetInteger() > 0 && idSoundSystemLocal.s_singleEmitter.GetInteger() < emitters.Num()) {
                 sound = emitters[idSoundSystemLocal.s_singleEmitter.GetInteger()]
-                if (sound != null && sound.playing) {
-                    // run through all the channels
+                if (sound != null && sound.playing) { // run through all the channels
                     j = 0
                     while (j < snd_local.SOUND_MAX_CHANNELS) {
                         val chan = sound.channels[j]
@@ -1844,13 +1790,11 @@ class snd_world {
                 if (null == sound) {
                     i++
                     continue
-                }
-                // if no channels are active, do nothing
+                } // if no channels are active, do nothing
                 if (!sound.playing) {
                     i++
                     continue
-                }
-                // run through all the channels
+                } // run through all the channels
                 j = 0
                 while (j < snd_local.SOUND_MAX_CHANNELS) {
                     val chan = sound.channels[j]
@@ -1865,8 +1809,7 @@ class snd_world {
                     j++
                 }
                 i++
-            }
-            // TODO port to OpenAL
+            } // TODO port to OpenAL
             if (false && enviroSuitActive) {
                 snd_system.soundSystemLocal.DoEnviroSuit(finalMixBuffer, MIXBUFFER_SAMPLES, numSpeakers)
             }
@@ -1902,8 +1845,7 @@ class snd_world {
                     } else {
                         outD.putShort(idMath.FtoiFast(s).toShort())
                     }
-                }
-                // write to file
+                } // write to file
                 fpa[i]!!.Write(outD) //, MIXBUFFER_SAMPLES * sizeof(short));
             }
             lastAVI44kHz += MIXBUFFER_SAMPLES
@@ -1918,8 +1860,7 @@ class snd_world {
             soundOrigin: idVec3,
             def: idSoundEmitterLocal
         ) {
-            if (dist >= def.distance) {
-                // we can't possibly hear the sound through this chain of portals
+            if (dist >= def.distance) { // we can't possibly hear the sound through this chain of portals
                 return
             }
             if (soundArea == listenerArea) {
@@ -1930,8 +1871,7 @@ class snd_world {
                 }
                 return
             }
-            if (stackDepth == MAX_PORTAL_TRACE_DEPTH) {
-                // don't spend too much time doing these calculations in big maps
+            if (stackDepth == MAX_PORTAL_TRACE_DEPTH) { // don't spend too much time doing these calculations in big maps
                 return
             }
             val newStack = soundPortalTrace_s()
@@ -1943,9 +1883,7 @@ class snd_world {
                 var occlusionDistance = 0.0f
 
                 // air blocking windows will block sound like closed doors
-                if (0 != re.blockingBits and ((portalConnection_t.PS_BLOCK_VIEW).ordinal or portalConnection_t.PS_BLOCK_AIR.ordinal)
-                ) {
-                    // we could just completely cut sound off, but reducing the volume works better
+                if (0 != re.blockingBits and ((portalConnection_t.PS_BLOCK_VIEW).ordinal or portalConnection_t.PS_BLOCK_AIR.ordinal)) { // we could just completely cut sound off, but reducing the volume works better
                     // continue;
                     occlusionDistance = idSoundSystemLocal.s_doorDistanceAdd.GetFloat()
                 }
@@ -1970,7 +1908,7 @@ class snd_world {
                 }
 
                 // pick a point on the portal to serve as our virtual sound origin
-// #if 1
+                // #if 1
                 val source = idVec3()
                 val pl = idPlane()
                 re.w!!.GetPlane(pl)
@@ -1989,8 +1927,7 @@ class snd_world {
                         edgeNormal.Cross(pl.Normal(), edgeDir)
                         val fromVert = idVec3(source.minus(re.w!![j].ToVec3()))
                         var d = edgeNormal.times(fromVert)
-                        if (d > 0) {
-                            // move it in
+                        if (d > 0) { // move it in
                             val div = edgeNormal.Normalize()
                             d /= div
                             source.minusAssign(edgeNormal.times(d))
@@ -2004,11 +1941,8 @@ class snd_world {
         }
 
         fun FindAmplitude(
-            sound: idSoundEmitterLocal,
-            localTime: Int,
-            listenerPosition: idVec3?,    /*s_channelType*/
-            channel: Int,
-            shakesOnly: Boolean
+            sound: idSoundEmitterLocal, localTime: Int, listenerPosition: idVec3?,    /*s_channelType*/
+            channel: Int, shakesOnly: Boolean
         ): Float {
             var i: Int
             var j: Int
@@ -2016,14 +1950,12 @@ class snd_world {
             var volume: Float
             var activeChannelCount: Int
             val sourceBuffer = FloatArray(AMPLITUDE_SAMPLES)
-            val sumBuffer = FloatArray(AMPLITUDE_SAMPLES)
-            // work out the distance from the listener to the emitter
+            val sumBuffer = FloatArray(AMPLITUDE_SAMPLES) // work out the distance from the listener to the emitter
             var dlen: Float
             if (!sound.playing) {
                 return 0.0f
             }
-            if (listenerPosition != null) {
-                // this doesn't do the portal spatialization
+            if (listenerPosition != null) { // this doesn't do the portal spatialization
                 val dist = idVec3(sound.origin - listenerPosition)
                 dlen = dist.Length()
                 dlen *= snd_shader.DOOM_TO_METERS
@@ -2056,8 +1988,7 @@ class snd_world {
                 //
                 // calculate volume
                 //
-                if (null == listenerPosition) {
-                    // just look at the raw wav data for light shader evaluation
+                if (null == listenerPosition) { // just look at the raw wav data for light shader evaluation
                     volume = 1.0f
                 } else {
                     volume = parms.volume
@@ -2065,8 +1996,7 @@ class snd_world {
                     if (shakesOnly) {
                         volume *= shakes
                     }
-                    if (listenerPosition != null && 0 == parms.soundShaderFlags and snd_shader.SSF_GLOBAL) {
-                        // check for overrides
+                    if (listenerPosition != null && 0 == parms.soundShaderFlags and snd_shader.SSF_GLOBAL) { // check for overrides
                         val maxd = parms.maxDistance
                         val mind = parms.minDistance
                         if (dlen >= maxd) {
@@ -2089,8 +2019,7 @@ class snd_world {
                 // fetch the sound from the cache
                 // this doesn't handle stereo samples correctly...
                 //
-                if (null == listenerPosition && (chan.parms!!.soundShaderFlags and snd_shader.SSF_NO_FLICKER) != 0) {
-                    // the NO_FLICKER option is to allow a light to still play a sound, but
+                if (null == listenerPosition && (chan.parms!!.soundShaderFlags and snd_shader.SSF_NO_FLICKER) != 0) { // the NO_FLICKER option is to allow a light to still play a sound, but
                     // not have it effect the intensity
                     j = 0
                     while (j < AMPLITUDE_SAMPLES) {
@@ -2108,8 +2037,8 @@ class snd_world {
                     val size = sample.LengthIn44kHzSamples()
                     val plitudeData = sample.amplitudeData
                     if (plitudeData != null) {
-                        val amplitudeData = plitudeData.asShortBuffer()
-                        // when the amplitudeData is present use that fill a dummy sourceBuffer
+                        val amplitudeData =
+                            plitudeData.asShortBuffer() // when the amplitudeData is present use that fill a dummy sourceBuffer
                         // this is to allow for amplitude based effect on hardware audio solutions
                         if (looping) {
                             offset %= size
@@ -2122,21 +2051,18 @@ class snd_world {
                                 j++
                             }
                         }
-                    } else {
-                        // get actual sample data
+                    } else { // get actual sample data
                         chan.GatherChannelSamples(offset, AMPLITUDE_SAMPLES, FloatBuffer.wrap(sourceBuffer))
                     }
                 }
                 activeChannelCount++
-                if (activeChannelCount == 1) {
-                    // store to the buffer
+                if (activeChannelCount == 1) { // store to the buffer
                     j = 0
                     while (j < AMPLITUDE_SAMPLES) {
                         sumBuffer[j] = volume * sourceBuffer[j]
                         j++
                     }
-                } else {
-                    // add to the buffer
+                } else { // add to the buffer
                     j = 0
                     while (j < AMPLITUDE_SAMPLES) {
                         sumBuffer[j] += volume * sourceBuffer[j]

@@ -28,8 +28,7 @@ class Force_Spring {
      Spring force
 
      ===============================================================================
-     */
-    /*
+     *//*
     ================
     idForce_Spring::idForce_Spring
     ================
@@ -83,15 +82,13 @@ class Force_Spring {
             restLength = savefile.ReadFloat()
             maxLength = savefile.ReadFloat()
             pullEntity1 = savefile.ReadBool()
-        }
-        // ivan end
+        } // ivan end
 
         /*
         ================
         idForce_Spring::InitSpring
         ================
-        */
-        // initialize the spring
+        */ // initialize the spring
         fun InitSpring(
             Kstretch: Float,
             Kcompress: Float,
@@ -112,8 +109,7 @@ class Force_Spring {
         ================
         idForce_Spring::SetPosition
         ================
-        */
-        // set the entities and positions on these entities the spring is attached to
+        */ // set the entities and positions on these entities the spring is attached to
         fun SetPosition(physics1: idPhysics?, id1: Int, p1: idVec3, physics2: idPhysics?, id2: Int, p2: idVec3) {
             this.physics1 = physics1
             this.id1 = id1
@@ -127,8 +123,7 @@ class Force_Spring {
         ================
         idForce_Spring::Evaluate
         ================
-        */
-        // common force interface
+        */ // common force interface
         override fun Evaluate(time: Int) {
             var length: Float
             val axis = idMat3()

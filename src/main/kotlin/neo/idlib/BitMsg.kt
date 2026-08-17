@@ -34,8 +34,8 @@ object BitMsg {
 
      ===============================================================================
      */
-    class idBitMsg//	writeData = null;
-//	readData = null;
+    class idBitMsg //	writeData = null;
+    //	readData = null;
     //
     //
     {
@@ -225,8 +225,7 @@ object BitMsg {
 
          If the number of bits is negative a sign is included.
          ================
-         */
-        // write the specified number of bits
+         */ // write the specified number of bits
         fun WriteBits(value: Int, numBits: Int) {
             var value = value
             var numBits = numBits
@@ -545,8 +544,7 @@ object BitMsg {
 
          If the number of bits is negative a sign is included.
          ================
-         */
-        // read the specified number of bits
+         */ // read the specified number of bits
         @Throws(idException::class)
         fun ReadBits(numBits: Int): Int {
             var numBits = numBits
@@ -663,8 +661,7 @@ object BitMsg {
                 c = ReadByte().toInt()
                 if (c <= 0 || c >= 255) {
                     break
-                }
-                // translate all fmt spec to avoid crash bugs in string routines
+                } // translate all fmt spec to avoid crash bugs in string routines
                 if (c == '%'.code) {
                     c = '.'.code
                 }
@@ -1267,8 +1264,7 @@ object BitMsg {
                 val baseData = ByteBuffer.allocate(MAX_DATA_BUFFER)
                 assert(length < MAX_DATA_BUFFER)
                 base!!.ReadData(baseData, length)
-                if (null == readDelta || readDelta!!.ReadBits(1) == 0) {
-//			memcpy( data, baseData, length );
+                if (null == readDelta || readDelta!!.ReadBits(1) == 0) { //			memcpy( data, baseData, length );
                     data.put(data) //.array(), 0, length);
                 } else {
                     readDelta!!.ReadData(data, length)

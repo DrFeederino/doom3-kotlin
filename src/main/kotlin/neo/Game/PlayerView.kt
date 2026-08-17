@@ -52,8 +52,7 @@ object PlayerView {
      Player view.
 
      ===============================================================================
-     */
-    // screenBlob_t is for the on-screen damage claw marks, etc
+     */ // screenBlob_t is for the on-screen damage claw marks, etc
     class screenBlob_t {
         var driftAmount = 0.0f
         var finishTime = 0
@@ -110,8 +109,7 @@ object PlayerView {
         private var alpha: Float = 0f
         private var msec: Int = 1000
 
-        fun SetTriggerState(active: Boolean): Boolean {
-            // handle on/off states
+        fun SetTriggerState(active: Boolean): Boolean { // handle on/off states
             if (active && state == FX_STATE_OFF) {
                 state = FX_STATE_RAMPUP
                 time = Game_local.gameLocal.slow.time + msec
@@ -1070,12 +1068,10 @@ object PlayerView {
          ==============
          */
         fun DamageImpulse(localKickDir: idVec3, damageDef: idDict) {
-            if (SysCvar.g_hitEffect.GetBool()) {
-                //
+            if (SysCvar.g_hitEffect.GetBool()) { //
                 // double vision effect
                 //
-                if (lastDamageTime > 0.0f && SEC2MS(lastDamageTime) + IMPULSE_DELAY > Game_local.gameLocal.time) {
-                    // keep shotgun from obliterating the view
+                if (lastDamageTime > 0.0f && SEC2MS(lastDamageTime) + IMPULSE_DELAY > Game_local.gameLocal.time) { // keep shotgun from obliterating the view
                     return
                 }
                 val dvTime = damageDef.GetFloat("dv_time")
@@ -1083,8 +1079,7 @@ object PlayerView {
                     if (dvFinishTime < Game_local.gameLocal.time) {
                         dvFinishTime = Game_local.gameLocal.time
                     }
-                    dvFinishTime += (SysCvar.g_dvTime.GetFloat() * dvTime).toInt()
-                    // don't let it add up too much in god mode
+                    dvFinishTime += (SysCvar.g_dvTime.GetFloat() * dvTime).toInt() // don't let it add up too much in god mode
                     if (dvFinishTime > Game_local.gameLocal.time + 5000) {
                         dvFinishTime = Game_local.gameLocal.time + 5000
                     }
@@ -1153,8 +1148,7 @@ object PlayerView {
          */
         fun WeaponFireFeedback(weaponDef: idDict) {
             val recoilTime: Int
-            recoilTime = weaponDef.GetInt("recoilTime")
-            // don't shorten a damage kick in progress
+            recoilTime = weaponDef.GetInt("recoilTime") // don't shorten a damage kick in progress
             if (recoilTime != 0 && kickFinishTime < Game_local.gameLocal.time) {
                 val angles = idAngles()
                 weaponDef.GetAngles("recoilAngles", "5 0 0", angles)
@@ -1192,12 +1186,10 @@ object PlayerView {
             return shakeAng.ToMat3()
         }
 
-        fun CalculateShake() {
-//            idVec3 origin, matrix;
+        fun CalculateShake() { //            idVec3 origin, matrix;
             val shakeVolume = Game_local.gameSoundWorld!!.CurrentShakeAmplitudeForPosition(
                 Game_local.gameLocal.time, player!!.firstPersonViewOrigin
-            )
-            //
+            ) //
             // shakeVolume should somehow be molded into an angle here
             // it should be thought of as being in the range 0.0f . 1.0f, although
             // since CurrentShakeAmplitudeForPosition() returns all the shake sounds
@@ -1212,8 +1204,7 @@ object PlayerView {
         // that with a warp model or in double vision mode
         fun RenderPlayerView(hud: idUserInterface) {
             val view = player!!.GetRenderView()
-            if (isD3XP) {
-                // D3XP: all effects handled by fxManager inside SingleView
+            if (isD3XP) { // D3XP: all effects handled by fxManager inside SingleView
                 SingleView(hud, view)
             } else if (SysCvar.g_skipViewEffects.GetBool()) {
                 SingleView(hud, view)
@@ -1229,14 +1220,12 @@ object PlayerView {
                 }
             }
             ScreenFade()
-            if (Game_network.net_clientLagOMeter.GetBool() && lagoMaterial != null && Game_local.gameLocal.isClient) {
-                //#modified-fva; BEGIN
+            if (Game_network.net_clientLagOMeter.GetBool() && lagoMaterial != null && Game_local.gameLocal.isClient) { //#modified-fva; BEGIN
                 var x = 10.0f
                 var y = 380.0f
                 var w = 64.0f
                 var h = 64.0f
-                if (cvarSystem.GetCVarBool("cst_hudAdjustAspect")) {
-                    // similar to CST_ANCHOR_BOTTOM_LEFT
+                if (cvarSystem.GetCVarBool("cst_hudAdjustAspect")) { // similar to CST_ANCHOR_BOTTOM_LEFT
                     var glWidth: CInt = CInt()
                     var glHeight: CInt = CInt()
                     renderSystem.GetGLSettings(glWidth, glHeight)
@@ -1267,8 +1256,7 @@ object PlayerView {
                     }
                 }
                 renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f)
-                renderSystem.DrawStretchPic(x, y, w, h, 0.0f, 0.0f, 1.0f, 1.0f, lagoMaterial)
-                //#modified-fva; END
+                renderSystem.DrawStretchPic(x, y, w, h, 0.0f, 0.0f, 1.0f, 1.0f, lagoMaterial) //#modified-fva; END
             }
         }
 
@@ -1462,12 +1450,10 @@ object PlayerView {
                     renderSystem.DrawStretchPic(
                         0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, tunnelMaterial
                     )
-                }
-                // D3XP: berserk overlay is handled by FullscreenFX_Helltime, only draw in base game
+                } // D3XP: berserk overlay is handled by FullscreenFX_Helltime, only draw in base game
                 if (!isD3XP && player!!.PowerUpActive(Player.BERSERK)) {
                     val berserkTime = player!!.inventory.powerupEndTime[Player.BERSERK] - Game_local.gameLocal.time
-                    if (berserkTime > 0) {
-                        // start fading if within 10 seconds of going away
+                    if (berserkTime > 0) { // start fading if within 10 seconds of going away
                         alpha = if (berserkTime < 10000) berserkTime.toFloat() / 10000 else 1.0f
                         renderSystem.SetColor4(1.0f, 1.0f, 1.0f, alpha)
                         renderSystem.DrawStretchPic(
@@ -1567,7 +1553,7 @@ object PlayerView {
                     player!!.GetInfluenceEntity()!!.GetPhysics().GetOrigin().minus(player!!.GetPhysics().GetOrigin())
                         .Length()
                 if (player!!.GetInfluenceRadius() != 0.0f && distance < player!!.GetInfluenceRadius()) {
-                    pct = distance / player!!.GetInfluenceRadius()//TODO:wtf?
+                    pct = distance / player!!.GetInfluenceRadius() //TODO:wtf?
                     pct = 1.0f - idMath.ClampFloat(0.0f, 1.0f, pct)
                 }
             }
@@ -1579,8 +1565,7 @@ object PlayerView {
                     0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, player!!.GetInfluenceMaterial()!!
                 )
             } else if (player!!.GetInfluenceEntity() == null) {
-                SingleView(hud, view)
-                //		return;
+                SingleView(hud, view) //		return;
             } else {
                 val offset = (25 + sin(Game_local.gameLocal.time.toFloat())).toInt()
                 FloatVision(hud, view, (pct * offset).toInt())
@@ -1638,9 +1623,8 @@ object PlayerView {
 
         //
         //
-        init {
-//	memset( screenBlobs, 0, sizeof( screenBlobs ) );
-//	memset( &view, 0, sizeof( view ) );
+        init { //	memset( screenBlobs, 0, sizeof( screenBlobs ) );
+            //	memset( &view, 0, sizeof( view ) );
             view = renderView_s()
             player = null
             dvMaterial = DeclManager.declManager.FindMaterial("_scratch")

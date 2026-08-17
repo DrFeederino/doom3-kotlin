@@ -143,13 +143,11 @@ val r_vidModes: Array<vidmode_s> = arrayOf(
     vidmode_s("Mode 22: 2880x1800", 2880, 1800),
     vidmode_s("Mode 23: 2560x1440", 2560, 1440),
     vidmode_s("Mode 24: 1440x1080", 1440, 1080),
-    vidmode_s("Mode 25: 1280x800", 1280, 800),
-    // 21:9 resolutions
+    vidmode_s("Mode 25: 1280x800", 1280, 800), // 21:9 resolutions
     vidmode_s("Mode 26: 2560x1080", 2560, 1080),
     vidmode_s("Mode 27: 3440x1440", 3440, 1440),
     vidmode_s("Mode 28: 3840x1600", 3840, 1600),
-    vidmode_s("Mode 29: 5120x2160", 5120, 2160),
-    // 32:9 resolutions
+    vidmode_s("Mode 29: 5120x2160", 5120, 2160), // 32:9 resolutions
     vidmode_s("Mode 30: 3840x1080", 3840, 1080),
     vidmode_s("Mode 31: 5120x1440", 5120, 1440),
     vidmode_s("Mode 32: 7680x2160", 7680, 2160)
@@ -486,12 +484,14 @@ val r_scaleMenusTo43 = idCVar(
 val r_useCarmacksReverse = idCVar(
     "r_useCarmacksReverse",
     "1",
-    CVAR_RENDERER or CVAR_ARCHIVE or CVAR_BOOL, "Use Z-Fail (Carmack's Reverse) when rendering shadows"
+    CVAR_RENDERER or CVAR_ARCHIVE or CVAR_BOOL,
+    "Use Z-Fail (Carmack's Reverse) when rendering shadows"
 )
 val r_useStencilOpSeparate = idCVar(
     "r_useStencilOpSeparate",
     "1",
-    CVAR_RENDERER or CVAR_ARCHIVE or CVAR_BOOL, "Use glStencilOpSeparate() (if available) when rendering shadows"
+    CVAR_RENDERER or CVAR_ARCHIVE or CVAR_BOOL,
+    "Use glStencilOpSeparate() (if available) when rendering shadows"
 )
 
 
@@ -900,8 +900,7 @@ fun R_ScreenshotFilename(lastNumber: CInt, base: String?, fileName: idStr) {
  R_InitCvars
  =================
  */
-fun R_InitCvars() {
-    // update latched cvars here
+fun R_InitCvars() { // update latched cvars here
 }
 
 /*
@@ -1002,8 +1001,7 @@ fun R_InitMaterials() {
 //#if MACOS_X
 //bool R_GetModeInfo( int *width, int *height, int mode ) {
 //#else
-fun R_GetModeInfo(width: IntArray?, height: IntArray?, mode: Int): Boolean {
-//#endif
+fun R_GetModeInfo(width: IntArray?, height: IntArray?, mode: Int): Boolean { //#endif
     val vm: vidmode_s
     if (mode < -1) {
         return false
@@ -1051,8 +1049,7 @@ fun R_CheckPortableExtensions() {
         }
         glConfig.maxTextureCoords = qgl.qglGetInteger(ARBFragmentProgram.GL_MAX_TEXTURE_COORDS_ARB)
         glConfig.maxTextureImageUnits = qgl.qglGetInteger(ARBFragmentProgram.GL_MAX_TEXTURE_IMAGE_UNITS_ARB)
-    }
-    //
+    } //
     // GL_ARB_texture_env_combine
     glConfig.textureEnvCombineAvailable = R_CheckExtension("GL_ARB_texture_env_combine")
 
@@ -1066,16 +1063,13 @@ fun R_CheckPortableExtensions() {
     glConfig.textureEnvAddAvailable = R_CheckExtension("GL_ARB_texture_env_add")
 
     // GL_ARB_texture_non_power_of_two
-    glConfig.textureNonPowerOfTwoAvailable = R_CheckExtension("GL_ARB_texture_non_power_of_two")
-    //
+    glConfig.textureNonPowerOfTwoAvailable = R_CheckExtension("GL_ARB_texture_non_power_of_two") //
     // GL_ARB_texture_compression + GL_S3_s3tc
     // DRI drivers may have GL_ARB_texture_compression but no GL_EXT_texture_compression_s3tc
     glConfig.textureCompressionAvailable =
-        R_CheckExtension("GL_ARB_texture_compression") && R_CheckExtension("GL_EXT_texture_compression_s3tc")
-    //
+        R_CheckExtension("GL_ARB_texture_compression") && R_CheckExtension("GL_EXT_texture_compression_s3tc") //
     // GL_ARB_texture_compression_bptc (BC7)
-    glConfig.bptcTextureCompressionAvailable = R_CheckExtension("GL_ARB_texture_compression_bptc")
-    //
+    glConfig.bptcTextureCompressionAvailable = R_CheckExtension("GL_ARB_texture_compression_bptc") //
     // GL_EXT_texture_filter_anisotropic
     glConfig.anisotropicAvailable = R_CheckExtension("GL_EXT_texture_filter_anisotropic")
     if (glConfig.anisotropicAvailable) {
@@ -1087,8 +1081,7 @@ fun R_CheckPortableExtensions() {
         )
     } else {
         glConfig.maxTextureAnisotropy = 1.0f
-    }
-    //
+    } //
     // GL_EXT_texture_lod_bias
     // The actual extension is broken as specificed, storing the state in the texture unit instead
     // of the texture object.  The behavior in GL 1.4 is the behavior we use.
@@ -1098,14 +1091,11 @@ fun R_CheckPortableExtensions() {
     } else {
         common.Printf("X..%s not found\n", "GL_1.4_texture_lod_bias")
         glConfig.textureLODBiasAvailable = false
-    }
-    //
+    } //
     // GL_EXT_shared_texture_palette
-    glConfig.sharedTexturePaletteAvailable = R_CheckExtension("GL_EXT_shared_texture_palette")
-    //
+    glConfig.sharedTexturePaletteAvailable = R_CheckExtension("GL_EXT_shared_texture_palette") //
     // GL_EXT_texture3D (not currently used for anything)
-    glConfig.texture3DAvailable = R_CheckExtension("GL_EXT_texture3D")
-    //
+    glConfig.texture3DAvailable = R_CheckExtension("GL_EXT_texture3D") //
     // EXT_stencil_wrap
     // This isn't very important, but some pathological case might cause a clamp error and give a shadow bug.
     // Nvidia also believes that future hardware may be able to run faster with this enabled to avoid the
@@ -1116,17 +1106,13 @@ fun R_CheckPortableExtensions() {
     } else {
         tr.stencilIncr = GL11.GL_INCR
         tr.stencilDecr = GL11.GL_DECR
-    }
-    //
+    } //
     // GL_EXT_stencil_two_side
-    glConfig.twoSidedStencilAvailable = R_CheckExtension("GL_EXT_stencil_two_side")
-    //
+    glConfig.twoSidedStencilAvailable = R_CheckExtension("GL_EXT_stencil_two_side") //
     // ARB_vertex_buffer_object
-    glConfig.ARBVertexBufferObjectAvailable = R_CheckExtension("GL_ARB_vertex_buffer_object")
-    //
+    glConfig.ARBVertexBufferObjectAvailable = R_CheckExtension("GL_ARB_vertex_buffer_object") //
     // ARB_vertex_program
-    glConfig.ARBVertexProgramAvailable = R_CheckExtension("GL_ARB_vertex_program")
-    //
+    glConfig.ARBVertexProgramAvailable = R_CheckExtension("GL_ARB_vertex_program") //
     // ARB_fragment_program
     if (r_inhibitFragmentProgram.GetBool()) {
         glConfig.ARBFragmentProgramAvailable = false
@@ -1134,12 +1120,9 @@ fun R_CheckPortableExtensions() {
         glConfig.ARBFragmentProgramAvailable = R_CheckExtension("GL_ARB_fragment_program")
     }
 
-    if (!glConfig.multitextureAvailable || !glConfig.textureEnvCombineAvailable
-        || !glConfig.cubeMapAvailable || !glConfig.envDot3Available
-    ) {
+    if (!glConfig.multitextureAvailable || !glConfig.textureEnvCombineAvailable || !glConfig.cubeMapAvailable || !glConfig.envDot3Available) {
         common.Error(common.GetLanguageDict().GetString("#str_06780"))
-    }
-    //
+    } //
     // GL_EXT_depth_bounds_test
     glConfig.depthBoundsTestAvailable = R_CheckExtension("EXT_depth_bounds_test")
 }
@@ -1206,8 +1189,7 @@ fun R_RenderingFPS(renderView: renderView_s?): Float {
     val start: Int = Sys_Milliseconds()
     var end: Int
     var count = 0
-    while (true) {
-        // render
+    while (true) { // render
         RenderSystem.renderSystem.BeginFrame(glConfig.vidWidth, glConfig.vidHeight)
         tr.primaryWorld!!.RenderScene(renderView!!)
         RenderSystem.renderSystem.EndFrame(null, null)
@@ -1255,8 +1237,7 @@ fun R_InitOpenGL() {
         parms.displayHz = r_displayRefresh.GetInteger()
         parms.multiSamples = r_multiSamples.GetInteger()
         parms.stereo = false
-        if (GLimp_Init(parms)) {
-            // it's ALIVE!
+        if (GLimp_Init(parms)) { // it's ALIVE!
             break
         }
         if (i == 1) {
@@ -1348,8 +1329,7 @@ fun R_InitOpenGL() {
  */
 fun R_SetColorMappings() {
 
-    if (r_gammaInShader.GetBool()) {
-        // nothing to do here
+    if (r_gammaInShader.GetBool()) { // nothing to do here
         return
     }
 
@@ -1811,12 +1791,10 @@ internal class R_MakeAmbientMap_f private constructor() : cmdFunction_t() {
                         dir.Normalize()
                         total[2] = 0.0f
                         total[1] = total[2]
-                        total[0] = total[1]
-                        //samples = 1;
+                        total[0] = total[1] //samples = 1;
                         val limit: Float =
                             if ((map).toBoolean()) 0.95f else 0.25f // small for specular, almost hemisphere for ambient
-                        for (s in 0 until samples) {
-                            // pick a random direction vector that is inside the unit sphere but not behind dir,
+                        for (s in 0 until samples) { // pick a random direction vector that is inside the unit sphere but not behind dir,
                             // which is a robust way to evenly sample a hemisphere
                             val test = idVec3()
                             while (true) {
@@ -1831,8 +1809,7 @@ internal class R_MakeAmbientMap_f private constructor() : cmdFunction_t() {
                                     break
                                 }
                             }
-                            val result = ByteArray(4)
-                            //test = dir;
+                            val result = ByteArray(4) //test = dir;
                             R_SampleCubeMap(test, width[0], buffers as Array<ByteBuffer>, result)
                             total[0] += result[0].toFloat()
                             total[1] += result[1].toFloat()
@@ -1882,8 +1859,7 @@ internal class R_Benchmark_f private constructor() : cmdFunction_t() {
         while (size >= 10) {
             r_screenFraction.SetInteger(size)
             fps = R_RenderingFPS(view)
-            val kpix: Int =
-                (glConfig.vidWidth * glConfig.vidHeight * (size * 0.01) * (size * 0.01) * 0.001).toInt()
+            val kpix: Int = (glConfig.vidWidth * glConfig.vidHeight * (size * 0.01) * (size * 0.01) * 0.001).toInt()
             msec = (1000.0f / fps)
             common.Printf("kpix: %4d  msec:%5.1f fps:%5.1f\n", kpix, msec, fps)
             size -= 10
@@ -2095,7 +2071,7 @@ internal class R_ReportSurfaceAreas_f private constructor() : cmdFunction_t() {
             i++
         }
 
-//            qsort(list, count, sizeof(list[0]), new R_QsortSurfaceAreas());
+        //            qsort(list, count, sizeof(list[0]), new R_QsortSurfaceAreas());
         Arrays.sort(list, R_QsortSurfaceAreas())
 
         // skip over ones with 0 area
@@ -2136,18 +2112,15 @@ internal class R_ReportImageDuplication_f private constructor() : cmdFunction_t(
         i = 0
         while (i < Image.globalImages.images.Num()) {
             val image1: idImage? = Image.globalImages.images[i]
-            if (image1!!.isPartialImage) {
-                // ignore background loading stubs
+            if (image1!!.isPartialImage) { // ignore background loading stubs
                 i++
                 continue
             }
-            if (image1.generatorFunction != null) {
-                // ignore procedural images
+            if (image1.generatorFunction != null) { // ignore procedural images
                 i++
                 continue
             }
-            if (image1.cubeFiles != cubeFiles_t.CF_2D) {
-                // ignore cube maps
+            if (image1.cubeFiles != cubeFiles_t.CF_2D) { // ignore cube maps
                 i++
                 continue
             }
@@ -2185,8 +2158,7 @@ internal class R_ReportImageDuplication_f private constructor() : cmdFunction_t(
                     j++
                     continue
                 }
-                if (Icmp(image1.imgName, image2.imgName) == 0) {
-                    // ignore same image-with-different-parms
+                if (Icmp(image1.imgName, image2.imgName) == 0) { // ignore same image-with-different-parms
                     j++
                     continue
                 }
@@ -2273,12 +2245,10 @@ internal class R_VidRestart_f private constructor() : cmdFunction_t() {
         }
 
         // sound and input are tied to the window we are about to destroy
-        if (doFullRestart) {
-            // free all of our texture numbers
+        if (doFullRestart) { // free all of our texture numbers
             snd_system.soundSystem.ShutdownHW()
             Sys_ShutdownInput()
-            Image.globalImages.PurgeAllImages()
-            // free the context and close the window
+            Image.globalImages.PurgeAllImages() // free the context and close the window
             GLimp_Shutdown()
             glConfig.isInitialized = false
 

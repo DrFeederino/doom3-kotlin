@@ -68,8 +68,7 @@ object BrittleFracture {
      of the render model which can fracture.
 
      ===============================================================================
-     */
-    //
+     */ //
     const val SHARD_ALIVE_TIME = 5000
     const val SHARD_FADE_START = 2000
 
@@ -347,9 +346,7 @@ object BrittleFracture {
                     var si = 0
                     while (si < model.NumSurfaces()) {
                         val surf = model.Surface(si)
-                        if (surf != null && surf.shader != null &&
-                            surf.shader!!.GetName() == "textures/smf/window_scratch"
-                        ) {
+                        if (surf != null && surf.shader != null && surf.shader!!.GetName() == "textures/smf/window_scratch") {
                             isXraySurface = true
                             break
                         }
@@ -521,8 +518,7 @@ object BrittleFracture {
                 msg.WriteFloat(dir[2])
                 ServerSendEvent(EVENT_PROJECT_DECAL, msg, true, -1)
             }
-            if (time >= gameLocal.time) {
-                // try to get the sound from the damage def
+            if (time >= gameLocal.time) { // try to get the sound from the damage def
                 var damageDef: idDeclEntityDef? = null
                 var sndShader: idSoundShader? = null
                 if (damageDefName != null) {
@@ -596,8 +592,7 @@ object BrittleFracture {
             return fl.takedamage == false
         }
 
-        override fun ClientPredictionThink() {
-            // only think forward because the state is not synced through snapshots
+        override fun ClientPredictionThink() { // only think forward because the state is not synced through snapshots
             if (!gameLocal.isNewFrame) {
                 return
             }
@@ -637,8 +632,7 @@ object BrittleFracture {
         }
 
         override fun UpdateRenderEntity(
-            renderEntity: RenderWorld.renderEntity_s,
-            renderView: RenderWorld.renderView_s?
+            renderEntity: RenderWorld.renderEntity_s, renderView: RenderWorld.renderView_s?
         ): Boolean {
             var i: Int
             var j: Int
@@ -692,12 +686,10 @@ object BrittleFracture {
 
             // allocate triangle surfaces for the fractures and decals
             tris = renderEntity.hModel!!.AllocSurfaceTriangles(
-                numTris * 3,
-                if (material!!.ShouldCreateBackSides()) numTris * 6 else numTris * 3
+                numTris * 3, if (material!!.ShouldCreateBackSides()) numTris * 6 else numTris * 3
             )
             decalTris = renderEntity.hModel!!.AllocSurfaceTriangles(
-                numDecalTris * 3,
-                if (decalMaterial!!.ShouldCreateBackSides()) numDecalTris * 6 else numDecalTris * 3
+                numDecalTris * 3, if (decalMaterial!!.ShouldCreateBackSides()) numDecalTris * 6 else numDecalTris * 3
             )
             i = 0
             while (i < shards.Num()) {
@@ -707,8 +699,7 @@ object BrittleFracture {
                 if (shards[i]!!.droppedTime >= 0) {
                     msec = gameLocal.time - shards[i]!!.droppedTime - SHARD_FADE_START
                     if (msec > 0) {
-                        fade =
-                            1.0f - msec.toFloat() / (SHARD_ALIVE_TIME - SHARD_FADE_START)
+                        fade = 1.0f - msec.toFloat() / (SHARD_ALIVE_TIME - SHARD_FADE_START)
                     }
                 }
                 packedColor = PackColor(
@@ -724,7 +715,7 @@ object BrittleFracture {
                 tangents.set(plane.Normal().times(axis).ToMat3())
                 j = 2
                 while (j < winding.GetNumPoints()) {
-                    v = tris.verts!![tris.numVerts++]!!
+                    v = tris.verts!![tris.numVerts++]
                     v.Clear()
                     v.xyz.set(origin.plus(winding[0].ToVec3().times(axis)))
                     v.st[0] = winding[0].s
@@ -733,7 +724,7 @@ object BrittleFracture {
                     v.tangents[0].set(tangents[1])
                     v.tangents[1].set(tangents[2])
                     v.SetColor(packedColor)
-                    v = tris.verts!![tris.numVerts++]!!
+                    v = tris.verts!![tris.numVerts++]
                     v.Clear()
                     v.xyz.set(origin.plus(winding[j - 1].ToVec3().times(axis)))
                     v.st[0] = winding[j - 1].s
@@ -742,7 +733,7 @@ object BrittleFracture {
                     v.tangents[0].set(tangents[1])
                     v.tangents[1].set(tangents[2])
                     v.SetColor(packedColor)
-                    v = tris.verts!![tris.numVerts++]!!
+                    v = tris.verts!![tris.numVerts++]
                     v.Clear()
                     v.xyz.set(origin.plus(winding[j].ToVec3().times(axis)))
                     v.st[0] = winding[j].s
@@ -766,7 +757,7 @@ object BrittleFracture {
                     val decalWinding: idWinding = shards[i]!!.decals[k]
                     j = 2
                     while (j < decalWinding.GetNumPoints()) {
-                        v = decalTris.verts!![decalTris.numVerts++]!!
+                        v = decalTris.verts!![decalTris.numVerts++]
                         v.Clear()
                         v.xyz.set(origin.plus(decalWinding[0].ToVec3().times(axis)))
                         v.st[0] = decalWinding[0].s
@@ -775,7 +766,7 @@ object BrittleFracture {
                         v.tangents[0].set(tangents[1])
                         v.tangents[1].set(tangents[2])
                         v.SetColor(packedColor)
-                        v = decalTris.verts!![decalTris.numVerts++]!!
+                        v = decalTris.verts!![decalTris.numVerts++]
                         v.Clear()
                         v.xyz.set(origin.plus(decalWinding[j - 1].ToVec3().times(axis)))
                         v.st[0] = decalWinding[j - 1].s
@@ -784,7 +775,7 @@ object BrittleFracture {
                         v.tangents[0].set(tangents[1])
                         v.tangents[1].set(tangents[2])
                         v.SetColor(packedColor)
-                        v = decalTris.verts!![decalTris.numVerts++]!!
+                        v = decalTris.verts!![decalTris.numVerts++]
                         v.Clear()
                         v.xyz.set(origin.plus(decalWinding[j].ToVec3().times(axis)))
                         v.st[0] = decalWinding[j].s
@@ -809,12 +800,9 @@ object BrittleFracture {
             }
             tris.tangentsCalculated = true
             decalTris.tangentsCalculated = true
-            SIMDProcessor!!.MinMax(tris.bounds[0], tris.bounds[1], tris.verts!! as Array<idDrawVert>, tris.numVerts)
+            SIMDProcessor!!.MinMax(tris.bounds[0], tris.bounds[1], tris.verts!!, tris.numVerts)
             SIMDProcessor!!.MinMax(
-                decalTris.bounds[0],
-                decalTris.bounds[1],
-                decalTris.verts!! as Array<idDrawVert>,
-                decalTris.numVerts
+                decalTris.bounds[0], decalTris.bounds[1], decalTris.verts!!, decalTris.numVerts
             )
 
             // C++: memset( &surface, 0, sizeof( surface ) );
@@ -1140,24 +1128,23 @@ object BrittleFracture {
             physicsObj.SetOrigin(GetPhysics().GetOrigin(), 0)
             physicsObj.SetAxis(GetPhysics().GetAxis(), 0)
 
-            if (isD3XP && isXraySurface) {
-                // D3XP: x-ray surface — build one quad from the first 4 verts (indices 0,1,3,2)
+            if (isD3XP && isXraySurface) { // D3XP: x-ray surface — build one quad from the first 4 verts (indices 0,1,3,2)
                 i = 0
                 while (i < 1 /*renderModel.NumSurfaces()*/) {
                     surf = renderModel.Surface(i)
                     material = surf!!.shader
                     w.Clear()
                     var k = 0
-                    v = surf.geometry!!.verts!![k]!!
+                    v = surf.geometry!!.verts!![k]
                     w.AddPoint(v.xyz); w[k].s = v.st[0]; w[k].t = v.st[1]
                     k = 1
-                    v = surf.geometry!!.verts!![k]!!
+                    v = surf.geometry!!.verts!![k]
                     w.AddPoint(v.xyz); w[k].s = v.st[0]; w[k].t = v.st[1]
                     k = 3
-                    v = surf.geometry!!.verts!![k]!!
+                    v = surf.geometry!!.verts!![k]
                     w.AddPoint(v.xyz); w[k].s = v.st[0]; w[k].t = v.st[1]
                     k = 2
-                    v = surf.geometry!!.verts!![k]!!
+                    v = surf.geometry!!.verts!![k]
                     w.AddPoint(v.xyz); w[k].s = v.st[0]; w[k].t = v.st[1]
                     Fracture_r(w)
                     i++
@@ -1172,7 +1159,7 @@ object BrittleFracture {
                         w.Clear()
                         k = 0
                         while (k < 3) {
-                            v = surf.geometry!!.verts!![surf.geometry!!.indexes!![j + 2 - k]]!!
+                            v = surf.geometry!!.verts!![surf.geometry!!.indexes!![j + 2 - k]]
                             w.AddPoint(v.xyz)
                             w[k].s = v.st[0]
                             w[k].t = v.st[1]
@@ -1249,18 +1236,15 @@ object BrittleFracture {
                                 )
                             )
                             if (plane[0].Side(p2, 0.1f) == SIDE_FRONT && plane[1].Side(
-                                    p1,
-                                    0.1f
+                                    p1, 0.1f
                                 ) == SIDE_FRONT
                             ) {
                                 if (plane[2].Side(p1, 0.1f) == SIDE_ON && plane[3].Side(
-                                        p1,
-                                        0.1f
+                                        p1, 0.1f
                                     ) == SIDE_ON
                                 ) {
                                     if (plane[2].Side(p2, 0.1f) == SIDE_ON && plane[3].Side(
-                                            p2,
-                                            0.1f
+                                            p2, 0.1f
                                         ) == SIDE_ON
                                     ) {
                                         shard1.neighbours.Append(shard2)

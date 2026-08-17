@@ -109,8 +109,7 @@ object Physics_StaticMulti {
             val num = CInt()
 
             self = savefile.ReadObject() as idEntity?
-            savefile.ReadInt(num)
-            // FIX: AssureSize without fill value leaves new slots null in Kotlin.
+            savefile.ReadInt(num) // FIX: AssureSize without fill value leaves new slots null in Kotlin.
             // C++ default-constructs POD structs. Must create objects for each slot.
             val oldNum = current.Num()
             current.AssureSize(num._val)
@@ -173,8 +172,7 @@ object Physics_StaticMulti {
         override fun SetClipModel(model: idClipModel?, density: Float, id: Int /*= 0*/, freeOld: Boolean /*= true*/) {
             var i: Int
             assert(self != null)
-            if (id >= clipModels.Num()) {
-                // FIX: C++ AssureSize copies defaultState by value into each new slot.
+            if (id >= clipModels.Num()) { // FIX: C++ AssureSize copies defaultState by value into each new slot.
                 // Kotlin AssureSize stores the same reference, causing aliasing corruption.
                 // Manually grow and initialize each new element independently.
                 val oldNum = current.Num()
@@ -185,8 +183,7 @@ object Physics_StaticMulti {
                     current[j].axis.Identity()
                     current[j].localOrigin.Zero()
                     current[j].localAxis.Identity()
-                }
-                // FIX: C++ passes NULL, not a new clip model
+                } // FIX: C++ passes NULL, not a new clip model
                 clipModels.AssureSize(id + 1, null)
             }
             if (clipModels[id] != null && clipModels[id] !== model) {
@@ -214,8 +211,7 @@ object Physics_StaticMulti {
         idPhysics_StaticMulti::GetClipModel
         ================
         */
-        override fun GetClipModel(id: Int /*= 0*/): idClipModel? {
-            // FIX: C++ also checks clipModels[id] != NULL before returning
+        override fun GetClipModel(id: Int /*= 0*/): idClipModel? { // FIX: C++ also checks clipModels[id] != NULL before returning
             return if (id >= 0 && id < clipModels.Num() && clipModels[id] != null) {
                 clipModels[id]
             } else Game_local.gameLocal.clip.DefaultClipModel()
@@ -272,15 +268,13 @@ object Physics_StaticMulti {
         override fun GetContents(id: Int /*= -1*/): Int {
             var i: Int
             var contents = 0
-            if (id >= 0 && id < clipModels.Num()) {
-                // FIX: C++ null-checks clipModels[id] before dereferencing
+            if (id >= 0 && id < clipModels.Num()) { // FIX: C++ null-checks clipModels[id] before dereferencing
                 if (clipModels[id] != null) {
                     contents = clipModels[id]!!.GetContents()
                 }
             } else if (id == -1) {
                 i = 0
-                while (i < clipModels.Num()) {
-                    // FIX: C++ null-checks clipModels[i] before dereferencing
+                while (i < clipModels.Num()) { // FIX: C++ null-checks clipModels[i] before dereferencing
                     if (clipModels[i] != null) {
                         contents = contents or clipModels[i]!!.GetContents()
                     }
@@ -313,8 +307,7 @@ object Physics_StaticMulti {
         */
         override fun GetBounds(id: Int /*= -1*/): idBounds {
             var i: Int
-            if (id >= 0 && id < clipModels.Num()) {
-                // FIX: C++ null-checks clipModels[id] before dereferencing
+            if (id >= 0 && id < clipModels.Num()) { // FIX: C++ null-checks clipModels[id] before dereferencing
                 if (clipModels[id] != null) {
                     return clipModels[id]!!.GetBounds()
                 }
@@ -322,8 +315,7 @@ object Physics_StaticMulti {
             if (id == -1) {
                 bounds.Clear()
                 i = 0
-                while (i < clipModels.Num()) {
-                    // FIX: C++ null-checks clipModels[i] before dereferencing
+                while (i < clipModels.Num()) { // FIX: C++ null-checks clipModels[i] before dereferencing
                     if (clipModels[i] != null) {
                         bounds.AddBounds(clipModels[i]!!.GetAbsBounds())
                     }
@@ -350,8 +342,7 @@ object Physics_StaticMulti {
         */
         override fun GetAbsBounds(id: Int /*= -1*/): idBounds {
             var i: Int
-            if (id >= 0 && id < clipModels.Num()) {
-                // FIX: C++ null-checks clipModels[id] before dereferencing
+            if (id >= 0 && id < clipModels.Num()) { // FIX: C++ null-checks clipModels[id] before dereferencing
                 if (clipModels[id] != null) {
                     return clipModels[id]!!.GetAbsBounds()
                 }
@@ -359,8 +350,7 @@ object Physics_StaticMulti {
             if (id == -1) {
                 absBounds.Clear()
                 i = 0
-                while (i < clipModels.Num()) {
-                    // FIX: C++ null-checks clipModels[i] before dereferencing
+                while (i < clipModels.Num()) { // FIX: C++ null-checks clipModels[i] before dereferencing
                     if (clipModels[i] != null) {
                         absBounds.AddBounds(clipModels[i]!!.GetAbsBounds())
                     }
@@ -744,21 +734,17 @@ object Physics_StaticMulti {
             var contents: Int
             contents = 0
             i = 0
-            while (i < clipModels.Num()) {
-                // FIX: C++ null-checks clipModels[i] before dereferencing
+            while (i < clipModels.Num()) { // FIX: C++ null-checks clipModels[i] before dereferencing
                 if (clipModels[i] != null) {
                     contents = if (model != null) {
                         contents or Game_local.gameLocal.clip.ContentsModel(
-                            clipModels[i]!!.GetOrigin(), clipModels[i], clipModels[i]!!.GetAxis(), -1,
-                            model.Handle(), model.GetOrigin(), model.GetAxis()
+                            clipModels[i]!!.GetOrigin(),
+                            clipModels[i],
+                            clipModels[i]!!.GetAxis(), -1, model.Handle(), model.GetOrigin(), model.GetAxis()
                         )
                     } else {
                         contents or Game_local.gameLocal.clip.Contents(
-                            clipModels[i]!!.GetOrigin(),
-                            clipModels[i],
-                            clipModels[i]!!.GetAxis(),
-                            -1,
-                            null
+                            clipModels[i]!!.GetOrigin(), clipModels[i], clipModels[i]!!.GetAxis(), -1, null
                         )
                     }
                 }
@@ -847,8 +833,7 @@ object Physics_StaticMulti {
         ================
         */
         override fun GetContact(num: Int): contactInfo_t {
-            info = contactInfo_t()
-            //	memset( &info, 0, sizeof( info ) );
+            info = contactInfo_t() //	memset( &info, 0, sizeof( info ) );
             return info
         }
 
@@ -935,8 +920,7 @@ object Physics_StaticMulti {
             val masterOrigin = idVec3()
             val masterAxis = idMat3()
             if (master != null) {
-                if (!hasMaster) {
-                    // transform from world space to master space
+                if (!hasMaster) { // transform from world space to master space
                     self!!.GetMasterPosition(masterOrigin, masterAxis)
                     i = 0
                     while (i < clipModels.Num()) {
@@ -1086,8 +1070,7 @@ object Physics_StaticMulti {
             defaultState.axis.Identity()
             defaultState.localOrigin.Zero()
             defaultState.localAxis.Identity()
-            current.SetNum(1)
-            // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias.
+            current.SetNum(1) // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias.
             // Create a new object instead of aliasing defaultState. Must match defaultState fields.
             current[0] = staticPState_s()
             current[0].origin.Zero()

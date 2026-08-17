@@ -198,8 +198,7 @@ object win_main {
         Sys_EnterCriticalSection(CRITICAL_SECTION_SYS)
 
         assert(!SysThreading.waiting[index]) // WaitForEvent from multiple threads not supported
-        if (SysThreading.signaled[index]) {
-            // Signal already raised — clear and pass through (Win32 auto-reset semantics)
+        if (SysThreading.signaled[index]) { // Signal already raised — clear and pass through (Win32 auto-reset semantics)
             SysThreading.signaled[index] = false
         } else {
             SysThreading.waiting[index] = true
@@ -222,8 +221,7 @@ object win_main {
 
         if (SysThreading.waiting[index]) {
             SysThreading.cond[index].signal()
-        } else {
-            // Latch the signal for the next wait
+        } else { // Latch the signal for the next wait
             SysThreading.signaled[index] = true
         }
 
@@ -312,11 +310,7 @@ object win_main {
      ==================
      */
     fun Sys_IsMainThread(): Boolean {
-        return if (SysThreading.mainThreadIdSet) {
-            Thread.currentThread().id == SysThreading.mainThreadId
-        } else {
-            true
-        }
+        return !SysThreading.mainThreadIdSet || Thread.currentThread().id == SysThreading.mainThreadId
     }
 
     /*
@@ -346,9 +340,7 @@ object win_main {
     fun Sys_DebugMemory_f() {
         Common.common.Printf("Total allocation %8dk in %d blocks\n", debug_total_alloc / 1024, debug_total_alloc_count)
         Common.common.Printf(
-            "Current allocation %8dk in %d blocks\n",
-            debug_current_alloc / 1024,
-            debug_current_alloc_count
+            "Current allocation %8dk in %d blocks\n", debug_current_alloc / 1024, debug_current_alloc_count
         )
     }
 
@@ -464,8 +456,7 @@ object win_main {
      ==============
      */
     fun Sys_IsWindowVisible(): Boolean {
-        if (win_glimp.window == 0L) return false
-        return glfwGetWindowAttrib(win_glimp.window, GLFW_VISIBLE) == GLFW_TRUE
+        return win_glimp.window != 0L && glfwGetWindowAttrib(win_glimp.window, GLFW_VISIBLE) == GLFW_TRUE
     }
 
     /*
@@ -512,8 +503,7 @@ object win_main {
      DLL Loading
 
      ========================================================================
-     */
-    /*
+     *//*
      ==============
      Sys_DefaultBasePath
      ==============
@@ -548,8 +538,7 @@ object win_main {
     fun Sys_ListFiles(directory: String, extension: String, list: idStrList): Int {
         val search: FilenameFilter
         val findinfo: File
-        search = FilenameFilter { pathname: File, name: String ->
-            // passing a slash as extension will find directories
+        search = FilenameFilter { pathname: File, name: String -> // passing a slash as extension will find directories
             if (extension == "/") {
                 return@FilenameFilter pathname.isDirectory()
             } else {
@@ -631,11 +620,9 @@ object win_main {
      ================
      */
     fun Sys_QueEvent(time: Long, type: sysEventType_t, value: Int, value2: Int, ptrLength: Int, ptr: ByteBuffer?) {
-        val ev: sysEvent_s
-        // FIX: Check overflow BEFORE replacing the slot, so old event data can be freed
+        val ev: sysEvent_s // FIX: Check overflow BEFORE replacing the slot, so old event data can be freed
         if (eventHead - eventTail >= MAX_QUED_EVENTS) {
-            Common.common.Printf("Sys_QueEvent: overflow\n")
-            // we are discarding an event, but don't leak memory
+            Common.common.Printf("Sys_QueEvent: overflow\n") // we are discarding an event, but don't leak memory
             eventQue[eventHead and MASK_QUED_EVENTS].evPtr?.clear()
             eventTail++
         }
@@ -696,8 +683,7 @@ object win_main {
         return ev
     }
 
-    fun Sys_StartAsyncThread() {
-        // Async thread is now created by Common.Init() directly.
+    fun Sys_StartAsyncThread() { // Async thread is now created by Common.Init() directly.
         // This function exists for API compatibility.
     }
 
@@ -710,10 +696,7 @@ object win_main {
      */
     fun Sys_Init() {
         CmdSystem.cmdSystem.AddCommand(
-            "in_restart",
-            Sys_In_Restart_f.INSTANCE,
-            CmdSystem.CMD_FL_SYSTEM,
-            "restarts the input system"
+            "in_restart", Sys_In_Restart_f.INSTANCE, CmdSystem.CMD_FL_SYSTEM, "restarts the input system"
         )
 
 
@@ -751,9 +734,7 @@ object win_main {
         } else {
             Common.common.Printf("forcing CPU type to ")
             val src = idLexer(
-                Win32Vars_t.sys_cpustring.GetString()!!,
-                Win32Vars_t.sys_cpustring.GetString()!!.length,
-                "sys_cpustring"
+                Win32Vars_t.sys_cpustring.GetString()!!, Win32Vars_t.sys_cpustring.GetString()!!.length, "sys_cpustring"
             )
             val token = idToken()
             var id = CPUID_NONE
@@ -774,8 +755,7 @@ object win_main {
             }
             if (id == CPUID_NONE) {
                 Common.common.Printf(
-                    "WARNING: unknown sys_cpustring '%s'\n",
-                    Win32Vars_t.sys_cpustring.GetString()!!
+                    "WARNING: unknown sys_cpustring '%s'\n", Win32Vars_t.sys_cpustring.GetString()!!
                 )
                 id = CPUID_GENERIC
             }
@@ -818,8 +798,7 @@ object win_main {
      Win_Frame
      ====================
      */
-    fun Win_Frame() {
-        // if "viewlog" has been modified, show or hide the log console
+    fun Win_Frame() { // if "viewlog" has been modified, show or hide the log console
         if (Win32Vars_t.win_viewlog.IsModified()) {
             if (!Common.com_skipRenderer.GetBool() && idAsyncNetwork.serverDedicated.GetInteger() != 1) {
                 win_syscon.Sys_ShowConsole(Win32Vars_t.win_viewlog.GetInteger(), false)
@@ -861,9 +840,7 @@ object win_main {
         Sys_StartAsyncThread()
 
         // hide or show the early console as necessary
-        if (Win32Vars_t.win_viewlog.GetInteger() != 0 || Common.com_skipRenderer.GetBool()
-            || idAsyncNetwork.serverDedicated.GetInteger() != 0
-        ) {
+        if (Win32Vars_t.win_viewlog.GetInteger() != 0 || Common.com_skipRenderer.GetBool() || idAsyncNetwork.serverDedicated.GetInteger() != 0) {
             win_syscon.Sys_ShowConsole(1, true)
         } else {
             win_syscon.Sys_ShowConsole(0, false)
@@ -872,8 +849,7 @@ object win_main {
         if (sys_cmdline.indexOf("+debugger") >= 0) {
             win_syscon.Sys_ShowConsole(1, true)
             return
-        }
-        // main game loop
+        } // main game loop
         while (true) {
             Win_Frame()
 

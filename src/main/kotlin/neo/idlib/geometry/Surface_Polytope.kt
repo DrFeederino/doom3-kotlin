@@ -28,8 +28,7 @@ object Surface_Polytope {
             val windingVerts: IntArray
             val w = idFixedWinding()
             val newVert = idDrawVert()
-            windingVerts = IntArray(Winding.MAX_POINTS_ON_WINDING)
-            //	memset( &newVert, 0, sizeof( newVert ) );
+            windingVerts = IntArray(Winding.MAX_POINTS_ON_WINDING) //	memset( &newVert, 0, sizeof( newVert ) );
             i = 0
             while (i < numPlanes) {
                 w.BaseForPlane(planes[i])
@@ -214,10 +213,7 @@ object Surface_Polytope {
         }
 
         fun SplitPolytope(
-            plane: idPlane,
-            epsilon: Float,
-            front: Array<idSurface_Polytope?>,
-            back: Array<idSurface_Polytope?>
+            plane: idPlane, epsilon: Float, front: Array<idSurface_Polytope?>, back: Array<idSurface_Polytope?>
         ): Int {
             val side: Int
             var i: Int
@@ -239,8 +235,7 @@ object Surface_Polytope {
             while (s < 2) {
                 if (surface[s][1]!![1] != null) {
                     polytopeSurfaces[s] = idSurface_Polytope()
-                    polytopeSurfaces[s].SwapTriangles(surface[s][1]!![1]!!)
-                    //                    delete surface[s];
+                    polytopeSurfaces[s].SwapTriangles(surface[s][1]!![1]!!) //                    delete surface[s];
                     surface[s][1]!![1] = null
                 }
                 s++

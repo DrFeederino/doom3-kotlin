@@ -84,8 +84,7 @@ class WorldSpawn {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[EV_Remove] =
-                    eventCallback_t0<idWorldspawn> { obj: idWorldspawn -> obj.Event_Remove() }
+                eventCallbacks[EV_Remove] = eventCallback_t0<idWorldspawn> { obj: idWorldspawn -> obj.Event_Remove() }
                 eventCallbacks[EV_SafeRemove] =
                     eventCallback_t0<idWorldspawn> { obj: idWorldspawn -> obj.Event_Remove() }
             }
@@ -95,8 +94,7 @@ class WorldSpawn {
          ================
          idWorldspawn::~idWorldspawn
          ================
-         */
-        // FIX: Added missing destructor — C++ ~idWorldspawn clears gameLocal.world
+         */ // FIX: Added missing destructor — C++ ~idWorldspawn clears gameLocal.world
         override fun _deconstructor() {
             if (Game_local.gameLocal.world === this) {
                 Game_local.gameLocal.world = null
@@ -146,9 +144,7 @@ class WorldSpawn {
                 func = Game_local.gameLocal.program.FindFunction(kv.GetValue().toString())
                 if (func == null) {
                     idGameLocal.Error(
-                        "Function '%s' not found in script for '%s' key on worldspawn",
-                        kv.GetValue(),
-                        kv.GetKey()
+                        "Function '%s' not found in script for '%s' key on worldspawn", kv.GetValue(), kv.GetKey()
                     )
                 }
                 thread = idThread(func!!)

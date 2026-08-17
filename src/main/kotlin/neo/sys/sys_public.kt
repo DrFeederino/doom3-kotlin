@@ -240,11 +240,7 @@ class sysEvent_s : idSerializable {
     }
 
     companion object {
-        private val SIZE = (CPP_class.ENUM_SIZE
-                + Integer.SIZE
-                + Integer.SIZE
-                + Integer.SIZE
-                + CPP_class.POINTER_SIZE)
+        private val SIZE = (CPP_class.ENUM_SIZE + Integer.SIZE + Integer.SIZE + Integer.SIZE + CPP_class.POINTER_SIZE)
 
         val BYTES = SIZE / 8
     }
@@ -266,8 +262,7 @@ class netadr_t {
         if (this === o) return true
         if (o !is netadr_t) return false
         val netadr_t = o
-        if (port != netadr_t.port) return false
-        return if (!Arrays.equals(ip, netadr_t.ip)) false else type == netadr_t.type
+        return port == netadr_t.port && Arrays.equals(ip, netadr_t.ip) && type == netadr_t.type
     }
 
     override fun hashCode(): Int {
@@ -370,8 +365,7 @@ class idPort {
                 udpPorts[bound_to.port]?.recieveFirst = udpPorts[bound_to.port]?.recieveFirst?.next
                 if (udpPorts[bound_to.port]?.recieveFirst != null) {
                     udpPorts[bound_to.port]?.recieveLast = null
-                }
-                // Not needed
+                } // Not needed
                 //udpPorts[ bound_to.port ].udpMsgAllocator.Free( msg )
                 return true
             }
@@ -446,9 +440,13 @@ class idTCP {
             address.port = port.toInt()
         }
         common.Printf(
-            "\"%s\" resolved to %d.%d.%d.%d:%d\n", host,
-            address.ip[0].toInt() and 0xFF, address.ip[1].toInt() and 0xFF,
-            address.ip[2].toInt() and 0xFF, address.ip[3].toInt() and 0xFF, address.port
+            "\"%s\" resolved to %d.%d.%d.%d:%d\n",
+            host,
+            address.ip[0].code and 0xFF,
+            address.ip[1].code and 0xFF,
+            address.ip[2].code and 0xFF,
+            address.ip[3].code and 0xFF,
+            address.port
         )
 
         if (socket != null) {
@@ -465,8 +463,9 @@ class idTCP {
                 )
             )
             socket = java.net.Socket()
-            socket!!.connect(java.net.InetSocketAddress(inetAddr, address.port), 10000)
-            // make it non-blocking by setting a short read timeout
+            socket!!.connect(
+                java.net.InetSocketAddress(inetAddr, address.port), 10000
+            ) // make it non-blocking by setting a short read timeout
             socket!!.soTimeout = 1
             socket!!.tcpNoDelay = true
         } catch (e: Exception) {
@@ -499,15 +498,13 @@ class idTCP {
         try {
             val nbytes = socket!!.getInputStream().read(data, 0, size)
 
-            if (nbytes == -1) {
-                // end of stream — remote closed connection
+            if (nbytes == -1) { // end of stream — remote closed connection
                 common.DPrintf("idTCP::Read: read 0 bytes - assume connection closed\n")
                 return -1
             }
 
             return nbytes
-        } catch (e: java.net.SocketTimeoutException) {
-            // non-blocking: no data available right now
+        } catch (e: java.net.SocketTimeoutException) { // non-blocking: no data available right now
             return 0
         } catch (e: Exception) {
             common.Printf("ERROR: idTCP::Read: %s\n", e.message ?: "unknown error")

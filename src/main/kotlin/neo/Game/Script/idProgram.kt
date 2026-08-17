@@ -33,7 +33,6 @@ import neo.idlib.hashing.MD4_BlockChecksum
 import neo.idlib.math.idVec3
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.util.*
 
 /* **********************************************************************
 
@@ -152,8 +151,7 @@ class idProgram {
                 savefile.WriteByte(variables[i])
             }
             i++
-        }
-        // Mark the end of the diff with default variables with -1
+        } // Mark the end of the diff with default variables with -1
         savefile.WriteInt(-1)
         savefile.WriteInt(numVariables)
         i = variableDefaults.Num()
@@ -204,8 +202,7 @@ class idProgram {
     }
 
     // Used to insure program code has not changed between savegames
-    fun CalculateChecksum(forOldSavegame: Boolean): Long {
-        // C++ statementBlock_t layout (natural alignment, sizeof = 20):
+    fun CalculateChecksum(forOldSavegame: Boolean): Long { // C++ statementBlock_t layout (natural alignment, sizeof = 20):
         //   unsigned short op;         // offset 0,  size 2
         //   (2 bytes padding)          // offset 2,  size 2 (align int a to 4)
         //   int a;                     // offset 4,  size 4
@@ -242,9 +239,7 @@ class idProgram {
             buffer.putInt(if (st.b != null) st.b!!.num else -1)  // b
             // DG: old savegames wrongly assumed argSize 0 for some statements.
             if (st.c != null) {
-                if (forOldSavegame && st.op == OP_OBJECTCALL
-                    && st.flags == statement_s.FLAG_OBJECTCALL_IMPL_NOT_PARSED_YET
-                ) {
+                if (forOldSavegame && st.op == OP_OBJECTCALL && st.flags == statement_s.FLAG_OBJECTCALL_IMPL_NOT_PARSED_YET) {
                     buffer.putInt(constantZeroNum)  // c - use zero constant for old savegame compat
                 } else {
                     buffer.putInt(st.c!!.num)  // c
@@ -262,8 +257,7 @@ class idProgram {
 
     //    changed between savegames
     fun Startup(defaultScript: String?) {
-        Game_local.gameLocal.Printf("Initializing scripts\n")
-        // make sure all data is freed up
+        Game_local.gameLocal.Printf("Initializing scripts\n") // make sure all data is freed up
 
         idThread.Restart()
 
@@ -292,9 +286,9 @@ class idProgram {
         // have typed "script" from the console, free up any types and vardefs that
         // have been allocated after the initial startup
         //
-//        for (i in top_types until types.Num()) {
-//            // idTypeDef has no special cleanup, just truncate
-//        }
+        //        for (i in top_types until types.Num()) {
+        //            // idTypeDef has no special cleanup, just truncate
+        //        }
         types.SetNum(top_types, false)
 
         for (i in top_defs until varDefs.Num()) {
@@ -342,8 +336,7 @@ class idProgram {
                     if (null == def.value!!.functionPtr!!.eventdef && 0 == def.value!!.functionPtr!!.firstStatement) {
                         throw idCompileError(
                             String.format(
-                                "function %s was not defined\n",
-                                def.GlobalName()
+                                "function %s was not defined\n", def.GlobalName()
                             )
                         )
                     }
@@ -402,10 +395,9 @@ class idProgram {
     fun BeginCompilation() {
         val statement: statement_s?
         FreeData()
-        try {
-            // make the first statement a return for a "NULL" function
+        try { // make the first statement a return for a "NULL" function
             statement = AllocStatement()
-            statement!!.linenumber = 0
+            statement.linenumber = 0
             statement.file = 0
             statement.op = OP_RETURN
             statement.a = null
@@ -456,11 +448,7 @@ class idProgram {
         statement = statements[instructionPointer]
         op = idCompiler.opcodes[statement.op]!!
         file.Printf(
-            "%20s(%d):\t%6d: %15s\t",
-            fileList[statement.file],
-            statement.linenumber,
-            instructionPointer,
-            op.opname
+            "%20s(%d):\t%6d: %15s\t", fileList[statement.file], statement.linenumber, instructionPointer, op.opname
         )
         if (statement.a != null) {
             file.Printf("\ta: ")
@@ -486,8 +474,7 @@ class idProgram {
         i = 0
         while (i < functions.Num()) {
             func = functions[i]
-            if (func.eventdef != null) {
-                // skip eventdefs
+            if (func.eventdef != null) { // skip eventdefs
                 i++
                 continue
             }
@@ -523,8 +510,7 @@ class idProgram {
         // free any special types we've created
         types.DeleteContents(true)
         filenum = 0
-        numVariables = 0
-        //	memset( variables, 0, sizeof( variables ) );
+        numVariables = 0 //	memset( variables, 0, sizeof( variables ) );
         variables = ByteArray(variables.size)
 
         // clear all the strings in the functions so that it doesn't look like we're leaking memory.
@@ -555,12 +541,12 @@ class idProgram {
         }
         val strippedName: String
         strippedName = fileSystem.OSPathToRelativePath(name)
-        filenum = if (strippedName == null || strippedName.isEmpty()) {
-            // not off the base path so just use the full path
-            fileList.addUnique(name)
-        } else {
-            fileList.addUnique(strippedName)
-        }
+        filenum =
+            if (strippedName == null || strippedName.isEmpty()) { // not off the base path so just use the full path
+                fileList.addUnique(name)
+            } else {
+                fileList.addUnique(strippedName)
+            }
 
         // save the unstripped name so that we don't have to strip the incoming name every time we call GetFilenum
         filename.set(name)
@@ -667,12 +653,10 @@ class idProgram {
         AddDefToNameList(def, name)
         if (type!!.Type() == Script_Program.ev_vector || type.Type() == Script_Program.ev_field && type.FieldType()!!
                 .Type() == Script_Program.ev_vector
-        ) {
-            //
+        ) { //
             // vector
             //
-            if (RESULT_STRING == name) {
-                // <RESULT> vector defs don't need the _x, _y and _z components
+            if (RESULT_STRING == name) { // <RESULT> vector defs don't need the _x, _y and _z components
                 assert(scope!!.Type() == Script_Program.ev_function)
                 def.value!!.stackOffset = scope.value!!.functionPtr!!.locals
                 def.initialized = initialized_t.stackVariable
@@ -709,8 +693,7 @@ class idProgram {
 
                 // get the memory for the full vector and point the _x, _y and _z
                 // defs at the vector member offsets
-                if (scope!!.Type() == Script_Program.ev_function) {
-                    // vector on stack
+                if (scope.Type() == Script_Program.ev_function) { // vector on stack
                     def.value!!.stackOffset = scope.value!!.functionPtr!!.locals
                     def.initialized = initialized_t.stackVariable
                     scope.value!!.functionPtr!!.locals += type.Size()
@@ -718,8 +701,7 @@ class idProgram {
                     def_x.value!!.stackOffset = def.value!!.stackOffset
                     def_y.value!!.stackOffset = def_x.value!!.stackOffset + java.lang.Float.BYTES
                     def_z.value!!.stackOffset = def_y.value!!.stackOffset + java.lang.Float.BYTES
-                } else {
-                    // global vector
+                } else { // global vector
                     val baseOffset = numVariables
                     def.value!!.setBytePtr(variables, baseOffset)
                     numVariables += type.Size()
@@ -736,28 +718,24 @@ class idProgram {
                 def_y.initialized = def.initialized
                 def_z.initialized = def.initialized
             }
-        } else if (scope!!.TypeDef()!!.Inherits(Script_Program.type_object)) {
-            //
+        } else if (scope!!.TypeDef()!!.Inherits(Script_Program.type_object)) { //
             // object variable
             //
             // set the value to the variable's position in the object
             def.value!!.ptrOffset = scope.TypeDef()!!.Size()
-        } else if (scope.Type() == Script_Program.ev_function) {
-            //
+        } else if (scope.Type() == Script_Program.ev_function) { //
             // stack variable
             //
             // since we don't know how many local variables there are,
             // we have to have them go backwards on the stack
             def.value!!.stackOffset = scope.value!!.functionPtr!!.locals
             def.initialized = initialized_t.stackVariable
-            if (type.Inherits(Script_Program.type_object)) {
-                // objects only have their entity number on the stack, not the entire object
+            if (type.Inherits(Script_Program.type_object)) { // objects only have their entity number on the stack, not the entire object
                 scope.value!!.functionPtr!!.locals += Script_Program.type_object.Size()
             } else {
                 scope.value!!.functionPtr!!.locals += type.Size()
             }
-        } else {
-            // global variable
+        } else { // global variable
             val baseOffset = numVariables
             def.value!!.setBytePtr(variables, baseOffset)
             numVariables += def.TypeDef()!!.Size()
@@ -787,13 +765,11 @@ class idProgram {
         while (def != null) {
             if (def.scope!!.Type() == Script_Program.ev_namespace) {
                 depth = def.DepthOfScope(scope)
-                if (0 == depth) {
-                    // not in the same namespace
+                if (0 == depth) { // not in the same namespace
                     def = def.Next()
                     continue
                 }
-            } else if (def.scope !== scope) {
-                // in a different function
+            } else if (def.scope !== scope) { // in a different function
                 def = def.Next()
                 continue
             } else {
@@ -922,8 +898,7 @@ class idProgram {
             }
             val namespaceName = fullname.Mid(start, pos - start).toString()
             def = GetDef(null, namespaceName, namespaceDef)
-            if (null == def) {
-                // couldn't find namespace
+            if (null == def) { // couldn't find namespace
                 return null
             }
             namespaceDef = def
@@ -933,8 +908,7 @@ class idProgram {
         } while (def.Type() == Script_Program.ev_namespace)
         val funcName = fullname.Right(fullname.Length() - start).toString()
         def = GetDef(null, funcName, namespaceDef)
-        if (null == def) {
-            // couldn't find function
+        if (null == def) { // couldn't find function
             return null
         }
         return if (def.Type() == Script_Program.ev_function && def.value!!.functionPtr!!.eventdef == null) {
@@ -963,7 +937,7 @@ class idProgram {
         var def: idVarDef?
 
         // look for the function
-//            def = null;
+        //            def = null;
         tdef = type.def
         while (tdef !== Script_Program.def_object) {
             def = GetDef(null, name, tdef)
@@ -1009,8 +983,7 @@ class idProgram {
         var defName: String? = "$"
         defName += name
         def = GetDef(Script_Program.type_entity, defName, Script_Program.def_namespace)
-        if (def != null && def.initialized != initialized_t.stackVariable) {
-            // 0 is reserved for NULL entity
+        if (def != null && def.initialized != initialized_t.stackVariable) { // 0 is reserved for NULL entity
             if (null == ent) {
                 def.value!!.entityNumberPtr = 0
             } else {

@@ -453,8 +453,7 @@ class idMat6 {
         return mat[0].p[0] + mat[1].p[1] + mat[2].p[2] + mat[3].p[3] + mat[4].p[4] + mat[5].p[5]
     }
 
-    fun Determinant(): Float {
-        // 2x2 sub-determinants required to calculate 6x6 determinant
+    fun Determinant(): Float { // 2x2 sub-determinants required to calculate 6x6 determinant
         val det2_45_01 = mat[4].p[0] * mat[5].p[1] - mat[4].p[1] * mat[5].p[0]
         val det2_45_02 = mat[4].p[0] * mat[5].p[2] - mat[4].p[2] * mat[5].p[0]
         val det2_45_03 = mat[4].p[0] * mat[5].p[3] - mat[4].p[3] * mat[5].p[0]
@@ -1158,8 +1157,7 @@ class idMat6 {
         this.mat[5].p[3] = -r3[2].x
         this.mat[5].p[4] = -r3[2].y
         this.mat[5].p[5] = -r3[2].z
-        return true
-        //#endif
+        return true //#endif
     }
 
     fun GetDimension(): Int {

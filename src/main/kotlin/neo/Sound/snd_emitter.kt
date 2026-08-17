@@ -44,8 +44,7 @@ object snd_emitter {
      SOUND EMITTER
 
      ===============================================================================
-     */
-    // sound channels
+     */ // sound channels
     const val SCHANNEL_ANY = 0 // used in queries and commands to effect every channel at once, in
 
     // startSound to have it not override any other channel
@@ -157,8 +156,9 @@ object snd_emitter {
 
         //
         //
-        override fun ProcessSample(inArr: FloatArray, inOffset: Int, out: FloatArray, outOffset: Int) {
-            // compute output value
+        override fun ProcessSample(
+            inArr: FloatArray, inOffset: Int, out: FloatArray, outOffset: Int
+        ) { // compute output value
             out[outOffset + 0] =
                 a1 * inArr[inOffset + 0] + a2 * inArr[inOffset - 1] + a3 * inArr[inOffset - 2] - b1 * out[outOffset - 1] - b2 * out[outOffset - 2]
         }
@@ -261,14 +261,14 @@ object snd_emitter {
         private val continuityOut2 = FloatArray(1)
 
         // functions
-        fun GenerateSlowChannel(playPos: FracTime, sampleCount44k: Int, finalBuffer: FloatArray) {
-            // FIX: Added null check from C++ — GetPlayingSoundWorld() can return null during level transitions
+        fun GenerateSlowChannel(
+            playPos: FracTime, sampleCount44k: Int, finalBuffer: FloatArray
+        ) { // FIX: Added null check from C++ — GetPlayingSoundWorld() can return null during level transitions
             val sw = snd_system.soundSystemLocal.GetPlayingSoundWorld() as? idSoundWorldLocal
             val `in` = slowIn
             val out = slowOut
             val src = slowSrc
-            val spline = slowSpline
-            //            int src, spline;
+            val spline = slowSpline //            int src, spline;
             val slowmoSpeed: Float
             var i: Int
             val neededSamples: Int
@@ -277,8 +277,8 @@ object snd_emitter {
             src.fill(0.0f)
             spline.fill(0.0f)
 
-//            src = in + 2;
-//            spline = out + 2;
+            //            src = in + 2;
+            //            spline = out + 2;
             // FIX: C++ checks if sw is null and defaults to 1.0f
             slowmoSpeed = sw?.slowmoSpeed ?: 1.0f
             neededSamples = (sampleCount44k * slowmoSpeed + 4).toInt()
@@ -306,7 +306,7 @@ object snd_emitter {
             }
 
             // lowpass filter
-//            float *in_p = in + 2, *out_p = out + 2;
+            //            float *in_p = in + 2, *out_p = out + 2;
             val in_p1 = continuityIn1
             val in_p2 = continuityIn2
             val out_p1 = continuityOut1
@@ -330,10 +330,7 @@ object snd_emitter {
                 count += 2
             }
             lowpass.SetContinuitySamples(
-                `in`[2 + numSamples - 2],
-                `in`[2 + numSamples - 3],
-                out[2 + numSamples - 2],
-                out[2 + numSamples - 3]
+                `in`[2 + numSamples - 2], `in`[2 + numSamples - 3], out[2 + numSamples - 2], out[2 + numSamples - 3]
             ) //2 = pointer offset
             playPos.time += zeroedPos
         }
@@ -347,8 +344,7 @@ object snd_emitter {
             this.chan = chan
         }
 
-        fun Reset() {
-            // FIX: C++ memset(this, 0, sizeof(*this)) zeroes ALL fields before setting overrides.
+        fun Reset() { // FIX: C++ memset(this, 0, sizeof(*this)) zeroes ALL fields before setting overrides.
             // Kotlin was only resetting a subset, leaving active/playbackState/lowpass stale.
             active = false
             chan = null
@@ -442,8 +438,7 @@ object snd_emitter {
             channelFade.Clear()
             diversity = 0.0f
             leadinSample = null
-            trigger44kHzTime = 0
-            // FIX: C++ sets stopped = false and paused = false in Clear()
+            trigger44kHzTime = 0 // FIX: C++ sets stopped = false and paused = false in Clear()
             stopped = false
             j = 0
             while (j < 6) {
@@ -495,8 +490,7 @@ object snd_emitter {
                 len = -sampleOffset44k
                 if (len > sampleCount44k) {
                     len = sampleCount44k
-                }
-                // FIX: C++ memset zeroes the negative-offset region
+                } // FIX: C++ memset zeroes the negative-offset region
                 for (i in dest_p until dest_p + len) {
                     dest.put(i, 0.0f)
                 }
@@ -507,8 +501,7 @@ object snd_emitter {
 
             // grab part of the leadin sample
             val leadin = leadinSample
-            if (leadin == null || sampleOffset44k < 0 || sampleCount44k <= 0) {
-                // FIX: C++ memset zeroes remaining buffer before returning
+            if (leadin == null || sampleOffset44k < 0 || sampleCount44k <= 0) { // FIX: C++ memset zeroes remaining buffer before returning
                 for (i in dest_p until dest_p + sampleCount44k) {
                     dest.put(i, 0.0f)
                 }
@@ -528,8 +521,7 @@ object snd_emitter {
             }
 
             // if not looping, zero fill any remaining spots
-            if (null == soundShader || 0 == parms!!.soundShaderFlags and snd_shader.SSF_LOOPING) {
-                // FIX: C++ memset zeroes remaining buffer before returning
+            if (null == soundShader || 0 == parms!!.soundShaderFlags and snd_shader.SSF_LOOPING) { // FIX: C++ memset zeroes remaining buffer before returning
                 for (i in dest_p until dest_p + sampleCount44k) {
                     dest.put(i, 0.0f)
                 }
@@ -538,8 +530,7 @@ object snd_emitter {
 
             // fill the remainder with looped samples
             val loop = soundShader!!.entries[0]
-            if (loop == null) {
-                // FIX: C++ memset zeroes remaining buffer before returning
+            if (loop == null) { // FIX: C++ memset zeroes remaining buffer before returning
                 for (i in dest_p until dest_p + sampleCount44k) {
                     dest.put(i, 0.0f)
                 }
@@ -568,14 +559,11 @@ object snd_emitter {
             }
             if (AL10.alIsSource(openalSource)) {
                 AL10.alSourceStop(openalSource)
-                AL10.alSourcei(openalSource, AL10.AL_BUFFER, 0)
-                // FIX: C++ unassociates effect slot from source so it can be deleted on shutdown
+                AL10.alSourcei(
+                    openalSource, AL10.AL_BUFFER, 0
+                ) // FIX: C++ unassociates effect slot from source so it can be deleted on shutdown
                 alSource3i(
-                    openalSource,
-                    EXTEfx.AL_AUXILIARY_SEND_FILTER,
-                    EXTEfx.AL_EFFECTSLOT_NULL,
-                    0,
-                    EXTEfx.AL_FILTER_NULL
+                    openalSource, EXTEfx.AL_AUXILIARY_SEND_FILTER, EXTEfx.AL_EFFECTSLOT_NULL, 0, EXTEfx.AL_FILTER_NULL
                 )
                 snd_system.soundSystemLocal.FreeOpenALSource(openalSource)
             }
@@ -701,8 +689,8 @@ object snd_emitter {
                 soundWorld!!.writeDemo!!.WriteInt(parms.soundClass)
             }
             this.origin.set(origin)
-            this.listenerId = listenerId
-            // FIX: C++ does struct value copy (*parms). Kotlin reference assignment would alias.
+            this.listenerId =
+                listenerId // FIX: C++ does struct value copy (*parms). Kotlin reference assignment would alias.
             this.parms = snd_shader.soundShaderParms_t(parms)
 
             // FIXME: change values on all channels?
@@ -728,11 +716,7 @@ object snd_emitter {
             }
             if (idSoundSystemLocal.s_showStartSound.GetInteger() != 0) {
                 Common.common.Printf(
-                    "StartSound %dms (%d,%d,%s) = ",
-                    soundWorld!!.gameMsec,
-                    index,
-                    channel,
-                    shader.GetName()
+                    "StartSound %dms (%d,%d,%s) = ", soundWorld!!.gameMsec, index, channel, shader.GetName()
                 )
             }
             if (soundWorld != null && soundWorld!!.writeDemo != null) {
@@ -755,8 +739,7 @@ object snd_emitter {
 
             // this is the sample time it will be first mixed
             var start44kHz: Int
-            start44kHz = if (soundWorld!!.fpa[0] != null) {
-                // if we are recording an AVI demo, don't use hardware time
+            start44kHz = if (soundWorld!!.fpa[0] != null) { // if we are recording an AVI demo, don't use hardware time
                 soundWorld!!.lastAVI44kHz + MIXBUFFER_SAMPLES
             } else {
                 snd_system.soundSystemLocal.GetCurrent44kHzTime() + MIXBUFFER_SAMPLES
@@ -860,8 +843,7 @@ object snd_emitter {
                 }
                 i++
             }
-            if (i == snd_local.SOUND_MAX_CHANNELS) {
-                // we couldn't find a channel for it
+            if (i == snd_local.SOUND_MAX_CHANNELS) { // we couldn't find a channel for it
                 Sys_LeaveCriticalSection()
                 if (idSoundSystemLocal.s_showStartSound.GetInteger() != 0) {
                     Common.common.Printf("no channels available\n")
@@ -880,8 +862,7 @@ object snd_emitter {
                 val start = win_shared.Sys_Milliseconds()
                 chan.leadinSample!!.Load()
                 val end = win_shared.Sys_Milliseconds()
-                Session.session.TimeHitch(end - start)
-                // recalculate start44kHz, because loading may have taken a fair amount of time
+                Session.session.TimeHitch(end - start) // recalculate start44kHz, because loading may have taken a fair amount of time
                 if (soundWorld!!.fpa[0] == null) {
                     start44kHz = snd_system.soundSystemLocal.GetCurrent44kHzTime() + MIXBUFFER_SAMPLES
                 }
@@ -922,9 +903,7 @@ object snd_emitter {
 
             // adjust the start time based on diversity for looping sounds, so they don't all start
             // at the same point
-            if (chan.parms!!.soundShaderFlags and snd_shader.SSF_LOOPING != 0 &&
-                chan.leadinSample!!.LengthIn44kHzSamples() == 0
-            ) {
+            if (chan.parms!!.soundShaderFlags and snd_shader.SSF_LOOPING != 0 && chan.leadinSample!!.LengthIn44kHzSamples() == 0) {
                 chan.trigger44kHzTime -= (diversity * length).toInt()
                 chan.trigger44kHzTime =
                     chan.trigger44kHzTime and 7.inv() // so we don't have to worry about the 22kHz and 11kHz expansions
@@ -1088,8 +1067,7 @@ object snd_emitter {
                 soundWorld!!.writeDemo!!.WriteFloat(over)
             }
             val start44kHz: Int
-            start44kHz = if (soundWorld!!.fpa[0] != null) {
-                // if we are recording an AVI demo, don't use hardware time
+            start44kHz = if (soundWorld!!.fpa[0] != null) { // if we are recording an AVI demo, don't use hardware time
                 soundWorld!!.lastAVI44kHz + MIXBUFFER_SAMPLES
             } else {
                 snd_system.soundSystemLocal.GetCurrent44kHzTime() + MIXBUFFER_SAMPLES
@@ -1105,9 +1083,7 @@ object snd_emitter {
                 }
 
                 // if it is already fading to this volume at this rate, don't change it
-                if (chan.channelFade.fadeEndVolume == to
-                    && chan.channelFade.fadeEnd44kHz - chan.channelFade.fadeStart44kHz == length44kHz
-                ) {
+                if (chan.channelFade.fadeEndVolume == to && chan.channelFade.fadeEnd44kHz - chan.channelFade.fadeStart44kHz == length44kHz) {
                     continue
                 }
 
@@ -1250,9 +1226,8 @@ object snd_emitter {
                         }
                         val slow = GetSlowChannel(chan)
                         if (soundWorld!!.slowmoActive && slow.IsActive()) {
-                            if (slow.GetCurrentPosition()!!.time >= chan.leadinSample!!.LengthIn44kHzSamples() / 2) {
-                                chan.Stop()
-                                // if this was an onDemand sound, purge the sample now
+                            if (slow.GetCurrentPosition().time >= chan.leadinSample!!.LengthIn44kHzSamples() / 2) {
+                                chan.Stop() // if this was an onDemand sound, purge the sample now
                                 if (chan.leadinSample!!.onDemand) {
                                     chan.leadinSample!!.PurgeSoundSample()
                                 }
@@ -1285,8 +1260,7 @@ object snd_emitter {
             // mark the entire sound emitter as non-playing if there aren't any active channels
             if (!hasActive) {
                 playing = false
-                if (removeStatus == REMOVE_STATUS_WAITSAMPLEFINISHED) {
-                    // this can now be reused by the next request for a new soundEmitter
+                if (removeStatus == REMOVE_STATUS_WAITSAMPLEFINISHED) { // this can now be reused by the next request for a new soundEmitter
                     removeStatus = REMOVE_STATUS_SAMPLEFINISHED
                 }
             }
@@ -1325,8 +1299,7 @@ object snd_emitter {
             val realOrigin = idVec3(origin.times(snd_shader.DOOM_TO_METERS))
             val len = idVec3(listenerPos - realOrigin)
             realDistance = len.LengthFast()
-            if (realDistance >= maxDistance) {
-                // no way to possibly hear it
+            if (realDistance >= maxDistance) { // no way to possibly hear it
                 distance = realDistance
                 return
             }
@@ -1338,8 +1311,7 @@ object snd_emitter {
             if (listenerArea == -1) {        // listener is outside the world
                 return
             }
-            if (rw != null) {
-                // we have a valid renderWorld
+            if (rw != null) { // we have a valid renderWorld
                 var soundInArea = rw.PointInArea(origin)
                 if (soundInArea == -1) {
                     if (lastValidPortalArea == -1) {        // sound is outside the world
@@ -1357,8 +1329,7 @@ object snd_emitter {
                 }
                 soundWorld!!.ResolveOrigin(0, null, soundInArea, 0.0f, origin, this)
                 distance /= snd_shader.METERS_TO_DOOM
-            } else {
-                // no portals available
+            } else { // no portals available
                 distance = realDistance
                 spatializedOrigin.set(origin) // sound is in our area
             }

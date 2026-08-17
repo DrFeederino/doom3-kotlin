@@ -25,7 +25,6 @@ Translated to Kotlin by Dr. Feederino with support of Claude Code.
 */
 package neo.Renderer
 
-import neo.Renderer.*
 import neo.Renderer.Interaction.idInteraction
 import neo.Renderer.Material.idMaterial
 import neo.Renderer.Model.idRenderModel
@@ -120,8 +119,7 @@ object tr_lightrun {
 
 
 
-     */
-    /*
+     *//*
      =================
      R_CreateLightRefs
      =================
@@ -159,10 +157,7 @@ object tr_lightrun {
         if (def.referenceBounds.IsCleared()) {
             return
         }
-        if ((r_showUpdates!!.GetBool()
-                    && (def.referenceBounds[1, 0] - def.referenceBounds[0, 0] > 1024
-                    || def.referenceBounds[1, 1] - def.referenceBounds[0, 1] > 1024))
-        ) {
+        if ((r_showUpdates.GetBool() && (def.referenceBounds[1, 0] - def.referenceBounds[0, 0] > 1024 || def.referenceBounds[1, 1] - def.referenceBounds[0, 1] > 1024))) {
             Common.common.Printf(
                 "big entityRef: %f,%f\n", def.referenceBounds[1, 0] - def.referenceBounds[0, 0],
                 def.referenceBounds[1, 1] - def.referenceBounds[0, 1]
@@ -191,8 +186,7 @@ object tr_lightrun {
      CREATE LIGHT REFS
 
      =================================================================================
-     */
-    /*
+     *//*
      =====================
      R_SetLightProject
 
@@ -202,8 +196,13 @@ object tr_lightrun {
      =====================
      */
     fun R_SetLightProject(
-        lightProject: Array<idPlane> /*[4]*/, origin: idVec3, target: idVec3,
-        rightVector: idVec3?, upVector: idVec3?, start: idVec3, stop: idVec3
+        lightProject: Array<idPlane> /*[4]*/,
+        origin: idVec3,
+        target: idVec3,
+        rightVector: idVec3?,
+        upVector: idVec3?,
+        start: idVec3,
+        stop: idVec3
     ) {
         var dist: Float
         var scale: Float
@@ -300,8 +299,7 @@ object tr_lightrun {
         if (ldef.frustumTris != null) {
             R_FreeStaticTriSurf(ldef.frustumTris)
             ldef.frustumTris = null
-        }
-        // free frustum windings
+        } // free frustum windings
         i = 0
         while (i < 6) {
             if (ldef.frustumWindings[i] != null) {
@@ -336,28 +334,29 @@ object tr_lightrun {
 
         // get the falloff image
         light.falloffImage = light.lightShader!!.LightFalloffImage()
-        if (null == light.falloffImage) {
-            // use the falloff from the default shader of the correct type
+        if (null == light.falloffImage) { // use the falloff from the default shader of the correct type
             val defaultShader: idMaterial?
             if (light.parms.pointLight._val) {
                 defaultShader = DeclManager.declManager.FindMaterial("lights/defaultPointLight")
                 light.falloffImage = defaultShader!!.LightFalloffImage()
-            } else {
-                // projected lights by default don't diminish with distance
+            } else { // projected lights by default don't diminish with distance
                 defaultShader = DeclManager.declManager.FindMaterial("lights/defaultProjectedLight")
                 light.falloffImage = defaultShader!!.LightFalloffImage()
             }
         }
 
         // set the projection
-        if (!light.parms.pointLight._val) {
-            // projected light
+        if (!light.parms.pointLight._val) { // projected light
             R_SetLightProject(
-                light.lightProject, vec3_origin /* light.parms.origin */, light.parms.target,
-                light.parms.right, light.parms.up, light.parms.start, light.parms.end
+                light.lightProject,
+                vec3_origin /* light.parms.origin */,
+                light.parms.target,
+                light.parms.right,
+                light.parms.up,
+                light.parms.start,
+                light.parms.end
             )
-        } else {
-            // point light
+        } else { // point light
             for (l in light.lightProject.indices) {
                 light.lightProject[l] = idPlane()
             }
@@ -395,8 +394,7 @@ object tr_lightrun {
         if (light.parms.parallel._val) {
             val dir = idVec3()
             dir.set(light.parms.lightCenter)
-            if (0.0f == dir.Normalize()) {
-                // make point straight up if not specified
+            if (0.0f == dir.Normalize()) { // make point straight up if not specified
                 dir[2] = 1.0f
             }
             light.globalLightOrigin.set(light.parms.origin.plus(dir.times(100000)))
@@ -424,16 +422,12 @@ object tr_lightrun {
         }
         i = 0
         while (i < tri.numVerts) {
-            points[i].set(tri.verts!!.get(i)!!.xyz)
+            points[i].set(tri.verts!!.get(i).xyz)
             i++
         }
-        if (r_showUpdates!!.GetBool() && ((tri.bounds[1, 0] - tri.bounds[0, 0] > 1024
-                    || tri.bounds[1, 1] - tri.bounds[0, 1] > 1024))
-        ) {
+        if (r_showUpdates.GetBool() && ((tri.bounds[1, 0] - tri.bounds[0, 0] > 1024 || tri.bounds[1, 1] - tri.bounds[0, 1] > 1024))) {
             Common.common.Printf(
-                "big lightRef: %f,%f\n",
-                tri.bounds[1, 0] - tri.bounds[0, 0],
-                tri.bounds[1, 1] - tri.bounds[0, 1]
+                "big lightRef: %f,%f\n", tri.bounds[1, 0] - tri.bounds[0, 0], tri.bounds[1, 1] - tri.bounds[0, 1]
             )
         }
 
@@ -454,10 +448,9 @@ object tr_lightrun {
         // we can limit the area references to those visible through the portals from the light center.
         // We can't do this in the normal case, because shadows are cast from back facing triangles, which
         // may be in areas not directly visible to the light projection center.
-        if ((light.parms.prelightModel != null) && r_useLightPortalFlow!!.GetBool() && light.lightShader!!.LightCastsShadows()) {
+        if ((light.parms.prelightModel != null) && r_useLightPortalFlow.GetBool() && light.lightShader!!.LightCastsShadows()) {
             light.world!!.FlowLightThroughPortals(light)
-        } else {
-            // push these points down the BSP tree into areas
+        } else { // push these points down the BSP tree into areas
             light.world!!.PushVolumeIntoTree(null, light, tri.numVerts, points)
         }
     }
@@ -660,8 +653,7 @@ object tr_lightrun {
      R_FreeEntityDefDerivedData
      ==================
      */
-    fun R_ClearEntityDefDynamicModel(def: idRenderEntityLocal) {
-        // free all the interaction surfaces
+    fun R_ClearEntityDefDynamicModel(def: idRenderEntityLocal) { // free all the interaction surfaces
         var inter: idInteraction? = def.firstInteraction
         while (inter != null && !inter.IsEmpty()) {
             inter.FreeSurfaces()
@@ -768,8 +760,7 @@ object tr_lightrun {
                     i++
                     continue
                 }
-                if (def.parms.hModel === model) {
-                    // this should never happen but Radiant messes it up all the time so just free the derived data
+                if (def.parms.hModel === model) { // this should never happen but Radiant messes it up all the time so just free the derived data
                     R_FreeEntityDefDerivedData(def, false, false)
                 }
                 i++
@@ -804,8 +795,7 @@ object tr_lightrun {
                 if (null == def) {
                     i++
                     continue
-                }
-                // the world model entities are put specifically in a single
+                } // the world model entities are put specifically in a single
                 // area, instead of just pushing their bounds into the tree
                 if (i < rw.numPortalAreas) {
                     rw.AddEntityRefToArea(def, rw.portalAreas!!.get(i))
@@ -836,8 +826,7 @@ object tr_lightrun {
      LIGHT TESTING
 
      =================================================================================
-     */
-    /*
+     *//*
      ====================
      R_ModulateLights_f
 

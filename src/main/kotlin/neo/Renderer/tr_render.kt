@@ -25,7 +25,6 @@ Translated to Kotlin by Dr. Feederino with support of Claude Code.
 */
 package neo.Renderer
 
-import neo.Renderer.*
 import neo.Renderer.Cinematic.cinData_t
 import neo.Renderer.Image.idImage
 import neo.Renderer.Material.idMaterial
@@ -56,8 +55,7 @@ import neo.sys.win_glimp.GLimp_DeactivateContext
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL13
 
-object tr_render {
-    /*
+object tr_render {/*
 
      back end scene + lights rendering functions
 
@@ -85,8 +83,8 @@ object tr_render {
         }
         qgl.qglBegin(GL_TRIANGLES)
         for (i in 0 until tri.numIndexes) {
-            qgl.qglTexCoord2fv(tri.verts!![tri.indexes!![i]]!!.st.ToFloatPtr())
-            qgl.qglVertex3fv(tri.verts!![tri.indexes!![i]]!!.xyz.ToFloatPtr())
+            qgl.qglTexCoord2fv(tri.verts!![tri.indexes!![i]].st.ToFloatPtr())
+            qgl.qglVertex3fv(tri.verts!![tri.indexes!![i]].xyz.ToFloatPtr())
         }
         qgl.qglEnd()
     }
@@ -109,21 +107,15 @@ object tr_render {
             }
         }
         val count: Int = if (r_singleTriangle.GetBool()) 3 else tri.numIndexes
-        if (tri.indexCache != null && r_useIndexBuffers!!.GetBool()) {
+        if (tri.indexCache != null && r_useIndexBuffers.GetBool()) {
             val idxPos = VertexCache.vertexCache.Position(tri.indexCache)
             if (VertexCache.vertexCache.IsVBOOffset(idxPos)) {
                 qgl.qglDrawElements(
-                    GL_TRIANGLES,
-                    count,
-                    Model.GL_INDEX_TYPE,
-                    VertexCache.vertexCache.GetVBOOffset(idxPos)
+                    GL_TRIANGLES, count, Model.GL_INDEX_TYPE, VertexCache.vertexCache.GetVBOOffset(idxPos)
                 )
             } else {
                 qgl.qglDrawElements(
-                    GL_TRIANGLES,
-                    count,
-                    Model.GL_INDEX_TYPE,
-                    idxPos
+                    GL_TRIANGLES, count, Model.GL_INDEX_TYPE, idxPos
                 )
             }
             backEnd!!.pc.c_vboIndexes += tri.numIndexes
@@ -146,34 +138,25 @@ object tr_render {
         backEnd!!.pc.c_shadowElements++
         backEnd!!.pc.c_shadowIndexes += numIndexes
         backEnd!!.pc.c_shadowVertexes += tri.numVerts
-        if (tri.indexCache != null && r_useIndexBuffers!!.GetBool()) {
+        if (tri.indexCache != null && r_useIndexBuffers.GetBool()) {
             val idxPos = VertexCache.vertexCache.Position(tri.indexCache)
-            val idxCount = if (r_singleTriangle!!.GetBool()) 3 else numIndexes
+            val idxCount = if (r_singleTriangle.GetBool()) 3 else numIndexes
             if (VertexCache.vertexCache.IsVBOOffset(idxPos)) {
                 qgl.qglDrawElements(
-                    GL_TRIANGLES,
-                    idxCount,
-                    Model.GL_INDEX_TYPE,
-                    VertexCache.vertexCache.GetVBOOffset(idxPos)
+                    GL_TRIANGLES, idxCount, Model.GL_INDEX_TYPE, VertexCache.vertexCache.GetVBOOffset(idxPos)
                 )
             } else {
                 qgl.qglDrawElements(
-                    GL_TRIANGLES,
-                    idxCount,
-                    Model.GL_INDEX_TYPE,
-                    idxPos
+                    GL_TRIANGLES, idxCount, Model.GL_INDEX_TYPE, idxPos
                 )
             }
             backEnd!!.pc.c_vboIndexes += numIndexes
         } else {
-            if (r_useIndexBuffers!!.GetBool()) {
+            if (r_useIndexBuffers.GetBool()) {
                 VertexCache.vertexCache.UnbindIndex()
             }
             qgl.qglDrawElements(
-                GL_TRIANGLES,
-                if (r_singleTriangle!!.GetBool()) 3 else numIndexes,
-                Model.GL_INDEX_TYPE,
-                tri.indexes
+                GL_TRIANGLES, if (r_singleTriangle.GetBool()) 3 else numIndexes, Model.GL_INDEX_TYPE, tri.indexes
             )
         }
     }
@@ -190,8 +173,7 @@ object tr_render {
             RB_DrawElementsImmediate(tri)
             return
         }
-        val ac =
-            idDrawVert(VertexCache.vertexCache.Position(tri.ambientCache))
+        val ac = idDrawVert(VertexCache.vertexCache.Position(tri.ambientCache))
         qgl.qglVertexPointer(3, GL_FLOAT, idDrawVert.BYTES, ac.xyzOffset().toLong())
         qgl.qglTexCoordPointer(2, GL_FLOAT, idDrawVert.BYTES, ac.stOffset().toLong())
         RB_DrawElementsWithCounters(tri)
@@ -269,7 +251,7 @@ object tr_render {
             }
 
             // change the scissor if needed
-            if (r_useScissor!!.GetBool() && !backEnd!!.currentScissor!!.Equals(drawSurf.scissorRect!!)) {
+            if (r_useScissor.GetBool() && !backEnd!!.currentScissor!!.Equals(drawSurf.scissorRect!!)) {
                 backEnd!!.currentScissor = idScreenRect(drawSurf.scissorRect!!)
                 qglScissor(
                     backEnd!!.viewDef!!.viewport.x1 + backEnd!!.currentScissor!!.x1,
@@ -307,7 +289,7 @@ object tr_render {
             }
 
             // change the scissor if needed
-            if (r_useScissor!!.GetBool() && !backEnd!!.currentScissor!!.Equals(drawSurf.scissorRect!!)) {
+            if (r_useScissor.GetBool() && !backEnd!!.currentScissor!!.Equals(drawSurf.scissorRect!!)) {
                 backEnd!!.currentScissor = idScreenRect(drawSurf.scissorRect!!)
                 qglScissor(
                     backEnd!!.viewDef!!.viewport.x1 + backEnd!!.currentScissor!!.x1,
@@ -328,20 +310,20 @@ object tr_render {
     }
 
     fun RB_GetShaderTextureMatrix(shaderRegisters: FloatArray, texture: textureStage_t, matrix: FloatArray /*[16]*/) {
-        matrix[0] = shaderRegisters[texture.matrix[0]!![0]]
-        matrix[4] = shaderRegisters[texture.matrix[0]!![1]]
+        matrix[0] = shaderRegisters[texture.matrix[0][0]]
+        matrix[4] = shaderRegisters[texture.matrix[0][1]]
         matrix[8] = 0.0f
-        matrix[12] = shaderRegisters[texture.matrix[0]!![2]]
+        matrix[12] = shaderRegisters[texture.matrix[0][2]]
 
         // we attempt to keep scrolls from generating incredibly large texture values, but
         // center rotations and center scales can still generate offsets that need to be > 1
         if (matrix[12] < -40 || matrix[12] > 40) {
             matrix[12] -= (matrix[12].toInt()).toFloat()
         }
-        matrix[1] = shaderRegisters[texture.matrix[1]!![0]]
-        matrix[5] = shaderRegisters[texture.matrix[1]!![1]]
+        matrix[1] = shaderRegisters[texture.matrix[1][0]]
+        matrix[5] = shaderRegisters[texture.matrix[1][1]]
         matrix[9] = 0.0f
-        matrix[13] = shaderRegisters[texture.matrix[1]!![2]]
+        matrix[13] = shaderRegisters[texture.matrix[1][2]]
         if (matrix[13] < -40 || matrix[13] > 40) {
             matrix[13] -= (matrix[13].toInt()).toFloat()
         }
@@ -371,7 +353,7 @@ object tr_render {
     fun RB_BindVariableStageImage(texture: textureStage_t, shaderRegisters: FloatArray?) {
         if (texture.cinematic[0] != null) {
             val cin: cinData_t?
-            if (r_skipDynamicTextures!!.GetBool()) {
+            if (r_skipDynamicTextures.GetBool()) {
                 Image.globalImages.defaultImage!!.Bind()
                 return
             }
@@ -388,7 +370,7 @@ object tr_render {
                 Image.globalImages.blackImage!!.Bind()
             }
         } else {
-            if (texture.image!![0] != null) {
+            if (texture.image[0] != null) {
                 texture.image[0]!!.Bind()
             }
         }
@@ -399,14 +381,12 @@ object tr_render {
      RB_BindStageTexture
      ======================
      */
-    fun RB_BindStageTexture(shaderRegisters: FloatArray?, texture: textureStage_t, surf: drawSurf_s) {
-        // image
+    fun RB_BindStageTexture(shaderRegisters: FloatArray?, texture: textureStage_t, surf: drawSurf_s) { // image
         RB_BindVariableStageImage(texture, shaderRegisters)
 
         // texgens
         if (texture.texgen == texgen_t.TG_DIFFUSE_CUBE) {
-            val vert =
-                idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache))
+            val vert = idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache))
             qgl.qglTexCoordPointer(3, GL_FLOAT, idDrawVert.BYTES, vert.normal.ToFloatPtr())
         }
         if (texture.texgen == texgen_t.TG_SKYBOX_CUBE || texture.texgen == texgen_t.TG_WOBBLESKY_CUBE) {
@@ -425,8 +405,7 @@ object tr_render {
             qgl.qglTexGenf(GL_T, GL_TEXTURE_GEN_MODE, GL13.GL_REFLECTION_MAP.toFloat())
             qgl.qglTexGenf(GL_R, GL_TEXTURE_GEN_MODE, GL13.GL_REFLECTION_MAP.toFloat())
             qgl.qglEnableClientState(GL_NORMAL_ARRAY)
-            val vert =
-                idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache))
+            val vert = idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache))
             qgl.qglNormalPointer(GL_FLOAT, idDrawVert.BYTES, vert.normalOffset().toLong())
             qglMatrixMode(GL_TEXTURE)
             val mat = FloatArray(16)
@@ -447,16 +426,10 @@ object tr_render {
      ======================
      */
     fun RB_FinishStageTexture(texture: textureStage_t, surf: drawSurf_s) {
-        if ((texture.texgen == texgen_t.TG_DIFFUSE_CUBE) || (texture.texgen == texgen_t.TG_SKYBOX_CUBE
-                    ) || (texture.texgen == texgen_t.TG_WOBBLESKY_CUBE)
-        ) {
-            val vert =
-                idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache))
+        if ((texture.texgen == texgen_t.TG_DIFFUSE_CUBE) || (texture.texgen == texgen_t.TG_SKYBOX_CUBE) || (texture.texgen == texgen_t.TG_WOBBLESKY_CUBE)) {
+            val vert = idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache))
             qgl.qglTexCoordPointer(
-                2,
-                GL_FLOAT,
-                idDrawVert.BYTES,
-                vert.st.ToFloatPtr()
+                2, GL_FLOAT, idDrawVert.BYTES, vert.st.ToFloatPtr()
             )
         }
         if (texture.texgen == texgen_t.TG_REFLECT_CUBE) {
@@ -515,9 +488,7 @@ object tr_render {
 
             // lights with no surfaces or shaderparms may still be present
             // for debug display
-            if ((null == vLight.localInteractions[0]) && (null == vLight.globalInteractions[0]
-                        ) && (null == vLight.translucentInteractions[0])
-            ) {
+            if ((null == vLight.localInteractions[0]) && (null == vLight.globalInteractions[0]) && (null == vLight.translucentInteractions[0])) {
                 vLight = vLight.next
                 continue
             }
@@ -528,8 +499,7 @@ object tr_render {
                 stage = shader.GetStage(i)
                 j = 0
                 while (j < 3) {
-                    val v: Float =
-                        r_lightScale!!.GetFloat() * vLight.shaderRegisters!![stage!!.color.registers[j]]
+                    val v: Float = r_lightScale.GetFloat() * vLight.shaderRegisters!![stage!!.color.registers[j]]
                     if (v > max) {
                         max = v
                     }
@@ -541,11 +511,10 @@ object tr_render {
         }
         backEnd!!.pc.maxLightValue = max
         if (max <= tr.backEndRendererMaxLight) {
-            backEnd!!.lightScale = r_lightScale!!.GetFloat()
+            backEnd!!.lightScale = r_lightScale.GetFloat()
             backEnd!!.overBright = 1.0f
         } else {
-            backEnd!!.lightScale =
-                r_lightScale!!.GetFloat() * tr.backEndRendererMaxLight / max
+            backEnd!!.lightScale = r_lightScale.GetFloat() * tr.backEndRendererMaxLight / max
             backEnd!!.overBright = max / tr.backEndRendererMaxLight
         }
     }
@@ -589,8 +558,7 @@ object tr_render {
 
         // we don't have to clear the depth / stencil buffer for 2D rendering
         if (backEnd!!.viewDef!!.viewEntitys != null) {
-            qglStencilMask(0xff)
-            // some cards may have 7 bit stencil buffers, so don't assume this
+            qglStencilMask(0xff) // some cards may have 7 bit stencil buffers, so don't assume this
             // should be 128
             qglClearStencil(1 shl (glConfig.stencilBits - 1))
             qglClear(GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT)
@@ -616,16 +584,16 @@ object tr_render {
         matrix: Array<idVec4> /*[2]*/,
         color: idVec4? /*[4]*/
     ) {
-        image[0] = surfaceStage.texture.image!![0]
+        image[0] = surfaceStage.texture.image[0]
         if (surfaceStage.texture.hasMatrix) {
-            matrix[0][0] = surfaceRegs[surfaceStage.texture.matrix[0]!![0]]
-            matrix[0][1] = surfaceRegs[surfaceStage.texture.matrix[0]!![1]]
+            matrix[0][0] = surfaceRegs[surfaceStage.texture.matrix[0][0]]
+            matrix[0][1] = surfaceRegs[surfaceStage.texture.matrix[0][1]]
             matrix[0][2] = 0.0f
-            matrix[0][3] = surfaceRegs[surfaceStage.texture.matrix[0]!![2]]
-            matrix[1][0] = surfaceRegs[surfaceStage.texture.matrix[1]!![0]]
-            matrix[1][1] = surfaceRegs[surfaceStage.texture.matrix[1]!![1]]
+            matrix[0][3] = surfaceRegs[surfaceStage.texture.matrix[0][2]]
+            matrix[1][0] = surfaceRegs[surfaceStage.texture.matrix[1][0]]
+            matrix[1][1] = surfaceRegs[surfaceStage.texture.matrix[1][1]]
             matrix[1][2] = 0.0f
-            matrix[1][3] = surfaceRegs[surfaceStage.texture.matrix[1]!![2]]
+            matrix[1][3] = surfaceRegs[surfaceStage.texture.matrix[1][2]]
 
             // we attempt to keep scrolls from generating incredibly large texture values, but
             // center rotations and center scales can still generate offsets that need to be > 1
@@ -647,8 +615,8 @@ object tr_render {
         }
         if (color != null) {
             for (i in 0..3) {
-                color[i] = surfaceRegs[surfaceStage.color.registers[i]]
-                // clamp here, so card with greater range don't look different.
+                color[i] =
+                    surfaceRegs[surfaceStage.color.registers[i]] // clamp here, so card with greater range don't look different.
                 // we could perform overbrighting like we do for lights, but
                 // it doesn't currently look worth it.
                 if (color[i] < 0) {
@@ -664,24 +632,18 @@ object tr_render {
         if (null == din.bumpImage) {
             return
         }
-        if (null == din.diffuseImage || r_skipDiffuse!!.GetBool()) {
+        if (null == din.diffuseImage || r_skipDiffuse.GetBool()) {
             din.diffuseImage = Image.globalImages.blackImage
         }
-        if ((null == din.specularImage) || r_skipSpecular!!.GetBool() || (din.ambientLight != 0)) {
+        if ((null == din.specularImage) || r_skipSpecular.GetBool() || (din.ambientLight != 0)) {
             din.specularImage = Image.globalImages.blackImage
         }
-        if (null == din.bumpImage || r_skipBump!!.GetBool()) {
+        if (null == din.bumpImage || r_skipBump.GetBool()) {
             din.bumpImage = Image.globalImages.flatNormalMap
         }
 
         // if we wouldn't draw anything, don't call the Draw function
-        if (((((din.diffuseColor[0] > 0
-                    ) || (din.diffuseColor[1] > 0
-                    ) || (din.diffuseColor[2] > 0)) && din.diffuseImage !== Image.globalImages.blackImage)
-                    || (((din.specularColor[0] > 0
-                    ) || (din.specularColor[1] > 0
-                    ) || (din.specularColor[2] > 0)) && din.specularImage !== Image.globalImages.blackImage))
-        ) {
+        if (((((din.diffuseColor[0] > 0) || (din.diffuseColor[1] > 0) || (din.diffuseColor[2] > 0)) && din.diffuseImage !== Image.globalImages.blackImage) || (((din.specularColor[0] > 0) || (din.specularColor[1] > 0) || (din.specularColor[2] > 0)) && din.specularImage !== Image.globalImages.blackImage))) {
             drawInteraction.run(din)
         }
     }
@@ -713,8 +675,7 @@ object tr_render {
         // DG: support lights nospecular parm, if desired by mapper and/or user
         var noSpecVar = r_supportNoSpecular.GetInteger()
         var allowNoSpecular = (noSpecVar == 1)
-        if (noSpecVar == -1) {
-            // r_supportNoSpecular -1 only allows nospecular if the map enables
+        if (noSpecVar == -1) { // r_supportNoSpecular -1 only allows nospecular if the map enables
             // it in the worldspawn by setting "allow_nospecular" "1"
             // the value of that is saved in tr.allowNoSpecular by idRenderSystemLocal::EndLevelLoad()
             allowNoSpecular = tr.allowNoSpecular
@@ -727,7 +688,7 @@ object tr_render {
         }
 
         // change the scissor if needed
-        if (r_useScissor!!.GetBool() && !backEnd!!.currentScissor!!.Equals(surf.scissorRect!!)) {
+        if (r_useScissor.GetBool() && !backEnd!!.currentScissor!!.Equals(surf.scissorRect!!)) {
             backEnd!!.currentScissor = surf.scissorRect
             qglScissor(
                 backEnd!!.viewDef!!.viewport.x1 + backEnd!!.currentScissor!!.x1,
@@ -748,9 +709,7 @@ object tr_render {
         inter.lightFalloffImage = vLight.falloffImage
         tr_main.R_GlobalPointToLocal(surf.space!!.modelMatrix, vLight.globalLightOrigin, inter.localLightOrigin)
         tr_main.R_GlobalPointToLocal(
-            surf.space!!.modelMatrix,
-            backEnd!!.viewDef!!.renderView.vieworg,
-            inter.localViewOrigin
+            surf.space!!.modelMatrix, backEnd!!.viewDef!!.renderView.vieworg, inter.localViewOrigin
         )
         inter.localLightOrigin[3] = 0.0f
         inter.localViewOrigin[3] = 1.0f
@@ -760,9 +719,7 @@ object tr_render {
         val lightProject: Array<idPlane> = idPlane.generateArray(4)
         for (i in 0..3) {
             tr_main.R_GlobalPlaneToLocal(
-                surf.space!!.modelMatrix,
-                backEnd!!.vLight!!.lightProject[i],
-                lightProject[i]
+                surf.space!!.modelMatrix, backEnd!!.vLight!!.lightProject[i], lightProject[i]
             )
         }
         for (lightStageNum in 0 until lightShader.GetNumStages()) {
@@ -772,17 +729,15 @@ object tr_render {
             if (0.0f == lightRegs[lightStage!!.conditionRegister]) {
                 continue
             }
-            inter.lightImage = lightStage.texture.image!![0]
+            inter.lightImage = lightStage.texture.image[0]
 
             for (i in inter.lightProjection.indices) {
                 inter.lightProjection[i] = lightProject[i].ToVec4()
-            }
-            // now multiply the texgen by the light texture matrix
+            } // now multiply the texgen by the light texture matrix
             if (lightStage.texture.hasMatrix) {
                 RB_GetShaderTextureMatrix(lightRegs, lightStage.texture, backEnd!!.lightTextureMatrix)
                 draw_common.RB_BakeTextureMatrixIntoTexgen(
-                    inter.lightProjection as Array<idVec4>,
-                    backEnd!!.lightTextureMatrix
+                    inter.lightProjection as Array<idVec4>, backEnd!!.lightTextureMatrix
                 )
             }
             inter.bumpImage = null
@@ -803,8 +758,7 @@ object tr_render {
             for (surfaceStageNum in 0 until surfaceShader.GetNumStages()) {
                 val surfaceStage: shaderStage_t? = surfaceShader.GetStage(surfaceStageNum)
                 when (surfaceStage!!.lighting) {
-                    stageLighting_t.SL_AMBIENT -> {
-                        // ignore ambient stages while drawing interactions
+                    stageLighting_t.SL_AMBIENT -> { // ignore ambient stages while drawing interactions
                         continue
                     }
 
@@ -813,8 +767,7 @@ object tr_render {
                         // ignore stage that fails the condition
                         if (0.0f == surfaceRegs[surfaceStage.conditionRegister]) {
                             continue
-                        }
-                        // draw any previous interaction
+                        } // draw any previous interaction
                         RB_SubmittInteraction(inter, drawInteraction!!)
                         inter.diffuseImage = null
                         inter.specularImage = null
@@ -835,11 +788,7 @@ object tr_render {
                         }
                         val diffuseImage: Array<idImage?> = arrayOf(null)
                         R_SetDrawInteraction(
-                            surfaceStage,
-                            surfaceRegs,
-                            diffuseImage,
-                            inter.diffuseMatrix,
-                            inter.diffuseColor
+                            surfaceStage, surfaceRegs, diffuseImage, inter.diffuseMatrix, inter.diffuseColor
                         )
                         inter.diffuseImage = diffuseImage[0]
                         inter.diffuseColor.timesAssign(0, lightColor[0])
@@ -858,16 +807,11 @@ object tr_render {
                         }
                         if (inter.specularImage != null) {
                             RB_SubmittInteraction(inter, drawInteraction!!)
-                        }
-                        // jmarshall - add no specular support(great for fill lighting).
+                        } // jmarshall - add no specular support(great for fill lighting).
                         if (!allowNoSpecular || !vLight.lightDef!!.parms.noSpecular._val) {
                             val specularImage: Array<idImage?> = arrayOf(null)
                             R_SetDrawInteraction(
-                                surfaceStage,
-                                surfaceRegs,
-                                specularImage,
-                                inter.specularMatrix,
-                                inter.specularColor
+                                surfaceStage, surfaceRegs, specularImage, inter.specularMatrix, inter.specularColor
                             )
                             inter.specularImage = specularImage[0]
                             inter.specularColor.timesAssign(0, lightColor[0])
@@ -875,8 +819,7 @@ object tr_render {
                             inter.specularColor.timesAssign(2, lightColor[2])
                             inter.specularColor.timesAssign(3, lightColor[3])
                             inter.vertexColor = surfaceStage.vertexColor
-                        }
-                        // jmarshall end
+                        } // jmarshall end
                         continue
                     }
                 }
@@ -954,14 +897,14 @@ object tr_render {
 
         // skip render bypasses everything that has models, assuming
         // them to be 3D views, but leaves 2D rendering visible
-        if (r_skipRender!!.GetBool() && backEnd!!.viewDef!!.viewEntitys != null) {
+        if (r_skipRender.GetBool() && backEnd!!.viewDef!!.viewEntitys != null) {
             return
         }
 
         // skip render context sets the wgl context to NULL,
         // which should factor out the API cost, under the assumption
         // that all gl calls just return if the context isn't valid
-        if (r_skipRenderContext!!.GetBool() && backEnd!!.viewDef!!.viewEntitys != null) {
+        if (r_skipRenderContext.GetBool() && backEnd!!.viewDef!!.viewEntitys != null) {
             GLimp_DeactivateContext()
         }
         backEnd!!.pc.c_surfaces += backEnd!!.viewDef!!.numDrawSurfs
@@ -971,7 +914,7 @@ object tr_render {
         draw_common.RB_STD_DrawView()
 
         // restore the context for 2D drawing if we were stubbing it out
-        if (r_skipRenderContext!!.GetBool() && backEnd!!.viewDef!!.viewEntitys != null) {
+        if (r_skipRenderContext.GetBool() && backEnd!!.viewDef!!.viewEntitys != null) {
             GLimp_ActivateContext()
             tr_backend.RB_SetDefaultGLState()
         }

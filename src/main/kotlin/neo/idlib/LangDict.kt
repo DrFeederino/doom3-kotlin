@@ -45,8 +45,7 @@ class LangDict {
             val src =
                 idLexer(Lexer.LEXFL_NOFATALERRORS or Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_ALLOWMULTICHARLITERALS or Lexer.LEXFL_ALLOWBACKSLASHSTRINGCONCAT)
             val len = idLib.fileSystem.ReadFile(fileName, buffer)
-            if (len <= 0) {
-                // let whoever called us deal with the failure (so sys_lang can be reset)
+            if (len <= 0) { // let whoever called us deal with the failure (so sys_lang can be reset)
                 return false
             }
             src.LoadMemory(bbtocb(buffer[0]!!), bbtocb(buffer[0]!!).capacity(), fileName)
@@ -66,8 +65,7 @@ class LangDict {
                     }
                     val kv = idLangKeyValue()
                     kv.key.set(tok)
-                    kv.value.set(tok2)
-                    // DG: D3LE has #font_ entries in english.lang, not supported here, just skip them
+                    kv.value.set(tok2) // DG: D3LE has #font_ entries in english.lang, not supported here, just skip them
                     if (kv.key.Cmpn("#font_", 6) != 0) {
                         assert(kv.key.Cmpn(Common.STRTABLE_ID, Common.STRTABLE_ID_LENGTH) == 0)
                         hash.Add(GetHashKey(kv.key), args.Append(kv))
@@ -117,10 +115,8 @@ class LangDict {
                 }
             }
             val id = GetNextId()
-            val kv = idLangKeyValue()
-            // _D3XP
-            kv.key.set(Str.va("#str_%08i", id))
-            // kv.key = va( "#str_%05i", id );
+            val kv = idLangKeyValue() // _D3XP
+            kv.key.set(Str.va("#str_%08i", id)) // kv.key = va( "#str_%05i", id );
             kv.value.set(str)
             c = args.Append(kv)
             assert(kv.key.Cmpn(Common.STRTABLE_ID, Common.STRTABLE_ID_LENGTH) == 0)
@@ -130,9 +126,8 @@ class LangDict {
 
         @Throws(idException::class)
         fun GetString(str: String?): String {
-            if ("#str_07184" == str) {
-//                System.out.printf("GetString#%d\n", DBG_GetString);
-//                return (DBG_GetString++) + "bnlaaaaaaaaaaa";
+            if ("#str_07184" == str) { //                System.out.printf("GetString#%d\n", DBG_GetString);
+                //                return (DBG_GetString++) + "bnlaaaaaaaaaaa";
             }
             if (str == null || str.isEmpty()) {
                 return ""
@@ -233,16 +228,14 @@ class LangDict {
         private fun GetHashKey(str: String): Int {
             var hashKey = 0
             var i: Int
-            var c: Char
-            // DG: Replace assertion for invalid entries with a warning shown only once
+            var c: Char // DG: Replace assertion for invalid entries with a warning shown only once
             val strbk = str
             i = Common.STRTABLE_ID_LENGTH
             while (i < str.length) {
                 c = str[i]
                 if (!warnedAboutInvalidKey && !Character.isDigit(c)) {
                     idLib.common.Warning(
-                        "We have at least one invalid key in a language dict: %s\n" +
-                                " (might still work, but Doom3 really wants #str_01234, i.e. only a number after '#str_')\n",
+                        "We have at least one invalid key in a language dict: %s\n" + " (might still work, but Doom3 really wants #str_01234, i.e. only a number after '#str_')\n",
                         strbk
                     )
                     warnedAboutInvalidKey = true

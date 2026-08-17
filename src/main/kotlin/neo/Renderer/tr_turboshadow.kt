@@ -60,10 +60,7 @@ object tr_turboshadow {
      =====================
      */
     fun R_CreateVertexProgramTurboShadowVolume(
-        ent: idRenderEntityLocal?,
-        tri: srfTriangles_s,
-        light: idRenderLightLocal?,
-        cullInfo: srfCullInfo_t
+        ent: idRenderEntityLocal?, tri: srfTriangles_s, light: idRenderLightLocal?, cullInfo: srfCullInfo_t
     ): srfTriangles_s? {
         var i: Int
         var j: Int
@@ -72,7 +69,7 @@ object tr_turboshadow {
         var indexes: IntArray?
         val facing: ByteArray?
         Interaction.R_CalcInteractionFacing(ent, tri, light, cullInfo)
-        if (r_useShadowProjectedCull!!.GetBool()) {
+        if (r_useShadowProjectedCull.GetBool()) {
             Interaction.R_CalcInteractionCullBits(ent, tri, light, cullInfo)
         }
         val numFaces: Int = tri.numIndexes / 3
@@ -80,7 +77,7 @@ object tr_turboshadow {
         facing = cullInfo.facing
 
         // if all the triangles are inside the light frustum
-        if (cullInfo.cullBits === Interaction.LIGHT_CULL_ALL_FRONT || !r_useShadowProjectedCull!!.GetBool()) {
+        if (cullInfo.cullBits === Interaction.LIGHT_CULL_ALL_FRONT || !r_useShadowProjectedCull.GetBool()) {
 
             // count the number of shadowing faces
             i = 0
@@ -111,8 +108,7 @@ object tr_turboshadow {
                 j++
             }
         }
-        if (0 == numShadowingFaces) {
-            // no faces are inside the light frustum and still facing the right way
+        if (0 == numShadowingFaces) { // no faces are inside the light frustum and still facing the right way
             return null
         }
 
@@ -140,8 +136,7 @@ object tr_turboshadow {
         var shadowIndexes: IntArray
         R_AllocStaticTriSurfIndexes(newTri, newTri.numIndexes)
         shadowIndexes = newTri.indexes!!
-        var shadowIndex = 0
-        // create new triangles along sil planes
+        var shadowIndex = 0 // create new triangles along sil planes
         sil = 0
         i = tri.numSilEdges
         while (i > 0) {
@@ -207,10 +202,7 @@ object tr_turboshadow {
      =====================
      */
     fun R_CreateTurboShadowVolume(
-        ent: idRenderEntityLocal,
-        tri: srfTriangles_s,
-        light: idRenderLightLocal,
-        cullInfo: srfCullInfo_t
+        ent: idRenderEntityLocal, tri: srfTriangles_s, light: idRenderLightLocal, cullInfo: srfCullInfo_t
     ): srfTriangles_s? {
         var i: Int
         var j: Int
@@ -229,7 +221,7 @@ object tr_turboshadow {
         facing = cullInfo.facing
 
         // if all the triangles are inside the light frustum
-        if (cullInfo.cullBits === Interaction.LIGHT_CULL_ALL_FRONT || !r_useShadowProjectedCull!!.GetBool()) {
+        if (cullInfo.cullBits === Interaction.LIGHT_CULL_ALL_FRONT || !r_useShadowProjectedCull.GetBool()) {
 
             // count the number of shadowing faces
             i = 0
@@ -260,8 +252,7 @@ object tr_turboshadow {
                 j++
             }
         }
-        if (0 == numShadowingFaces) {
-            // no faces are inside the light frustum and still facing the right way
+        if (0 == numShadowingFaces) { // no faces are inside the light frustum and still facing the right way
             return null
         }
         newTri = R_AllocStaticTriSurf()
@@ -282,8 +273,7 @@ object tr_turboshadow {
                 i += 3
                 j++
                 continue
-            }
-            // this may pull in some vertexes that are outside
+            } // this may pull in some vertexes that are outside
             // the frustum, because they connect to vertexes inside
             vertRemap[tri.silIndexes!![i + 0]] = 0
             vertRemap[tri.silIndexes!![i + 1]] = 0
@@ -296,14 +286,13 @@ object tr_turboshadow {
             for (a in shadows.indices) {
                 shadows[a] = shadowVerts[a]!!.xyz
             }
-            newTri.numVerts =
-                SIMDProcessor!!.CreateShadowCache(
-                    shadows as Array<idVec4>,
-                    vertRemap,
-                    localLightOrigin,
-                    tri.verts as Array<DrawVert.idDrawVert>,
-                    tri.numVerts
-                )
+            newTri.numVerts = SIMDProcessor!!.CreateShadowCache(
+                shadows as Array<idVec4>,
+                vertRemap,
+                localLightOrigin,
+                tri.verts as Array<DrawVert.idDrawVert>,
+                tri.numVerts
+            )
         })
         c_turboUsedVerts += newTri.numVerts
         c_turboUnusedVerts += tri.numVerts * 2 - newTri.numVerts
@@ -335,8 +324,7 @@ object tr_turboshadow {
         var shadowIndexes: IntArray
         R_AllocStaticTriSurfIndexes(newTri, newTri.numIndexes)
         shadowIndexes = newTri.indexes!!
-        var shadowIndex = 0
-        // create new triangles along sil planes
+        var shadowIndex = 0 // create new triangles along sil planes
         var silIndex = 0
         i = tri.numSilEdges
         while (i > 0) {

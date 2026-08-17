@@ -28,8 +28,7 @@ package neo.Renderer
 import neo.Renderer.RenderWorld_local.portal_s
 import neo.idlib.math.idPlane
 
-object RenderWorld_portals {
-    /*
+object RenderWorld_portals {/*
      All that is done in these functions is the creation of viewLights
      and viewEntitys for the lightDefs and entityDefs that are visible
      in the portal areas that can be seen from the current viewpoint.

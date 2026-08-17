@@ -102,8 +102,7 @@ object GameSSDWindow {
     const val Z_FAR = 4000.0f
     const val Z_NEAR = 100.0f
     val explosionMaterials = arrayOf(
-        "game/SSD/fball",
-        "game/SSD/teleport"
+        "game/SSD/fball", "game/SSD/teleport"
     )
 
     /*
@@ -164,9 +163,14 @@ object GameSSDWindow {
 
         fun Draw(dc: idDeviceContext, cursor: idVec2) {
             dc.DrawMaterial(
-                cursor.x - crosshairWidth / 2, cursor.y - crosshairHeight / 2,
-                crosshairWidth, crosshairHeight,
-                crosshairMaterial[currentCrosshair], colorWhite, 1.0f, 1.0f
+                cursor.x - crosshairWidth / 2,
+                cursor.y - crosshairHeight / 2,
+                crosshairWidth,
+                crosshairHeight,
+                crosshairMaterial[currentCrosshair],
+                colorWhite,
+                1.0f,
+                1.0f
             )
         }
 
@@ -360,7 +364,7 @@ object GameSSDWindow {
             persize.x = abs((screenBounds[1].x - screenBounds[0].x))
             persize.y = abs((screenBounds[1].y - screenBounds[0].y))
 
-//	idVec3 center = screenBounds.GetCenter();
+            //	idVec3 center = screenBounds.GetCenter();
             x = screenBounds[0].x
             y = screenBounds[1].y
             dc.DrawMaterialRotated(x, y, persize.x, persize.y, material, matColor, 1.0f, 1.0f, DEG2RAD(rotation))
@@ -467,12 +471,7 @@ object GameSSDWindow {
         }
 
         fun Init(
-            _game: idGameSSDWindow?,
-            startPosition: idVec3?,
-            _size: idVec2,
-            _speed: Float,
-            rotate: Float,
-            _health: Int
+            _game: idGameSSDWindow?, startPosition: idVec3?, _size: idVec2, _speed: Float, rotate: Float, _health: Int
         ) {
             EntityInit()
             MoverInit(idVec3(0.0f, 0.0f, -_speed), rotate)
@@ -499,8 +498,7 @@ object GameSSDWindow {
             ): SSDAsteroid? {
                 for (i in 0 until MAX_ASTEROIDS) {
                     if (!asteroidPool[i].inUse) {
-                        asteroidPool[i]
-                            .Init(_game, startPosition, _size, _speed, rotate, _health)
+                        asteroidPool[i].Init(_game, startPosition, _size, _speed, rotate, _health)
                         asteroidPool[i].inUse = true
                         asteroidPool[i].id = i
                         return asteroidPool[i]
@@ -536,7 +534,7 @@ object GameSSDWindow {
                     var id: Int
                     id = savefile.ReadInt()
                     val ent = GetSpecificAsteroid(id)
-                    ent!!.ReadFromSaveGame(savefile, _game)
+                    ent.ReadFromSaveGame(savefile, _game)
                 }
             }
         }
@@ -572,11 +570,7 @@ object GameSSDWindow {
             //
             protected val astronautPool = Array(MAX_ASTRONAUT) { SSDAstronaut() }
             fun GetNewAstronaut(
-                _game: idGameSSDWindow?,
-                startPosition: idVec3?,
-                _speed: Float,
-                rotate: Float,
-                _health: Int
+                _game: idGameSSDWindow?, startPosition: idVec3?, _speed: Float, rotate: Float, _health: Int
             ): SSDAstronaut? {
                 for (i in 0 until MAX_ASTRONAUT) {
                     if (!astronautPool[i].inUse) {
@@ -616,7 +610,7 @@ object GameSSDWindow {
                     var id: Int
                     id = savefile.ReadInt()
                     val ent = GetSpecificAstronaut(id)
-                    ent!!.ReadFromSaveGame(savefile, _game)
+                    ent.ReadFromSaveGame(savefile, _game)
                 }
             }
         }
@@ -711,8 +705,7 @@ object GameSSDWindow {
             if (followBuddy) {
                 position.set(buddy!!.position)
                 position.z -= 50.0f
-            } else {
-                //Only mess with the z if we are not following
+            } else { //Only mess with the z if we are not following
                 position.z = buddy!!.position.z - 50
             }
 
@@ -722,8 +715,7 @@ object GameSSDWindow {
             //Destroy myself after the explosion is done
             if (currentTime > endTime) {
                 destroyed = true
-                if (killBuddy) {
-                    //Destroy the exploding object
+                if (killBuddy) { //Destroy the exploding object
                     buddy!!.destroyed = true
                 }
             }
@@ -749,8 +741,7 @@ object GameSSDWindow {
             ): SSDExplosion? {
                 for (i in 0 until MAX_EXPLOSIONS) {
                     if (!explosionPool[i].inUse) {
-                        explosionPool[i]
-                            .Init(_game, _position, _size, _length, _type, _buddy, _killBuddy, _followBuddy)
+                        explosionPool[i].Init(_game, _position, _size, _length, _type, _buddy, _killBuddy, _followBuddy)
                         explosionPool[i].inUse = true
                         return explosionPool[i]
                     }
@@ -785,7 +776,7 @@ object GameSSDWindow {
                     var id: Int
                     id = savefile.ReadInt()
                     val ent = GetSpecificExplosion(id)
-                    ent!!.ReadFromSaveGame(savefile, _game)
+                    ent.ReadFromSaveGame(savefile, _game)
                 }
             }
         }
@@ -831,12 +822,7 @@ object GameSSDWindow {
         }
 
         fun Init(
-            _game: idGameSSDWindow?,
-            _ent: SSDEntity?,
-            _points: Int,
-            _length: Int,
-            _distance: Int,
-            color: idVec4
+            _game: idGameSSDWindow?, _ent: SSDEntity?, _points: Int, _length: Int, _distance: Int, color: idVec4
         ) {
             EntityInit()
             SetGame(_game)
@@ -886,12 +872,7 @@ object GameSSDWindow {
             //
             protected val pointsPool = Array(MAX_POINTS) { SSDPoints() }
             fun GetNewPoints(
-                _game: idGameSSDWindow?,
-                _ent: SSDEntity?,
-                _points: Int,
-                _length: Int,
-                _distance: Int,
-                color: idVec4
+                _game: idGameSSDWindow?, _ent: SSDEntity?, _points: Int, _length: Int, _distance: Int, color: idVec4
             ): SSDPoints? {
                 for (i in 0 until MAX_POINTS) {
                     if (!pointsPool[i].inUse) {
@@ -930,7 +911,7 @@ object GameSSDWindow {
                     var id: Int
                     id = savefile.ReadInt()
                     val ent = GetSpecificPoints(id)
-                    ent!!.ReadFromSaveGame(savefile, _game)
+                    ent.ReadFromSaveGame(savefile, _game)
                 }
             }
         }
@@ -967,11 +948,7 @@ object GameSSDWindow {
         }
 
         fun Init(
-            _game: idGameSSDWindow?,
-            _beginPosition: idVec3?,
-            _endPosition: idVec3,
-            _speed: Float,
-            _size: Float
+            _game: idGameSSDWindow?, _beginPosition: idVec3?, _endPosition: idVec3, _speed: Float, _size: Float
         ) {
             EntityInit()
             SetGame(_game)
@@ -995,8 +972,7 @@ object GameSSDWindow {
             //Move forward based on speed (units per second)
             val moved = idVec3(dir.times(elapsed.toFloat() / 1000.0f * speed.z))
             position.plusAssign(moved)
-            if (position.z > endPosition.z) {
-                //We have reached our position
+            if (position.z > endPosition.z) { //We have reached our position
                 destroyed = true
             }
         }
@@ -1005,16 +981,11 @@ object GameSSDWindow {
             //
             protected val projectilePool = Array(MAX_PROJECTILES) { SSDProjectile() }
             fun GetNewProjectile(
-                _game: idGameSSDWindow?,
-                _beginPosition: idVec3?,
-                _endPosition: idVec3,
-                _speed: Float,
-                _size: Float
+                _game: idGameSSDWindow?, _beginPosition: idVec3?, _endPosition: idVec3, _speed: Float, _size: Float
             ): SSDProjectile? {
                 for (i in 0 until MAX_PROJECTILES) {
                     if (!projectilePool[i].inUse) {
-                        projectilePool[i]
-                            .Init(_game, _beginPosition, _endPosition, _speed, _size)
+                        projectilePool[i].Init(_game, _beginPosition, _endPosition, _speed, _size)
                         projectilePool[i].inUse = true
                         return projectilePool[i]
                     }
@@ -1049,12 +1020,11 @@ object GameSSDWindow {
                     var id: Int
                     id = savefile.ReadInt()
                     val ent = GetSpecificProjectile(id)
-                    ent!!.ReadFromSaveGame(savefile, _game)
+                    ent.ReadFromSaveGame(savefile, _game)
                 }
             }
         }
-    }
-    //    
+    } //
     /**
      * Powerups work in two phases: 1.) Closed container hurls at you If you
      * shoot the container it open 3.) If an opened powerup hits the player he
@@ -1089,20 +1059,12 @@ object GameSSDWindow {
 
                 //Small explosion to indicate it is opened
                 val explosion = GetNewExplosion(
-                    game,
-                    position,
-                    size.times(2.0f),
-                    300,
-                    SSDExplosion.EXPLOSION_NORMAL,
-                    this,
-                    false,
-                    true
+                    game, position, size.times(2.0f), 300, SSDExplosion.EXPLOSION_NORMAL, this, false, true
                 )
                 game!!.entities.Append(explosion)
                 powerupState = POWERUP_STATE_OPEN
                 SetMaterial(powerupMaterials[powerupType][powerupState])
-            } else {
-                //Destory the powerup with a big explosion
+            } else { //Destory the powerup with a big explosion
                 val explosion: SSDExplosion? =
                     GetNewExplosion(game, position, size.times(2), 300, SSDExplosion.EXPLOSION_NORMAL, this)
                 game!!.entities.Append(explosion)
@@ -1113,8 +1075,7 @@ object GameSSDWindow {
         }
 
         override fun OnStrikePlayer() {
-            if (powerupState == POWERUP_STATE_OPEN) {
-                //The powerup was open so activate it
+            if (powerupState == POWERUP_STATE_OPEN) { //The powerup was open so activate it
                 OnActivatePowerup()
             }
 
@@ -1164,8 +1125,7 @@ object GameSSDWindow {
             startPosition.x = idGameSSDWindow.random.RandomInt(V_WIDTH) - V_WIDTH / 2.0f
             startPosition.y = idGameSSDWindow.random.RandomInt(V_HEIGHT) - V_HEIGHT / 2.0f
             startPosition.z = ENTITY_START_DIST.toFloat()
-            position.set(startPosition)
-            //SetPosition(startPosition);
+            position.set(startPosition) //SetPosition(startPosition);
             powerupState = POWERUP_STATE_CLOSED
             powerupType = idGameSSDWindow.random.RandomInt(POWERUP_TYPE_MAX + 1)
             if (powerupType >= POWERUP_TYPE_MAX) {
@@ -1233,7 +1193,7 @@ object GameSSDWindow {
                     var id: Int
                     id = savefile.ReadInt()
                     val ent = GetSpecificPowerup(id)
-                    ent!!.ReadFromSaveGame(savefile, _game)
+                    ent.ReadFromSaveGame(savefile, _game)
                 }
             }
         }
@@ -1614,8 +1574,7 @@ object GameSSDWindow {
                 weaponData.Append(newWeapon)
             }
             superBlasterTimeout = savefile.ReadInt()
-            savefile.Read(gameStats!!)
-            //Reset this because it is no longer valid
+            savefile.Read(gameStats!!) //Reset this because it is no longer valid
             gameStats!!.levelStats.targetEnt = null
             SSDAsteroid.ReadAsteroids(savefile, this)
             SSDAstronaut.ReadAstronauts(savefile, this)
@@ -1659,9 +1618,7 @@ object GameSSDWindow {
         }
 
         override fun GetWinVarByName(
-            _name: String?,
-            winLookup: Boolean /*= false*/,
-            owner: Array<drawWin_t?>? /*= NULL*/
+            _name: String?, winLookup: Boolean /*= false*/, owner: Array<drawWin_t?>? /*= NULL*/
         ): idWinVar? {
             var retVar: idWinVar? = null
             if (Icmp(_name!!, "beginLevel") == 0) {
@@ -1693,8 +1650,7 @@ object GameSSDWindow {
                 }
 
                 //The last thing to draw is the crosshair
-                val cursor = idVec2()
-                //GetCursor(cursor);
+                val cursor = idVec2() //GetCursor(cursor);
                 cursor.x = gui!!.CursorX()
                 cursor.y = gui!!.CursorY()
                 crosshair.Draw(dc!!, cursor)
@@ -1722,8 +1678,7 @@ object GameSSDWindow {
             gameStats!!.health -= damage
             gui!!.SetStateString("player_health", va("%d", gameStats!!.health))
             gui!!.HandleNamedEvent("playerDamage")
-            if (gameStats!!.health <= 0) {
-                //The player is dead
+            if (gameStats!!.health <= 0) { //The player is dead
                 GameOver()
             }
         }
@@ -1820,17 +1775,16 @@ object GameSSDWindow {
             if (Icmp(_name, "levelcount") == 0) {
                 levelCount = src.ParseInt()
                 for (i in 0 until levelCount) {
-                    val newLevel = SSDLevelData_t()
-                    //                    memset(newLevel, 0, sizeof(SSDLevelData_t));
+                    val newLevel = SSDLevelData_t() //                    memset(newLevel, 0, sizeof(SSDLevelData_t));
                     levelData.Append(newLevel)
-                    val newAsteroid = SSDAsteroidData_t()
-                    //                    memset(newAsteroid, 0, sizeof(SSDAsteroidData_t));
+                    val newAsteroid =
+                        SSDAsteroidData_t() //                    memset(newAsteroid, 0, sizeof(SSDAsteroidData_t));
                     asteroidData.Append(newAsteroid)
-                    val newAstronaut = SSDAstronautData_t()
-                    //                    memset(newAstronaut, 0, sizeof(SSDAstronautData_t));
+                    val newAstronaut =
+                        SSDAstronautData_t() //                    memset(newAstronaut, 0, sizeof(SSDAstronautData_t));
                     astronautData.Append(newAstronaut)
-                    val newPowerup = SSDPowerupData_t()
-                    //                    memset(newPowerup, 0, sizeof(SSDPowerupData_t));
+                    val newPowerup =
+                        SSDPowerupData_t() //                    memset(newPowerup, 0, sizeof(SSDPowerupData_t));
                     powerupData.Append(newPowerup)
                 }
                 return true
@@ -1838,8 +1792,8 @@ object GameSSDWindow {
             if (Icmp(_name, "weaponCount") == 0) {
                 weaponCount = src.ParseInt()
                 for (i in 0 until weaponCount) {
-                    val newWeapon = SSDWeaponData_t()
-                    //                    memset(newWeapon, 0, sizeof(SSDWeaponData_t));
+                    val newWeapon =
+                        SSDWeaponData_t() //                    memset(newWeapon, 0, sizeof(SSDWeaponData_t));
                     weaponData.Append(newWeapon)
                 }
                 return true
@@ -1979,7 +1933,7 @@ object GameSSDWindow {
             ResetEntities()
 
             //Reset the gamestats structure
-//            memset(gameStats, 0);
+            //            memset(gameStats, 0);
             gameStats = SSDGameStats_t()
             gameStats!!.health = 100
         }
@@ -1988,12 +1942,11 @@ object GameSSDWindow {
             ResetEntities()
 
             //Reset the level statistics structure
-//            memset(gameStats.levelStats, 0, sizeof(gameStats.levelStats));
+            //            memset(gameStats.levelStats, 0, sizeof(gameStats.levelStats));
             gameStats!!.levelStats = SSDLevelStats_t()
         }
 
-        private fun ResetEntities() {
-            //Destroy all of the entities
+        private fun ResetEntities() { //Destroy all of the entities
             for (i in 0 until entities.Num()) {
                 entities[i]!!.DestroyEntity()
             }
@@ -2055,8 +2008,7 @@ object GameSSDWindow {
             gameStats!!.score += accuracyPoints
             StopSuperBlaster()
             gameStats!!.nextLevel++
-            if (gameStats!!.nextLevel >= levelCount) {
-                //Have they beaten the game
+            if (gameStats!!.nextLevel >= levelCount) { //Have they beaten the game
                 GameComplete()
             } else {
 
@@ -2100,8 +2052,7 @@ object GameSSDWindow {
                 }
 
                 //Find if we are targeting and enemy
-                val cursor = idVec2()
-                //GetCursor(cursor);
+                val cursor = idVec2() //GetCursor(cursor);
                 cursor.x = gui!!.CursorX()
                 cursor.y = gui!!.CursorY()
                 gameStats!!.levelStats.targetEnt = EntityHitTest(cursor)
@@ -2154,8 +2105,7 @@ object GameSSDWindow {
                             } else if (ent.type == SSD.SSD_ENTITY_ASTRONAUT) {
                                 AstronautStruckPlayer(ent as SSDAstronaut?)
                             }
-                        } else {
-                            //Tag for removal later in the frame
+                        } else { //Tag for removal later in the frame
                             ent.destroyed = true
                         }
                     }
@@ -2163,8 +2113,7 @@ object GameSSDWindow {
             }
         }
 
-        private fun ZOrderEntities() {
-            //Z-Order the entities
+        private fun ZOrderEntities() { //Z-Order the entities
             //Using a simple sorting method
             for (i in entities.Num() - 1 downTo 0) {
                 var flipped = false
@@ -2176,8 +2125,7 @@ object GameSSDWindow {
                         flipped = true
                     }
                 }
-                if (!flipped) {
-                    //Jump out because it is sorted
+                if (!flipped) { //Jump out because it is sorted
                     break
                 }
             }
@@ -2185,8 +2133,7 @@ object GameSSDWindow {
 
         private fun SpawnAsteroid() {
             val currentTime = ssdTime
-            if (currentTime < gameStats!!.levelStats.nextAsteroidSpawnTime) {
-                //Not time yet
+            if (currentTime < gameStats!!.levelStats.nextAsteroidSpawnTime) { //Not time yet
                 return
             }
 
@@ -2217,14 +2164,12 @@ object GameSSDWindow {
 
         private fun FireWeapon(key: Int) {
             val cursorWorld = GetCursorWorld()
-            val cursor = idVec2()
-            //GetCursor(cursor);
+            val cursor = idVec2() //GetCursor(cursor);
             cursor.x = gui!!.CursorX()
             cursor.y = gui!!.CursorY()
             if (key == K_MOUSE1) {
                 gameStats!!.levelStats.shotCount++
-                if (gameStats!!.levelStats.targetEnt != null) {
-                    //Aim the projectile from the bottom of the screen directly at the ent
+                if (gameStats!!.levelStats.targetEnt != null) { //Aim the projectile from the bottom of the screen directly at the ent
                     //SSDProjectile* newProj = new SSDProjectile(this, idVec3(320,0,0), gameStats.levelStats.targetEnt.position, weaponData[gameStats.currentWeapon].speed, weaponData[gameStats.currentWeapon].size);
                     val newProj = SSDProjectile.GetNewProjectile(
                         this,
@@ -2233,8 +2178,7 @@ object GameSSDWindow {
                         weaponData[gameStats!!.currentWeapon].speed,
                         weaponData[gameStats!!.currentWeapon].size.toFloat()
                     )
-                    entities.Append(newProj)
-                    //newProj = SSDProjectile::GetNewProjectile(this, idVec3(-320,-0,0), gameStats.levelStats.targetEnt.position, weaponData[gameStats.currentWeapon].speed, weaponData[gameStats.currentWeapon].size);
+                    entities.Append(newProj) //newProj = SSDProjectile::GetNewProjectile(this, idVec3(-320,-0,0), gameStats.levelStats.targetEnt.position, weaponData[gameStats.currentWeapon].speed, weaponData[gameStats.currentWeapon].size);
                     //entities.Append(newProj);
 
                     //We hit something
@@ -2246,8 +2190,7 @@ object GameSSDWindow {
                         HitAstronaut(gameStats!!.levelStats.targetEnt as SSDAstronaut?, key)
                     } else if (gameStats!!.levelStats.targetEnt!!.type == SSD.SSD_ENTITY_ASTRONAUT) {
                     }
-                } else {
-                    ////Aim the projectile at the cursor position all the way to the far clipping
+                } else { ////Aim the projectile at the cursor position all the way to the far clipping
                     //SSDProjectile* newProj = SSDProjectile::GetNewProjectile(this, idVec3(0,-180,0), idVec3(cursorWorld.x, cursorWorld.y, (Z_FAR-Z_NEAR)/2.0f), weaponData[gameStats.currentWeapon].speed, weaponData[gameStats.currentWeapon].size);
 
                     //Aim the projectile so it crosses the cursor 1/4 of screen
@@ -2275,8 +2218,7 @@ object GameSSDWindow {
         }
 
         private fun EntityHitTest(pt: idVec2): SSDEntity? {
-            for (i in 0 until entities.Num()) {
-                //Since we ZOrder the entities every frame we can stop at the first entity we hit.
+            for (i in 0 until entities.Num()) { //Since we ZOrder the entities every frame we can stop at the first entity we hit.
                 //ToDo: Make sure this assumption is true
                 if (entities[i]!!.HitTest(pt)) {
                     return entities[i]
@@ -2291,12 +2233,7 @@ object GameSSDWindow {
 
                 //The asteroid has been destroyed
                 val explosion: SSDExplosion? = GetNewExplosion(
-                    this,
-                    asteroid.position,
-                    asteroid.size.times(2),
-                    300,
-                    SSDExplosion.EXPLOSION_NORMAL,
-                    asteroid
+                    this, asteroid.position, asteroid.size.times(2), 300, SSDExplosion.EXPLOSION_NORMAL, asteroid
                 )
                 entities.Append(explosion)
                 PlaySound("arcade_explode")
@@ -2304,12 +2241,10 @@ object GameSSDWindow {
 
                 //Don't let the player hit it anymore because 
                 asteroid.noHit = true
-                gameStats!!.levelStats.destroyedAsteroids++
-                //if(gameStats.levelStats.destroyedAsteroids >= levelData[gameStats.currentLevel].needToWin) {
+                gameStats!!.levelStats.destroyedAsteroids++ //if(gameStats.levelStats.destroyedAsteroids >= levelData[gameStats.currentLevel].needToWin) {
                 //	LevelComplete();
                 //}
-            } else {
-                //This was a damage hit so create a real small quick explosion
+            } else { //This was a damage hit so create a real small quick explosion
                 val explosion = GetNewExplosion(
                     this,
                     asteroid.position,
@@ -2329,12 +2264,7 @@ object GameSSDWindow {
             asteroid.noHit = true
             AddDamage(asteroidData[gameStats!!.currentLevel].asteroidDamage)
             val explosion: SSDExplosion? = GetNewExplosion(
-                this,
-                asteroid.position,
-                asteroid.size.times(2),
-                300,
-                SSDExplosion.EXPLOSION_NORMAL,
-                asteroid
+                this, asteroid.position, asteroid.size.times(2), 300, SSDExplosion.EXPLOSION_NORMAL, asteroid
             )
             entities.Append(explosion)
             PlaySound("arcade_explode")
@@ -2379,8 +2309,7 @@ object GameSSDWindow {
         }
 
         private fun GetCursorWorld(): idVec2 {
-            val cursor = idVec2()
-            //GetCursor(cursor);
+            val cursor = idVec2() //GetCursor(cursor);
             cursor.x = gui!!.CursorX()
             cursor.y = gui!!.CursorY()
             cursor.x = cursor.x - 0.5f * V_WIDTH
@@ -2391,8 +2320,7 @@ object GameSSDWindow {
         //Astronaut Methods
         private fun SpawnAstronaut() {
             val currentTime = ssdTime
-            if (currentTime < gameStats!!.levelStats.nextAstronautSpawnTime) {
-                //Not time yet
+            if (currentTime < gameStats!!.levelStats.nextAstronautSpawnTime) { //Not time yet
                 return
             }
 
@@ -2406,11 +2334,7 @@ object GameSSDWindow {
             val rotate =
                 random.RandomFloat() * (astronautData[gameStats!!.currentLevel].rotateMax - astronautData[gameStats!!.currentLevel].rotateMin) + astronautData[gameStats!!.currentLevel].rotateMin
             val astronaut = SSDAstronaut.GetNewAstronaut(
-                this,
-                startPosition,
-                speed,
-                rotate,
-                astronautData[gameStats!!.currentLevel].health
+                this, startPosition, speed, rotate, astronautData[gameStats!!.currentLevel].health
             )
             entities.Append(astronaut)
             gameStats!!.levelStats.nextAstronautSpawnTime =
@@ -2425,12 +2349,7 @@ object GameSSDWindow {
 
                     //The astronaut has been destroyed
                     val explosion: SSDExplosion? = GetNewExplosion(
-                        this,
-                        astronaut.position,
-                        astronaut.size.times(2),
-                        300,
-                        SSDExplosion.EXPLOSION_NORMAL,
-                        astronaut
+                        this, astronaut.position, astronaut.size.times(2), 300, SSDExplosion.EXPLOSION_NORMAL, astronaut
                     )
                     entities.Append(explosion)
                     PlaySound("arcade_explode")
@@ -2440,8 +2359,7 @@ object GameSSDWindow {
 
                     //Don't let the player hit it anymore
                     astronaut.noHit = true
-                } else {
-                    //This was a damage hit so create a real small quick explosion
+                } else { //This was a damage hit so create a real small quick explosion
                     val explosion = GetNewExplosion(
                         this,
                         astronaut.position,
@@ -2464,12 +2382,7 @@ object GameSSDWindow {
 
             //We are saving an astronaut
             val explosion: SSDExplosion? = GetNewExplosion(
-                this,
-                astronaut.position,
-                astronaut.size.times(2),
-                300,
-                SSDExplosion.EXPLOSION_TELEPORT,
-                astronaut
+                this, astronaut.position, astronaut.size.times(2), 300, SSDExplosion.EXPLOSION_TELEPORT, astronaut
             )
             entities.Append(explosion)
             PlaySound("arcade_capture")
@@ -2484,8 +2397,7 @@ object GameSSDWindow {
         //Powerup Methods
         private fun SpawnPowerup() {
             val currentTime = ssdTime
-            if (currentTime < gameStats!!.levelStats.nextPowerupSpawnTime) {
-                //Not time yet
+            if (currentTime < gameStats!!.levelStats.nextPowerupSpawnTime) { //Not time yet
                 return
             }
             val speed =

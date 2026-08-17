@@ -130,15 +130,19 @@ object RenderSystem {
         }
         if (r_showDefs.GetBool()) {
             common.Printf(
-                "viewEntities:%d  shadowEntities:%d  viewLights:%d\n", tr.pc!!.c_visibleViewEntities,
-                tr.pc!!.c_shadowViewEntities, tr.pc!!.c_viewLights
+                "viewEntities:%d  shadowEntities:%d  viewLights:%d\n",
+                tr.pc!!.c_visibleViewEntities,
+                tr.pc!!.c_shadowViewEntities,
+                tr.pc!!.c_viewLights
             )
         }
         if (r_showUpdates.GetBool()) {
             common.Printf(
                 "entityUpdates:%d  entityRefs:%d  lightUpdates:%d  lightRefs:%d\n",
-                tr.pc!!.c_entityUpdates, tr.pc!!.c_entityReferences,
-                tr.pc!!.c_lightUpdates, tr.pc!!.c_lightReferences
+                tr.pc!!.c_entityUpdates,
+                tr.pc!!.c_entityReferences,
+                tr.pc!!.c_lightUpdates,
+                tr.pc!!.c_lightReferences
             )
         }
         if (r_showMemory.GetBool()) {
@@ -161,8 +165,7 @@ object RenderSystem {
      ====================
      */
     fun R_IssueRenderCommands() {
-        if (renderCommand_t.RC_NOP == frameData!!.cmdHead!!.commandId && frameData!!.cmdHead!!.next == null) {
-            // nothing to issue
+        if (renderCommand_t.RC_NOP == frameData!!.cmdHead!!.commandId && frameData!!.cmdHead!!.next == null) { // nothing to issue
             return
         }
 
@@ -206,8 +209,7 @@ object RenderSystem {
      and by R_ToggleSmpFrame
      ====================
      */
-    fun R_ClearCommandChain() {
-        // clear the command chain
+    fun R_ClearCommandChain() { // clear the command chain
         frameData!!.cmdTail = emptyCommand_t()
         frameData!!.cmdHead = frameData!!.cmdTail
         frameData!!.cmdHead!!.commandId = renderCommand_t.RC_NOP
@@ -219,8 +221,7 @@ object RenderSystem {
      R_ViewStatistics
      =================
      */
-    fun R_ViewStatistics(parms: viewDef_s) {
-        // report statistics about this view
+    fun R_ViewStatistics(parms: viewDef_s) { // report statistics about this view
         if (!r_showSurfaces.GetBool()) {
             return
         }
@@ -354,8 +355,8 @@ object RenderSystem {
         var scaleY: FloatArray = floatArrayOf(1.0f)
 
         var vidWidth: Int = 0
-        var vidHeight: Int = 0 // passed to R_BeginFrame
-        // For some reason people decided that we need displays with ultra small pixels,
+        var vidHeight: Int =
+            0 // passed to R_BeginFrame // For some reason people decided that we need displays with ultra small pixels,
         // so everything rendered on them must be scaled up to be legible.
         // unfortunately, this bullshit feature was "improved" upon by deciding that the best
         // way to implement "High DPI" was to pretend that windows have fewer pixels than they
@@ -392,19 +393,9 @@ object RenderSystem {
         var shaderName: String? = null
 
         companion object {
-            val SIZE: Int = (Integer.SIZE
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + java.lang.Float.SIZE
-                    + java.lang.Float.SIZE
-                    + java.lang.Float.SIZE
-                    + java.lang.Float.SIZE
-                    + CPP_class.POINTER_SIZE //const idMaterial *	glyph
-                    + (CPP_class.CHAR_SIZE * 32))
+            val SIZE: Int =
+                (Integer.SIZE + Integer.SIZE + Integer.SIZE + Integer.SIZE + Integer.SIZE + Integer.SIZE + Integer.SIZE + java.lang.Float.SIZE + java.lang.Float.SIZE + java.lang.Float.SIZE + java.lang.Float.SIZE + CPP_class.POINTER_SIZE //const idMaterial *	glyph
+                        + (CPP_class.CHAR_SIZE * 32))
         }
     }
 
@@ -420,9 +411,7 @@ object RenderSystem {
         }
 
         companion object {
-            val SIZE: Int = ((glyphInfo_t.SIZE * GLYPHS_PER_FONT)
-                    + java.lang.Float.SIZE
-                    + (CPP_class.CHAR_SIZE * 64))
+            val SIZE: Int = ((glyphInfo_t.SIZE * GLYPHS_PER_FONT) + java.lang.Float.SIZE + (CPP_class.CHAR_SIZE * 64))
 
             val BYTES: Int = SIZE / java.lang.Byte.SIZE
         }
@@ -523,25 +512,11 @@ object RenderSystem {
         }
 
         abstract fun DrawStretchPic(
-            x: Float,
-            y: Float,
-            w: Float,
-            h: Float,
-            s1: Float,
-            t1: Float,
-            s2: Float,
-            t2: Float,
-            material: idMaterial?
+            x: Float, y: Float, w: Float, h: Float, s1: Float, t1: Float, s2: Float, t2: Float, material: idMaterial?
         )
 
         abstract fun DrawStretchTri(
-            p1: idVec2,
-            p2: idVec2,
-            p3: idVec2,
-            t1: idVec2,
-            t2: idVec2,
-            t3: idVec2,
-            material: idMaterial?
+            p1: idVec2, p2: idVec2, p3: idVec2, t1: idVec2, t2: idVec2, t3: idVec2, material: idMaterial?
         )
 
         abstract fun GlobalToNormalizedDeviceCoordinates(global: idVec3?, ndc: idVec3?)
@@ -549,22 +524,12 @@ object RenderSystem {
         abstract fun PrintMemInfo(mi: MemInfo_t)
         abstract fun DrawSmallChar(x: Int, y: Int, ch: Int, material: idMaterial?)
         abstract fun DrawSmallStringExt(
-            x: Int,
-            y: Int,
-            string: CharArray,
-            setColor: idVec4,
-            forceColor: Boolean,
-            material: idMaterial?
+            x: Int, y: Int, string: CharArray, setColor: idVec4, forceColor: Boolean, material: idMaterial?
         )
 
         abstract fun DrawBigChar(x: Int, y: Int, ch: Int, material: idMaterial?)
         abstract fun DrawBigStringExt(
-            x: Int,
-            y: Int,
-            string: String,
-            setColor: idVec4,
-            forceColor: Boolean,
-            material: idMaterial?
+            x: Int, y: Int, string: String, setColor: idVec4, forceColor: Boolean, material: idMaterial?
         )
 
         // dump all 2D drawing so far this frame to the demo file
@@ -598,10 +563,7 @@ object RenderSystem {
         // then perform all desired rendering, then capture to an image
         // if the specified physical dimensions are larger than the current cropped region, they will be cut down to fit
         abstract fun CropRenderSize(
-            width: Int,
-            height: Int,
-            makePowerOfTwo: Boolean /*= false*/,
-            forceDimensions: Boolean /*= false */
+            width: Int, height: Int, makePowerOfTwo: Boolean /*= false*/, forceDimensions: Boolean /*= false */
         )
 
 

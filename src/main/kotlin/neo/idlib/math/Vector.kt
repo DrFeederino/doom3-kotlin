@@ -21,12 +21,7 @@ val vec4_zero: idVec4 get() = vec4_origin
 val vec5_origin: idVec5 get() = idVec5(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
 val vec6_infinity: idVec6
     get() = idVec6(
-        idMath.INFINITY,
-        idMath.INFINITY,
-        idMath.INFINITY,
-        idMath.INFINITY,
-        idMath.INFINITY,
-        idMath.INFINITY
+        idMath.INFINITY, idMath.INFINITY, idMath.INFINITY, idMath.INFINITY, idMath.INFINITY, idMath.INFINITY
     )
 val vec6_origin: idVec6 get() = idVec6(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
 val vec6_zero: idVec6 get() = vec6_origin
@@ -472,8 +467,7 @@ open class idVec3 : idVec<idVec3>, idSerializable {
         return idVec3(-x, -y, -z)
     }
 
-    override fun set(a: idVec3): idVec3 {
-        //assert(!a.x.isNaN())
+    override fun set(a: idVec3): idVec3 { //assert(!a.x.isNaN())
         x = a.x
         y = a.y
         z = a.z
@@ -991,8 +985,7 @@ open class idVec3 : idVec<idVec3>, idSerializable {
      =============
      */
 
-    fun ProjectOntoPlane(normal: idVec3, overBounce: Float = 1.0f) {
-        // x * a.x + y * a.y + z * a.z;
+    fun ProjectOntoPlane(normal: idVec3, overBounce: Float = 1.0f) { // x * a.x + y * a.y + z * a.z;
         var backoff: Float = this * normal //	backoff = this.x * normal.x;//TODO:normal.x???
         if (overBounce != 1.0f) {
             if (backoff < 0) {
@@ -1007,8 +1000,7 @@ open class idVec3 : idVec<idVec3>, idSerializable {
 
     fun ProjectAlongPlane(normal: idVec3, epsilon: Float, overBounce: Float = 1.0f): Boolean {
         val cross = idVec3()
-        cross.set(this.Cross(normal).Cross(this))
-        // normalize so a fixed epsilon can be used
+        cross.set(this.Cross(normal).Cross(this)) // normalize so a fixed epsilon can be used
         cross.Normalize()
         val len: Float = normal * cross
         if (abs(len) < epsilon) {
@@ -1081,8 +1073,7 @@ open class idVec3 : idVec<idVec3>, idSerializable {
         return x
     }
 
-    override fun set(i: Int, value: Float): Float {
-        //`assert(!value.isNaN())
+    override fun set(i: Int, value: Float): Float { //`assert(!value.isNaN())
         when (i) {
             0 -> x = value
             1 -> y = value
@@ -1710,8 +1701,7 @@ class idVec6 : idVec<idVec6>, idSerializable {
 
     constructor()
 
-    constructor(a: FloatArray) {
-//	memcpy( p, a, 6 * sizeof( Float ) );
+    constructor(a: FloatArray) { //	memcpy( p, a, 6 * sizeof( Float ) );
         System.arraycopy(a, 0, p, 0, 6)
     }
 
@@ -1768,12 +1758,7 @@ class idVec6 : idVec<idVec6>, idSerializable {
     //public 	idVec6			operator-( final  idVec6 &a ) final ;
     override fun plus(a: idVec6): idVec6 {
         return idVec6(
-            p[0] + a.p[0],
-            p[1] + a.p[1],
-            p[2] + a.p[2],
-            p[3] + a.p[3],
-            p[4] + a.p[4],
-            p[5] + a.p[5]
+            p[0] + a.p[0], p[1] + a.p[1], p[2] + a.p[2], p[3] + a.p[3], p[4] + a.p[4], p[5] + a.p[5]
         )
     }
 
@@ -1793,8 +1778,7 @@ class idVec6 : idVec<idVec6>, idSerializable {
     //
     //public 	friend idVec6	operator*( final  Float a, final  idVec6 b );
     fun Compare(a: idVec6): Boolean { // exact compare, no epsilon
-        return (p[0] == a.p[0] && p[1] == a.p[1] && p[2] == a.p[2]
-                && p[3] == a.p[3] && p[4] == a.p[4] && p[5] == a.p[5])
+        return (p[0] == a.p[0] && p[1] == a.p[1] && p[2] == a.p[2] && p[3] == a.p[3] && p[4] == a.p[4] && p[5] == a.p[5])
     }
 
     fun Compare(a: idVec6, epsilon: Float): Boolean { // compare with epsilon
@@ -1855,8 +1839,7 @@ class idVec6 : idVec<idVec6>, idSerializable {
         return 6
     }
 
-    fun SubVec3(index: Int): idVec3 {
-//	return *reinterpret_cast<const idVec3 *>(p + index * 3);
+    fun SubVec3(index: Int): idVec3 { //	return *reinterpret_cast<const idVec3 *>(p + index * 3);
         val offset = index * 3
         return idVec3(p[offset + 0], p[offset + 1], p[offset + 2])
     }
@@ -1965,9 +1948,7 @@ class idVec6 : idVec<idVec6>, idSerializable {
     }
 
     override fun toString(): String {
-        return "idVec6{" +
-                "p=" + Arrays.toString(p) +
-                '}'
+        return "idVec6{" + "p=" + Arrays.toString(p) + '}'
     }
 
     companion object {
@@ -2091,8 +2072,7 @@ class idVecX {
         while (i < size) {
             m.p[i] = p[i] + a.p[i]
             i++
-        }
-        //#endif
+        } //#endif
         return m
     }
 
@@ -2143,13 +2123,11 @@ class idVecX {
     fun ChangeSize(newSize: Int, makeZero: Boolean = false) {
         val alloc = newSize + 3 and 3.inv()
         if (alloc > alloced && alloced != -1) {
-            val oldVec = p
-            //		p = (Float *) Mem_Alloc16( alloc * sizeof( Float ) );
+            val oldVec = p //		p = (Float *) Mem_Alloc16( alloc * sizeof( Float ) );
             p = FloatArray(alloc)
             alloced = alloc
             System.arraycopy(oldVec, 0, p, 0, size) //TODO:ifelse
-            if (makeZero) {
-                // zero any new elements
+            if (makeZero) { // zero any new elements
                 for (i in size until newSize) {
                     p[i] = 0.0f
                 }
@@ -2163,8 +2141,9 @@ class idVecX {
         return size
     }
 
-    fun SetData(length: Int, data: FloatArray) {
-        //	assert( ( ( (int) data ) & 15 ) == 0 ); // data must be 16 byte aligned
+    fun SetData(
+        length: Int, data: FloatArray
+    ) { //	assert( ( ( (int) data ) & 15 ) == 0 ); // data must be 16 byte aligned
         p = data
         size = length
         alloced = -1
@@ -2295,24 +2274,16 @@ class idVecX {
     @Deprecated("readonly")
     fun SubVec3(index: Int): idVec3 {
         val offset = index * 3
-        assert(index >= 0 && offset + 3 <= size)
-        //	return *reinterpret_cast<idVec3 *>(p + index * 3);
+        assert(index >= 0 && offset + 3 <= size) //	return *reinterpret_cast<idVec3 *>(p + index * 3);
         return idVec3(p[offset + 0], p[offset + 1], p[offset + 2])
-    }
-    //public	idVec3 &		SubVec3( int index );
+    } //public	idVec3 &		SubVec3( int index );
 
     @Deprecated("readonly")
     fun SubVec6(index: Int): idVec6 {
         val offset = index * 6
-        assert(index >= 0 && offset + 6 <= size)
-        //	return *reinterpret_cast<idVec6 *>(p + index * 6);
+        assert(index >= 0 && offset + 6 <= size) //	return *reinterpret_cast<idVec6 *>(p + index * 6);
         return idVec6(
-            p[offset + 0],
-            p[offset + 1],
-            p[offset + 2],
-            p[offset + 3],
-            p[offset + 4],
-            p[offset + 5]
+            p[offset + 0], p[offset + 1], p[offset + 2], p[offset + 3], p[offset + 4], p[offset + 5]
         )
     }
 
@@ -2333,8 +2304,7 @@ class idVecX {
         }
         if (p.size < alloced) {
             p = FloatArray(alloced)
-        }
-        //p = p.copyOf(alloced)
+        } //p = p.copyOf(alloced)
         tempIndex += alloced
         VECX_CLEAREND()
     }

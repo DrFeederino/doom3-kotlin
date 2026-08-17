@@ -32,9 +32,9 @@ object Winding {
      */
     open class idWinding {
         protected var allocedSize = 0
-        protected var numPoints: Int// number of points
+        protected var numPoints: Int // number of points
 
-        protected var p: Array<idVec5> = emptyArray()// pointer to point data
+        protected var p: Array<idVec5> = emptyArray() // pointer to point data
 
         private var NULL =
             true // used to identify whether any value was assigned. used in combination with idWinding.Split(....);
@@ -263,13 +263,11 @@ object Winding {
                     back.set(Copy())
                     SIDE_BACK
                 }
-            }
-            // if nothing at the front of the clipping plane
+            } // if nothing at the front of the clipping plane
             if (0 == counts[SIDE_FRONT]) {
                 back.set(Copy())
                 return SIDE_BACK
-            }
-            // if nothing at the back of the clipping plane
+            } // if nothing at the back of the clipping plane
             if (0 == counts[SIDE_BACK]) {
                 front.set(Copy())
                 return SIDE_FRONT
@@ -400,12 +398,10 @@ object Winding {
             // if the winding is on the plane and we should keep it
             if (keepOn && 0 == counts[SIDE_FRONT] && 0 == counts[SIDE_BACK]) {
                 return this
-            }
-            // if nothing at the front of the clipping plane
+            } // if nothing at the front of the clipping plane
             if (0 == counts[SIDE_FRONT]) {
                 return null
-            }
-            // if nothing at the back of the clipping plane
+            } // if nothing at the back of the clipping plane
             if (0 == counts[SIDE_BACK]) {
                 return this
             }
@@ -439,8 +435,7 @@ object Winding {
                 p2.set(p[(i + 1) % numPoints])
                 dot = dists[i] / (dists[i] - dists[i + 1])
                 j = 0
-                while (j < 3) {
-                    // avoid round off error when possible
+                while (j < 3) { // avoid round off error when possible
                     if (plane.Normal()[j] == 1.0f) {
                         mid[j] = plane.Dist()
                     } else if (plane.Normal()[j] == -1.0f) {
@@ -510,13 +505,11 @@ object Winding {
             // if the winding is on the plane and we should keep it
             if (keepOn && 0 == counts[SIDE_FRONT] && 0 == counts[SIDE_BACK]) {
                 return true
-            }
-            // if nothing at the front of the clipping plane
+            } // if nothing at the front of the clipping plane
             if (0 == counts[SIDE_FRONT]) {
                 numPoints = 0
                 return false
-            }
-            // if nothing at the back of the clipping plane
+            } // if nothing at the back of the clipping plane
             if (0 == counts[SIDE_BACK]) {
                 return true
             }
@@ -640,13 +633,11 @@ object Winding {
             val edgeNormal = idVec3()
             var dist: Float
             i = 0
-            while (i < numPoints) {
-                // from TDM: don't remove any points when there are only 3 or less left to avoid
+            while (i < numPoints) { // from TDM: don't remove any points when there are only 3 or less left to avoid
                 // degenerating the winding, otherwise this may result in windings with numPoints = 0
                 if (numPoints <= 3) {
                     return
-                }
-                // create plane through edge orthogonal to winding plane
+                } // create plane through edge orthogonal to winding plane
                 edgeNormal.set((p[i].ToVec3() - p[(i + numPoints - 1) % numPoints].ToVec3()).Cross(normal))
                 edgeNormal.Normalize()
                 dist = edgeNormal * p[i].ToVec3()
@@ -704,8 +695,7 @@ object Winding {
             if (abs(plane.Distance(point)) > epsilon) {
                 return false
             }
-            for (i in 0 until numPoints) {
-                // create plane through edge orthogonal to winding plane
+            for (i in 0 until numPoints) { // create plane through edge orthogonal to winding plane
                 normal.set((p[(i + 1) % numPoints].ToVec3() - p[i].ToVec3()).Cross(plane.Normal()))
                 normal.Normalize()
                 dist = normal * p[i].ToVec3()
@@ -715,16 +705,14 @@ object Winding {
                 normal.set(plane.Normal().Cross(normal))
                 dot = normal * point
                 dist = dot - normal * p[i].ToVec3()
-                if (dist < epsilon) {
-                    // if the winding already has the point
+                if (dist < epsilon) { // if the winding already has the point
                     if (dist > -epsilon) {
                         return false
                     }
                     continue
                 }
                 dist = dot - normal * p[(i + 1) % numPoints].ToVec3()
-                if (dist > -epsilon) {
-                    // if the winding already has the point
+                if (dist > -epsilon) { // if the winding already has the point
                     if (dist < epsilon) {
                         return false
                     }
@@ -743,13 +731,10 @@ object Winding {
          Adds the given winding to the convex hull.
          Assumes the current winding already is a convex hull with three or more points.
          =============
-         */
-        // add a winding to the convex hull
+         */ // add a winding to the convex hull
 
         fun AddToConvexHull(
-            winding: idWinding?,
-            normal: idVec3,
-            epsilon: Float = ON_EPSILON
+            winding: idWinding?, normal: idVec3, epsilon: Float = ON_EPSILON
         ) { // add a winding to the convex hull
             var i: Int
             var j: Int
@@ -773,8 +758,7 @@ object Winding {
             hullSide = BooleanArray(maxPts)
             i = 0
             while (i < winding.numPoints) {
-                val p1 = winding.p[i]
-                // calculate hull edge vectors
+                val p1 = winding.p[i] // calculate hull edge vectors
                 j = 0
                 while (j < numPoints) {
                     dir.set(p[(j + 1) % numPoints].ToVec3() - p[j].ToVec3())
@@ -846,13 +830,10 @@ object Winding {
          Add a point to the convex hull.
          The current winding must be convex but may be degenerate and can have less than three points.
          =============
-         */
-        // add a point to the convex hull
+         */ // add a point to the convex hull
 
         fun AddToConvexHull(
-            point: idVec3,
-            normal: idVec3,
-            epsilon: Float = ON_EPSILON
+            point: idVec3, normal: idVec3, epsilon: Float = ON_EPSILON
         ) { // add a point to the convex hull
             var j: Int
             var k: Int
@@ -869,8 +850,7 @@ object Winding {
                     return
                 }
 
-                1 -> {
-                    // don't add the same point second
+                1 -> { // don't add the same point second
                     if (p[0].ToVec3().Compare(point, epsilon)) {
                         return
                     }
@@ -879,16 +859,13 @@ object Winding {
                     return
                 }
 
-                2 -> {
-                    // don't add a point if it already exists
+                2 -> { // don't add a point if it already exists
                     if (p[0].ToVec3().Compare(point, epsilon) || p[1].ToVec3().Compare(point, epsilon)) {
                         return
-                    }
-                    // if only two points make sure we have the right ordering according to the normal
+                    } // if only two points make sure we have the right ordering according to the normal
                     dir.set(point - p[0].ToVec3())
                     dir.set(dir.Cross(p[1].ToVec3() - p[0].ToVec3()))
-                    if (dir[0] == 0.0f && dir[1] == 0.0f && dir[2] == 0.0f) {
-                        // points don't make a plane
+                    if (dir[0] == 0.0f && dir[1] == 0.0f && dir[2] == 0.0f) { // points don't make a plane
                         return
                     }
                     if (dir * normal > 0.0f) {
@@ -962,8 +939,7 @@ object Winding {
             if (!EnsureAlloced(numHullPoints, false)) {
                 return
             }
-            numPoints = numHullPoints
-            //	memcpy( p, hullPoints, numHullPoints * sizeof(idVec5) );
+            numPoints = numHullPoints //	memcpy( p, hullPoints, numHullPoints * sizeof(idVec5) );
             for (i in 0 until numHullPoints) {
                 p[i].set(hullPoints[i])
             }
@@ -990,8 +966,7 @@ object Winding {
             val keep1: Boolean
             val keep2: Boolean
             f1 = this
-            f2 = idWinding(w)
-            // find a idLib::common edge
+            f2 = idWinding(w) // find a idLib::common edge
             j = 0
             i = 0
             while (i < f1.numPoints) {
@@ -1023,8 +998,7 @@ object Winding {
             }
             if (i == f1.numPoints) {
                 return null // no matching edges
-            }
-            // check slope of connected lines
+            } // check slope of connected lines
             // if the slopes are colinear, the point can be removed
             back.set(f1.p[(i + f1.numPoints - 1) % f1.numPoints].ToVec3())
             delta.set(p1 - back)
@@ -1047,8 +1021,7 @@ object Winding {
             if (dot > CONTINUOUS_EPSILON) {
                 return null // not a convex polygon
             }
-            keep2 = dot < -CONTINUOUS_EPSILON
-            // build the new polygon
+            keep2 = dot < -CONTINUOUS_EPSILON // build the new polygon
             newf = idWinding(f1.numPoints + f2.numPoints)
 
             // copy first polygon
@@ -1111,10 +1084,7 @@ object Winding {
                     if (p1[j] >= MAX_WORLD_COORD || p1[j] <= MIN_WORLD_COORD) {
                         if (print) {
                             idLib.common.Printf(
-                                "idWinding::Check: point %d outside world %c-axis: %f",
-                                i,
-                                'X' + j,
-                                p1[j]
+                                "idWinding::Check: point %d outside world %c-axis: %f", i, 'X' + j, p1[j]
                             )
                         }
                         return false
@@ -1307,8 +1277,7 @@ object Winding {
             while (i < numPoints) {
                 j = 0
                 while (j < 3) {
-                    if (p[i][j] <= MIN_WORLD_COORD || p[i][j] >= MAX_WORLD_COORD
-                    ) {
+                    if (p[i][j] <= MIN_WORLD_COORD || p[i][j] >= MAX_WORLD_COORD) {
                         return true
                     }
                     j++
@@ -1395,16 +1364,14 @@ object Winding {
         }
 
         fun PlanesConcave(w2: idWinding, normal1: idVec3, normal2: idVec3, dist1: Float, dist2: Float): Boolean {
-            var i: Int
-            // check if one of the points of winding 1 is at the back of the plane of winding 2
+            var i: Int // check if one of the points of winding 1 is at the back of the plane of winding 2
             i = 0
             while (i < numPoints) {
                 if (normal2 * p[i].ToVec3() - dist2 > WCONVEX_EPSILON) {
                     return true
                 }
                 i++
-            }
-            // check if one of the points of winding 2 is at the back of the plane of winding 1
+            } // check if one of the points of winding 2 is at the back of the plane of winding 1
             i = 0
             while (i < w2.numPoints) {
                 if (normal1 * w2.p[i].ToVec3() - dist1 > WCONVEX_EPSILON) {
@@ -1435,10 +1402,7 @@ object Winding {
 
         // returns true if the line or ray intersects the winding
         fun LineIntersection(
-            windingPlane: idPlane,
-            start: idVec3,
-            end: idVec3,
-            backFaceCull: Boolean = false
+            windingPlane: idPlane, start: idVec3, end: idVec3, backFaceCull: Boolean = false
         ): Boolean {
             val front: Float
             val back: Float
@@ -1474,11 +1438,7 @@ object Winding {
 
         // intersection point is start + dir * scale
         fun RayIntersection(
-            windingPlane: idPlane,
-            start: idVec3,
-            dir: idVec3,
-            scale: CFloat,
-            backFaceCull: Boolean = false
+            windingPlane: idPlane, start: idVec3, dir: idVec3, scale: CFloat, backFaceCull: Boolean = false
         ): Boolean {
             var i: Int
             var side: Boolean
@@ -1505,9 +1465,7 @@ object Winding {
         }
 
         protected fun EnsureAlloced(n: Int, keep: Boolean = false): Boolean {
-            return if (n > allocedSize) {
-                ReAllocate(n, keep)
-            } else true
+            return n <= allocedSize || ReAllocate(n, keep)
         }
 
         protected open fun ReAllocate(n: Int): Boolean {
@@ -1662,10 +1620,7 @@ object Winding {
         }
 
         fun ClipInPlaceNoAlloc(
-            plane: idPlane,
-            scratch: clipScratch_t,
-            epsilon: Float = ON_EPSILON,
-            keepOn: Boolean = false
+            plane: idPlane, scratch: clipScratch_t, epsilon: Float = ON_EPSILON, keepOn: Boolean = false
         ): Boolean {
             val dists = scratch.dists
             val sides = scratch.sides

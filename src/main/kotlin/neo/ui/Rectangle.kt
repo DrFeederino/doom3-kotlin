@@ -75,9 +75,7 @@ object Rectangle {
         }
 
         fun Contains(xt: Float, yt: Float): Boolean {
-            return if (w == 0.0f && h == 0.0f) {
-                false
-            } else xt >= x && xt <= Right() && yt >= y && yt <= Bottom()
+            return !(w == 0.0f && h == 0.0f) && xt >= x && xt <= Right() && yt >= y && yt <= Bottom()
         }
 
         fun Empty() {
@@ -213,9 +211,9 @@ object Rectangle {
             if (java.lang.Float.floatToIntBits(y) != java.lang.Float.floatToIntBits(other.y)) {
                 return false
             }
-            return if (java.lang.Float.floatToIntBits(w) != java.lang.Float.floatToIntBits(other.w)) {
-                false
-            } else java.lang.Float.floatToIntBits(h) == java.lang.Float.floatToIntBits(other.h)
+            return java.lang.Float.floatToIntBits(w) == java.lang.Float.floatToIntBits(other.w) && java.lang.Float.floatToIntBits(
+                h
+            ) == java.lang.Float.floatToIntBits(other.h)
         }
 
         operator fun get(index: Int): Float {

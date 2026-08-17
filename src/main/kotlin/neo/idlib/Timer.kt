@@ -128,9 +128,7 @@ class Timer {
                 total += timers[i].Milliseconds()
             }
             idLib.common.Printf(
-                "Total time for report %s was %5.2f\n\n",
-                reportName,
-                0.001f * total
+                "Total time for report %s was %5.2f\n\n", reportName, 0.001f * total
             )
         }
 

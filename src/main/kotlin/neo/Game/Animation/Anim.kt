@@ -481,9 +481,7 @@ object Anim {
                 }
                 if (parent != jointInfo[i].parentNum) {
                     idGameLocal.Error(
-                        "Model '%s' has different joint hierarchy than anim '%s'",
-                        model.Name(),
-                        name
+                        "Model '%s' has different joint hierarchy than anim '%s'", model.Name(), name
                     )
                 }
                 i++
@@ -491,10 +489,7 @@ object Anim {
         }
 
         fun GetInterpolatedFrame(
-            frame: frameBlend_t,
-            joints: Array<idJointQuat>,
-            index: IntArray,
-            numIndexes: Int
+            frame: frameBlend_t, joints: Array<idJointQuat>, index: IntArray, numIndexes: Int
         ) {
             val jointframe1: FloatArray
             var jf1_ptr: Int
@@ -531,7 +526,7 @@ object Anim {
                 if (animBits != 0) {
                     lerpIndex[numLerpJoints++] = j
 
-//			jointframe2 = frame2 ;
+                    //			jointframe2 = frame2 ;
                     jf1_ptr = f1_ptr + infoPtr.firstComponent
                     jf2_ptr = f2_ptr + infoPtr.firstComponent
                     when (animBits and (ANIM_TX or ANIM_TY or ANIM_TZ)) {
@@ -683,8 +678,9 @@ object Anim {
             }
         }
 
-        fun GetSingleFrame(framenum: Int, joints: Array<idJointQuat>, index: IntArray, numIndexes: Int) {
-            //	float				[]frame;
+        fun GetSingleFrame(
+            framenum: Int, joints: Array<idJointQuat>, index: IntArray, numIndexes: Int
+        ) { //	float				[]frame;
             var jointframe: FloatArray
             var jf_ptr: Int
             var animBits: Int
@@ -695,8 +691,7 @@ object Anim {
             for (_i in 0 until baseFrame.Num()) {
                 joints[_i] = idJointQuat(baseFrame[_i])
             }
-            if (framenum == 0 || 0 == numAnimatedComponents) {
-                // just use the base frame
+            if (framenum == 0 || 0 == numAnimatedComponents) { // just use the base frame
                 return
             }
 
@@ -852,8 +847,7 @@ object Anim {
         fun GetOriginRotation(rotation: idQuat, time: Int, cyclecount: Int) {
             val frame = frameBlend_t()
             val animBits: Int = jointInfo[0].animBits
-            if (animBits and (ANIM_QX or ANIM_QY or ANIM_QZ) == 0) {
-                // just use the baseframe
+            if (animBits and (ANIM_QX or ANIM_QY or ANIM_QZ) == 0) { // just use the baseframe
                 rotation.set(baseFrame[0].q)
                 return
             }

@@ -45,8 +45,7 @@ import neo.idlib.containers.List.idList
 import neo.idlib.containers.idStrList
 import neo.idlib.idException
 
-class DeclSkin {
-    /*
+class DeclSkin {/*
     ===============================================================================
 
         idDeclSkin
@@ -70,15 +69,15 @@ class DeclSkin {
         ================
         */
         @Throws(idException::class)
-        override fun SetDefaultText(): Boolean {
-            // if there exists a material with the same name
+        override fun SetDefaultText(): Boolean { // if there exists a material with the same name
             return if (DeclManager.declManager.FindType(declType_t.DECL_MATERIAL, GetName(), false) != null) {
-                val generated = StringBuffer(2048)
-                // FIX: Was using trimIndent() raw string which produced an extra trailing newline
+                val generated =
+                    StringBuffer(2048) // FIX: Was using trimIndent() raw string which produced an extra trailing newline
                 idStr.snPrintf(
                     generated, generated.capacity(),
                     "skin %s // IMPLICITLY GENERATED\n{\n_default %s\n}\n",
-                    GetName(), GetName()
+                    GetName(),
+                    GetName()
                 )
                 SetText(generated.toString())
                 true
@@ -129,8 +128,7 @@ class DeclSkin {
                     continue
                 }
                 val map = skinMapping_t()
-                if (0 == token.Icmp("*")) {
-                    // wildcard
+                if (0 == token.Icmp("*")) { // wildcard
                     map.from = null
                 } else {
                     map.from = DeclManager.declManager.FindMaterial(token)
@@ -183,8 +181,7 @@ class DeclSkin {
         ================
         idDeclSkin::GetNumModelAssociations
         ================
-        */
-        // model associations are just for the preview dialog in the editor
+        */ // model associations are just for the preview dialog in the editor
         fun GetNumModelAssociations(): Int {
             return associatedModels.size()
         }

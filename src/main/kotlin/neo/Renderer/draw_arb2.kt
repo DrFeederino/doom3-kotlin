@@ -55,28 +55,22 @@ object draw_arb2 {
         progs[a++] = progDef_t(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, program_t.VPROG_TEST, "test.vfp")
         progs[a++] = progDef_t(GL_FRAGMENT_PROGRAM_ARB, program_t.FPROG_TEST, "test.vfp")
         progs[a++] = progDef_t(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, program_t.VPROG_INTERACTION, "interaction.vfp")
-        progs[a++] =
-            progDef_t(GL_FRAGMENT_PROGRAM_ARB, program_t.FPROG_INTERACTION, "interaction.vfp")
+        progs[a++] = progDef_t(GL_FRAGMENT_PROGRAM_ARB, program_t.FPROG_INTERACTION, "interaction.vfp")
         progs[a++] =
             progDef_t(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, program_t.VPROG_BUMPY_ENVIRONMENT, "bumpyEnvironment.vfp")
         progs[a++] = progDef_t(
-            GL_FRAGMENT_PROGRAM_ARB,
-            program_t.FPROG_BUMPY_ENVIRONMENT,
-            "bumpyEnvironment.vfp"
+            GL_FRAGMENT_PROGRAM_ARB, program_t.FPROG_BUMPY_ENVIRONMENT, "bumpyEnvironment.vfp"
         )
         progs[a++] = progDef_t(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, program_t.VPROG_AMBIENT, "ambientLight.vfp")
         progs[a++] = progDef_t(GL_FRAGMENT_PROGRAM_ARB, program_t.FPROG_AMBIENT, "ambientLight.vfp")
         progs[a++] = progDef_t(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, program_t.VPROG_STENCIL_SHADOW, "shadow.vp")
         progs[a++] = progDef_t(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, program_t.VPROG_ENVIRONMENT, "environment.vfp")
-        progs[a++] =
-            progDef_t(GL_FRAGMENT_PROGRAM_ARB, program_t.FPROG_ENVIRONMENT, "environment.vfp")
+        progs[a++] = progDef_t(GL_FRAGMENT_PROGRAM_ARB, program_t.FPROG_ENVIRONMENT, "environment.vfp")
         progs[a++] = progDef_t(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, program_t.VPROG_GLASSWARP, "arbVP_glasswarp.txt")
-        progs[a++] =
-            progDef_t(GL_FRAGMENT_PROGRAM_ARB, program_t.FPROG_GLASSWARP, "arbFP_glasswarp.txt")
+        progs[a++] = progDef_t(GL_FRAGMENT_PROGRAM_ARB, program_t.FPROG_GLASSWARP, "arbFP_glasswarp.txt")
         progs[a++] =
             progDef_t(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, program_t.VPROG_SOFT_PARTICLE, "soft_particle.vfp")
-        progs[a++] =
-            progDef_t(GL_FRAGMENT_PROGRAM_ARB, program_t.FPROG_SOFT_PARTICLE, "soft_particle.vfp")
+        progs[a++] = progDef_t(GL_FRAGMENT_PROGRAM_ARB, program_t.FPROG_SOFT_PARTICLE, "soft_particle.vfp")
 
         // additional programs can be dynamically specified in materials
     }
@@ -93,29 +87,22 @@ object draw_arb2 {
 
     private fun findLineThatStartsWith(text: String, findMe: String): Int {
         var res = text.indexOf(findMe)
-        while (res != -1) {
-            // skip whitespace before match, if any
+        while (res != -1) { // skip whitespace before match, if any
             var cur = res
             if (cur > 0) cur--
             while (cur > 0 && (text[cur] == ' ' || text[cur] == '\t')) {
                 cur--
-            }
-            // now we should be at a newline (or at the beginning)
+            } // now we should be at a newline (or at the beginning)
             if (cur == 0) return cur
-            if (text[cur] == '\n' || text[cur] == '\r') return cur + 1
-            // otherwise maybe we're in commented out text or whatever, search on
+            if (text[cur] == '\n' || text[cur] == '\r') return cur + 1 // otherwise maybe we're in commented out text or whatever, search on
             res = text.indexOf(findMe, res + 1)
         }
         return -1
     }
 
-    private fun isARBidentifierChar(c: Int): Boolean {
-        // according to chapter 3.11.2 in ARB_fragment_program.txt identifiers can only
+    private fun isARBidentifierChar(c: Int): Boolean { // according to chapter 3.11.2 in ARB_fragment_program.txt identifiers can only
         // contain these chars (first char mustn't be a number, but that doesn't matter here)
-        return c == '$'.code || c == '_'.code
-                || (c in '0'.code..'9'.code)
-                || (c in 'A'.code..'Z'.code)
-                || (c in 'a'.code..'z'.code)
+        return c == '$'.code || c == '_'.code || (c in '0'.code..'9'.code) || (c in 'A'.code..'Z'.code) || (c in 'a'.code..'z'.code)
     }
 
     /*
@@ -167,12 +154,10 @@ object draw_arb2 {
         } else {
             Image.globalImages.specularTableImage!!.Bind()
         }
-        while (surf != null) {
-            // perform setup here that will not change over multiple interaction passes
+        while (surf != null) { // perform setup here that will not change over multiple interaction passes
 
             // set the vertex pointers
-            val ac =
-                idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache))
+            val ac = idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache))
             qgl.qglColorPointer(4, GL11.GL_UNSIGNED_BYTE, idDrawVert.BYTES, ac.colorOffset().toLong())
             qgl.qglVertexAttribPointerARB(11, 3, GL11.GL_FLOAT, false, idDrawVert.BYTES, ac.normalOffset().toLong())
             qgl.qglVertexAttribPointerARB(10, 3, GL11.GL_FLOAT, false, idDrawVert.BYTES, ac.tangentsOffset_1().toLong())
@@ -244,9 +229,7 @@ object draw_arb2 {
                 vLight = vLight.next
                 continue
             }
-            if (vLight.localInteractions[0] == null && vLight.globalInteractions[0] == null
-                && vLight.translucentInteractions[0] == null
-            ) {
+            if (vLight.localInteractions[0] == null && vLight.globalInteractions[0] == null && vLight.translucentInteractions[0] == null) {
                 vLight = vLight.next
                 continue
             }
@@ -263,8 +246,7 @@ object draw_arb2 {
                     )
                 }
                 qgl.qglClear(GL11.GL_STENCIL_BUFFER_BIT)
-            } else {
-                // no shadows, so no need to read or write the stencil buffer
+            } else { // no shadows, so no need to read or write the stencil buffer
                 // we might in theory want to use GL_ALWAYS instead of disabling
                 // completely, to satisfy the invarience rules
                 qgl.qglStencilFunc(GL11.GL_ALWAYS, 128, 255)
@@ -312,91 +294,11 @@ object draw_arb2 {
     // DG: the following two shaders are taken from TheDarkMod 2.04 (glprogs/soft_particle.vfp)
     // (C) 2005-2016 Broken Glass Studios (The Dark Mod Team) and the individual authors
     //     released under a revised BSD license and GPLv3
-    private val softpartVShader = "!!ARBvp1.0  \n" +
-            "OPTION ARB_position_invariant;  \n" +
-            "# NOTE: unlike the TDM shader, the following lines use .texcoord and .color  \n" +
-            "#   instead of .attrib[8] and .attrib[3], to make it work with non-nvidia drivers \n" +
-            "#   Furthermore, I added support for a texture matrix \n" +
-            "PARAM defaultTexCoord = { 0, 0.5, 0, 1 }; \n" +
-            "MOV    result.texcoord, defaultTexCoord; \n" +
-            "# program.env[12] is PP_DIFFUSE_MATRIX_S, 13 is PP_DIFFUSE_MATRIX_T \n" +
-            "DP4    result.texcoord.x, vertex.texcoord, program.env[12]; \n" +
-            "DP4    result.texcoord.y, vertex.texcoord, program.env[13]; \n" +
-            "MOV    result.color, vertex.color; \n" +
-            "END \n"
+    private val softpartVShader =
+        "!!ARBvp1.0  \n" + "OPTION ARB_position_invariant;  \n" + "# NOTE: unlike the TDM shader, the following lines use .texcoord and .color  \n" + "#   instead of .attrib[8] and .attrib[3], to make it work with non-nvidia drivers \n" + "#   Furthermore, I added support for a texture matrix \n" + "PARAM defaultTexCoord = { 0, 0.5, 0, 1 }; \n" + "MOV    result.texcoord, defaultTexCoord; \n" + "# program.env[12] is PP_DIFFUSE_MATRIX_S, 13 is PP_DIFFUSE_MATRIX_T \n" + "DP4    result.texcoord.x, vertex.texcoord, program.env[12]; \n" + "DP4    result.texcoord.y, vertex.texcoord, program.env[13]; \n" + "MOV    result.color, vertex.color; \n" + "END \n"
 
-    private val softpartFShader = "!!ARBfp1.0  \n" +
-            "# == Fragment Program == \n" +
-            "# taken from The Dark Mod 2.04, adjusted for dhewm3 \n" +
-            "# (C) 2005-2016 Broken Glass Studios (The Dark Mod Team) \n" +
-            "# \n" +
-            "# Input textures \n" +
-            "#   texture[0]   particle diffusemap \n" +
-            "#   texture[1]   _currentDepth \n" +
-            "# \n" +
-            "# Constants set by the engine: \n" +
-            "#   program.env[22] is reciprocal of _currentDepth size. Lets us convert a screen position to a texcoord in _currentDepth \n" +
-            "#      { 1.0f / depthtex.width, 1.0f / depthtex.height, float(depthtex.width)/int(depthtex.width), \n" +
-            "#          float(depthtex.height)/int(depthtex.height) } \n" +
-            "#   program.env[23] is the particle radius, given as { radius, 1/(fadeRange), 1/radius } \n" +
-            "#      fadeRange is the particle diameter for alpha blends (like smoke), but the particle radius for additive \n" +
-            "#      blends (light glares), because additive effects work differently. Fog is half as apparent when a wall   \n" +
-            "#      is in the middle of it. Light glares lose no visibility when they have something to reflect off.  \n" +
-            "#   program.env[24] is the color channel mask. Particles with additive blend need their RGB channels modified to blend them out. \n" +
-            "#                                              Particles with an alpha blend need their alpha channel modified. \n" +
-            "# \n" +
-            "# Hard-coded constants \n" +
-            "#    depth_consts allows us to recover the original depth in Doom units of anything in the depth \n" +
-            "#    buffer. Doom3's and thus TDM's projection matrix differs slightly from the classic projection matrix as \n" +
-            "#    it implements a \"nearly-infinite\" zFar. The matrix is hard-coded in the engine, so we use hard-coded \n" +
-            "#    constants here for efficiency. depth_consts is derived from the numbers in that matrix. \n" +
-            "# \n" +
-            "# next line: prevent dhewm3 from injecting gamma in shader code into this shader,  \n" +
-            "#            because that looks bad when rendered with additive blending (gets too bright) \n" +
-            "# nodhewm3gammahack \n" +
-            "\n" +
-            "PARAM   depth_consts = { 0.33333333, -0.33316667, 0.0, 0.0 }; \n" +
-            "PARAM   particle_radius  = program.env[23]; \n" +
-            "TEMP    tmp, scene_depth, particle_depth, near_fade, fade; \n" +
-            "\n" +
-            "# Map the fragment to a texcoord on our depth image, and sample to find scene_depth \n" +
-            "MUL   tmp.xy, fragment.position, program.env[22]; \n" +
-            "TEX   scene_depth, tmp, texture[1], 2D; \n" +
-            "MIN   scene_depth, scene_depth, 0.9994; # Required by TDM projection matrix. Equates to max recoverable  \n" +
-            "                                        # depth of 30k units, which is enough. 0.9995 is infinite depth. \n" +
-            "                                        # This is needed only if there is caulk sky on show (which writes \n" +
-            "                                        # no depth, so leaves 1 in the depth texture).  \n" +
-            "\n" +
-            "# Recover original depth in doom units  \n" +
-            "MAD   tmp, scene_depth, depth_consts.x, depth_consts.y; \n" +
-            "RCP   scene_depth, tmp.x; \n" +
-            "\n" +
-            "# Convert particle depth to doom units too \n" +
-            "MAD   tmp, fragment.position.z, depth_consts.x, depth_consts.y; \n" +
-            "RCP   particle_depth, tmp.x; \n" +
-            "\n" +
-            "# Scale the depth difference by the particle diameter to calc an alpha  \n" +
-            "# value based on how much of the 3d volume represented by the particle  \n" +
-            "# is in front of the solid scene  \n" +
-            "ADD      tmp, -scene_depth, particle_depth;     # NB depth is negative. 0 at the eye, -100 at 100 units into the screen. \n" +
-            "ADD      tmp, tmp, particle_radius.x;           # Add the radius so a depth difference of particle radius now equals 0 \n" +
-            "MUL_SAT  fade, tmp, particle_radius.y;          # divide by the particle radius or diameter and clamp \n" +
-            "\n" +
-            "# Also fade if the particle is too close to our eye position, so it doesn't 'pop' in and out of view \n" +
-            "# Start a linear fade at particle_radius distance from the particle. \n" +
-            "MUL_SAT  near_fade, particle_depth, -particle_radius.z;  \n" +
-            "\n" +
-            "# Calculate final fade and apply the channel mask \n" +
-            "MUL      fade, near_fade, fade; \n" +
-            "ADD_SAT  fade, fade, program.env[24];  # saturate the channels that don't want modifying \n" +
-            "\n" +
-            "# Set the color. Multiply by vertex/fragment color as that's how the particle system fades particles in and out \n" +
-            "TEMP  oColor; \n" +
-            "TEX   oColor, fragment.texcoord, texture[0], 2D; \n" +
-            "MUL   oColor, oColor, fade; \n" +
-            "MUL   result.color, oColor, fragment.color; \n" +
-            "\n" +
-            "END \n"
+    private val softpartFShader =
+        "!!ARBfp1.0  \n" + "# == Fragment Program == \n" + "# taken from The Dark Mod 2.04, adjusted for dhewm3 \n" + "# (C) 2005-2016 Broken Glass Studios (The Dark Mod Team) \n" + "# \n" + "# Input textures \n" + "#   texture[0]   particle diffusemap \n" + "#   texture[1]   _currentDepth \n" + "# \n" + "# Constants set by the engine: \n" + "#   program.env[22] is reciprocal of _currentDepth size. Lets us convert a screen position to a texcoord in _currentDepth \n" + "#      { 1.0f / depthtex.width, 1.0f / depthtex.height, float(depthtex.width)/int(depthtex.width), \n" + "#          float(depthtex.height)/int(depthtex.height) } \n" + "#   program.env[23] is the particle radius, given as { radius, 1/(fadeRange), 1/radius } \n" + "#      fadeRange is the particle diameter for alpha blends (like smoke), but the particle radius for additive \n" + "#      blends (light glares), because additive effects work differently. Fog is half as apparent when a wall   \n" + "#      is in the middle of it. Light glares lose no visibility when they have something to reflect off.  \n" + "#   program.env[24] is the color channel mask. Particles with additive blend need their RGB channels modified to blend them out. \n" + "#                                              Particles with an alpha blend need their alpha channel modified. \n" + "# \n" + "# Hard-coded constants \n" + "#    depth_consts allows us to recover the original depth in Doom units of anything in the depth \n" + "#    buffer. Doom3's and thus TDM's projection matrix differs slightly from the classic projection matrix as \n" + "#    it implements a \"nearly-infinite\" zFar. The matrix is hard-coded in the engine, so we use hard-coded \n" + "#    constants here for efficiency. depth_consts is derived from the numbers in that matrix. \n" + "# \n" + "# next line: prevent dhewm3 from injecting gamma in shader code into this shader,  \n" + "#            because that looks bad when rendered with additive blending (gets too bright) \n" + "# nodhewm3gammahack \n" + "\n" + "PARAM   depth_consts = { 0.33333333, -0.33316667, 0.0, 0.0 }; \n" + "PARAM   particle_radius  = program.env[23]; \n" + "TEMP    tmp, scene_depth, particle_depth, near_fade, fade; \n" + "\n" + "# Map the fragment to a texcoord on our depth image, and sample to find scene_depth \n" + "MUL   tmp.xy, fragment.position, program.env[22]; \n" + "TEX   scene_depth, tmp, texture[1], 2D; \n" + "MIN   scene_depth, scene_depth, 0.9994; # Required by TDM projection matrix. Equates to max recoverable  \n" + "                                        # depth of 30k units, which is enough. 0.9995 is infinite depth. \n" + "                                        # This is needed only if there is caulk sky on show (which writes \n" + "                                        # no depth, so leaves 1 in the depth texture).  \n" + "\n" + "# Recover original depth in doom units  \n" + "MAD   tmp, scene_depth, depth_consts.x, depth_consts.y; \n" + "RCP   scene_depth, tmp.x; \n" + "\n" + "# Convert particle depth to doom units too \n" + "MAD   tmp, fragment.position.z, depth_consts.x, depth_consts.y; \n" + "RCP   particle_depth, tmp.x; \n" + "\n" + "# Scale the depth difference by the particle diameter to calc an alpha  \n" + "# value based on how much of the 3d volume represented by the particle  \n" + "# is in front of the solid scene  \n" + "ADD      tmp, -scene_depth, particle_depth;     # NB depth is negative. 0 at the eye, -100 at 100 units into the screen. \n" + "ADD      tmp, tmp, particle_radius.x;           # Add the radius so a depth difference of particle radius now equals 0 \n" + "MUL_SAT  fade, tmp, particle_radius.y;          # divide by the particle radius or diameter and clamp \n" + "\n" + "# Also fade if the particle is too close to our eye position, so it doesn't 'pop' in and out of view \n" + "# Start a linear fade at particle_radius distance from the particle. \n" + "MUL_SAT  near_fade, particle_depth, -particle_radius.z;  \n" + "\n" + "# Calculate final fade and apply the channel mask \n" + "MUL      fade, near_fade, fade; \n" + "ADD_SAT  fade, fade, program.env[24];  # saturate the channels that don't want modifying \n" + "\n" + "# Set the color. Multiply by vertex/fragment color as that's how the particle system fades particles in and out \n" + "TEMP  oColor; \n" + "TEX   oColor, fragment.texcoord, texture[0], 2D; \n" + "MUL   oColor, oColor, fade; \n" + "MUL   result.color, oColor, fragment.color; \n" + "\n" + "END \n"
 
     /*
      =================
@@ -411,12 +313,10 @@ object draw_arb2 {
         val end: Int
 
         // DG: soft particle shaders are loaded from inline strings
-        if (progs[progIndex].ident == program_t.VPROG_SOFT_PARTICLE.ordinal
-            || progs[progIndex].ident == program_t.FPROG_SOFT_PARTICLE.ordinal
-        ) {
+        if (progs[progIndex].ident == program_t.VPROG_SOFT_PARTICLE.ordinal || progs[progIndex].ident == program_t.FPROG_SOFT_PARTICLE.ordinal) {
             Common.common.Printf("<internal> %s", progs[progIndex].name)
-            buffer = if (progs[progIndex].ident == program_t.VPROG_SOFT_PARTICLE.ordinal)
-                softpartVShader else softpartFShader
+            buffer =
+                if (progs[progIndex].ident == program_t.VPROG_SOFT_PARTICLE.ordinal) softpartVShader else softpartFShader
         } else {
             val fullPath = idStr("glprogs/" + progs[progIndex].name)
             val fileBuffer = arrayOf<ByteBuffer?>(null)
@@ -440,8 +340,7 @@ object draw_arb2 {
         //
         // submit the program string at start to GL
         //
-        if (progs[progIndex].ident == program_t.PROG_INVALID.ordinal) {
-            // allocate a new identifier for this program
+        if (progs[progIndex].ident == program_t.PROG_INVALID.ordinal) { // allocate a new identifier for this program
             progs[progIndex].ident = program_t.PROG_USER.ordinal + progIndex
         }
 
@@ -475,9 +374,7 @@ object draw_arb2 {
         buffer = buffer.substring(start, end + 3)
 
         // DG: hack gamma correction into shader
-        if (r_gammaInShader.GetBool() && progs[progIndex].target == GL_FRAGMENT_PROGRAM_ARB &&
-            buffer.indexOf("nodhewm3gammahack") == -1
-        ) {
+        if (r_gammaInShader.GetBool() && progs[progIndex].target == GL_FRAGMENT_PROGRAM_ARB && buffer.indexOf("nodhewm3gammahack") == -1) {
 
             // note that strlen("dhewm3tmpres") == strlen("result.color")
             val tmpres = "TEMP dhewm3tmpres; # injected by dhewm3 for gamma correction\n"
@@ -486,16 +383,14 @@ object draw_arb2 {
             // outColor.rgb = pow(dhewm3tmpres.rgb*r_brightness, vec3(1.0/r_gamma))
             // outColor.a = dhewm3tmpres.a;
             val extraLines =
-                "# gamma correction in shader, injected by dhewm3 \n" +
-                        // MUL_SAT clamps the result to [0, 1] - it must not be negative because
+                "# gamma correction in shader, injected by dhewm3 \n" + // MUL_SAT clamps the result to [0, 1] - it must not be negative because
                         // POW might not work with a negative base (it looks wrong with intel's Linux driver)
                         // and clamping values >1 to 1 is ok because when writing to result.color
                         // it's clamped anyway and pow(base, exp) is always >= 1 for base >= 1
                         "MUL_SAT dhewm3tmpres.xyz, program.env[21], dhewm3tmpres;\n" + // first multiply with brightness
                         "POW result.color.x, dhewm3tmpres.x, program.env[21].w;\n" + // then do pow(dhewm3tmpres.xyz, vec3(1/gamma))
                         "POW result.color.y, dhewm3tmpres.y, program.env[21].w;\n" + // (apparently POW only supports scalars, not whole vectors)
-                        "POW result.color.z, dhewm3tmpres.z, program.env[21].w;\n" +
-                        "MOV result.color.w, dhewm3tmpres.w;\n" + // alpha remains unmodified
+                        "POW result.color.z, dhewm3tmpres.z, program.env[21].w;\n" + "MOV result.color.w, dhewm3tmpres.w;\n" + // alpha remains unmodified
                         "\nEND\n\n" // we add this block right at the end, replacing the original "END" string
 
             val fullLen = buffer.length + tmpres.length + extraLines.length
@@ -503,24 +398,19 @@ object draw_arb2 {
 
             // add tmpres right after OPTION line (if any)
             var insertPos = findLineThatStartsWith(buffer, "OPTION")
-            if (insertPos == -1) {
-                // no OPTION? then just put it after the first line (usually sth like "!!ARBfp1.0\n")
+            if (insertPos == -1) { // no OPTION? then just put it after the first line (usually sth like "!!ARBfp1.0\n")
                 insertPos = 0
-            }
-            // but we want the position *after* that line
+            } // but we want the position *after* that line
             while (buffer[insertPos] != '\n' && buffer[insertPos] != '\r') {
                 ++insertPos
-            }
-            // skip the newline character(s) as well
+            } // skip the newline character(s) as well
             while (buffer[insertPos] == '\n' || buffer[insertPos] == '\r') {
                 ++insertPos
             }
 
             // copy text up to insertPos
-            outStr.append(buffer, 0, insertPos)
-            // copy tmpres ("TEMP dhewm3tmpres; # ..")
-            outStr.append(tmpres)
-            // copy remaining original shader up to (excluding) "END"
+            outStr.append(buffer, 0, insertPos) // copy tmpres ("TEMP dhewm3tmpres; # ..")
+            outStr.append(tmpres) // copy remaining original shader up to (excluding) "END"
             outStr.append(buffer.substring(insertPos, buffer.indexOf("END")))
 
             // replace all existing occurrences of "result.color" with "dhewm3tmpres"
@@ -531,37 +421,32 @@ object draw_arb2 {
 
                 // if this was part of "OUTPUT bla = result.color;", replace
                 // "OUTPUT bla" with "ALIAS  bla" (so it becomes "ALIAS  bla = dhewm3tmpres;")
-                var s = resIdx - 1
-                // first skip whitespace before "dhewm3tmpres" (was "result.color")
+                var s = resIdx - 1 // first skip whitespace before "dhewm3tmpres" (was "result.color")
                 while (s > 0 && (outStr[s] == ' ' || outStr[s] == '\t')) {
                     --s
-                }
-                // if there's no '=' before result.color, this line can't be affected
+                } // if there's no '=' before result.color, this line can't be affected
                 if (s > 0 && outStr[s] == '=' && s > 8) {
                     --s // we were on '=', so go to the char before and skip whitespace again
                     while (s > 0 && (outStr[s] == ' ' || outStr[s] == '\t')) {
                         --s
-                    }
-                    // now we should be at the end of "bla" (or however the variable/alias is called)
+                    } // now we should be at the end of "bla" (or however the variable/alias is called)
                     if (s > 7 && isARBidentifierChar(outStr[s].code)) {
-                        --s
-                        // skip all the remaining chars that are legal in identifiers
+                        --s // skip all the remaining chars that are legal in identifiers
                         while (s > 0 && isARBidentifierChar(outStr[s].code)) {
                             --s
-                        }
-                        // there should be at least one space/tab between "OUTPUT" and "bla"
+                        } // there should be at least one space/tab between "OUTPUT" and "bla"
                         if (s > 6 && (outStr[s] == ' ' || outStr[s] == '\t')) {
-                            --s
-                            // skip remaining whitespace (if any)
+                            --s // skip remaining whitespace (if any)
                             while (s > 0 && (outStr[s] == ' ' || outStr[s] == '\t')) {
                                 --s
-                            }
-                            // now we should be at "OUTPUT" (specifically at its last 'T'),
+                            } // now we should be at "OUTPUT" (specifically at its last 'T'),
                             // if this is indeed such a case
                             if (s >= 5 && outStr[s] == 'T') {
                                 val outputStart = s - 5
-                                if (outStr.substring(outputStart, outputStart + 6) == "OUTPUT") {
-                                    // it really is "OUTPUT" => replace "OUTPUT" with "ALIAS "
+                                if (outStr.substring(
+                                        outputStart, outputStart + 6
+                                    ) == "OUTPUT"
+                                ) { // it really is "OUTPUT" => replace "OUTPUT" with "ALIAS "
                                     outStr.replace(outputStart, outputStart + 6, "ALIAS ")
                                 }
                             }
@@ -586,10 +471,7 @@ object draw_arb2 {
         qgl.qglBindProgramARB(progs[progIndex].target, progs[progIndex].ident)
         qgl.qglGetError()
         qgl.qglProgramStringARB(
-            progs[progIndex].target,
-            ARBVertexProgram.GL_PROGRAM_FORMAT_ASCII_ARB,
-            start,
-            substring
+            progs[progIndex].target, ARBVertexProgram.GL_PROGRAM_FORMAT_ASCII_ARB, start, substring
         )
 
         err = qgl.qglGetError()
@@ -684,8 +566,7 @@ object draw_arb2 {
      */
     internal class RB_ARB2_DrawInteraction private constructor() : DrawInteraction() {
         override fun run(din: drawInteraction_t) {
-            DBG_RB_ARB2_DrawInteraction++
-            // load all the vertex program parameters
+            DBG_RB_ARB2_DrawInteraction++ // load all the vertex program parameters
             qglProgramEnvParameter4fvARB(
                 ARBVertexProgram.GL_VERTEX_PROGRAM_ARB,
                 programParameter_t.PP_LIGHT_ORIGIN,
@@ -750,76 +631,54 @@ object draw_arb2 {
             // testing fragment based normal mapping
             if (r_testARBProgram.GetBool()) {
                 qglProgramEnvParameter4fvARB(
-                    GL_FRAGMENT_PROGRAM_ARB,
-                    2,
-                    din.localLightOrigin.ToFloatPtr()
+                    GL_FRAGMENT_PROGRAM_ARB, 2, din.localLightOrigin.ToFloatPtr()
                 )
                 qglProgramEnvParameter4fvARB(
-                    GL_FRAGMENT_PROGRAM_ARB,
-                    3,
-                    din.localViewOrigin.ToFloatPtr()
+                    GL_FRAGMENT_PROGRAM_ARB, 3, din.localViewOrigin.ToFloatPtr()
                 )
             }
             when (din.vertexColor) {
                 stageVertexColor_t.SVC_IGNORE -> {
                     qglProgramEnvParameter4fvARB(
-                        ARBVertexProgram.GL_VERTEX_PROGRAM_ARB,
-                        programParameter_t.PP_COLOR_MODULATE,
-                        ZERO
+                        ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, programParameter_t.PP_COLOR_MODULATE, ZERO
                     )
                     qglProgramEnvParameter4fvARB(
-                        ARBVertexProgram.GL_VERTEX_PROGRAM_ARB,
-                        programParameter_t.PP_COLOR_ADD,
-                        ONE
+                        ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, programParameter_t.PP_COLOR_ADD, ONE
                     )
                 }
 
                 stageVertexColor_t.SVC_MODULATE -> {
                     qglProgramEnvParameter4fvARB(
-                        ARBVertexProgram.GL_VERTEX_PROGRAM_ARB,
-                        programParameter_t.PP_COLOR_MODULATE,
-                        ONE
+                        ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, programParameter_t.PP_COLOR_MODULATE, ONE
                     )
                     qglProgramEnvParameter4fvARB(
-                        ARBVertexProgram.GL_VERTEX_PROGRAM_ARB,
-                        programParameter_t.PP_COLOR_ADD,
-                        ZERO
+                        ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, programParameter_t.PP_COLOR_ADD, ZERO
                     )
                 }
 
                 stageVertexColor_t.SVC_INVERSE_MODULATE -> {
                     qglProgramEnvParameter4fvARB(
-                        ARBVertexProgram.GL_VERTEX_PROGRAM_ARB,
-                        programParameter_t.PP_COLOR_MODULATE,
-                        NEG_ONE
+                        ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, programParameter_t.PP_COLOR_MODULATE, NEG_ONE
                     )
                     qglProgramEnvParameter4fvARB(
-                        ARBVertexProgram.GL_VERTEX_PROGRAM_ARB,
-                        programParameter_t.PP_COLOR_ADD,
-                        ONE
+                        ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, programParameter_t.PP_COLOR_ADD, ONE
                     )
                 }
             }
 
             // set the constant colors
             qglProgramEnvParameter4fvARB(
-                GL_FRAGMENT_PROGRAM_ARB,
-                0,
-                din.diffuseColor.ToFloatPtr()
+                GL_FRAGMENT_PROGRAM_ARB, 0, din.diffuseColor.ToFloatPtr()
             )
             qglProgramEnvParameter4fvARB(
-                GL_FRAGMENT_PROGRAM_ARB,
-                1,
-                din.specularColor.ToFloatPtr()
+                GL_FRAGMENT_PROGRAM_ARB, 1, din.specularColor.ToFloatPtr()
             )
 
             // DG: brightness and gamma in shader as program.env[4]
-            if (r_gammaInShader.GetBool()) {
-                // program.env[4].xyz are all r_brightness, program.env[4].w is 1.0/r_gamma
+            if (r_gammaInShader.GetBool()) { // program.env[4].xyz are all r_brightness, program.env[4].w is 1.0/r_gamma
                 val parm = FloatArray(4)
                 parm.fill(r_brightness.GetFloat())
-                parm[3] =
-                    1.0f / r_gamma.GetFloat() // 1.0/gamma so the shader doesn't have to do this calculation
+                parm[3] = 1.0f / r_gamma.GetFloat() // 1.0/gamma so the shader doesn't have to do this calculation
                 qglProgramEnvParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, programParameter_t.PP_GAMMA_BRIGHTNESS, parm)
             }
 

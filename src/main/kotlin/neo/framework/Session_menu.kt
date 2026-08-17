@@ -50,8 +50,9 @@ class Session_menu {
     ===============
     */
     internal class idListSaveGameCompare : cmp_t<fileTIME_T> {
-        override fun compare(a: fileTIME_T?, b: fileTIME_T?): Int {
-            // NOTE: Kotlin adaptation - null handling added for safety (C++ original does not handle null)
+        override fun compare(
+            a: fileTIME_T?, b: fileTIME_T?
+        ): Int { // NOTE: Kotlin adaptation - null handling added for safety (C++ original does not handle null)
             if (a == null) {
                 return if (b == null) 0 else 1
             }

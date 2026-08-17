@@ -196,11 +196,11 @@ object VertexCache {
             virtualMemory = false
 
             // use ARB_vertex_buffer_object unless explicitly disabled
-            if (r_useVertexBuffers!!.GetInteger() != 0 && glConfig.ARBVertexBufferObjectAvailable) {
+            if (r_useVertexBuffers.GetInteger() != 0 && glConfig.ARBVertexBufferObjectAvailable) {
                 Common.common.Printf("using ARB_vertex_buffer_object memory\n")
             } else {
                 virtualMemory = true
-                r_useIndexBuffers!!.SetBool(false)
+                r_useIndexBuffers.SetBool(false)
                 Common.common.Printf("WARNING: vertex array range in virtual memory (SLOW)\n")
             }
 
@@ -225,8 +225,8 @@ object VertexCache {
                 allocatingTempBuffer = true // force the alloc to use GL_STREAM_DRAW_ARB
                 tempBuffers[i] = Alloc(junk, frameBytes)
                 allocatingTempBuffer = false
-                tempBuffers[i]!!.tag = vertBlockTag_t.TAG_FIXED
-                // unlink these from the static list, so they won't ever get purged
+                tempBuffers[i]!!.tag =
+                    vertBlockTag_t.TAG_FIXED // unlink these from the static list, so they won't ever get purged
                 tempBuffers[i]!!.next!!.prev = tempBuffers[i]!!.prev
                 tempBuffers[i]!!.prev!!.next = tempBuffers[i]!!.next
             }
@@ -254,8 +254,7 @@ object VertexCache {
          Used when toggling vertex programs on or off, because
          the cached data isn't valid
          ===========
-         */
-        // called when vertex programs are enabled or disabled, because
+         */ // called when vertex programs are enabled or disabled, because
         // the cached data is no longer valid
         fun PurgeAll() {
             while (staticHeaders.next !== staticHeaders) {
@@ -270,9 +269,7 @@ object VertexCache {
         // These allocations can be purged, which will zero the pointer.
 
         fun Alloc(
-            data: ByteBuffer,
-            size: Int,
-            buffer: vertCache_s? = null, indexBuffer: Boolean = false, /*= false*/
+            data: ByteBuffer, size: Int, buffer: vertCache_s? = null, indexBuffer: Boolean = false, /*= false*/
             clearOwner: (() -> Unit)? = null
         ): vertCache_s {
             var buffer: vertCache_s? = buffer
@@ -374,9 +371,7 @@ object VertexCache {
             val intData = data!!
             if (numInts > intData.size) {
                 Common.common.Error(
-                    "idVertexCache::Alloc: size %d exceeds int array size %d\n",
-                    size,
-                    intData.size
+                    "idVertexCache::Alloc: size %d exceeds int array size %d\n", size, intData.size
                 )
             }
             val intBuffer = byteData.asIntBuffer()
@@ -410,16 +405,13 @@ object VertexCache {
             val numItems = size / lightingCache_s.BYTES
             if (numItems > data.size) {
                 Common.common.Error(
-                    "idVertexCache::Alloc: size %d exceeds lighting cache array size %d\n",
-                    size,
-                    data.size
+                    "idVertexCache::Alloc: size %d exceeds lighting cache array size %d\n", size, data.size
                 )
             }
             val buffer = BufferUtils.createByteBuffer(size)
             buffer.order(ByteOrder.LITTLE_ENDIAN)
             for (i in 0 until numItems) {
-                buffer.putFloat(data[i].localLightVector.x)
-                    .putFloat(data[i].localLightVector.y)
+                buffer.putFloat(data[i].localLightVector.x).putFloat(data[i].localLightVector.y)
                     .putFloat(data[i].localLightVector.z)
             }
             buffer.flip()
@@ -438,18 +430,13 @@ object VertexCache {
             val numItems = size / shadowCache_s.BYTES
             if (numItems > data.size) {
                 Common.common.Error(
-                    "idVertexCache::Alloc: size %d exceeds shadow cache array size %d\n",
-                    size,
-                    data.size
+                    "idVertexCache::Alloc: size %d exceeds shadow cache array size %d\n", size, data.size
                 )
             }
             val buffer = BufferUtils.createByteBuffer(size)
             buffer.order(ByteOrder.LITTLE_ENDIAN)
             for (i in 0 until numItems) {
-                buffer.putFloat(data[i].xyz.x)
-                    .putFloat(data[i].xyz.y)
-                    .putFloat(data[i].xyz.z)
-                    .putFloat(data[i].xyz.w)
+                buffer.putFloat(data[i].xyz.x).putFloat(data[i].xyz.y).putFloat(data[i].xyz.z).putFloat(data[i].xyz.w)
             }
             buffer.flip()
             return buffer
@@ -473,8 +460,7 @@ object VertexCache {
 
          The ARB_vertex_buffer_object will be bound
          ==============
-         */
-        // This will be a real pointer with virtual memory,
+         */ // This will be a real pointer with virtual memory,
         // but it will be an int offset cast to a pointer of ARB_vertex_buffer_object
         fun Position(buffer: vertCache_s?): ByteBuffer {
             if (null == buffer || buffer.tag == vertBlockTag_t.TAG_FREE) {
@@ -484,18 +470,15 @@ object VertexCache {
             // the ARB vertex object just uses an offset
             if (buffer!!.vbo != 0) {
                 if (r_showVertexCache.GetInteger() == 2) {
-                    if (buffer!!.tag == vertBlockTag_t.TAG_TEMP) {
+                    if (buffer.tag == vertBlockTag_t.TAG_TEMP) {
                         Common.common.Printf(
-                            "GL_ARRAY_BUFFER_ARB = %d + %d (%d bytes)\n",
-                            buffer.vbo,
-                            buffer.offset,
-                            buffer.size
+                            "GL_ARRAY_BUFFER_ARB = %d + %d (%d bytes)\n", buffer.vbo, buffer.offset, buffer.size
                         )
                     } else {
                         Common.common.Printf("GL_ARRAY_BUFFER_ARB = %d (%d bytes)\n", buffer.vbo, buffer.size)
                     }
                 }
-                if (buffer!!.indexBuffer) {
+                if (buffer.indexBuffer) {
                     qgl.qglBindBufferARB(ARBVertexBufferObject.GL_ELEMENT_ARRAY_BUFFER_ARB, buffer.vbo)
                 } else {
                     qgl.qglBindBufferARB(ARBVertexBufferObject.GL_ARRAY_BUFFER_ARB, buffer.vbo)
@@ -504,7 +487,7 @@ object VertexCache {
             }
 
             // virtual memory is a real pointer
-            val vm = buffer!!.virtMem!!.duplicate()
+            val vm = buffer.virtMem!!.duplicate()
             vm.position(buffer.offset).limit(buffer.offset + buffer.size)
             return vm.slice()
         }
@@ -531,8 +514,7 @@ object VertexCache {
          We can't simply sync with the GPU and overwrite what we have, because
          there may still be future references to dynamically created surfaces.
          ===========
-         */
-        // automatically freed at the end of the next frame
+         */ // automatically freed at the end of the next frame
         // used for specular texture coordinates and gui drawing, which
         // will change every frame.
         // will return NULL if the vertex cache is completely full
@@ -542,8 +524,7 @@ object VertexCache {
             if (size <= 0) {
                 Common.common.Error("idVertexCache::AllocFrameTemp: size = %d\n", size)
             }
-            if (dynamicAllocThisFrame + size > frameBytes) {
-                // if we don't have enough room in the temp block, allocate a static block,
+            if (dynamicAllocThisFrame + size > frameBytes) { // if we don't have enough room in the temp block, allocate a static block,
                 // but immediately free it so it will get freed at the next frame
                 tempOverflow = true
                 block = Alloc(data, size)
@@ -586,10 +567,7 @@ object VertexCache {
             if (block.vbo != 0) {
                 qgl.qglBindBufferARB(ARBVertexBufferObject.GL_ARRAY_BUFFER_ARB, block.vbo)
                 qgl.qglBufferSubDataARB(
-                    ARBVertexBufferObject.GL_ARRAY_BUFFER_ARB,
-                    block.offset.toLong(),
-                    size.toLong(),
-                    data
+                    ARBVertexBufferObject.GL_ARRAY_BUFFER_ARB, block.offset.toLong(), size.toLong(), data
                 )
             } else {
                 val dst = block.virtMem!!.duplicate()
@@ -607,9 +585,7 @@ object VertexCache {
             val numVerts = size / idDrawVert.BYTES
             if (numVerts > data.size) {
                 Common.common.Error(
-                    "idVertexCache::Alloc: size %d exceeds draw vert array size %d\n",
-                    size,
-                    data.size
+                    "idVertexCache::Alloc: size %d exceeds draw vert array size %d\n", size, data.size
                 )
             }
             val buffer = BufferUtils.createByteBuffer(size)
@@ -625,9 +601,7 @@ object VertexCache {
             val numVerts = size / idDrawVert.BYTES
             if (numVerts > data.size) {
                 Common.common.Error(
-                    "idVertexCache::AllocFrameTemp: size %d exceeds draw vert array size %d\n",
-                    size,
-                    data.size
+                    "idVertexCache::AllocFrameTemp: size %d exceeds draw vert array size %d\n", size, data.size
                 )
             }
             var buffer = drawVertUploadBuffer
@@ -654,9 +628,7 @@ object VertexCache {
             val numVecs = size / idVec3.BYTES
             if (numVecs > data.size) {
                 Common.common.Error(
-                    "idVertexCache::AllocFrameTemp: size %d exceeds idVec3 array size %d\n",
-                    size,
-                    data.size
+                    "idVertexCache::AllocFrameTemp: size %d exceeds idVec3 array size %d\n", size, data.size
                 )
             }
 
@@ -684,9 +656,7 @@ object VertexCache {
             val numVecs = size / idVec4.BYTES
             if (numVecs > data.size) {
                 Common.common.Error(
-                    "idVertexCache::AllocFrameTemp: size %d exceeds idVec4 array size %d\n",
-                    size,
-                    data.size
+                    "idVertexCache::AllocFrameTemp: size %d exceeds idVec4 array size %d\n", size, data.size
                 )
             }
 
@@ -762,8 +732,7 @@ object VertexCache {
         // updates the counter for determining which temp space to use
         // and which blocks can be purged
         // Also prints debugging info when enabled
-        fun EndFrame() {
-            // display debug information
+        fun EndFrame() { // display debug information
             if (r_showVertexCache.GetBool()) {
                 var staticUseCount = 0
                 var staticUseSize = 0
@@ -778,15 +747,19 @@ object VertexCache {
                 val frameOverflow: String = if (tempOverflow) "(OVERFLOW)" else ""
                 Common.common.Printf(
                     "vertex dynamic:%d=%dk%s, static alloc:%d=%dk used:%d=%dk total:%d=%dk\n",
-                    dynamicCountThisFrame, dynamicAllocThisFrame / 1024, frameOverflow,
-                    staticCountThisFrame, staticAllocThisFrame / 1024,
-                    staticUseCount, staticUseSize / 1024,
-                    staticCountTotal, staticAllocTotal / 1024
+                    dynamicCountThisFrame,
+                    dynamicAllocThisFrame / 1024,
+                    frameOverflow,
+                    staticCountThisFrame,
+                    staticAllocThisFrame / 1024,
+                    staticUseCount,
+                    staticUseSize / 1024,
+                    staticCountTotal,
+                    staticAllocTotal / 1024
                 )
             }
 
-            if (!virtualMemory) {
-                // unbind vertex buffers so normal virtual memory will be used in case
+            if (!virtualMemory) { // unbind vertex buffers so normal virtual memory will be used in case
                 // r_useVertexBuffers / r_useIndexBuffers
                 qgl.qglBindBufferARB(ARBVertexBufferObject.GL_ARRAY_BUFFER_ARB, 0)
                 qgl.qglBindBufferARB(ARBVertexBufferObject.GL_ELEMENT_ARRAY_BUFFER_ARB, 0)
@@ -853,7 +826,7 @@ object VertexCache {
             } else {
                 Common.common.Printf("Vertex cache is in virtual memory (SLOW)\n")
             }
-            if (r_useIndexBuffers!!.GetBool()) {
+            if (r_useIndexBuffers.GetBool()) {
                 Common.common.Printf("Index buffers are accelerated.\n")
             } else {
                 Common.common.Printf("Index buffers are not used.\n")
@@ -864,8 +837,7 @@ object VertexCache {
             if (null == block) {
                 Common.common.Error("idVertexCache Free: NULL pointer")
             }
-            if (block!!.user != null) {
-                // let the owner know we have purged it
+            if (block!!.user != null) { // let the owner know we have purged it
                 block.user = null
             } // null the owner's reference (C++: *block->user = NULL)
             block.clearOwner?.invoke()
@@ -875,8 +847,7 @@ object VertexCache {
             if (block.tag != vertBlockTag_t.TAG_TEMP) {
                 staticAllocTotal -= block.size
                 staticCountTotal--
-                if (block.vbo != 0) {
-                    // VBO will be reused, no need to free
+                if (block.vbo != 0) { // VBO will be reused, no need to free
                 } else if (block.virtMem != null) {
                     block.virtMem = null
                 }

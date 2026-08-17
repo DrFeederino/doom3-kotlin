@@ -194,8 +194,7 @@ class idAngles : idSerializable {
 
     fun notEquals(a: idAngles): Boolean { // exact compare, no epsilon
         return !Compare(a)
-    }
-    //
+    } //
     /**
      * ================= idAngles::Normalize360
      *
@@ -366,8 +365,7 @@ class idAngles : idSerializable {
         angle = idMath.ACos(w)
         if (angle == 0.0f) {
             vec.set(0.0f, 0.0f, 1.0f)
-        } else {
-            //vec *= (1.0f / sin( angle ));
+        } else { //vec *= (1.0f / sin( angle ));
             vec.Normalize()
             vec.FixDegenerateNormal()
             angle *= 2.0f * idMath.M_RAD2DEG

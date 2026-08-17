@@ -202,15 +202,7 @@ internal class opcode_s(
     var type_c: idVarDef?
 ) {
     override fun toString(): String {
-        return "opcode_s{" +
-                "name='" + name + '\'' +
-                ", opname='" + opname + '\'' +
-                ", priority=" + priority +
-                ", rightAssociative=" + rightAssociative +
-                ", type_a=" + type_a +
-                ", type_b=" + type_b +
-                ", type_c=" + type_c +
-                '}'
+        return "opcode_s{" + "name='" + name + '\'' + ", opname='" + opname + '\'' + ", priority=" + priority + ", rightAssociative=" + rightAssociative + ", type_a=" + type_a + ", type_b=" + type_b + ", type_c=" + type_c + '}'
     }
 }
 
@@ -278,13 +270,13 @@ internal class idCompiler {
          */
     private fun Error(fmt: String, vararg args: Any) { //const id_attribute((format(printf,2,3)));
 
-//            va_list argptr;
-//            char[] string = new char[1024];
-//
-//            va_start(argptr, message);
-//            vsprintf(string, message, argptr);
-//            va_end(argptr);
-//
+        //            va_list argptr;
+        //            char[] string = new char[1024];
+        //
+        //            va_start(argptr, message);
+        //            vsprintf(string, message, argptr);
+        //            va_end(argptr);
+        //
         throw idCompileError(String.format(fmt, *args))
     }
 
@@ -297,13 +289,13 @@ internal class idCompiler {
          */
     private fun Warning(fmt: String, vararg args: Any) { // const id_attribute((format(printf,2,3)));
 
-//            va_list argptr;
-//            char[] string = new char[1024];
-//
-//            va_start(argptr, message);
-//            vsprintf(string, message, argptr);
-//            va_end(argptr);
-//
+        //            va_list argptr;
+        //            char[] string = new char[1024];
+        //
+        //            va_start(argptr, message);
+        //            vsprintf(string, message, argptr);
+        //            va_end(argptr);
+        //
         parserPtr.Warning("%s", String.format(fmt, *args))
     }
 
@@ -572,22 +564,15 @@ internal class idCompiler {
             var_b.numUsers++
         }
         val statement = Game_local.gameLocal.program.AllocStatement()
-        statement!!.linenumber = currentLineNumber
+        statement.linenumber = currentLineNumber
         statement.file = currentFileNumber
-        if (op!!.type_c === Script_Program.def_void || op.rightAssociative) {
-            // ifs, gotos, and assignments don't need vars allocated
+        if (op!!.type_c === Script_Program.def_void || op.rightAssociative) { // ifs, gotos, and assignments don't need vars allocated
             var_c = null
-        } else {
-            // allocate result space
+        } else { // allocate result space
             // try to reuse result defs as much as possible
             var_c = Game_local.gameLocal.program.FindFreeResultDef(
-                op.type_c!!.TypeDef(),
-                RESULT_STRING,
-                scope,
-                var_a,
-                var_b
-            )
-            // set user count back to 1, a result def needs to be used twice before it can be reused
+                op.type_c!!.TypeDef(), RESULT_STRING, scope, var_a, var_b
+            ) // set user count back to 1, a result def needs to be used twice before it can be reused
             var_c.numUsers = 1
         }
         statement.op = indexOf(op, opcodes)
@@ -665,8 +650,7 @@ internal class idCompiler {
             return
         }
         if (currentFileNumber != Game_local.gameLocal.program.GetFilenum(parserPtr.GetFileName().toString())) {
-            if (braceDepth > 0 && !token.equals("}")) {
-                // missing a closing brace.  try to give as much info as possible.
+            if (braceDepth > 0 && !token.equals("}")) { // missing a closing brace.  try to give as much info as possible.
                 if (scope!!.Type() == Script_Program.ev_function) {
                     Error("Unexpected end of file inside function '%s'.  Missing closing braces.", scope!!.Name())
                 } else if (scope!!.Type() == Script_Program.ev_object) {
@@ -679,8 +663,7 @@ internal class idCompiler {
             }
         }
         when (token.type) {
-            TT_STRING -> {
-                // handle quoted strings as a unit
+            TT_STRING -> { // handle quoted strings as a unit
                 immediateType = Script_Program.type_string
                 return
             }
@@ -689,8 +672,7 @@ internal class idCompiler {
 
                 // handle quoted vectors as a unit
                 immediateType = Script_Program.type_vector
-                val lex =
-                    idLexer(token.toString(), token.Length(), parserPtr.GetFileName().toString(), LEXFL_NOERRORS)
+                val lex = idLexer(token.toString(), token.Length(), parserPtr.GetFileName().toString(), LEXFL_NOERRORS)
                 val token2 = idToken()
 
                 i = 0
@@ -723,8 +705,7 @@ internal class idCompiler {
                 return
             }
 
-            TT_PUNCTUATION -> {
-                // entity names
+            TT_PUNCTUATION -> { // entity names
                 if (token.equals("$")) {
                     immediateType = Script_Program.type_entity
                     parserPtr.ReadToken(token)
@@ -755,8 +736,7 @@ internal class idCompiler {
 
          Parses a variable type, including functions types
          ============
-         */
-    /*
+         *//*
          =============
          idCompiler::ExpectToken
 
@@ -957,8 +937,7 @@ internal class idCompiler {
         def = FindImmediate(type, eval, string)
         if (def != null) {
             def.numUsers++
-        } else {
-            // allocate a new def
+        } else { // allocate a new def
             def = Game_local.gameLocal.program.AllocDef(type, "<IMMEDIATE>", Script_Program.def_namespace, true)
             if (type!!.Type() == Script_Program.ev_string) {
                 def.SetString(string, true)
@@ -1060,11 +1039,7 @@ internal class idCompiler {
     }
 
     private fun EmitFunctionParms(
-        op: Int,
-        func: idVarDef?,
-        startarg: Int,
-        startsize: Int,
-        `object`: idVarDef?
+        op: Int, func: idVarDef?, startarg: Int, startsize: Int, `object`: idVarDef?
     ): idVarDef? {
         var e: idVarDef?
         var funcArg: idTypeDef?
@@ -1106,13 +1081,10 @@ internal class idCompiler {
             EmitOpcode(op, `object`, VirtualFunctionConstant(func))
 
             // need arg size seperate since script object may be NULL
-            val statement =
-                Game_local.gameLocal.program.GetStatement(Game_local.gameLocal.program.NumStatements() - 1)
-            statement.c = SizeConstant(func.value!!.functionPtr!!.parmTotal)
-            // DG: set flag for savegame compat when prototype was parsed but implementation wasn't yet
-            if (op == OP_OBJECTCALL && func.value!!.functionPtr!!.parmTotal > 0
-                && func.value!!.functionPtr!!.parmSize.Num() == 0
-            ) {
+            val statement = Game_local.gameLocal.program.GetStatement(Game_local.gameLocal.program.NumStatements() - 1)
+            statement.c =
+                SizeConstant(func.value!!.functionPtr!!.parmTotal) // DG: set flag for savegame compat when prototype was parsed but implementation wasn't yet
+            if (op == OP_OBJECTCALL && func.value!!.functionPtr!!.parmTotal > 0 && func.value!!.functionPtr!!.parmSize.Num() == 0) {
                 statement.flags = statement_s.FLAG_OBJECTCALL_IMPL_NOT_PARSED_YET
             }
         } else {
@@ -1135,14 +1107,12 @@ internal class idCompiler {
                 Script_Program.ev_entity -> OP_STORE_ENT
                 Script_Program.ev_object -> OP_STORE_OBJ
                 else -> {
-                    Error("Invalid return type for function '%s'", func.Name())
-                    // shut up compiler
+                    Error("Invalid return type for function '%s'", func.Name()) // shut up compiler
                     OP_STORE_OBJ
                 }
             }
         }
-        if (returnType.Type() == Script_Program.ev_void) {
-            // don't need result space since there's no result, so just return the normal result def.
+        if (returnType.Type() == Script_Program.ev_void) { // don't need result space since there's no result, so just return the normal result def.
             return returnDef
         }
 
@@ -1150,13 +1120,8 @@ internal class idCompiler {
         // try to reuse result defs as much as possible
         val statement = Game_local.gameLocal.program.GetStatement(Game_local.gameLocal.program.NumStatements() - 1)
         val resultDef = Game_local.gameLocal.program.FindFreeResultDef(
-            returnType,
-            RESULT_STRING,
-            scope,
-            statement.a,
-            statement.b
-        )
-        // set user count back to 0, a result def needs to be used twice before it can be reused
+            returnType, RESULT_STRING, scope, statement.a, statement.b
+        ) // set user count back to 0, a result def needs to be used twice before it can be reused
         resultDef.numUsers = 0
         EmitOpcode(resultOp, returnDef, resultDef)
         return resultDef
@@ -1179,8 +1144,7 @@ internal class idCompiler {
             EmitFunctionParms(OP_THREAD, funcDef, 0, 0, null)
         } else {
             if (funcDef.initialized != initialized_t.uninitialized && funcDef.value!!.functionPtr!!.eventdef != null) {
-                if (scope!!.Type() != Script_Program.ev_namespace && scope!!.scope!!.Type() == Script_Program.ev_object) {
-                    // get the local object pointer
+                if (scope!!.Type() != Script_Program.ev_namespace && scope!!.scope!!.Type() == Script_Program.ev_object) { // get the local object pointer
                     val thisdef = Game_local.gameLocal.program.GetDef(scope!!.scope!!.TypeDef(), "self", scope)
                     if (thisdef == null) {
                         Error("No 'self' within scope")
@@ -1233,10 +1197,10 @@ internal class idCompiler {
             Error("\"%s\" cannot be called with object notation", funcDef.Name())
         }
 
-//            //TODO:fix this.
-//            if (!idThread.Type.RespondsTo(funcDef.value!!.functionPtr.eventdef)) {
-//                Error("\"%s\" is not callable as a 'sys' function", funcDef.Name());
-//            }
+        //            //TODO:fix this.
+        //            if (!idThread.Type.RespondsTo(funcDef.value!!.functionPtr.eventdef)) {
+        //                Error("\"%s\" is not callable as a 'sys' function", funcDef.Name());
+        //            }
         return EmitFunctionParms(OP_SYSCALL, funcDef, 0, 0, null)
     }
 
@@ -1261,13 +1225,10 @@ internal class idCompiler {
                 }
                 tdef = tdef!!.TypeDef()!!.SuperClass()!!.def
             }
-        } else {
-            // first look through the defs in our scope
+        } else { // first look through the defs in our scope
             def = Game_local.gameLocal.program.GetDef(null, name, scope)
-            if (def == null) {
-                // if we're in a member function, check types local to the object
-                if (scope!!.Type() != Script_Program.ev_namespace && scope!!.scope!!.Type() == Script_Program.ev_object) {
-                    // get the local object pointer
+            if (def == null) { // if we're in a member function, check types local to the object
+                if (scope!!.Type() != Script_Program.ev_namespace && scope!!.scope!!.Type() == Script_Program.ev_object) { // get the local object pointer
                     val thisdef = Game_local.gameLocal.program.GetDef(scope!!.scope!!.TypeDef(), "self", scope)
                     field = LookupDef(name, scope!!.scope!!.TypeDef()!!.def)
                     if (field == null) {
@@ -1296,8 +1257,7 @@ internal class idCompiler {
                     }
                     op = opcodes[OP_INDIRECT_F.also { op_i = it }]!!
                     while (op.type_a!!.Type() != Script_Program.ev_object || type_b != op.type_b!!.Type() || type_c != op.type_c!!.Type()) {
-                        if (op.priority == FUNCTION_PRIORITY && op.type_a!!.Type() == Script_Program.ev_object && op.type_c!!.Type() == Script_Program.ev_void && type_c != op.type_c!!.Type()) {
-                            // catches object calls that return a value
+                        if (op.priority == FUNCTION_PRIORITY && op.type_a!!.Type() == Script_Program.ev_object && op.type_c!!.Type() == Script_Program.ev_void && type_c != op.type_c!!.Type()) { // catches object calls that return a value
                             break
                         }
                         op = opcodes[++op_i]!!
@@ -1306,12 +1266,11 @@ internal class idCompiler {
                         }
                     }
 
-//				if ( ( op - opcodes ) == OP_OBJECTCALL ) {
+                    //				if ( ( op - opcodes ) == OP_OBJECTCALL ) {
                     if (op_i == OP_OBJECTCALL) {
                         ExpectToken("(")
                         def = ParseObjectCall(thisdef, field)
-                    } else {
-                        // emit the conversion opcode
+                    } else { // emit the conversion opcode
                         def = EmitOpcode(op, thisdef, field)
 
                         // field access gets type from field
@@ -1328,26 +1287,19 @@ internal class idCompiler {
         var def: idVarDef?
         var namespaceDef: idVarDef?
         val name = idStr()
-        if (immediateType == Script_Program.type_entity) {
-            // if an immediate entity ($-prefaced name) then create or lookup a def for it.
+        if (immediateType == Script_Program.type_entity) { // if an immediate entity ($-prefaced name) then create or lookup a def for it.
             // when entities are spawned, they'll lookup the def and point it to them.
             def = Game_local.gameLocal.program.GetDef(
-                Script_Program.type_entity,
-                "$$token",
-                Script_Program.def_namespace
+                Script_Program.type_entity, "$$token", Script_Program.def_namespace
             )
             if (def == null) {
                 def = Game_local.gameLocal.program.AllocDef(
-                    Script_Program.type_entity,
-                    "$$token",
-                    Script_Program.def_namespace,
-                    true
+                    Script_Program.type_entity, "$$token", Script_Program.def_namespace, true
                 )
             }
             NextToken()
             return def
-        } else if (immediateType != null) {
-            // if the token is an immediate, allocate a constant for it
+        } else if (immediateType != null) { // if the token is an immediate, allocate a constant for it
             return ParseImmediate()
         }
         ParseName(name)
@@ -1357,9 +1309,8 @@ internal class idCompiler {
                 Error("%s is not a member of %s", name, basetype!!.TypeDef()!!.Name())
             } else {
                 Error("Unknown value \"%s\"", name)
-            }
-            // if namespace, then look up the variable in that namespace
-        } else if (def!!.Type() == Script_Program.ev_namespace) {
+            } // if namespace, then look up the variable in that namespace
+        } else if (def.Type() == Script_Program.ev_namespace) {
             while (def!!.Type() == Script_Program.ev_namespace) {
                 ExpectToken("::")
                 ParseName(name)
@@ -1368,8 +1319,7 @@ internal class idCompiler {
                 if (def == null) {
                     Error("Unknown value \"%s::%s\"", namespaceDef.GlobalName(), name)
                 }
-            }
-            //def = LookupDef( name, basetype );
+            } //def = LookupDef( name, basetype );
         }
         return def
     }
@@ -1417,8 +1367,7 @@ internal class idCompiler {
         }
 
         // check for negation operator
-        if (immediateType == null && CheckToken("-")) {
-            // constants are directly negated without an instruction
+        if (immediateType == null && CheckToken("-")) { // constants are directly negated without an instruction
             return if (immediateType == Script_Program.type_float) {
                 immediate._float = -immediate._float
                 ParseImmediate()
@@ -1496,8 +1445,7 @@ internal class idCompiler {
             return GetTerm()
         }
         e = GetExpression(priority - 1)
-        if (token.equals(";")) {
-            // save us from searching through the opcodes unneccesarily
+        if (token.equals(";")) { // save us from searching through the opcodes unneccesarily
             return e
         }
         while (true) {
@@ -1516,8 +1464,7 @@ internal class idCompiler {
                 }
                 op = opcodes[++op_i]
             }
-            if (null == op || null == op.name) {
-                // next token isn't at this priority level
+            if (null == op || null == op.name) { // next token isn't at this priority level
                 break
             }
 
@@ -1531,12 +1478,12 @@ internal class idCompiler {
             oldtype = basetype
 
             // field access needs scope from object
-            if (op.name!![0] == '.' && e!!.TypeDef()!!.Inherits(Script_Program.type_object)) {
-                // save off what type this field is part of
+            if (op.name!![0] == '.' && e!!.TypeDef()!!
+                    .Inherits(Script_Program.type_object)
+            ) { // save off what type this field is part of
                 basetype = e.TypeDef()!!.def
             }
-            if (op.rightAssociative) {
-                // if last statement is an indirect, change it to an address of
+            if (op.rightAssociative) { // if last statement is an indirect, change it to an address of
                 if (Game_local.gameLocal.program.NumStatements() > 0) {
                     val statement =
                         Game_local.gameLocal.program.GetStatement(Game_local.gameLocal.program.NumStatements() - 1)
@@ -1564,8 +1511,7 @@ internal class idCompiler {
                     e2.TypeDef()!!.ReturnType()!!.Type()
                 } else if (e2.TypeDef()!!.FieldType() != null) {
                     e2.TypeDef()!!.FieldType()!!.Type()
-                } else {
-                    // not a field
+                } else { // not a field
                     Script_Program.ev_error
                 }
             } else {
@@ -1573,13 +1519,12 @@ internal class idCompiler {
             }
             oldop = op
             while (!TypeMatches(type_a, op!!.type_a!!.Type()) || !TypeMatches(
-                    type_b,
-                    op.type_b!!.Type()
+                    type_b, op.type_b!!.Type()
                 ) || type_c != Script_Program.ev_void && !TypeMatches(type_c, op.type_c!!.Type())
             ) {
-                if (op.priority == FUNCTION_PRIORITY &&
-                    TypeMatches(type_a, op.type_a!!.Type()) &&
-                    TypeMatches(type_b, op.type_b!!.Type())
+                if (op.priority == FUNCTION_PRIORITY && TypeMatches(type_a, op.type_a!!.Type()) && TypeMatches(
+                        type_b, op.type_b!!.Type()
+                    )
                 ) {
                     break
                 }
@@ -1618,38 +1563,33 @@ internal class idCompiler {
                     if (callthread) {
                         Error("Expecting function call after 'thread'")
                     }
-                    if (type_a == Script_Program.ev_pointer && type_b != e.TypeDef()!!.PointerType()!!.Type()) {
-                        // FIXME: need to make a general case for this
-//				if ( ( op - opcodes == OP_STOREP_F ) && ( e.TypeDef().PointerType().Type() == ev_boolean ) ) {
+                    if (type_a == Script_Program.ev_pointer && type_b != e.TypeDef()!!.PointerType()!!
+                            .Type()
+                    ) { // FIXME: need to make a general case for this
+                        //				if ( ( op - opcodes == OP_STOREP_F ) && ( e.TypeDef().PointerType().Type() == ev_boolean ) ) {
                         if (op_i == OP_STOREP_F && e.TypeDef()!!.PointerType()!!
                                 .Type() == Script_Program.ev_boolean
-                        ) {
-                            // copy from float to boolean pointer
+                        ) { // copy from float to boolean pointer
                             op = opcodes[OP_STOREP_FTOBOOL.also { op_i = it }]!!
                         } else if (op_i == OP_STOREP_BOOL && e.TypeDef()!!.PointerType()!!
                                 .Type() == Script_Program.ev_float
-                        ) {
-                            // copy from boolean to float pointer
+                        ) { // copy from boolean to float pointer
                             op = opcodes[OP_STOREP_BOOLTOF.also { op_i = it }]!!
                         } else if (op_i == OP_STOREP_F && e.TypeDef()!!.PointerType()!!
                                 .Type() == Script_Program.ev_string
-                        ) {
-                            // copy from float to string pointer
+                        ) { // copy from float to string pointer
                             op = opcodes[OP_STOREP_FTOS.also { op_i = it }]!!
                         } else if (op_i == OP_STOREP_BOOL && e.TypeDef()!!.PointerType()!!
                                 .Type() == Script_Program.ev_string
-                        ) {
-                            // copy from boolean to string pointer
+                        ) { // copy from boolean to string pointer
                             op = opcodes[OP_STOREP_BTOS.also { op_i = it }]!!
                         } else if (op_i == OP_STOREP_V && e.TypeDef()!!.PointerType()!!
                                 .Type() == Script_Program.ev_string
-                        ) {
-                            // copy from vector to string pointer
+                        ) { // copy from vector to string pointer
                             op = opcodes[OP_STOREP_VTOS.also { op_i = it }]!!
                         } else if (op_i == OP_STOREP_ENT && e.TypeDef()!!.PointerType()!!
                                 .Type() == Script_Program.ev_object
-                        ) {
-                            // store an entity into an object pointer
+                        ) { // store an entity into an object pointer
                             op = opcodes[OP_STOREP_OBJENT.also { op_i = it }]!!
                         } else {
                             Error("type mismatch for '%s'", op.name)
@@ -1660,8 +1600,7 @@ internal class idCompiler {
                     } else {
                         EmitOpcode(op, e, e2)
                     }
-                    if (op_i == OP_STOREP_OBJENT) {
-                        // statement.b points to type_pointer, which is just a temporary that gets its type reassigned, so we store the real type in statement.c
+                    if (op_i == OP_STOREP_OBJENT) { // statement.b points to type_pointer, which is just a temporary that gets its type reassigned, so we store the real type in statement.c
                         // so that we can do a type check during run time since we don't know what type the script object is at compile time because it
                         // comes from an entity
                         val statement =
@@ -1763,8 +1702,7 @@ internal class idCompiler {
         val patch2: Int = Game_local.gameLocal.program.NumStatements()
         val e = GetExpression(TOP_PRIORITY)
         ExpectToken(")")
-        if (e!!.initialized == initialized_t.initializedConstant && e.value!!.intPtr != 0) {
-            //FIXME: we can completely skip generation of this code in the opposite case
+        if (e!!.initialized == initialized_t.initializedConstant && e.value!!.intPtr != 0) { //FIXME: we can completely skip generation of this code in the opposite case
             ParseStatement()
             EmitOpcode(OP_GOTO, JumpTo(patch2), null)
         } else {
@@ -1912,8 +1850,7 @@ internal class idCompiler {
     }
 
     private fun ParseStatement() {
-        if (CheckToken(";")) {
-            // skip semicolons, which are harmless and ok syntax
+        if (CheckToken(";")) { // skip semicolons, which are harmless and ok syntax
             return
         }
         if (CheckToken("{")) {
@@ -2013,8 +1950,7 @@ internal class idCompiler {
         }
         ExpectToken("{")
         do {
-            if (CheckToken(";")) {
-                // skip semicolons, which are harmless and ok syntax
+            if (CheckToken(";")) { // skip semicolons, which are harmless and ok syntax
                 continue
             }
             fieldtype = ParseType()
@@ -2046,11 +1982,9 @@ internal class idCompiler {
          ============
          */
     private fun ParseFunction(returnType: idTypeDef?, name: String): idTypeDef? {
-        val newtype =
-            idTypeDef(Script_Program.ev_function, null, name, Script_Program.type_function.Size(), returnType)
+        val newtype = idTypeDef(Script_Program.ev_function, null, name, Script_Program.type_function.Size(), returnType)
         var type: idTypeDef?
-        if (scope!!.Type() != Script_Program.ev_namespace) {
-            // create self pointer
+        if (scope!!.Type() != Script_Program.ev_namespace) { // create self pointer
             newtype.AddFunctionParm(scope!!.TypeDef(), "self")
         }
         if (!CheckToken(")")) {
@@ -2087,7 +2021,7 @@ internal class idCompiler {
                 scope!!.TypeDef()!!.AddFunction(func)
             }
         } else {
-            func = def!!.value!!.functionPtr
+            func = def.value!!.functionPtr
             assert(func != null)
             if (func!!.firstStatement != 0) {
                 Error("%s redeclared", def.GlobalName())
@@ -2095,8 +2029,7 @@ internal class idCompiler {
         }
 
         // check if this is a prototype or declaration
-        if (!CheckToken("{")) {
-            // it's just a prototype, so get the ; and move on
+        if (!CheckToken("{")) { // it's just a prototype, so get the ; and move on
             ExpectToken(";")
 
             // DG: calculate parmTotal for prototype so calling this function before
@@ -2105,7 +2038,7 @@ internal class idCompiler {
             // otherwise they're defined in a different order than before,
             // so their .num is different which breaks compat with savegames.
             val numParms: Int = type!!.NumParameters()
-            func!!.parmTotal = 0
+            func.parmTotal = 0
             i = 0
             while (i < numParms) {
                 parmType = type.GetParmType(i)
@@ -2123,7 +2056,7 @@ internal class idCompiler {
         // calculate stack space used by parms
         val numParms: Int = type!!.NumParameters()
         var totalSize = 0
-        func!!.parmSize.SetNum(numParms)
+        func.parmSize.SetNum(numParms)
         i = 0
         while (i < numParms) {
             parmType = type.GetParmType(i)
@@ -2134,8 +2067,7 @@ internal class idCompiler {
             }
             totalSize += func.parmSize[i]
             i++
-        }
-        // DG: if parmTotal has been calculated before (prototype), it shouldn't have changed
+        } // DG: if parmTotal has been calculated before (prototype), it shouldn't have changed
         assert(func.parmTotal == 0 || totalSize == func.parmTotal) {
             "function parameter sizes differ between prototype vs implementation!"
         }
@@ -2199,8 +2131,7 @@ internal class idCompiler {
                 superClass = superClass.SuperClass()
             }
             if (destructorFunc != null) {
-                if (func.firstStatement < Game_local.gameLocal.program.NumStatements()) {
-                    // change all returns to point to the call to the destructor
+                if (func.firstStatement < Game_local.gameLocal.program.NumStatements()) { // change all returns to point to the call to the destructor
                     pos = Game_local.gameLocal.program.GetStatement(func.firstStatement)
                     i = func.firstStatement
                     while (i < Game_local.gameLocal.program.NumStatements()) {
@@ -2220,17 +2151,16 @@ internal class idCompiler {
             }
         }
 
-// Disabled code since it caused a function to fall through to the next function when last statement is in the form "if ( x ) { return; }"
-// #if 0
+        // Disabled code since it caused a function to fall through to the next function when last statement is in the form "if ( x ) { return; }"
+        // #if 0
         // // don't bother adding a return opcode if the "return" statement was used.
         // if ( ( func.firstStatement == gameLocal.program.NumStatements() ) || ( gameLocal.program.GetStatement( gameLocal.program.NumStatements() - 1 ).op != OP_RETURN ) ) {
         // // emit an end of statements opcode
         // EmitOpcode( OP_RETURN, 0, 0 );
         // }
-// #else
+        // #else
         // always emit the return opcode
-        EmitOpcode(OP_RETURN, null, null)
-        // #endif
+        EmitOpcode(OP_RETURN, null, null) // #endif
 
         // record the number of statements in the function
         func.numStatements = Game_local.gameLocal.program.NumStatements() - func.firstStatement
@@ -2247,8 +2177,7 @@ internal class idCompiler {
         def = Game_local.gameLocal.program.AllocDef(type, name, scope, false)
 
         // check for an initialization
-        if (CheckToken("=")) {
-            // if a local variable in a function then write out interpreter code to initialize variable
+        if (CheckToken("=")) { // if a local variable in a function then write out interpreter code to initialize variable
             if (scope!!.Type() == Script_Program.ev_function) {
                 def2 = GetExpression(TOP_PRIORITY)
                 if (type == Script_Program.type_float && def2!!.TypeDef() == Script_Program.type_float) {
@@ -2280,8 +2209,7 @@ internal class idCompiler {
                 } else {
                     Error("bad initialization for '%s'", name)
                 }
-            } else {
-                // global variables can only be initialized with immediate values
+            } else { // global variables can only be initialized with immediate values
                 negate = false
                 if (token.type == TT_PUNCTUATION && token.equals("-")) {
                     negate = true
@@ -2305,8 +2233,7 @@ internal class idCompiler {
                 }
                 NextToken()
             }
-        } else if (type == Script_Program.type_string) {
-            // local strings on the stack are initialized in the interpreter
+        } else if (type == Script_Program.type_string) { // local strings on the stack are initialized in the interpreter
             if (scope!!.Type() != Script_Program.ev_function) {
                 def.SetString("", false)
             }
@@ -2338,8 +2265,7 @@ internal class idCompiler {
         if (returnType != expectedType) {
             Error("Return type doesn't match internal return type '%s'", expectedType!!.Name())
         }
-        val newtype =
-            idTypeDef(Script_Program.ev_function, null, name, Script_Program.type_function.Size(), returnType)
+        val newtype = idTypeDef(Script_Program.ev_function, null, name, Script_Program.type_function.Size(), returnType)
         ExpectToken("(")
         format = ev.GetArgFormat()!!
         num = format.length
@@ -2354,7 +2280,10 @@ internal class idCompiler {
             if (argType != expectedType) {
                 Error(
                     "The type of parm %d ('%s') does not match the internal type '%s' in definition of '%s' event.",
-                    i + 1, parmName, expectedType!!.Name(), name
+                    i + 1,
+                    parmName,
+                    expectedType!!.Name(),
+                    name
                 )
             }
             newtype.AddFunctionParm(argType, "")
@@ -2379,7 +2308,7 @@ internal class idCompiler {
             type = Game_local.gameLocal.program.AllocType(newtype)
             type.def = Game_local.gameLocal.program.AllocDef(type, name, Script_Program.def_namespace, true)
             val func = Game_local.gameLocal.program.AllocFunction(type.def)
-            func!!.eventdef = ev
+            func.eventdef = ev
             func.parmSize.SetNum(num)
             i = 0
             while (i < num) {
@@ -2406,8 +2335,7 @@ internal class idCompiler {
         var type: idTypeDef?
         var def: idVarDef?
         val oldscope: idVarDef?
-        if (CheckToken(";")) {
-            // skip semicolons, which are harmless and ok syntax
+        if (CheckToken(";")) { // skip semicolons, which are harmless and ok syntax
             return
         }
         type = ParseType()
@@ -2492,7 +2420,7 @@ internal class idCompiler {
         currentLineNumber = 0
         console = toConsole
 
-//	memset( &immediate, 0, sizeof( immediate ) );
+        //	memset( &immediate, 0, sizeof( immediate ) );
         parser.SetFlags(LEXFL_ALLOWMULTICHARLITERALS)
         parser.LoadMemory(text, text.length, filename!!)
         parserPtr = parser
@@ -2520,25 +2448,23 @@ internal class idCompiler {
         // init the current token line to be the first line so that currentLineNumber is set correctly in NextToken
         token.line = 1
         val error = false
-        try {
-            // read first token
+        try { // read first token
             NextToken()
-            while (!eof && !error) {
-                // parse from global namespace
+            while (!eof && !error) { // parse from global namespace
                 ParseNamespace(Script_Program.def_namespace)
             }
         } catch (err: idCompileError) {
-            val error2: String = if (console) {
-                // don't print line number of an error if were calling script from the console using the "script" command
-                String.format("Error: %s\n", err.error)
-            } else {
-                String.format(
-                    "Error: file %s, line %d: %s\n",
-                    Game_local.gameLocal.program.GetFilename(currentFileNumber),
-                    currentLineNumber,
-                    err.error
-                )
-            }
+            val error2: String =
+                if (console) { // don't print line number of an error if were calling script from the console using the "script" command
+                    String.format("Error: %s\n", err.error)
+                } else {
+                    String.format(
+                        "Error: file %s, line %d: %s\n",
+                        Game_local.gameLocal.program.GetFilename(currentFileNumber),
+                        currentLineNumber,
+                        err.error
+                    )
+                }
             parser.FreeSource()
             throw idCompileError(error2)
         }
@@ -2562,346 +2488,89 @@ internal class idCompiler {
                 Script_Program.def_void
             ),  //
             opcode_s(
-                "++",
-                "UINC_F",
-                1,
-                true,
-                Script_Program.def_float,
-                Script_Program.def_void,
-                Script_Program.def_void
-            ),
-            opcode_s(
-                "++",
-                "UINCP_F",
-                1,
-                true,
-                Script_Program.def_object,
-                Script_Program.def_field,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "--",
-                "UDEC_F",
-                1,
-                true,
-                Script_Program.def_float,
-                Script_Program.def_void,
-                Script_Program.def_void
-            ),
-            opcode_s(
-                "--",
-                "UDECP_F",
-                1,
-                true,
-                Script_Program.def_object,
-                Script_Program.def_field,
-                Script_Program.def_float
+                "++", "UINC_F", 1, true, Script_Program.def_float, Script_Program.def_void, Script_Program.def_void
+            ), opcode_s(
+                "++", "UINCP_F", 1, true, Script_Program.def_object, Script_Program.def_field, Script_Program.def_float
+            ), opcode_s(
+                "--", "UDEC_F", 1, true, Script_Program.def_float, Script_Program.def_void, Script_Program.def_void
+            ), opcode_s(
+                "--", "UDECP_F", 1, true, Script_Program.def_object, Script_Program.def_field, Script_Program.def_float
             ),  //
             opcode_s(
-                "~",
-                "COMP_F",
-                -1,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_void,
-                Script_Program.def_float
+                "~", "COMP_F", -1, false, Script_Program.def_float, Script_Program.def_void, Script_Program.def_float
             ),  //
             opcode_s(
-                "*",
-                "MUL_F",
-                3,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "*",
-                "MUL_V",
-                3,
-                false,
-                Script_Program.def_vector,
-                Script_Program.def_vector,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "*",
-                "MUL_FV",
-                3,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_vector,
-                Script_Program.def_vector
-            ),
-            opcode_s(
-                "*",
-                "MUL_VF",
-                3,
-                false,
-                Script_Program.def_vector,
-                Script_Program.def_float,
-                Script_Program.def_vector
+                "*", "MUL_F", 3, false, Script_Program.def_float, Script_Program.def_float, Script_Program.def_float
+            ), opcode_s(
+                "*", "MUL_V", 3, false, Script_Program.def_vector, Script_Program.def_vector, Script_Program.def_float
+            ), opcode_s(
+                "*", "MUL_FV", 3, false, Script_Program.def_float, Script_Program.def_vector, Script_Program.def_vector
+            ), opcode_s(
+                "*", "MUL_VF", 3, false, Script_Program.def_vector, Script_Program.def_float, Script_Program.def_vector
             ),  //
             opcode_s(
-                "/",
-                "DIV",
-                3,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "%",
-                "MOD_F",
-                3,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_float
+                "/", "DIV", 3, false, Script_Program.def_float, Script_Program.def_float, Script_Program.def_float
+            ), opcode_s(
+                "%", "MOD_F", 3, false, Script_Program.def_float, Script_Program.def_float, Script_Program.def_float
             ),  //
             opcode_s(
-                "+",
-                "ADD_F",
-                4,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "+",
-                "ADD_V",
-                4,
-                false,
-                Script_Program.def_vector,
-                Script_Program.def_vector,
-                Script_Program.def_vector
-            ),
-            opcode_s(
-                "+",
-                "ADD_S",
-                4,
-                false,
-                Script_Program.def_string,
-                Script_Program.def_string,
-                Script_Program.def_string
-            ),
-            opcode_s(
-                "+",
-                "ADD_FS",
-                4,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_string,
-                Script_Program.def_string
-            ),
-            opcode_s(
-                "+",
-                "ADD_SF",
-                4,
-                false,
-                Script_Program.def_string,
-                Script_Program.def_float,
-                Script_Program.def_string
-            ),
-            opcode_s(
-                "+",
-                "ADD_VS",
-                4,
-                false,
-                Script_Program.def_vector,
-                Script_Program.def_string,
-                Script_Program.def_string
-            ),
-            opcode_s(
-                "+",
-                "ADD_SV",
-                4,
-                false,
-                Script_Program.def_string,
-                Script_Program.def_vector,
-                Script_Program.def_string
+                "+", "ADD_F", 4, false, Script_Program.def_float, Script_Program.def_float, Script_Program.def_float
+            ), opcode_s(
+                "+", "ADD_V", 4, false, Script_Program.def_vector, Script_Program.def_vector, Script_Program.def_vector
+            ), opcode_s(
+                "+", "ADD_S", 4, false, Script_Program.def_string, Script_Program.def_string, Script_Program.def_string
+            ), opcode_s(
+                "+", "ADD_FS", 4, false, Script_Program.def_float, Script_Program.def_string, Script_Program.def_string
+            ), opcode_s(
+                "+", "ADD_SF", 4, false, Script_Program.def_string, Script_Program.def_float, Script_Program.def_string
+            ), opcode_s(
+                "+", "ADD_VS", 4, false, Script_Program.def_vector, Script_Program.def_string, Script_Program.def_string
+            ), opcode_s(
+                "+", "ADD_SV", 4, false, Script_Program.def_string, Script_Program.def_vector, Script_Program.def_string
             ),  //
             opcode_s(
-                "-",
-                "SUB_F",
-                4,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "-",
-                "SUB_V",
-                4,
-                false,
-                Script_Program.def_vector,
-                Script_Program.def_vector,
-                Script_Program.def_vector
+                "-", "SUB_F", 4, false, Script_Program.def_float, Script_Program.def_float, Script_Program.def_float
+            ), opcode_s(
+                "-", "SUB_V", 4, false, Script_Program.def_vector, Script_Program.def_vector, Script_Program.def_vector
             ),  //
             opcode_s(
-                "==",
-                "EQ_F",
-                5,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "==",
-                "EQ_V",
-                5,
-                false,
-                Script_Program.def_vector,
-                Script_Program.def_vector,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "==",
-                "EQ_S",
-                5,
-                false,
-                Script_Program.def_string,
-                Script_Program.def_string,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "==",
-                "EQ_E",
-                5,
-                false,
-                Script_Program.def_entity,
-                Script_Program.def_entity,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "==",
-                "EQ_EO",
-                5,
-                false,
-                Script_Program.def_entity,
-                Script_Program.def_object,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "==",
-                "EQ_OE",
-                5,
-                false,
-                Script_Program.def_object,
-                Script_Program.def_entity,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "==",
-                "EQ_OO",
-                5,
-                false,
-                Script_Program.def_object,
-                Script_Program.def_object,
-                Script_Program.def_float
+                "==", "EQ_F", 5, false, Script_Program.def_float, Script_Program.def_float, Script_Program.def_float
+            ), opcode_s(
+                "==", "EQ_V", 5, false, Script_Program.def_vector, Script_Program.def_vector, Script_Program.def_float
+            ), opcode_s(
+                "==", "EQ_S", 5, false, Script_Program.def_string, Script_Program.def_string, Script_Program.def_float
+            ), opcode_s(
+                "==", "EQ_E", 5, false, Script_Program.def_entity, Script_Program.def_entity, Script_Program.def_float
+            ), opcode_s(
+                "==", "EQ_EO", 5, false, Script_Program.def_entity, Script_Program.def_object, Script_Program.def_float
+            ), opcode_s(
+                "==", "EQ_OE", 5, false, Script_Program.def_object, Script_Program.def_entity, Script_Program.def_float
+            ), opcode_s(
+                "==", "EQ_OO", 5, false, Script_Program.def_object, Script_Program.def_object, Script_Program.def_float
             ),  //
             opcode_s(
-                "!=",
-                "NE_F",
-                5,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "!=",
-                "NE_V",
-                5,
-                false,
-                Script_Program.def_vector,
-                Script_Program.def_vector,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "!=",
-                "NE_S",
-                5,
-                false,
-                Script_Program.def_string,
-                Script_Program.def_string,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "!=",
-                "NE_E",
-                5,
-                false,
-                Script_Program.def_entity,
-                Script_Program.def_entity,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "!=",
-                "NE_EO",
-                5,
-                false,
-                Script_Program.def_entity,
-                Script_Program.def_object,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "!=",
-                "NE_OE",
-                5,
-                false,
-                Script_Program.def_object,
-                Script_Program.def_entity,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "!=",
-                "NE_OO",
-                5,
-                false,
-                Script_Program.def_object,
-                Script_Program.def_object,
-                Script_Program.def_float
+                "!=", "NE_F", 5, false, Script_Program.def_float, Script_Program.def_float, Script_Program.def_float
+            ), opcode_s(
+                "!=", "NE_V", 5, false, Script_Program.def_vector, Script_Program.def_vector, Script_Program.def_float
+            ), opcode_s(
+                "!=", "NE_S", 5, false, Script_Program.def_string, Script_Program.def_string, Script_Program.def_float
+            ), opcode_s(
+                "!=", "NE_E", 5, false, Script_Program.def_entity, Script_Program.def_entity, Script_Program.def_float
+            ), opcode_s(
+                "!=", "NE_EO", 5, false, Script_Program.def_entity, Script_Program.def_object, Script_Program.def_float
+            ), opcode_s(
+                "!=", "NE_OE", 5, false, Script_Program.def_object, Script_Program.def_entity, Script_Program.def_float
+            ), opcode_s(
+                "!=", "NE_OO", 5, false, Script_Program.def_object, Script_Program.def_object, Script_Program.def_float
             ),  //
             opcode_s(
-                "<=",
-                "LE",
-                5,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                ">=",
-                "GE",
-                5,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "<",
-                "LT",
-                5,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                ">",
-                "GT",
-                5,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_float
+                "<=", "LE", 5, false, Script_Program.def_float, Script_Program.def_float, Script_Program.def_float
+            ), opcode_s(
+                ">=", "GE", 5, false, Script_Program.def_float, Script_Program.def_float, Script_Program.def_float
+            ), opcode_s(
+                "<", "LT", 5, false, Script_Program.def_float, Script_Program.def_float, Script_Program.def_float
+            ), opcode_s(
+                ">", "GT", 5, false, Script_Program.def_float, Script_Program.def_float, Script_Program.def_float
             ),  //
             opcode_s(
                 ".",
@@ -2911,8 +2580,7 @@ internal class idCompiler {
                 Script_Program.def_object,
                 Script_Program.def_field,
                 Script_Program.def_float
-            ),
-            opcode_s(
+            ), opcode_s(
                 ".",
                 "INDIRECT_V",
                 1,
@@ -2920,8 +2588,7 @@ internal class idCompiler {
                 Script_Program.def_object,
                 Script_Program.def_field,
                 Script_Program.def_vector
-            ),
-            opcode_s(
+            ), opcode_s(
                 ".",
                 "INDIRECT_S",
                 1,
@@ -2929,8 +2596,7 @@ internal class idCompiler {
                 Script_Program.def_object,
                 Script_Program.def_field,
                 Script_Program.def_string
-            ),
-            opcode_s(
+            ), opcode_s(
                 ".",
                 "INDIRECT_E",
                 1,
@@ -2938,8 +2604,7 @@ internal class idCompiler {
                 Script_Program.def_object,
                 Script_Program.def_field,
                 Script_Program.def_entity
-            ),
-            opcode_s(
+            ), opcode_s(
                 ".",
                 "INDIRECT_BOOL",
                 1,
@@ -2947,8 +2612,7 @@ internal class idCompiler {
                 Script_Program.def_object,
                 Script_Program.def_field,
                 Script_Program.def_boolean
-            ),
-            opcode_s(
+            ), opcode_s(
                 ".",
                 "INDIRECT_OBJ",
                 1,
@@ -2974,8 +2638,7 @@ internal class idCompiler {
                 Script_Program.def_entity,
                 Script_Program.def_function,
                 Script_Program.def_void
-            ),
-            opcode_s(
+            ), opcode_s(
                 ".",
                 "OBJECTCALL",
                 2,
@@ -2983,44 +2646,16 @@ internal class idCompiler {
                 Script_Program.def_object,
                 Script_Program.def_function,
                 Script_Program.def_void
-            ),
-            opcode_s(
-                ".",
-                "SYSCALL",
-                2,
-                false,
-                Script_Program.def_void,
-                Script_Program.def_function,
-                Script_Program.def_void
+            ), opcode_s(
+                ".", "SYSCALL", 2, false, Script_Program.def_void, Script_Program.def_function, Script_Program.def_void
             ),  //
             opcode_s(
-                "=",
-                "STORE_F",
-                6,
-                true,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "=",
-                "STORE_V",
-                6,
-                true,
-                Script_Program.def_vector,
-                Script_Program.def_vector,
-                Script_Program.def_vector
-            ),
-            opcode_s(
-                "=",
-                "STORE_S",
-                6,
-                true,
-                Script_Program.def_string,
-                Script_Program.def_string,
-                Script_Program.def_string
-            ),
-            opcode_s(
+                "=", "STORE_F", 6, true, Script_Program.def_float, Script_Program.def_float, Script_Program.def_float
+            ), opcode_s(
+                "=", "STORE_V", 6, true, Script_Program.def_vector, Script_Program.def_vector, Script_Program.def_vector
+            ), opcode_s(
+                "=", "STORE_S", 6, true, Script_Program.def_string, Script_Program.def_string, Script_Program.def_string
+            ), opcode_s(
                 "=",
                 "STORE_ENT",
                 6,
@@ -3028,8 +2663,7 @@ internal class idCompiler {
                 Script_Program.def_entity,
                 Script_Program.def_entity,
                 Script_Program.def_entity
-            ),
-            opcode_s(
+            ), opcode_s(
                 "=",
                 "STORE_BOOL",
                 6,
@@ -3037,8 +2671,7 @@ internal class idCompiler {
                 Script_Program.def_boolean,
                 Script_Program.def_boolean,
                 Script_Program.def_boolean
-            ),
-            opcode_s(
+            ), opcode_s(
                 "=",
                 "STORE_OBJENT",
                 6,
@@ -3046,8 +2679,7 @@ internal class idCompiler {
                 Script_Program.def_object,
                 Script_Program.def_entity,
                 Script_Program.def_object
-            ),
-            opcode_s(
+            ), opcode_s(
                 "=",
                 "STORE_OBJ",
                 6,
@@ -3055,8 +2687,7 @@ internal class idCompiler {
                 Script_Program.def_object,
                 Script_Program.def_object,
                 Script_Program.def_object
-            ),
-            opcode_s(
+            ), opcode_s(
                 "=",
                 "STORE_OBJENT",
                 6,
@@ -3073,8 +2704,7 @@ internal class idCompiler {
                 Script_Program.def_string,
                 Script_Program.def_float,
                 Script_Program.def_string
-            ),
-            opcode_s(
+            ), opcode_s(
                 "=",
                 "STORE_BTOS",
                 6,
@@ -3082,8 +2712,7 @@ internal class idCompiler {
                 Script_Program.def_string,
                 Script_Program.def_boolean,
                 Script_Program.def_string
-            ),
-            opcode_s(
+            ), opcode_s(
                 "=",
                 "STORE_VTOS",
                 6,
@@ -3091,8 +2720,7 @@ internal class idCompiler {
                 Script_Program.def_string,
                 Script_Program.def_vector,
                 Script_Program.def_string
-            ),
-            opcode_s(
+            ), opcode_s(
                 "=",
                 "STORE_FTOBOOL",
                 6,
@@ -3100,8 +2728,7 @@ internal class idCompiler {
                 Script_Program.def_boolean,
                 Script_Program.def_float,
                 Script_Program.def_boolean
-            ),
-            opcode_s(
+            ), opcode_s(
                 "=",
                 "STORE_BOOLTOF",
                 6,
@@ -3111,15 +2738,8 @@ internal class idCompiler {
                 Script_Program.def_float
             ),  //
             opcode_s(
-                "=",
-                "STOREP_F",
-                6,
-                true,
-                Script_Program.def_pointer,
-                Script_Program.def_float,
-                Script_Program.def_float
-            ),
-            opcode_s(
+                "=", "STOREP_F", 6, true, Script_Program.def_pointer, Script_Program.def_float, Script_Program.def_float
+            ), opcode_s(
                 "=",
                 "STOREP_V",
                 6,
@@ -3127,8 +2747,7 @@ internal class idCompiler {
                 Script_Program.def_pointer,
                 Script_Program.def_vector,
                 Script_Program.def_vector
-            ),
-            opcode_s(
+            ), opcode_s(
                 "=",
                 "STOREP_S",
                 6,
@@ -3136,8 +2755,7 @@ internal class idCompiler {
                 Script_Program.def_pointer,
                 Script_Program.def_string,
                 Script_Program.def_string
-            ),
-            opcode_s(
+            ), opcode_s(
                 "=",
                 "STOREP_ENT",
                 6,
@@ -3145,8 +2763,7 @@ internal class idCompiler {
                 Script_Program.def_pointer,
                 Script_Program.def_entity,
                 Script_Program.def_entity
-            ),
-            opcode_s(
+            ), opcode_s(
                 "=",
                 "STOREP_FLD",
                 6,
@@ -3154,8 +2771,7 @@ internal class idCompiler {
                 Script_Program.def_pointer,
                 Script_Program.def_field,
                 Script_Program.def_field
-            ),
-            opcode_s(
+            ), opcode_s(
                 "=",
                 "STOREP_BOOL",
                 6,
@@ -3163,8 +2779,7 @@ internal class idCompiler {
                 Script_Program.def_pointer,
                 Script_Program.def_boolean,
                 Script_Program.def_boolean
-            ),
-            opcode_s(
+            ), opcode_s(
                 "=",
                 "STOREP_OBJ",
                 6,
@@ -3172,8 +2787,7 @@ internal class idCompiler {
                 Script_Program.def_pointer,
                 Script_Program.def_object,
                 Script_Program.def_object
-            ),
-            opcode_s(
+            ), opcode_s(
                 "=",
                 "STOREP_OBJENT",
                 6,
@@ -3190,8 +2804,7 @@ internal class idCompiler {
                 Script_Program.def_pointer,
                 Script_Program.def_float,
                 Script_Program.def_string
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<=>",
                 "STOREP_BTOS",
                 6,
@@ -3199,8 +2812,7 @@ internal class idCompiler {
                 Script_Program.def_pointer,
                 Script_Program.def_boolean,
                 Script_Program.def_string
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<=>",
                 "STOREP_VTOS",
                 6,
@@ -3208,8 +2820,7 @@ internal class idCompiler {
                 Script_Program.def_pointer,
                 Script_Program.def_vector,
                 Script_Program.def_string
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<=>",
                 "STOREP_FTOBOOL",
                 6,
@@ -3217,8 +2828,7 @@ internal class idCompiler {
                 Script_Program.def_pointer,
                 Script_Program.def_float,
                 Script_Program.def_boolean
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<=>",
                 "STOREP_BOOLTOF",
                 6,
@@ -3228,103 +2838,27 @@ internal class idCompiler {
                 Script_Program.def_float
             ),  //
             opcode_s(
-                "*=",
-                "UMUL_F",
-                6,
-                true,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_void
-            ),
-            opcode_s(
-                "*=",
-                "UMUL_V",
-                6,
-                true,
-                Script_Program.def_vector,
-                Script_Program.def_float,
-                Script_Program.def_void
-            ),
-            opcode_s(
-                "/=",
-                "UDIV_F",
-                6,
-                true,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_void
-            ),
-            opcode_s(
-                "/=",
-                "UDIV_V",
-                6,
-                true,
-                Script_Program.def_vector,
-                Script_Program.def_float,
-                Script_Program.def_void
-            ),
-            opcode_s(
-                "%=",
-                "UMOD_F",
-                6,
-                true,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_void
-            ),
-            opcode_s(
-                "+=",
-                "UADD_F",
-                6,
-                true,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_void
-            ),
-            opcode_s(
-                "+=",
-                "UADD_V",
-                6,
-                true,
-                Script_Program.def_vector,
-                Script_Program.def_vector,
-                Script_Program.def_void
-            ),
-            opcode_s(
-                "-=",
-                "USUB_F",
-                6,
-                true,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_void
-            ),
-            opcode_s(
-                "-=",
-                "USUB_V",
-                6,
-                true,
-                Script_Program.def_vector,
-                Script_Program.def_vector,
-                Script_Program.def_void
-            ),
-            opcode_s(
-                "&=",
-                "UAND_F",
-                6,
-                true,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_void
-            ),
-            opcode_s(
-                "|=",
-                "UOR_F",
-                6,
-                true,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_void
+                "*=", "UMUL_F", 6, true, Script_Program.def_float, Script_Program.def_float, Script_Program.def_void
+            ), opcode_s(
+                "*=", "UMUL_V", 6, true, Script_Program.def_vector, Script_Program.def_float, Script_Program.def_void
+            ), opcode_s(
+                "/=", "UDIV_F", 6, true, Script_Program.def_float, Script_Program.def_float, Script_Program.def_void
+            ), opcode_s(
+                "/=", "UDIV_V", 6, true, Script_Program.def_vector, Script_Program.def_float, Script_Program.def_void
+            ), opcode_s(
+                "%=", "UMOD_F", 6, true, Script_Program.def_float, Script_Program.def_float, Script_Program.def_void
+            ), opcode_s(
+                "+=", "UADD_F", 6, true, Script_Program.def_float, Script_Program.def_float, Script_Program.def_void
+            ), opcode_s(
+                "+=", "UADD_V", 6, true, Script_Program.def_vector, Script_Program.def_vector, Script_Program.def_void
+            ), opcode_s(
+                "-=", "USUB_F", 6, true, Script_Program.def_float, Script_Program.def_float, Script_Program.def_void
+            ), opcode_s(
+                "-=", "USUB_V", 6, true, Script_Program.def_vector, Script_Program.def_vector, Script_Program.def_void
+            ), opcode_s(
+                "&=", "UAND_F", 6, true, Script_Program.def_float, Script_Program.def_float, Script_Program.def_void
+            ), opcode_s(
+                "|=", "UOR_F", 6, true, Script_Program.def_float, Script_Program.def_float, Script_Program.def_void
             ),  //
             opcode_s(
                 "!",
@@ -3334,42 +2868,14 @@ internal class idCompiler {
                 Script_Program.def_boolean,
                 Script_Program.def_void,
                 Script_Program.def_float
-            ),
-            opcode_s(
-                "!",
-                "NOT_F",
-                -1,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_void,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "!",
-                "NOT_V",
-                -1,
-                false,
-                Script_Program.def_vector,
-                Script_Program.def_void,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "!",
-                "NOT_S",
-                -1,
-                false,
-                Script_Program.def_vector,
-                Script_Program.def_void,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "!",
-                "NOT_ENT",
-                -1,
-                false,
-                Script_Program.def_entity,
-                Script_Program.def_void,
-                Script_Program.def_float
+            ), opcode_s(
+                "!", "NOT_F", -1, false, Script_Program.def_float, Script_Program.def_void, Script_Program.def_float
+            ), opcode_s(
+                "!", "NOT_V", -1, false, Script_Program.def_vector, Script_Program.def_void, Script_Program.def_float
+            ), opcode_s(
+                "!", "NOT_S", -1, false, Script_Program.def_vector, Script_Program.def_void, Script_Program.def_float
+            ), opcode_s(
+                "!", "NOT_ENT", -1, false, Script_Program.def_entity, Script_Program.def_void, Script_Program.def_float
             ),  //
             opcode_s(
                 "<NEG_F>",
@@ -3379,8 +2885,7 @@ internal class idCompiler {
                 Script_Program.def_float,
                 Script_Program.def_void,
                 Script_Program.def_float
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<NEG_V>",
                 "NEG_V",
                 -1,
@@ -3390,13 +2895,7 @@ internal class idCompiler {
                 Script_Program.def_vector
             ),  //
             opcode_s(
-                "int",
-                "INT_F",
-                -1,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_void,
-                Script_Program.def_float
+                "int", "INT_F", -1, false, Script_Program.def_float, Script_Program.def_void, Script_Program.def_float
             ),  //
             opcode_s(
                 "<IF>",
@@ -3406,8 +2905,7 @@ internal class idCompiler {
                 Script_Program.def_float,
                 Script_Program.def_jumpoffset,
                 Script_Program.def_void
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<IFNOT>",
                 "IFNOT",
                 -1,
@@ -3425,8 +2923,7 @@ internal class idCompiler {
                 Script_Program.def_function,
                 Script_Program.def_argsize,
                 Script_Program.def_void
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<THREAD>",
                 "THREAD",
                 -1,
@@ -3434,8 +2931,7 @@ internal class idCompiler {
                 Script_Program.def_function,
                 Script_Program.def_argsize,
                 Script_Program.def_void
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<THREAD>",
                 "OBJTHREAD",
                 -1,
@@ -3452,8 +2948,7 @@ internal class idCompiler {
                 Script_Program.def_float,
                 Script_Program.def_float,
                 Script_Program.def_void
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<PUSH>",
                 "PUSH_V",
                 -1,
@@ -3461,8 +2956,7 @@ internal class idCompiler {
                 Script_Program.def_vector,
                 Script_Program.def_vector,
                 Script_Program.def_void
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<PUSH>",
                 "PUSH_S",
                 -1,
@@ -3470,8 +2964,7 @@ internal class idCompiler {
                 Script_Program.def_string,
                 Script_Program.def_string,
                 Script_Program.def_void
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<PUSH>",
                 "PUSH_ENT",
                 -1,
@@ -3479,8 +2972,7 @@ internal class idCompiler {
                 Script_Program.def_entity,
                 Script_Program.def_entity,
                 Script_Program.def_void
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<PUSH>",
                 "PUSH_OBJ",
                 -1,
@@ -3488,8 +2980,7 @@ internal class idCompiler {
                 Script_Program.def_object,
                 Script_Program.def_object,
                 Script_Program.def_void
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<PUSH>",
                 "PUSH_OBJENT",
                 -1,
@@ -3497,8 +2988,7 @@ internal class idCompiler {
                 Script_Program.def_entity,
                 Script_Program.def_object,
                 Script_Program.def_void
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<PUSH>",
                 "PUSH_FTOS",
                 -1,
@@ -3506,8 +2996,7 @@ internal class idCompiler {
                 Script_Program.def_string,
                 Script_Program.def_float,
                 Script_Program.def_void
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<PUSH>",
                 "PUSH_BTOF",
                 -1,
@@ -3515,8 +3004,7 @@ internal class idCompiler {
                 Script_Program.def_float,
                 Script_Program.def_boolean,
                 Script_Program.def_void
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<PUSH>",
                 "PUSH_FTOB",
                 -1,
@@ -3524,8 +3012,7 @@ internal class idCompiler {
                 Script_Program.def_boolean,
                 Script_Program.def_float,
                 Script_Program.def_void
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<PUSH>",
                 "PUSH_VTOS",
                 -1,
@@ -3533,8 +3020,7 @@ internal class idCompiler {
                 Script_Program.def_string,
                 Script_Program.def_vector,
                 Script_Program.def_void
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<PUSH>",
                 "PUSH_BTOS",
                 -1,
@@ -3553,15 +3039,8 @@ internal class idCompiler {
                 Script_Program.def_void
             ),  //
             opcode_s(
-                "&&",
-                "AND",
-                7,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_float
-            ),
-            opcode_s(
+                "&&", "AND", 7, false, Script_Program.def_float, Script_Program.def_float, Script_Program.def_float
+            ), opcode_s(
                 "&&",
                 "AND_BOOLF",
                 7,
@@ -3569,8 +3048,7 @@ internal class idCompiler {
                 Script_Program.def_boolean,
                 Script_Program.def_float,
                 Script_Program.def_float
-            ),
-            opcode_s(
+            ), opcode_s(
                 "&&",
                 "AND_FBOOL",
                 7,
@@ -3578,8 +3056,7 @@ internal class idCompiler {
                 Script_Program.def_float,
                 Script_Program.def_boolean,
                 Script_Program.def_float
-            ),
-            opcode_s(
+            ), opcode_s(
                 "&&",
                 "AND_BOOLBOOL",
                 7,
@@ -3587,17 +3064,9 @@ internal class idCompiler {
                 Script_Program.def_boolean,
                 Script_Program.def_boolean,
                 Script_Program.def_float
-            ),
-            opcode_s(
-                "||",
-                "OR",
-                7,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_float
-            ),
-            opcode_s(
+            ), opcode_s(
+                "||", "OR", 7, false, Script_Program.def_float, Script_Program.def_float, Script_Program.def_float
+            ), opcode_s(
                 "||",
                 "OR_BOOLF",
                 7,
@@ -3605,8 +3074,7 @@ internal class idCompiler {
                 Script_Program.def_boolean,
                 Script_Program.def_float,
                 Script_Program.def_float
-            ),
-            opcode_s(
+            ), opcode_s(
                 "||",
                 "OR_FBOOL",
                 7,
@@ -3614,8 +3082,7 @@ internal class idCompiler {
                 Script_Program.def_float,
                 Script_Program.def_boolean,
                 Script_Program.def_float
-            ),
-            opcode_s(
+            ), opcode_s(
                 "||",
                 "OR_BOOLBOOL",
                 7,
@@ -3625,22 +3092,9 @@ internal class idCompiler {
                 Script_Program.def_float
             ),  //
             opcode_s(
-                "&",
-                "BITAND",
-                3,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_float
-            ),
-            opcode_s(
-                "|",
-                "BITOR",
-                3,
-                false,
-                Script_Program.def_float,
-                Script_Program.def_float,
-                Script_Program.def_float
+                "&", "BITAND", 3, false, Script_Program.def_float, Script_Program.def_float, Script_Program.def_float
+            ), opcode_s(
+                "|", "BITOR", 3, false, Script_Program.def_float, Script_Program.def_float, Script_Program.def_float
             ),  //
             opcode_s(
                 "<BREAK>",
@@ -3650,8 +3104,7 @@ internal class idCompiler {
                 Script_Program.def_float,
                 Script_Program.def_void,
                 Script_Program.def_void
-            ),
-            opcode_s(
+            ), opcode_s(
                 "<CONTINUE>",
                 "CONTINUE",
                 -1,
@@ -3663,10 +3116,43 @@ internal class idCompiler {
             null
         )
         private val punctuation = arrayOf(
-            "+=", "-=", "*=", "/=", "%=", "&=", "|=", "++", "--",
-            "&&", "||", "<=", ">=", "==", "!=", "::", ";", ",",
-            "~", "!", "*", "/", "%", "(", ")", "-", "+",
-            "=", "[", "]", ".", "<", ">", "&", "|", ":", null
+            "+=",
+            "-=",
+            "*=",
+            "/=",
+            "%=",
+            "&=",
+            "|=",
+            "++",
+            "--",
+            "&&",
+            "||",
+            "<=",
+            ">=",
+            "==",
+            "!=",
+            "::",
+            ";",
+            ",",
+            "~",
+            "!",
+            "*",
+            "/",
+            "%",
+            "(",
+            ")",
+            "-",
+            "+",
+            "=",
+            "[",
+            "]",
+            ".",
+            "<",
+            ">",
+            "&",
+            "|",
+            ":",
+            null
         )
         var bla = 0
 

@@ -51,10 +51,8 @@ object tr_font {
      ============
      */
     fun readInt(): Int {
-        val i: Int = (fdFile!![fdOffset].toInt() and 0xFF) +
-                ((fdFile!![fdOffset + 1].toInt() and 0xFF) shl 8) +
-                ((fdFile!![fdOffset + 2].toInt() and 0xFF) shl 16) +
-                ((fdFile!![fdOffset + 3].toInt() and 0xFF) shl 24)
+        val i: Int =
+            (fdFile!![fdOffset].toInt() and 0xFF) + ((fdFile!![fdOffset + 1].toInt() and 0xFF) shl 8) + ((fdFile!![fdOffset + 2].toInt() and 0xFF) shl 16) + ((fdFile!![fdOffset + 3].toInt() and 0xFF) shl 24)
         fdOffset += 4
         return i
     }

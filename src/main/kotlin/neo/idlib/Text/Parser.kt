@@ -243,8 +243,7 @@ object Parser {
                 return false
             }
             script = idLexer(filename, 0, OSPath)
-            if (!script.IsLoaded()) {
-//		delete script;
+            if (!script.IsLoaded()) { //		delete script;
                 //script = null
                 return false
             }
@@ -259,8 +258,7 @@ object Parser {
             skip = 0
             loaded = true
             if (definehash.isEmpty()) {
-                defines = null
-                //definehash = Array(DEFINEHASHSIZE) { define_s() } // Mem_ClearedAlloc(DEFINEHASHSIZE);
+                defines = null //definehash = Array(DEFINEHASHSIZE) { define_s() } // Mem_ClearedAlloc(DEFINEHASHSIZE);
                 AddGlobalDefinesToSource()
             }
             return true
@@ -276,8 +274,7 @@ object Parser {
                 return false
             }
             script = idLexer(ptr, length, name)
-            if (!script.IsLoaded()) {
-//		delete script;
+            if (!script.IsLoaded()) { //		delete script;
                 return false
             }
             script.SetFlags(flags)
@@ -314,25 +311,18 @@ object Parser {
             // free all the scripts
             while (scriptstack != null) {
                 script = scriptstack
-                scriptstack = scriptstack!!.next
-                //		delete script;
-            }
-            // free all the tokens
+                scriptstack = scriptstack!!.next //		delete script;
+            } // free all the tokens
             while (tokens != null) {
                 token = tokens
-                tokens = tokens!!.next
-                //		delete token;
-            }
-            // free all indents
+                tokens = tokens!!.next //		delete token;
+            } // free all indents
             while (indentstack != null) {
                 indent = indentstack
-                indentstack = indentstack!!.next
-                //                Mem_Free(indent);
+                indentstack = indentstack!!.next //                Mem_Free(indent);
             }
-            if (!keepDefines) {
-                // free hash table
-                if (definehash.isEmpty()) {
-                    // free defines
+            if (!keepDefines) { // free hash table
+                if (definehash.isEmpty()) { // free defines
                     i = 0
                     while (i < DEFINEHASHSIZE) {
                         while (definehash[i] != null) {
@@ -342,8 +332,7 @@ object Parser {
                         }
                         i++
                     }
-                    defines = null
-                    //                    Mem_Free(this.definehash);
+                    defines = null //                    Mem_Free(this.definehash);
                     definehash = arrayOfNulls(DEFINEHASHSIZE)
                 }
             }
@@ -362,22 +351,16 @@ object Parser {
             while (true) {
                 if (!ReadSourceToken(token)) {
                     return false
-                }
-                // check for precompiler directives
-                if (token.type == Token.TT_PUNCTUATION
-                    && token[0] == '#' && (token.Length() == 1 || token[1] == '\u0000')
-                ) {
-                    // read the precompiler directive
+                } // check for precompiler directives
+                if (token.type == Token.TT_PUNCTUATION && token[0] == '#' && (token.Length() == 1 || token[1] == '\u0000')) { // read the precompiler directive
                     if (!ReadDirective()) {
                         return false
                     }
                     continue
-                }
-                // if skipping source because of conditional compilation
+                } // if skipping source because of conditional compilation
                 if (skip != 0) {
                     continue
-                }
-                // recursively concatenate strings that are behind each other still resolving defines
+                } // recursively concatenate strings that are behind each other still resolving defines
                 if (token.type == Token.TT_STRING && (scriptstack!!.GetFlags() and Lexer.LEXFL_NOSTRINGCONCAT) == 0) {
                     val newtoken = idToken()
                     if (ReadToken(newtoken)) {
@@ -387,33 +370,23 @@ object Parser {
                             UnreadSourceToken(newtoken)
                         }
                     }
-                }
-                //
-                if (0 == scriptstack!!.GetFlags() and Lexer.LEXFL_NODOLLARPRECOMPILE) {
-                    // check for special precompiler directives
-                    if (token.type == Token.TT_PUNCTUATION
-                        && token[0] == '$' && (token.Length() == 1 || token[1] == '\u0000')
-                    ) {
-                        // read the precompiler directive
+                } //
+                if (0 == scriptstack!!.GetFlags() and Lexer.LEXFL_NODOLLARPRECOMPILE) { // check for special precompiler directives
+                    if (token.type == Token.TT_PUNCTUATION && token[0] == '$' && (token.Length() == 1 || token[1] == '\u0000')) { // read the precompiler directive
                         if (ReadDollarDirective()) {
                             continue
                         }
                     }
-                }
-                // if the token is a name
-                if (token.type == Token.TT_NAME && 0 == token.flags and TOKEN_FL_RECURSIVE_DEFINE) {
-                    // check if the name is a define macro
-                    define = FindHashedDefine(definehash, token.toString())
-                    // if it is a define macro
-                    if (define != null) {
-                        // expand the defined macro
+                } // if the token is a name
+                if (token.type == Token.TT_NAME && 0 == token.flags and TOKEN_FL_RECURSIVE_DEFINE) { // check if the name is a define macro
+                    define = FindHashedDefine(definehash, token.toString()) // if it is a define macro
+                    if (define != null) { // expand the defined macro
                         if (!ExpandDefineIntoSource(token, define)) {
                             return false
                         }
                         continue
                     }
-                }
-                // found a token
+                } // found a token
                 return true
             }
         }
@@ -454,8 +427,7 @@ object Parser {
                 return false
             }
             if (token.type == Token.TT_NUMBER) {
-                if (token.subtype and subtype != subtype) {
-//                    str.Clear();
+                if (token.subtype and subtype != subtype) { //                    str.Clear();
                     str = ""
                     if (subtype and Token.TT_DECIMAL != 0) {
                         str = "decimal "
@@ -492,9 +464,7 @@ object Parser {
                 }
                 if (token.subtype != subtype) {
                     this.Error(
-                        "expected '%s' but found '%s'",
-                        scriptstack!!.GetPunctuationFromId(subtype),
-                        token.toString()
+                        "expected '%s' but found '%s'", scriptstack!!.GetPunctuationFromId(subtype), token.toString()
                     )
                     return false
                 }
@@ -519,8 +489,7 @@ object Parser {
             val tok = _tempToken
             if (!ReadToken(tok)) {
                 return false
-            }
-            //if the token is available
+            } //if the token is available
             if (tok.toString() == string) {
                 return true
             }
@@ -534,8 +503,7 @@ object Parser {
             val tok = _tempToken
             if (!ReadToken(tok)) {
                 return false
-            }
-            //if the type matches
+            } //if the type matches
             if (tok.type == type && tok.subtype and subtype == subtype) {
                 token.set(tok)
                 return true
@@ -606,8 +574,7 @@ object Parser {
          Skips until a matching close brace is found.
          Internal brace depths are properly skipped.
          =================
-         */
-        // skip the braced section
+         */ // skip the braced section
 
         @Throws(idException::class)
         fun SkipBracedSection(parseFirstBrace: Boolean = true /*= true*/): Boolean {
@@ -637,8 +604,7 @@ object Parser {
          Parses until a matching close brace is found.
          Internal brace depths are properly skipped.
          =================
-         */
-        // parse a braced section into a string
+         */ // parse a braced section into a string
         @Throws(idException::class)
         fun ParseBracedSection(out: idStr, tabs: Int /*= -1*/): String {
             var tabs = tabs
@@ -706,8 +672,7 @@ object Parser {
 
          * TODO:FIXME: what about precompilation ?
          =================
-         */
-        // parse a braced section into a string, maintaining indents and newlines
+         */ // parse a braced section into a string, maintaining indents and newlines
         @Throws(idException::class)
         fun ParseBracedSectionExact(out: idStr, tabs: Int /*= -1*/): String {
             return scriptstack!!.ParseBracedSectionExact(out, tabs)
@@ -742,13 +707,11 @@ object Parser {
             val tok = idToken()
             if (!ReadToken(tok)) {
                 return false
-            }
-            // if no lines were crossed before this token
+            } // if no lines were crossed before this token
             if (0 == tok.linesCrossed) {
                 token.set(tok)
                 return true
-            }
-            //
+            } //
             UnreadSourceToken(tok)
             return false
         }
@@ -874,12 +837,10 @@ object Parser {
 
          * TODO:FIXME: this is very bad code, the script isn't even garrenteed to still be around
          ================
-         */
-        // Get the string from the marker to the current position
+         */ // Get the string from the marker to the current position
         @Throws(idException::class)
         fun GetStringFromMarker(out: idStr, clean: Boolean /*= false*/) {
-            val p: Int //marker
-            //            int save;
+            val p: Int //marker //            int save;
             if (marker_p == null) {
                 marker_p = String(scriptstack!!.buffer)
             }
@@ -890,8 +851,8 @@ object Parser {
             }
 
             // Set the end character to NULL to give us a complete string
-//            save = p;
-//            p = 0;
+            //            save = p;
+            //            p = 0;
             // If cleaning then reparse
             if (clean) {
                 val temp = idParser(marker_p!!, p, "temp", flags) //TODO:check whether this substringing works
@@ -904,7 +865,7 @@ object Parser {
             }
 
             // restore the character we set to NULL
-//            p = save;
+            //            p = save;
         }
 
         // add a define to the source
@@ -936,16 +897,14 @@ object Parser {
             i = 0
             while (builtins[i].string != null) {
 
-//		define = (define_t *) Mem_Alloc(sizeof(define_t) + strlen(builtin[i].string) + 1);
+                //		define = (define_t *) Mem_Alloc(sizeof(define_t) + strlen(builtin[i].string) + 1);
                 define = define_s()
-                define.name = builtins[i].string!!
-                //		strcpy(define.name, builtin[i].string);
+                define.name = builtins[i].string!! //		strcpy(define.name, builtin[i].string);
                 define.flags = DEFINE_FIXED
                 define.builtin = builtins[i].id
                 define.numparms = 0
                 define.parms = null
-                define.tokens = null
-                // add the define to the source
+                define.tokens = null // add the define to the source
                 AddDefineToHash(define, definehash)
                 i++
             }
@@ -953,11 +912,8 @@ object Parser {
 
         // set the source include path
         fun SetIncludePath(path: String) {
-            includepath.set(path)
-            // add trailing path seperator
-            if (includepath[includepath.Length() - 1] != '\\'
-                && includepath[includepath.Length() - 1] != '/'
-            ) {
+            includepath.set(path) // add trailing path seperator
+            if (includepath[includepath.Length() - 1] != '\\' && includepath[includepath.Length() - 1] != '/') {
                 includepath.Append(PATHSEPERATOR_STR)
             }
         }
@@ -1055,14 +1011,13 @@ object Parser {
 
         // print an error message
         @Throws(idException::class)
-        fun Error(fmt: String, vararg args: Any?) {
-//	char text[MAX_STRING_CHARS];
-//            char text[MAX_STRING_CHARS];
-//            va_list ap;
-//
-//            va_start(ap, str);
-//            vsprintf(text, str, ap);
-//            va_end(ap);
+        fun Error(fmt: String, vararg args: Any?) { //	char text[MAX_STRING_CHARS];
+            //            char text[MAX_STRING_CHARS];
+            //            va_list ap;
+            //
+            //            va_start(ap, str);
+            //            vsprintf(text, str, ap);
+            //            va_end(ap);
             if (scriptstack != null) {
                 val text = String.format(fmt, *args)
                 scriptstack!!.Error(text)
@@ -1081,13 +1036,12 @@ object Parser {
 
         // print a warning message
         @Throws(idException::class)
-        fun Warning(fmt: String, vararg args: Any) {
-//            char text[MAX_STRING_CHARS];
-//            va_list ap;
-//
-//            va_start(ap, str);
-//            vsprintf(text, str, ap);
-//            va_end(ap);
+        fun Warning(fmt: String, vararg args: Any) { //            char text[MAX_STRING_CHARS];
+            //            va_list ap;
+            //
+            //            va_start(ap, str);
+            //            vsprintf(text, str, ap);
+            //            va_end(ap);
             if (scriptstack != null) {
                 val text = String.format(fmt, *args)
                 scriptstack!!.Warning(text)
@@ -1107,7 +1061,7 @@ object Parser {
         private fun PushIndent(type: Int, skip: Int) {
             val indent: indent_s
 
-//	indent = (indent_t *) Mem_Alloc(sizeof(indent_t));
+            //	indent = (indent_t *) Mem_Alloc(sizeof(indent_t));
             indent = indent_s()
             indent.type = type
             indent.script = scriptstack!!
@@ -1133,8 +1087,7 @@ object Parser {
             type._val = indent.type
             skip._val = indent.skip
             indentstack = indentstack!!.next
-            this.skip -= indent.skip
-            //	Mem_Free( indent );
+            this.skip -= indent.skip //	Mem_Free( indent );
         }
 
         @Throws(idException::class)
@@ -1147,8 +1100,7 @@ object Parser {
                     return
                 }
                 s = s.next
-            }
-            //push the script on the script stack
+            } //push the script on the script stack
             script.next = scriptstack
             scriptstack = script
         }
@@ -1164,10 +1116,8 @@ object Parser {
                 idLib.common.FatalError("idParser::ReadSourceToken: not loaded")
                 return false
             }
-            changedScript = 0
-            // if there's no token already available
-            while (tokens == null) {
-                // if there's a token to read from the script
+            changedScript = 0 // if there's no token already available
+            while (tokens == null) { // if there's a token to read from the script
                 if (scriptstack!!.ReadToken(token)) {
                     token.linesCrossed += changedScript
 
@@ -1176,31 +1126,23 @@ object Parser {
                         marker_p = "" //token.whiteSpaceEnd_p;//TODO:does marker_p do anythning???
                     }
                     return true
-                }
-                // if at the end of the script
-                if (scriptstack!!.EndOfFile()) {
-                    // remove all indents of the script
+                } // if at the end of the script
+                if (scriptstack!!.EndOfFile()) { // remove all indents of the script
                     while (indentstack != null && indentstack!!.script === scriptstack) {
                         this.Warning("missing #endif")
                         PopIndent(type, skip)
                     }
                     changedScript = 1
-                }
-                // if this was the initial script
+                } // if this was the initial script
                 if (scriptstack!!.next == null) {
                     return false
-                }
-                // remove the script and return to the previous one
+                } // remove the script and return to the previous one
                 script = scriptstack
-                scriptstack = scriptstack!!.next
-                //		delete script;
-            }
-            // copy the already available token
-            token.set(tokens!!)
-            // remove the token from the source
+                scriptstack = scriptstack!!.next //		delete script;
+            } // copy the already available token
+            token.set(tokens!!) // remove the token from the source
             t = tokens
-            tokens = tokens!!.next
-            //	delete t;
+            tokens = tokens!!.next //	delete t;
             return true
         }
 
@@ -1260,14 +1202,12 @@ object Parser {
             while (i < define.numparms) {
                 parms[i] = null
                 i++
-            }
-            // if no leading "("
+            } // if no leading "("
             if (token.toString() != "(") {
                 UnreadSourceToken(token)
                 this.Error("define '%s' missing parameters", define.name)
                 return false
-            }
-            // read the define parameters
+            } // read the define parameters
             done = 0
             numparms = 0
             indent = 1
@@ -1347,21 +1287,16 @@ object Parser {
             return true
         }
 
-        private fun MergeTokens(t1: idToken, t2: idToken): Boolean {
-            // merging of a name with a name or number
+        private fun MergeTokens(t1: idToken, t2: idToken): Boolean { // merging of a name with a name or number
             if (t1.type == Token.TT_NAME && (t2.type == Token.TT_NAME || t2.type == Token.TT_NUMBER && t2.subtype and Token.TT_FLOAT == 0)) {
                 t1.Append(t2.data)
                 return true
-            }
-            // merging of two strings
+            } // merging of two strings
             if (t1.type == Token.TT_STRING && t2.type == Token.TT_STRING) {
                 t1.Append(t2.data)
                 return true
-            }
-            // merging of two numbers
-            if (t1.type == Token.TT_NUMBER && t2.type == Token.TT_NUMBER && t1.subtype and (Token.TT_HEX or Token.TT_BINARY) == 0 && t2.subtype and (Token.TT_HEX or Token.TT_BINARY) == 0 && (t1.subtype and Token.TT_FLOAT == 0
-                        || t2.subtype and Token.TT_FLOAT == 0)
-            ) {
+            } // merging of two numbers
+            if (t1.type == Token.TT_NUMBER && t2.type == Token.TT_NUMBER && t1.subtype and (Token.TT_HEX or Token.TT_BINARY) == 0 && t2.subtype and (Token.TT_HEX or Token.TT_BINARY) == 0 && (t1.subtype and Token.TT_FLOAT == 0 || t2.subtype and Token.TT_FLOAT == 0)) {
                 t1.Append(t2.data)
                 return true
             }
@@ -1370,13 +1305,9 @@ object Parser {
 
         @Throws(idException::class)
         private fun ExpandBuiltinDefine(
-            defToken: idToken,
-            define: define_s,
-            firstToken: Array<idToken?>,
-            lastToken: Array<idToken?>
+            defToken: idToken, define: define_s, firstToken: Array<idToken?>, lastToken: Array<idToken?>
         ): Boolean {
-            val token: idToken
-            /*ID_TIME_T*/
+            val token: idToken/*ID_TIME_T*/
             val curtime: String
             val buf: String //[MAX_STRING_CHARS];
             token = idToken(defToken)
@@ -1408,16 +1339,15 @@ object Parser {
 
                 BUILTIN_DATE -> {
 
-//                    t = System.currentTimeMillis();
-//                    curtime = ctime( & t);
+                    //                    t = System.currentTimeMillis();
+                    //                    curtime = ctime( & t);
                     curtime = Date().toString()
                     token.set("\"")
                     token.Append(curtime + 4)
                     token[7] = '\u0000'
                     token.Append(curtime + 20)
                     token[10] = '\u0000'
-                    token.Append("\"")
-                    //			free(curtime);
+                    token.Append("\"") //			free(curtime);
                     token.type = Token.TT_STRING
                     token.subtype = token.Length()
                     token.line = defToken.line
@@ -1429,14 +1359,13 @@ object Parser {
 
                 BUILTIN_TIME -> {
 
-//                    t = System.currentTimeMillis();
-//                    curtime = ctime( & t);
+                    //                    t = System.currentTimeMillis();
+                    //                    curtime = ctime( & t);
                     curtime = Date().toString()
                     token.set("\"")
                     token.Append(curtime + 11)
                     token[8] = '\u0000'
-                    token.Append("\"")
-                    //			free(curtime);
+                    token.Append("\"") //			free(curtime);
                     token.type = Token.TT_STRING
                     token.subtype = token.Length()
                     token.line = defToken.line
@@ -1464,10 +1393,7 @@ object Parser {
 
         @Throws(idException::class)
         private fun ExpandDefine(
-            deftoken: idToken,
-            define: define_s,
-            firstToken: Array<idToken?>,
-            lastToken: Array<idToken?>
+            deftoken: idToken, define: define_s, firstToken: Array<idToken?>, lastToken: Array<idToken?>
         ): Boolean {
             val parms = arrayOfNulls<idToken?>(MAX_DEFINEPARMS)
             var dt: idToken?
@@ -1485,38 +1411,31 @@ object Parser {
             // if it is a builtin define
             if (define.builtin != 0) {
                 return ExpandBuiltinDefine(deftoken, define, firstToken, lastToken)
-            }
-            // if the define has parameters
+            } // if the define has parameters
             if (define.numparms != 0) {
                 if (!ReadDefineParms(define, parms, MAX_DEFINEPARMS)) {
                     return false
-                }
-                //#ifdef DEBUG_EVAL
-//		for ( i = 0; i < define.numparms; i++ ) {
-//			Log_Write("define parms %d:", i);
-//			for ( pt = parms[i]; pt; pt = pt.next ) {
-//				Log_Write( "%s", pt.c_str() );
-//			}
-//		}
-//#endif //DEBUG_EVAL
-            }
-            // empty list at first
+                } //#ifdef DEBUG_EVAL
+                //		for ( i = 0; i < define.numparms; i++ ) {
+                //			Log_Write("define parms %d:", i);
+                //			for ( pt = parms[i]; pt; pt = pt.next ) {
+                //				Log_Write( "%s", pt.c_str() );
+                //			}
+                //		}
+                //#endif //DEBUG_EVAL
+            } // empty list at first
             first = null
-            last = null
-            // create a list with tokens of the expanded define
+            last = null // create a list with tokens of the expanded define
             dt = define.tokens
             while (dt != null) {
-                parmnum = -1
-                // if the token is a name, it could be a define parameter
+                parmnum = -1 // if the token is a name, it could be a define parameter
                 if (dt.type == Token.TT_NAME) {
                     parmnum = FindDefineParm(define, dt.toString())
-                }
-                // if it is a define parameter
+                } // if it is a define parameter
                 if (parmnum >= 0) {
                     pt = parms[parmnum]
                     while (pt != null) {
-                        t = idToken(pt)
-                        //add the token to the list
+                        t = idToken(pt) //add the token to the list
                         t.next = null
                         if (last != null) {
                             last.next = t
@@ -1526,19 +1445,15 @@ object Parser {
                         last = t
                         pt = pt.next
                     }
-                } else {
-                    // if stringizing operator
-                    if (dt.toString() == "#") {
-                        // the stringizing operator must be followed by a define parameter
+                } else { // if stringizing operator
+                    if (dt.toString() == "#") { // the stringizing operator must be followed by a define parameter
                         parmnum = if (dt.next != null) {
                             FindDefineParm(define, dt.next.toString())
                         } else {
                             -1
                         }
-                        if (parmnum >= 0) {
-                            // step over the stringizing operator
-                            dt = dt.next
-                            // stringize the define parameter tokens
+                        if (parmnum >= 0) { // step over the stringizing operator
+                            dt = dt.next // stringize the define parameter tokens
                             if (!StringizeTokens(parms.copyOfRange(parmnum, parms.size), token)) {
                                 this.Error("can't stringize tokens")
                                 return false
@@ -1553,11 +1468,9 @@ object Parser {
                     } else {
                         t = idToken(dt)
                         t.line = deftoken.line
-                    }
-                    // add the token to the list
-                    t.next = null
-                    // the token being read from the define list should use the line number of
-// the original file, not the header file
+                    } // add the token to the list
+                    t.next = null // the token being read from the define list should use the line number of
+                    // the original file, not the header file
                     t.line = deftoken.line
                     if (last != null) {
                         last.next = t
@@ -1567,12 +1480,10 @@ object Parser {
                     last = t
                 }
                 dt = dt!!.next
-            }
-            // check for the merging operator
+            } // check for the merging operator
             t = first
             while (t != null) {
-                if (t.next != null) {
-                    // if the merging operator
+                if (t.next != null) { // if the merging operator
                     if (t.next.toString() == "##") {
                         t1 = t
                         t2 = t.next!!.next
@@ -1580,23 +1491,19 @@ object Parser {
                             if (!MergeTokens(t1, t2)) {
                                 this.Error("can't merge '%s' with '%s'", t1.data, t2.data)
                                 return false
-                            }
-                            //					delete t1.next;
+                            } //					delete t1.next;
                             t1.next = t2.next
                             if (t2 === last) {
                                 last = t1
-                            }
-                            //					delete t2;
+                            } //					delete t2;
                             continue
                         }
                     }
                 }
                 t = t.next
-            }
-            // store the first and last token of the list
+            } // store the first and last token of the list
             firstToken[0] = first
-            lastToken[0] = last
-            // free all the parameter tokens
+            lastToken[0] = last // free all the parameter tokens
             i = 0
             while (i < define.numparms) {
                 pt = parms[i]
@@ -1615,8 +1522,7 @@ object Parser {
             val lastToken = arrayOf<idToken?>(null)
             if (!ExpandDefine(deftoken, define, firstToken, lastToken)) {
                 return false
-            }
-            // if the define is not empty
+            } // if the define is not empty
             if (firstToken[0] != null && lastToken[0] != null) {
                 firstToken[0]!!.linesCrossed += deftoken.linesCrossed
                 lastToken[0]!!.next = tokens
@@ -1629,8 +1535,7 @@ object Parser {
             var define: define_s?
             var newdefine: define_s
             define = globaldefines
-            while (define != null) {
-                //TODO:check if "define = globaldefines" is correct.
+            while (define != null) { //TODO:check if "define = globaldefines" is correct.
                 newdefine = CopyDefine(define)
                 AddDefineToHash(newdefine, definehash)
                 define = define.next
@@ -1643,18 +1548,15 @@ object Parser {
             var newtoken: idToken
             var lasttoken: idToken?
 
-//	newdefine = (define_t *) Mem_Alloc(sizeof(define_t) + strlen(define.name) + 1);
-            newdefine = define_s()
-            //copy the define name
-//	newdefine.name = (char *) newdefine + sizeof(define_t);
+            //	newdefine = (define_t *) Mem_Alloc(sizeof(define_t) + strlen(define.name) + 1);
+            newdefine = define_s() //copy the define name
+            //	newdefine.name = (char *) newdefine + sizeof(define_t);
             newdefine.name = define.name
             newdefine.flags = define.flags
             newdefine.builtin = define.builtin
-            newdefine.numparms = define.numparms
-            //the define is not linked
+            newdefine.numparms = define.numparms //the define is not linked
             newdefine.next = null
-            newdefine.hashnext = null
-            //copy the define tokens
+            newdefine.hashnext = null //copy the define tokens
             newdefine.tokens = null
             lasttoken = null
             token = define.tokens
@@ -1668,8 +1570,7 @@ object Parser {
                 }
                 lasttoken = newtoken
                 token = token.next
-            }
-            //copy the define parameters
+            } //copy the define parameters
             newdefine.parms = null
             lasttoken = null
             token = define.parms
@@ -1761,20 +1662,16 @@ object Parser {
                 return false
             }
             if (token.type == Token.TT_STRING) {
-                script = idLexer()
-                // try relative to the current file
+                script = idLexer() // try relative to the current file
                 path.set(scriptstack!!.GetFileName())
                 path.StripFilename()
                 path.plusAssign("/")
                 path.plusAssign(token)
-                if (!script.LoadFile(path.toString(), OSPath)) {
-                    // try absolute path
+                if (!script.LoadFile(path.toString(), OSPath)) { // try absolute path
                     path.set(token)
-                    if (!script.LoadFile(path.toString(), OSPath)) {
-                        // try from the include path
+                    if (!script.LoadFile(path.toString(), OSPath)) { // try from the include path
                         path.set(includepath.plus(token))
-                        if (!script.LoadFile(path.toString(), OSPath)) {
-//					delete script;
+                        if (!script.LoadFile(path.toString(), OSPath)) { //					delete script;
                             script = null
                         }
                     }
@@ -1802,8 +1699,7 @@ object Parser {
                     return true
                 }
                 script = idLexer()
-                if (!script.LoadFile(includepath.plus(path).toString(), OSPath)) {
-//			delete script;
+                if (!script.LoadFile(includepath.plus(path).toString(), OSPath)) { //			delete script;
                     script = null
                 }
             } else {
@@ -1975,10 +1871,7 @@ object Parser {
 
         @Throws(idException::class)
         private fun EvaluateTokens(
-            tokens: idToken?,
-            intValue: CInt,
-            floatValue: CFloat,
-            integer: Int
+            tokens: idToken?, intValue: CInt, floatValue: CFloat, integer: Int
         ): Boolean {
             var o: operator_s? = operator_s()
             var firstOperator: operator_s?
@@ -1996,8 +1889,7 @@ object Parser {
             var negativevalue = false
             var questmarkintvalue = false
             var questmarkfloatvalue = 0.0f
-            var gotquestmarkvalue = false
-            //
+            var gotquestmarkvalue = false //
             val operator_heap = arrayOfNulls<operator_s?>(MAX_OPERATORS)
             val numoperators = IntArray(1)
             val value_heap = arrayOfNulls<value_s?>(MAX_VALUES)
@@ -2031,8 +1923,7 @@ object Parser {
                             this.Error("defined() without name in #if/#elif")
                             error = true
                             break
-                        }
-                        //v = (value_t *) GetClearedMemory(sizeof(value_t));
+                        } //v = (value_t *) GetClearedMemory(sizeof(value_t));
                         error = AllocValue(v, value_heap, numvalues)
                         if (FindHashedDefine(definehash, t.toString()) != null) {
                             v!!.intValue = 1
@@ -2058,8 +1949,7 @@ object Parser {
                                 break
                             }
                         }
-                        brace = false
-                        // defined() creates a value
+                        brace = false // defined() creates a value
                         lastwasvalue = true
                     }
 
@@ -2068,8 +1958,7 @@ object Parser {
                             this.Error("syntax error in #if/#elif")
                             error = true
                             break
-                        }
-                        //v = (value_t *) GetClearedMemory(sizeof(value_t));
+                        } //v = (value_t *) GetClearedMemory(sizeof(value_t));
                         error = AllocValue(v, value_heap, numvalues)
                         if (negativevalue) {
                             v!!.intValue = -t.GetIntValue()
@@ -2086,10 +1975,8 @@ object Parser {
                         } else {
                             firstValue = v
                         }
-                        lastValue = v
-                        //last token was a value
-                        lastwasvalue = true
-                        //
+                        lastValue = v //last token was a value
+                        lastwasvalue = true //
                         negativevalue = false
                     }
 
@@ -2105,16 +1992,14 @@ object Parser {
                                 this.Error("too many ) in #if/#elsif")
                                 error = true
                             }
-                        } else {
-                            //check for invalid operators on floating point values
+                        } else { //check for invalid operators on floating point values
                             if (0 == integer) {
                                 if (t.subtype == Lexer.P_BIN_NOT || t.subtype == Lexer.P_MOD || t.subtype == Lexer.P_RSHIFT || t.subtype == Lexer.P_LSHIFT || t.subtype == Lexer.P_BIN_AND || t.subtype == Lexer.P_BIN_OR || t.subtype == Lexer.P_BIN_XOR) {
                                     this.Error("illigal operator '%s' on floating point operands\n", t)
                                     error = true
                                 }
                             }
-                            if (!error) {
-                                // In C++, P_SUB with !lastwasvalue breaks out of the inner switch
+                            if (!error) { // In C++, P_SUB with !lastwasvalue breaks out of the inner switch
                                 // (sets negativevalue, does NOT create an operator).
                                 // With lastwasvalue, P_SUB falls through to the operator cases.
                                 if (t.subtype == Lexer.P_SUB && !lastwasvalue) {
@@ -2147,8 +2032,7 @@ object Parser {
                                         }
                                     }
                                 }
-                                if (!error && !negativevalue) {
-                                    //o = (operator_t *) GetClearedMemory(sizeof(operator_t));
+                                if (!error && !negativevalue) { //o = (operator_t *) GetClearedMemory(sizeof(operator_t));
                                     error = AllocOperator(o, operator_heap, numoperators)
                                     o!!.op = t.subtype
                                     o.priority = PC_OperatorPriority(t.subtype)
@@ -2185,12 +2069,10 @@ object Parser {
                     this.Error("too many ( in #if/#elif")
                     error = true
                 }
-            }
-            //
+            } //
             gotquestmarkvalue = false
             questmarkintvalue = false
-            questmarkfloatvalue = 0.0f
-            //while there are operators
+            questmarkfloatvalue = 0.0f //while there are operators
             while (!error && firstOperator != null) {
                 v = firstValue
                 o = firstOperator
@@ -2200,20 +2082,16 @@ object Parser {
                     //than the next operator
                     if (o.parentheses > o.next!!.parentheses) {
                         break
-                    }
-                    //if the current and next operator are nested equally deep in parentheses
-                    if (o.parentheses == o.next!!.parentheses) {
-                        //if the priority of the current operator is equal or higher
+                    } //if the current and next operator are nested equally deep in parentheses
+                    if (o.parentheses == o.next!!.parentheses) { //if the priority of the current operator is equal or higher
                         //than the priority of the next operator
                         if (o.priority >= o.next!!.priority) {
                             break
                         }
-                    }
-                    //if the arity of the operator isn't equal to 1
+                    } //if the arity of the operator isn't equal to 1
                     if (o.op != Lexer.P_LOGIC_NOT && o.op != Lexer.P_BIN_NOT) {
                         v = v!!.next
-                    }
-                    //if there's no value or no next value
+                    } //if there's no value or no next value
                     if (null == v) {
                         this.Error("mising values in #if/#elif")
                         error = true
@@ -2340,22 +2218,18 @@ object Parser {
                         questmarkfloatvalue = v1.floatValue
                         gotquestmarkvalue = true
                     }
-                }
-                // #ifdef DEBUG_EVAL
+                } // #ifdef DEBUG_EVAL
                 // if (integer) Log_Write("result value = %d", v1.intvalue);
                 // else Log_Write("result value = %f", v1.floatvalue);
-// #endif //DEBUG_EVAL
+                // #endif //DEBUG_EVAL
                 if (error) {
                     break
-                }
-                //                lastoperatortype = o.op;
+                } //                lastoperatortype = o.op;
                 //if not an operator with arity 1
-                if (o.op != Lexer.P_LOGIC_NOT && o.op != Lexer.P_BIN_NOT) {
-                    //remove the second value if not question mark operator
+                if (o.op != Lexer.P_LOGIC_NOT && o.op != Lexer.P_BIN_NOT) { //remove the second value if not question mark operator
                     if (o.op != Lexer.P_QUESTIONMARK) {
                         v = v.next
-                    }
-                    //
+                    } //
                     if (v!!.prev != null) {
                         v.prev!!.next = v.next
                     } else {
@@ -2365,11 +2239,9 @@ object Parser {
                         v.next!!.prev = v.prev
                     } else {
                         lastValue = v.prev
-                    }
-                    //FreeMemory(v);
-//                    FreeValue(v);//TODO:does this macro do anytihng?
-                }
-                //remove the operator
+                    } //FreeMemory(v);
+                    //                    FreeValue(v);//TODO:does this macro do anytihng?
+                } //remove the operator
                 if (o.prev != null) {
                     o.prev!!.next = o.next
                 } else {
@@ -2379,9 +2251,8 @@ object Parser {
                     o.next!!.prev = o.prev
                 } else {
                     lastOperator = o.prev
-                }
-                //FreeMemory(o);
-//                FreeOperator(o);//TODO:see above
+                } //FreeMemory(o);
+                //                FreeOperator(o);//TODO:see above
             }
             if (firstValue != null) {
                 if (intValue._val != 0) {
@@ -2422,16 +2293,14 @@ object Parser {
             var define: define_s?
             var defined = false
             intvalue._val = 0
-            floatvalue._val = 0.0f
-            //
+            floatvalue._val = 0.0f //
             if (!ReadLine(token)) {
                 this.Error("no value after #if/#elif")
                 return false
             }
             firstToken = null
             lastToken = null
-            do {
-                //if the token is a name
+            do { //if the token is a name
                 if (token.type == Token.TT_NAME) {
                     if (defined) {
                         defined = false
@@ -2453,8 +2322,7 @@ object Parser {
                             firstToken = t
                         }
                         lastToken = t
-                    } else {
-                        //then it must be a define
+                    } else { //then it must be a define
                         define = FindHashedDefine(definehash, token.toString())
                         if (null == define) {
                             this.Error("can't Evaluate '%s', not defined", token)
@@ -2478,25 +2346,23 @@ object Parser {
                     this.Error("can't Evaluate '%s'", token)
                     return false
                 }
-            } while (ReadLine(token))
-            //
-            return EvaluateTokens(firstToken, intvalue, floatvalue, integer)
+            } while (ReadLine(token)) //
+            return EvaluateTokens(firstToken, intvalue, floatvalue, integer) //            //
+            //// #ifdef DEBUG_EVAL
+            //            // Log_Write("eval:");
+            //// #endif //DEBUG_EVAL
+            //            for (t = firsttoken; t != null; t = nexttoken) {
+            //// #ifdef DEBUG_EVAL
+            //                // Log_Write(" %s", t.c_str());
+            //// #endif //DEBUG_EVAL
+            //                nexttoken = t.next;
+            ////		delete t;
+            //            } //end for
+            //// #ifdef DEBUG_EVAL
+            //            // if (integer) Log_Write("eval result: %d", *intvalue);
+            //            // else Log_Write("eval result: %f", *floatvalue);
+            //// #endif //DEBUG_EVAL
             //            //
-//// #ifdef DEBUG_EVAL
-//            // Log_Write("eval:");
-//// #endif //DEBUG_EVAL
-//            for (t = firsttoken; t != null; t = nexttoken) {
-//// #ifdef DEBUG_EVAL
-//                // Log_Write(" %s", t.c_str());
-//// #endif //DEBUG_EVAL
-//                nexttoken = t.next;
-////		delete t;
-//            } //end for
-//// #ifdef DEBUG_EVAL
-//            // if (integer) Log_Write("eval result: %d", *intvalue);
-//            // else Log_Write("eval result: %f", *floatvalue);
-//// #endif //DEBUG_EVAL
-//            //
         }
 
         @Throws(idException::class)
@@ -2509,8 +2375,7 @@ object Parser {
             var t: idToken
             var define: define_s?
             intValue._val = 0
-            floatValue._val = 0.0f
-            //
+            floatValue._val = 0.0f //
             if (!ReadSourceToken(token)) {
                 this.Error("no leading ( after \$evalint/\$evalfloat")
                 return false
@@ -2522,8 +2387,7 @@ object Parser {
             indent = 1
             firstToken = null
             lasttoken = null
-            do {
-                //if the token is a name
+            do { //if the token is a name
                 if (token.type == Token.TT_NAME) {
                     if (defined) {
                         defined = false
@@ -2545,8 +2409,7 @@ object Parser {
                             firstToken = t
                         }
                         lasttoken = t
-                    } else {
-                        //then it must be a define
+                    } else { //then it must be a define
                         define = FindHashedDefine(definehash, token.toString())
                         if (null == define) {
                             this.Warning("can't Evaluate '%s', not defined", token)
@@ -2578,24 +2441,22 @@ object Parser {
                     this.Error("can't Evaluate '%s'", token)
                     return false
                 }
-            } while (ReadSourceToken(token))
-            //
-            return EvaluateTokens(firstToken, intValue, floatValue, integer)
-            // //
-// // #ifdef DEBUG_EVAL
+            } while (ReadSourceToken(token)) //
+            return EvaluateTokens(firstToken, intValue, floatValue, integer) // //
+            // // #ifdef DEBUG_EVAL
             // // Log_Write("$eval:");
-// // #endif //DEBUG_EVAL
+            // // #endif //DEBUG_EVAL
             // for (t = firsttoken; t; t = nexttoken) {
-// // #ifdef DEBUG_EVAL
+            // // #ifdef DEBUG_EVAL
             // // Log_Write(" %s", t.c_str());
-// // #endif //DEBUG_EVAL
+            // // #endif //DEBUG_EVAL
             // nexttoken = t.next;
             // delete t;
             // } //end for
-// // #ifdef DEBUG_EVAL
+            // // #ifdef DEBUG_EVAL
             // // if (integer) Log_Write("$eval result: %d", *intvalue);
             // // else Log_Write("$eval result: %f", *floatvalue);
-// // #endif //DEBUG_EVAL
+            // // #endif //DEBUG_EVAL
             // //
         }
 
@@ -2613,45 +2474,37 @@ object Parser {
                 UnreadSourceToken(token)
                 this.Error("expected name after #define, found '%s'", token)
                 return false
-            }
-            // check if the define already exists
+            } // check if the define already exists
             define = FindHashedDefine(definehash, token.toString())
             if (define != null) {
                 if (define.flags and DEFINE_FIXED != 0) {
                     this.Error("can't redefine '%s'", token)
                     return false
                 }
-                this.Warning("redefinition of '%s'", token)
-                // unread the define name before executing the #undef directive
+                this.Warning(
+                    "redefinition of '%s'", token
+                ) // unread the define name before executing the #undef directive
                 UnreadSourceToken(token)
                 if (!Directive_undef()) {
                     return false
-                }
-                // if the define was not removed (define.flags & DEFINE_FIXED)
+                } // if the define was not removed (define.flags & DEFINE_FIXED)
                 define = FindHashedDefine(definehash, token.toString())
-            }
-            // allocate define
-//	define = (define_t *) Mem_ClearedAlloc(sizeof(define_t) + token.Length() + 1);
-            define = define_s()
-            //	define.name = (char *) define + sizeof(define_t);
-            define.name = token.data
-            // add the define to the source
-            AddDefineToHash(define, definehash)
-            // if nothing is defined, just return
+            } // allocate define
+            //	define = (define_t *) Mem_ClearedAlloc(sizeof(define_t) + token.Length() + 1);
+            define = define_s() //	define.name = (char *) define + sizeof(define_t);
+            define.name = token.data // add the define to the source
+            AddDefineToHash(define, definehash) // if nothing is defined, just return
             if (!ReadLine(token)) {
                 return true
-            }
-            // if it is a define with parameters
-            if (!token.WhiteSpaceBeforeToken() && token.toString() == "(") {
-                // read the define parameters
+            } // if it is a define with parameters
+            if (!token.WhiteSpaceBeforeToken() && token.toString() == "(") { // read the define parameters
                 last = null
                 if (!CheckTokenString(")")) {
                     while (true) {
                         if (!ReadLine(token)) {
                             this.Error("expected define parameter")
                             return false
-                        }
-                        // if it isn't a name
+                        } // if it isn't a name
                         if (token.type != Token.TT_NAME) {
                             this.Error("invalid define parameter")
                             return false
@@ -2659,8 +2512,7 @@ object Parser {
                         if (FindDefineParm(define, token.toString()) >= 0) {
                             this.Error("two the same define parameters")
                             return false
-                        }
-                        // add the define parm
+                        } // add the define parm
                         t = idToken(token)
                         t.ClearTokenWhiteSpace()
                         t.next = null
@@ -2670,16 +2522,14 @@ object Parser {
                             define.parms = t
                         }
                         last = t
-                        define.numparms++
-                        // read next token
+                        define.numparms++ // read next token
                         if (!ReadLine(token)) {
                             this.Error("define parameters not terminated")
                             return false
                         }
                         if (token.toString() == ")") {
                             break
-                        }
-                        // then it must be a comma
+                        } // then it must be a comma
                         if (token.toString() != ",") {
                             this.Error("define not terminated")
                             return false
@@ -2689,8 +2539,7 @@ object Parser {
                 if (!ReadLine(token)) {
                     return true
                 }
-            }
-            // read the defined stuff
+            } // read the defined stuff
             last = null
             do {
                 t = idToken(token)
@@ -2707,8 +2556,7 @@ object Parser {
                 }
                 last = t
             } while (ReadLine(token))
-            if (last != null) {
-                // check for merge operators at the beginning or end
+            if (last != null) { // check for merge operators at the beginning or end
                 if (define.tokens.toString() == "##" || last.toString() == "##") {
                     this.Error("define with misplaced ##")
                     return false
@@ -2726,8 +2574,7 @@ object Parser {
             if (type._val == INDENT_ELSE) {
                 this.Error("misplaced #elif")
                 return false
-            }
-            // TODO: check if sending an empty CFloat is OK
+            } // TODO: check if sending an empty CFloat is OK
             if (!Evaluate(value, CFloat(), 1)) {
                 return false
             }
@@ -2752,8 +2599,7 @@ object Parser {
         private fun Directive_line(): Boolean {
             val token = idToken()
             this.Error("#line directive not supported")
-            while (ReadLine(token)) {
-                //TODO:??
+            while (ReadLine(token)) { //TODO:??
             }
             return true
         }
@@ -2784,8 +2630,7 @@ object Parser {
         private fun Directive_pragma(): Boolean {
             val token = idToken()
             this.Warning("#pragma directive not supported")
-            while (ReadLine(token)) {
-                //TODO::???
+            while (ReadLine(token)) { //TODO::???
             }
             return true
         }
@@ -2859,14 +2704,12 @@ object Parser {
             if (!ReadSourceToken(token)) {
                 this.Error("found '#' without name")
                 return false
-            }
-            //directive name must be on the same line
+            } //directive name must be on the same line
             if (token.linesCrossed > 0) {
                 UnreadSourceToken(token)
                 this.Error("found '#' at end of line")
                 return false
-            }
-            //if if is a name
+            } //if if is a name
             if (token.type == Token.TT_NAME) {
                 if (token.toString() == "ifdef") {
                     return Directive_ifdef()
@@ -2880,8 +2723,7 @@ object Parser {
                     return Directive_else()
                 } else if (token.toString() == "endif") {
                     return Directive_endif()
-                } else if (skip > 0) {
-                    // skip the rest of the line
+                } else if (skip > 0) { // skip the rest of the line
                     while (ReadLine(token)) {
                     }
                     return true
@@ -2963,14 +2805,12 @@ object Parser {
             if (!ReadSourceToken(token)) {
                 this.Error("found '$' without name")
                 return false
-            }
-            // directive name must be on the same line
+            } // directive name must be on the same line
             if (token.linesCrossed > 0) {
                 UnreadSourceToken(token)
                 this.Error("found '$' at end of line")
                 return false
-            }
-            // if if is a name
+            } // if if is a name
             if (token.type == Token.TT_NAME) {
                 if (token.toString() == "evalint") {
                     return DollarDirective_evalint()
@@ -3076,19 +2916,19 @@ object Parser {
             private fun FreeDefine(define: define_s) {
 
                 //free the define parameters
-//            for (t = define.parms; t; t = next) {
-//                next = t.next;
-//		delete t;
-//            }
+                //            for (t = define.parms; t; t = next) {
+                //                next = t.next;
+                //		delete t;
+                //            }
                 //free the define tokens
-//            for (t = define.tokens; t; t = next) {
-//                next = t.next;
-//		delete t;
-//            }
+                //            for (t = define.tokens; t; t = next) {
+                //                next = t.next;
+                //		delete t;
+                //            }
                 define.tokens = null
                 define.parms = define.tokens //TODO:check if nullifying doesn't break nothing.
                 //free the define
-//            Mem_Free(define);
+                //            Mem_Free(define);
             }
 
             @Throws(idException::class)
@@ -3097,15 +2937,13 @@ object Parser {
                 val def: define_s?
                 if (!src.LoadMemory(string, string.length, "*defineString")) {
                     return null
-                }
-                // create a define from the source
+                } // create a define from the source
                 if (!src.Directive_define()) {
                     src.FreeSource()
                     return null
                 }
                 def = src.CopyFirstDefine()
-                src.FreeSource()
-                //if the define was created succesfully
+                src.FreeSource() //if the define was created succesfully
                 return def
             }
         }

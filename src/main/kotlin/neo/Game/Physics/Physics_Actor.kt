@@ -106,8 +106,7 @@ class Physics_Actor {
         ================
         idPhysics_Actor::GetMasterDeltaYaw
         ================
-        */
-        // get delta yaw of master
+        */ // get delta yaw of master
         fun GetMasterDeltaYaw(): Float {
             return masterDeltaYaw
         }
@@ -116,8 +115,7 @@ class Physics_Actor {
         ================
         idPhysics_Actor::GetGroundEntity
         ================
-        */
-        // returns the ground entity
+        */ // returns the ground entity
         fun GetGroundEntity(): idEntity? {
             return groundEntityPtr.GetEntity()
         }
@@ -126,10 +124,8 @@ class Physics_Actor {
         ================
         idPhysics_Actor::SetClipModelAxis
         ================
-        */
-        // align the clip model with the gravity direction
-        fun SetClipModelAxis() {
-            // align clip model to gravity direction
+        */ // align the clip model with the gravity direction
+        fun SetClipModelAxis() { // align clip model to gravity direction
             if (gravityNormal[2] == -1.0f || gravityNormal == vec3_zero) {
                 clipModelAxis.Identity()
             } else {
@@ -146,8 +142,7 @@ class Physics_Actor {
         ================
         idPhysics_Actor::SetClipModel
         ================
-        */
-        // common physics interface
+        */ // common physics interface
         override fun SetClipModel(model: idClipModel?, density: Float, id: Int /*= 0*/, freeOld: Boolean /*= true*/) {
             assert(self != null)
             assert(
@@ -296,13 +291,25 @@ class Physics_Actor {
         override fun ClipTranslation(results: trace_s, translation: idVec3, model: idClipModel?) {
             if (model != null) {
                 Game_local.gameLocal.clip.TranslationModel(
-                    results, clipModel!!.GetOrigin(), clipModel!!.GetOrigin() + translation,
-                    clipModel, clipModel!!.GetAxis(), clipMask, model.Handle(), model.GetOrigin(), model.GetAxis()
+                    results,
+                    clipModel!!.GetOrigin(),
+                    clipModel!!.GetOrigin() + translation,
+                    clipModel,
+                    clipModel!!.GetAxis(),
+                    clipMask,
+                    model.Handle(),
+                    model.GetOrigin(),
+                    model.GetAxis()
                 )
             } else {
                 Game_local.gameLocal.clip.Translation(
-                    results, clipModel!!.GetOrigin(), clipModel!!.GetOrigin() + translation,
-                    clipModel, clipModel!!.GetAxis(), clipMask, self
+                    results,
+                    clipModel!!.GetOrigin(),
+                    clipModel!!.GetOrigin() + translation,
+                    clipModel,
+                    clipModel!!.GetAxis(),
+                    clipMask,
+                    self
                 )
             }
         }
@@ -315,13 +322,19 @@ class Physics_Actor {
         override fun ClipRotation(results: trace_s, rotation: idRotation, model: idClipModel?) {
             if (model != null) {
                 Game_local.gameLocal.clip.RotationModel(
-                    results, clipModel!!.GetOrigin(), rotation,
-                    clipModel, clipModel!!.GetAxis(), clipMask, model.Handle(), model.GetOrigin(), model.GetAxis()
+                    results,
+                    clipModel!!.GetOrigin(),
+                    rotation,
+                    clipModel,
+                    clipModel!!.GetAxis(),
+                    clipMask,
+                    model.Handle(),
+                    model.GetOrigin(),
+                    model.GetAxis()
                 )
             } else {
                 Game_local.gameLocal.clip.Rotation(
-                    results, clipModel!!.GetOrigin(), rotation,
-                    clipModel, clipModel!!.GetAxis(), clipMask, self
+                    results, clipModel!!.GetOrigin(), rotation, clipModel, clipModel!!.GetAxis(), clipMask, self
                 )
             }
         }

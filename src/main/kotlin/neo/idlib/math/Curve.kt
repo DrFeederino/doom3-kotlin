@@ -243,8 +243,7 @@ open class idCurve<T : idVec<T>>(private val factory: () -> T) {
         var mid: Int
         var offset: Int
         var res: Int
-        if (currentIndex >= 0 && currentIndex <= times.Num()) {
-            // use the cached index if it is still valid
+        if (currentIndex >= 0 && currentIndex <= times.Num()) { // use the cached index if it is still valid
             if (currentIndex == 0) {
                 if (time <= times[currentIndex]) {
                     return currentIndex
@@ -255,21 +254,16 @@ open class idCurve<T : idVec<T>>(private val factory: () -> T) {
                 }
             } else if (time > times[currentIndex - 1] && time <= times[currentIndex]) {
                 return currentIndex
-            } else if (time > times[currentIndex] && (currentIndex + 1 == times.Num() || time <= times[currentIndex + 1])
-            ) {
-                // use the next index
+            } else if (time > times[currentIndex] && (currentIndex + 1 == times.Num() || time <= times[currentIndex + 1])) { // use the next index
                 currentIndex++
                 return currentIndex
             }
-        }
-        // use binary search to find the index for the given time
+        } // use binary search to find the index for the given time
         len = times.Num()
         mid = len
         offset = 0
         res = 0
-        while (mid
-            > 0
-        ) {
+        while (mid > 0) {
             mid = len shr 1
             if (time == times[offset + mid]) {
                 return offset + mid
@@ -296,8 +290,7 @@ open class idCurve<T : idVec<T>>(private val factory: () -> T) {
     protected open fun TimeForIndex(index: Int): Float {
         val n = times.Num() - 1
         if (index < 0) {
-            return (times[0]
-                    + index * (times[1] - times[0]))
+            return (times[0] + index * (times[1] - times[0]))
         } else if (index > n) {
             return times[n] + (index - n) * (times[n] - times[n - 1])
         }
@@ -348,8 +341,7 @@ open class idCurve<T : idVec<T>>(private val factory: () -> T) {
         temp[0][0] = 0.5f * delta * (GetSpeed(t0) + GetSpeed(t1))
         i = 2
         m = 1
-        while (i <= order) {
-            // approximate using the trapezoid rule
+        while (i <= order) { // approximate using the trapezoid rule
             sum = 0.0f
             j = 1
             while (j <= m) {
@@ -522,8 +514,9 @@ class idCurve_Bezier<T : idVec<T>>(factory: () -> T) : idCurve<T>(factory) {
      first derivative of bezier basis functions
      ====================
      */
-    protected fun BasisFirstDerivative(order: Int, t: Float, bvals: FloatArray) {
-        // Store original bvals for the calculation
+    protected fun BasisFirstDerivative(
+        order: Int, t: Float, bvals: FloatArray
+    ) { // Store original bvals for the calculation
         val tempBvals = FloatArray(order)
         System.arraycopy(bvals, 0, tempBvals, 0, order)
 
@@ -545,8 +538,9 @@ class idCurve_Bezier<T : idVec<T>>(factory: () -> T) : idCurve<T>(factory) {
      second derivative of bezier basis functions
      ====================
      */
-    protected fun BasisSecondDerivative(order: Int, t: Float, bvals: FloatArray) {
-        // Store original bvals for the calculation
+    protected fun BasisSecondDerivative(
+        order: Int, t: Float, bvals: FloatArray
+    ) { // Store original bvals for the calculation
         val tempBvals = FloatArray(order)
         System.arraycopy(bvals, 0, tempBvals, 0, order)
 
@@ -1320,8 +1314,7 @@ class idCurve_CatmullRomSpline<T : idVec<T>>(factory: () -> T) : idCurve_Spline<
  *
  * ===============================================================================
  */
-class idCurve_KochanekBartelsSpline<T : idVec<T>>(factory: () -> T) :
-    idCurve_Spline<T>(factory) {
+class idCurve_KochanekBartelsSpline<T : idVec<T>>(factory: () -> T) : idCurve_Spline<T>(factory) {
     protected val bias: idFloatList = idFloatList()
     protected val continuity: idFloatList = idFloatList()
     protected val tension: idFloatList = idFloatList()
@@ -1708,9 +1701,7 @@ open class idCurve_BSpline<T : idVec<T>>     // default to cubic
      */
     protected fun BasisSecondDerivative(index: Int, order: Int, t: Float): Float {
         return BasisFirstDerivative(index, order - 1, t) - BasisFirstDerivative(
-            index + 1,
-            order - 1,
-            t
+            index + 1, order - 1, t
         ) * (order - 1).toFloat() / (TimeForIndex(index + (order - 1) - 2) - TimeForIndex(index - 2))
     }
 }
@@ -2005,8 +1996,9 @@ open class idCurve_NonUniformBSpline<T : idVec<T>>(factory: () -> T) : idCurve_B
      first derivative of spline basis functions
      ====================
      */
-    protected fun BasisFirstDerivative(index: Int, order: Int, t: Float, bvals: FloatArray) {
-        // Store original bvals for the calculation
+    protected fun BasisFirstDerivative(
+        index: Int, order: Int, t: Float, bvals: FloatArray
+    ) { // Store original bvals for the calculation
         val tempBvals = FloatArray(order)
         System.arraycopy(bvals, 0, tempBvals, 0, order)
 
@@ -2032,8 +2024,9 @@ open class idCurve_NonUniformBSpline<T : idVec<T>>(factory: () -> T) : idCurve_B
      second derivative of spline basis functions
      ====================
      */
-    protected fun BasisSecondDerivative(index: Int, order: Int, t: Float, bvals: FloatArray) {
-        // Store original bvals for the calculation
+    protected fun BasisSecondDerivative(
+        index: Int, order: Int, t: Float, bvals: FloatArray
+    ) { // Store original bvals for the calculation
         val tempBvals = FloatArray(order)
         System.arraycopy(bvals, 0, tempBvals, 0, order)
 

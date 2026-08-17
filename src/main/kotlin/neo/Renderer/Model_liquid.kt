@@ -94,8 +94,7 @@ object Model_liquid {
         private var verts_y: Int = 32
 
         init {
-            shader = DeclManager.declManager.FindMaterial(null as idStr?)
-            // ~30 hz
+            shader = DeclManager.declManager.FindMaterial(null as idStr?) // ~30 hz
             random.SetSeed(0)
         }
 
@@ -209,8 +208,7 @@ object Model_liquid {
 
             // build the information that will be common to all animations of this mesh:
             // sil edge connectivity and normal / tangent generation information
-            deformInfo =
-                R_BuildDeformInfo(verts.Num(), verts.getList(), tris.Num(), tris, true)
+            deformInfo = R_BuildDeformInfo(verts.Num(), verts.getList(), tris.Num(), tris, true)
             bounds.Clear()
             bounds.AddPoint(idVec3(0.0f, 0.0f, drop_height * -10.0f))
             bounds.AddPoint(idVec3((verts_x - 1) * scale_x, (verts_y - 1) * scale_y, drop_height * 10.0f))
@@ -225,9 +223,7 @@ object Model_liquid {
         }
 
         override fun InstantiateDynamicModel(
-            ent: renderEntity_s?,
-            view: viewDef_s?,
-            cachedModel: idRenderModel?
+            ent: renderEntity_s?, view: viewDef_s?, cachedModel: idRenderModel?
         ): idRenderModel? {
             var cachedModel: idRenderModel? = cachedModel
             val staticModel: idRenderModelStatic
@@ -248,8 +244,7 @@ object Model_liquid {
 
             // update the liquid model
             frames = (t - time) / update_tics
-            if (frames > LIQUID_MAX_SKIP_FRAMES) {
-                // don't let time accumalate when skipping frames
+            if (frames > LIQUID_MAX_SKIP_FRAMES) { // don't let time accumalate when skipping frames
                 time += update_tics * (frames - LIQUID_MAX_SKIP_FRAMES)
                 frames = LIQUID_MAX_SKIP_FRAMES
             }
@@ -267,8 +262,7 @@ object Model_liquid {
             return staticModel
         }
 
-        override fun Bounds(ent: renderEntity_s?): idBounds {
-            // FIXME: need to do this better
+        override fun Bounds(ent: renderEntity_s?): idBounds { // FIXME: need to do this better
             return (bounds)
         }
 
@@ -374,12 +368,11 @@ object Model_liquid {
             tri.silEdges = deformInfo!!.silEdges as Array<Model.silEdge_t?>
             tri.dominantTris = deformInfo!!.dominantTris as Array<Model.dominantTri_s?>
             tri.numVerts = deformInfo!!.numOutputVerts
-            R_AllocStaticTriSurfVerts(tri, tri.numVerts)
-            // deep copy - C++ memcpy copies bytes, Kotlin must copy objects
+            R_AllocStaticTriSurfVerts(
+                tri, tri.numVerts
+            ) // deep copy - C++ memcpy copies bytes, Kotlin must copy objects
             SIMDProcessor!!.Memcpy(
-                tri.verts as Array<idDrawVert>,
-                verts.getList() as Array<idDrawVert>,
-                deformInfo!!.numSourceVerts
+                tri.verts as Array<idDrawVert>, verts.getList(), deformInfo!!.numSourceVerts
             )
 
             // replicate the mirror seam vertexes
@@ -395,8 +388,7 @@ object Model_liquid {
             // R_DeriveTangents() to get normals, tangents, and face planes.  If it only
             // needs shadows generated, it will only have to generate face planes.  If it only
             // has ambient drawing, or is culled, no additional work will be necessary
-            if (!r_useDeferredTangents!!.GetBool()) {
-                // set face planes, vertex normals, tangents
+            if (!r_useDeferredTangents.GetBool()) { // set face planes, vertex normals, tangents
                 R_DeriveTangents(tri)
             }
             surf.geometry = tri
@@ -481,16 +473,8 @@ object Model_liquid {
                         p1 += verts_x
                         x = 1
                         while (x < verts_x - 1) {
-                            value = (((page2[p2 + x + verts_x]
-                                    + page2[p2 + x - verts_x]
-                                    + page2[p2 + x + 1]
-                                    + page2[p2 + x - 1]
-                                    + page2[(p2 + x) - verts_x - 1]
-                                    + page2[p2 + x - verts_x + 1]
-                                    + page2[p2 + x + verts_x - 1]
-                                    + page2[p2 + x + verts_x + 1]
-                                    + page2[p2 + x])) * (2.0f / 9.0f)
-                                    - page1[p1 + x])
+                            value =
+                                (((page2[p2 + x + verts_x] + page2[p2 + x - verts_x] + page2[p2 + x + 1] + page2[p2 + x - 1] + page2[(p2 + x) - verts_x - 1] + page2[p2 + x - verts_x + 1] + page2[p2 + x + verts_x - 1] + page2[p2 + x + verts_x + 1] + page2[p2 + x])) * (2.0f / 9.0f) - page1[p1 + x])
                             page1[p1 + x] = value * density
                             x++
                         }
@@ -505,15 +489,8 @@ object Model_liquid {
                         p1 += verts_x
                         x = 1
                         while (x < verts_x - 1) {
-                            value = (((page2[p2 + x + verts_x]
-                                    + page2[p2 + x - verts_x]
-                                    + page2[p2 + x + 1]
-                                    + page2[p2 + x - 1]
-                                    + page2[(p2 + x) - verts_x - 1]
-                                    + page2[p2 + x - verts_x + 1]
-                                    + page2[p2 + x + verts_x - 1]
-                                    + page2[p2 + x + verts_x + 1])) * 0.25f
-                                    - page1[p1 + x])
+                            value =
+                                (((page2[p2 + x + verts_x] + page2[p2 + x - verts_x] + page2[p2 + x + 1] + page2[p2 + x - 1] + page2[(p2 + x) - verts_x - 1] + page2[p2 + x - verts_x + 1] + page2[p2 + x + verts_x - 1] + page2[p2 + x + verts_x + 1])) * 0.25f - page1[p1 + x])
                             page1[p1 + x] = value * density
                             x++
                         }
@@ -528,15 +505,8 @@ object Model_liquid {
                         p1 += verts_x
                         x = 1
                         while (x < verts_x - 1) {
-                            value = ((page2[p2 + x + verts_x]
-                                    + page2[p2 + x - verts_x]
-                                    + page2[p2 + x + 1]
-                                    + page2[p2 + x - 1]
-                                    + page2[(p2 + x) - verts_x - 1]
-                                    + page2[p2 + x - verts_x + 1]
-                                    + page2[p2 + x + verts_x - 1]
-                                    + page2[p2 + x + verts_x + 1]
-                                    + page2[p2 + x])) * (1.0f / 9.0f)
+                            value =
+                                ((page2[p2 + x + verts_x] + page2[p2 + x - verts_x] + page2[p2 + x + 1] + page2[p2 + x - 1] + page2[(p2 + x) - verts_x - 1] + page2[p2 + x - verts_x + 1] + page2[p2 + x + verts_x - 1] + page2[p2 + x + verts_x + 1] + page2[p2 + x])) * (1.0f / 9.0f)
                             page1[p1 + x] = value * density
                             x++
                         }

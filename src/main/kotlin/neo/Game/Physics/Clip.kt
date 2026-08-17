@@ -43,7 +43,6 @@ import neo.idlib.geometry.TraceModel.idTraceModel
 import neo.idlib.geometry.Winding.idFixedWinding
 import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import java.util.*
 
 object Clip {
     const val MAX_SECTOR_DEPTH = 12
@@ -83,20 +82,14 @@ object Clip {
      ============
      */
     fun TestHugeTranslation(
-        results: trace_s,
-        mdl: idClipModel?,
-        start: idVec3,
-        end: idVec3,
-        trmAxis: idMat3
+        results: trace_s, mdl: idClipModel?, start: idVec3, end: idVec3, trmAxis: idMat3
     ): Boolean {
-        if (mdl != null && end.minus(start).LengthSqr() > Square(CM_MAX_TRACE_DIST)) {
-            // assert (false);
+        if (mdl != null && end.minus(start).LengthSqr() > Square(CM_MAX_TRACE_DIST)) { // assert (false);
             results.fraction = 0.0f
             results.endpos.set(start)
             results.endAxis.set(trmAxis)
             results.c = contactInfo_t() //memset( results.c, 0, sizeof( results.c ) );
-            results.c.point.set(start)
-            // D3XP/CTF: removed ENTITYNUM_WORLD assignment here — the memset/constructor
+            results.c.point.set(start) // D3XP/CTF: removed ENTITYNUM_WORLD assignment here — the memset/constructor
             // already sets entityNum to 0. In CTF, huge translations can occur benignly when
             // a player connects near a flag spawning nuggets.
             if (!isD3XP) {
@@ -111,11 +104,9 @@ object Clip {
                 )
             } else {
                 Game_local.gameLocal.Warning("huge translation for clip model %d", mdl.GetId())
-            }
-            // DG: also print coordinates for debugging
+            } // DG: also print coordinates for debugging
             Game_local.gameLocal.Warning(
-                "  from (%.2f %.2f %.2f) to (%.2f %.2f %.2f)",
-                start.x, start.y, start.z, end.x, end.y, end.z
+                "  from (%.2f %.2f %.2f) to (%.2f %.2f %.2f)", start.x, start.y, start.z, end.x, end.y, end.z
             )
             return true
         }
@@ -127,8 +118,7 @@ object Clip {
                 = 0
         var children: Array<clipSector_s?> = arrayOfNulls(2)
         var clipLinks: clipLink_s? = null
-        var dist = 0.0f //        private void oSet(clipSector_s clip) {
-        //            this.axis = clip.axis;
+        var dist = 0.0f //        private void oSet(clipSector_s clip) { //            this.axis = clip.axis;
         //            this.dist = clip.dist;
         //            this.children = clip.children;
         //            this.clipLinks = clip.clipLinks;
@@ -403,11 +393,9 @@ object Clip {
             }
 
             // set the abs box
-            if (axis.IsRotated()) {
-                // expand for rotation
+            if (axis.IsRotated()) { // expand for rotation
                 absBounds.FromTransformedBounds(bounds, origin, axis)
-            } else {
-                // normal
+            } else { // normal
                 absBounds[0] = bounds[0] + origin
                 absBounds[1] = bounds[1] + origin
             }
@@ -573,8 +561,7 @@ object Clip {
             return enabled
         }
 
-        fun IsEqual(trm: idTraceModel): Boolean {
-            // FIX: Was === (referential identity), C++ uses *GetCachedTraceModel() == trm (structural equality)
+        fun IsEqual(trm: idTraceModel): Boolean { // FIX: Was === (referential identity), C++ uses *GetCachedTraceModel() == trm (structural equality)
             return traceModelIndex != -1 && GetCachedTraceModel(traceModelIndex) == trm
         }
 
@@ -589,11 +576,9 @@ object Clip {
                 collisionModelHandle
             } else if (traceModelIndex != -1) {
                 collisionModelManager.SetupTrmModel(
-                    GetCachedTraceModel(traceModelIndex),
-                    arrayOf(material)
+                    GetCachedTraceModel(traceModelIndex), arrayOf(material)
                 )
-            } else {
-                // this happens in multiplayer on the combat models
+            } else { // this happens in multiplayer on the combat models
                 Game_local.gameLocal.Warning(
                     "idClipModel::Handle: clip model %d on '%s' (%x) is not a collision or trace model",
                     id,
@@ -618,9 +603,7 @@ object Clip {
         fun GetMassProperties(density: Float, mass: CFloat, centerOfMass: idVec3, inertiaTensor: idMat3) {
             if (traceModelIndex == -1) {
                 idGameLocal.Error(
-                    "idClipModel::GetMassProperties: clip model %d on '%s' is not a trace model\n",
-                    id,
-                    entity!!.name
+                    "idClipModel::GetMassProperties: clip model %d on '%s' is not a trace model\n", id, entity!!.name
                 )
             }
             val entry: trmCache_s = traceModelCache[traceModelIndex]
@@ -692,8 +675,7 @@ object Clip {
         idClipModel::~idClipModel
         ================
         */
-        protected fun _deconstructor() {
-            // make sure the clip model is no longer linked
+        protected fun _deconstructor() { // make sure the clip model is no longer linked
             Unlink()
             if (traceModelIndex != -1) {
                 FreeTraceModel(traceModelIndex)
@@ -804,8 +786,7 @@ object Clip {
             ===============
             */
             fun FreeTraceModel(traceModelIndex: Int) {
-                if (traceModelIndex < 0 || traceModelIndex >= traceModelCache.Num() || traceModelCache[traceModelIndex].refCount <= 0
-                ) {
+                if (traceModelIndex < 0 || traceModelIndex >= traceModelCache.Num() || traceModelCache[traceModelIndex].refCount <= 0) {
                     Game_local.gameLocal.Warning("idClipModel::FreeTraceModel: tried to free uncached trace model")
                     return
                 }
@@ -829,9 +810,7 @@ object Clip {
             private fun GetTraceModelHashKey(trm: idTraceModel): Int {
                 val v = trm.bounds[0]
                 return trm.type.ordinal shl 8 xor (trm.numVerts shl 4) xor (trm.numEdges shl 2) xor (trm.numPolys shl 0) xor idMath.FloatHash(
-                    v.x,
-                    v.y,
-                    v.z
+                    v.x, v.y, v.z
                 )
             }
 
@@ -885,27 +864,19 @@ object Clip {
             val maxSector = vec3_origin
 
             // clear clip sectors
-            clipSectors = Array(MAX_SECTORS) { clipSector_s() }
-            //	memset( clipSectors, 0, MAX_SECTORS * sizeof( clipSector_t ) );
+            clipSectors =
+                Array(MAX_SECTORS) { clipSector_s() } //	memset( clipSectors, 0, MAX_SECTORS * sizeof( clipSector_t ) );
             numClipSectors = 0
-            touchCount = -1
-            // get world map bounds
+            touchCount = -1 // get world map bounds
             h = collisionModelManager.LoadModel("worldMap", false)
-            collisionModelManager.GetModelBounds(h, worldBounds)
-            // create world sectors
+            collisionModelManager.GetModelBounds(h, worldBounds) // create world sectors
             CreateClipSectors_r(0, worldBounds, maxSector)
             size.set(worldBounds[1].minus(worldBounds[0]))
             Game_local.gameLocal.Printf(
-                "map bounds are (%1.1f, %1.1f, %1.1f)\n",
-                size[0],
-                size[1],
-                size[2]
+                "map bounds are (%1.1f, %1.1f, %1.1f)\n", size[0], size[1], size[2]
             )
             Game_local.gameLocal.Printf(
-                "max clip sector is (%1.1f, %1.1f, %1.1f)\n",
-                maxSector[0],
-                maxSector[1],
-                maxSector[2]
+                "max clip sector is (%1.1f, %1.1f, %1.1f)\n", maxSector[0], maxSector[1], maxSector[2]
             )
 
             // initialize a default clip model
@@ -925,8 +896,7 @@ object Clip {
         idClip::Shutdown
         ===============
         */
-        fun Shutdown() {
-//	delete[] clipSectors;
+        fun Shutdown() { //	delete[] clipSectors;
             clipSectors = Array(0) { clipSector_s() }
 
             // free the trace model used for the temporaryClipModel
@@ -939,20 +909,23 @@ object Clip {
             if (defaultClipModel.traceModelIndex != -1) {
                 idClipModel.FreeTraceModel(defaultClipModel.traceModelIndex)
                 defaultClipModel.traceModelIndex = -1
-            }
-            //
-//            clipLinkAllocator.Shutdown();
+            } //
+            //            clipLinkAllocator.Shutdown();
         }
 
         /*
         ============
         idClip::Translation
         ============
-        */
-        // clip versus the rest of the world
+        */ // clip versus the rest of the world
         fun Translation(
-            results: trace_s, start: idVec3, end: idVec3,
-            mdl: idClipModel?, trmAxis: idMat3, contentMask: Int, passEntity: idEntity?
+            results: trace_s,
+            start: idVec3,
+            end: idVec3,
+            mdl: idClipModel?,
+            trmAxis: idMat3,
+            contentMask: Int,
+            passEntity: idEntity?
         ): Boolean {
             var i: Int
             val num: Int
@@ -966,19 +939,10 @@ object Clip {
                 return true
             }
             trm = TraceModelForClipModel(mdl)
-            if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) {
-                // test world
+            if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) { // test world
                 numTranslations++
                 collisionModelManager.Translation(
-                    results,
-                    start,
-                    end,
-                    trm,
-                    trmAxis,
-                    contentMask,
-                    0,
-                    vec3_origin,
-                    idMat3.getMat3_default()
+                    results, start, end, trm, trmAxis, contentMask, 0, vec3_origin, idMat3.getMat3_default()
                 )
                 results.c.entityNum =
                     if (results.fraction != 1.0f) Game_local.ENTITYNUM_WORLD else Game_local.ENTITYNUM_NONE
@@ -1013,15 +977,7 @@ object Clip {
                 } else {
                     numTranslations++
                     collisionModelManager.Translation(
-                        trace,
-                        start,
-                        end,
-                        trm,
-                        trmAxis,
-                        contentMask,
-                        touch.Handle(),
-                        touch.origin,
-                        touch.axis
+                        trace, start, end, trm, trmAxis, contentMask, touch.Handle(), touch.origin, touch.axis
                     )
                 }
                 if (trace.fraction < results.fraction) {
@@ -1043,8 +999,13 @@ object Clip {
         ============
         */
         fun Rotation(
-            results: trace_s, start: idVec3, rotation: idRotation,
-            mdl: idClipModel?, trmAxis: idMat3, contentMask: Int, passEntity: idEntity?
+            results: trace_s,
+            start: idVec3,
+            rotation: idRotation,
+            mdl: idClipModel?,
+            trmAxis: idMat3,
+            contentMask: Int,
+            passEntity: idEntity?
         ): Boolean {
             var i: Int
             val num: Int
@@ -1054,27 +1015,17 @@ object Clip {
             val trace = sharedTrace
             val trm: idTraceModel?
             trm = TraceModelForClipModel(mdl)
-            if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) {
-                // test world
+            if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) { // test world
                 numRotations++
                 collisionModelManager.Rotation(
-                    results,
-                    start,
-                    rotation,
-                    trm!!,
-                    trmAxis,
-                    contentMask,
-                    0,
-                    vec3_origin,
-                    idMat3.getMat3_default()
+                    results, start, rotation, trm!!, trmAxis, contentMask, 0, vec3_origin, idMat3.getMat3_default()
                 )
                 results.c.entityNum =
                     if (results.fraction != 1.0f) Game_local.ENTITYNUM_WORLD else Game_local.ENTITYNUM_NONE
                 if (results.fraction == 0.0f) {
                     return true // blocked immediately by the world
                 }
-            } else {
-//		memset( &results, 0, sizeof( results ) );
+            } else { //		memset( &results, 0, sizeof( results ) );
                 results.fraction = 1.0f
                 results.endpos.set(start)
                 results.endAxis.set(trmAxis.times(rotation.ToMat3()))
@@ -1100,15 +1051,7 @@ object Clip {
                 }
                 numRotations++
                 collisionModelManager.Rotation(
-                    trace,
-                    start,
-                    rotation,
-                    trm!!,
-                    trmAxis,
-                    contentMask,
-                    touch.Handle(),
-                    touch.origin,
-                    touch.axis
+                    trace, start, rotation, trm!!, trmAxis, contentMask, touch.Handle(), touch.origin, touch.axis
                 )
                 if (trace.fraction < results.fraction) {
                     results.set(trace)
@@ -1129,8 +1072,14 @@ object Clip {
         ============
         */
         fun Motion(
-            results: trace_s, start: idVec3, end: idVec3, rotation: idRotation,
-            mdl: idClipModel?, trmAxis: idMat3, contentMask: Int, passEntity: idEntity?
+            results: trace_s,
+            start: idVec3,
+            end: idVec3,
+            rotation: idRotation,
+            mdl: idClipModel?,
+            trmAxis: idMat3,
+            contentMask: Int,
+            passEntity: idEntity?
         ): Boolean {
             var i: Int
             var num: Int
@@ -1148,17 +1097,13 @@ object Clip {
             if (TestHugeTranslation(results, mdl, start, end, trmAxis)) {
                 return true
             }
-            if (mdl != null && rotation.GetAngle() != 0.0f && rotation.GetVec() != vec3_origin) {
-                // if no translation
-                if (start == end) {
-                    // pure rotation
+            if (mdl != null && rotation.GetAngle() != 0.0f && rotation.GetVec() != vec3_origin) { // if no translation
+                if (start == end) { // pure rotation
                     return Rotation(results, start, rotation, mdl, trmAxis, contentMask, passEntity)
                 }
-            } else if (start != end) {
-                // pure translation
+            } else if (start != end) { // pure translation
                 return Translation(results, start, end, mdl, trmAxis, contentMask, passEntity)
-            } else {
-                // no motion
+            } else { // no motion
                 results.fraction = 1.0f
                 results.endpos.set(start)
                 results.endAxis.set(trmAxis)
@@ -1166,24 +1111,14 @@ object Clip {
             }
             trm = TraceModelForClipModel(mdl)!!
             radius = trm.bounds.GetRadius()
-            if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) {
-                // translational collision with world
+            if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) { // translational collision with world
                 numTranslations++
                 collisionModelManager.Translation(
-                    translationalTrace,
-                    start,
-                    end,
-                    trm,
-                    trmAxis,
-                    contentMask,
-                    0,
-                    vec3_origin,
-                    idMat3.getMat3_default()
+                    translationalTrace, start, end, trm, trmAxis, contentMask, 0, vec3_origin, idMat3.getMat3_default()
                 )
                 translationalTrace.c.entityNum =
                     if (translationalTrace.fraction != 1.0f) Game_local.ENTITYNUM_WORLD else Game_local.ENTITYNUM_NONE
-            } else {
-//		memset( &translationalTrace, 0, sizeof( translationalTrace ) );
+            } else { //		memset( &translationalTrace, 0, sizeof( translationalTrace ) );
                 translationalTrace.clear()
                 translationalTrace.fraction = 1.0f
                 translationalTrace.endpos.set(end)
@@ -1215,15 +1150,7 @@ object Clip {
                     } else {
                         numTranslations++
                         collisionModelManager.Translation(
-                            trace,
-                            start,
-                            end,
-                            trm,
-                            trmAxis,
-                            contentMask,
-                            touch.Handle(),
-                            touch.origin,
-                            touch.axis
+                            trace, start, end, trm, trmAxis, contentMask, touch.Handle(), touch.origin, touch.axis
                         )
                     }
                     if (trace.fraction < translationalTrace.fraction) {
@@ -1239,12 +1166,10 @@ object Clip {
             } else {
                 num = -1
             }
-            endPosition.set(translationalTrace.endpos)
-            // Create a copy of rotation with the new origin — C++ copies by value,
+            endPosition.set(translationalTrace.endpos) // Create a copy of rotation with the new origin — C++ copies by value,
             // Kotlin would alias the caller's rotation parameter if we did endRotation = rotation
             val endRotation = idRotation(endPosition, rotation.GetVec(), rotation.GetAngle())
-            if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) {
-                // rotational collision with world
+            if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) { // rotational collision with world
                 numRotations++
                 collisionModelManager.Rotation(
                     rotationalTrace,
@@ -1259,8 +1184,7 @@ object Clip {
                 )
                 rotationalTrace.c.entityNum =
                     if (rotationalTrace.fraction != 1.0f) Game_local.ENTITYNUM_WORLD else Game_local.ENTITYNUM_NONE
-            } else {
-//		memset( &rotationalTrace, 0, sizeof( rotationalTrace ) );
+            } else { //		memset( &rotationalTrace, 0, sizeof( rotationalTrace ) );
                 rotationalTrace.clear()
                 rotationalTrace.fraction = 1.0f
                 rotationalTrace.endpos.set(endPosition)
@@ -1323,8 +1247,15 @@ object Clip {
         ============
         */
         fun Contacts(
-            contacts: Array<contactInfo_t>, maxContacts: Int, start: idVec3, dir: idVec6, depth: Float,
-            mdl: idClipModel?, trmAxis: idMat3, contentMask: Int, passEntity: idEntity?
+            contacts: Array<contactInfo_t>,
+            maxContacts: Int,
+            start: idVec3,
+            dir: idVec6,
+            depth: Float,
+            mdl: idClipModel?,
+            trmAxis: idMat3,
+            contentMask: Int,
+            passEntity: idEntity?
         ): Int {
             var i: Int
             var j: Int
@@ -1336,25 +1267,25 @@ object Clip {
             val traceBounds = sharedTraceBounds
             val trm: idTraceModel
             trm = TraceModelForClipModel(mdl)!!
-            numContacts = if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) {
-                // test world
-                this.numContacts++
-                collisionModelManager.Contacts(
-                    contacts,
-                    maxContacts,
-                    start,
-                    dir,
-                    depth,
-                    trm,
-                    trmAxis,
-                    contentMask,
-                    0,
-                    vec3_origin,
-                    idMat3.getMat3_default()
-                )
-            } else {
-                0
-            }
+            numContacts =
+                if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) { // test world
+                    this.numContacts++
+                    collisionModelManager.Contacts(
+                        contacts,
+                        maxContacts,
+                        start,
+                        dir,
+                        depth,
+                        trm,
+                        trmAxis,
+                        contentMask,
+                        0,
+                        vec3_origin,
+                        idMat3.getMat3_default()
+                    )
+                } else {
+                    0
+                }
             i = 0
             while (i < numContacts) {
                 contacts[i].entityNum = Game_local.ENTITYNUM_WORLD
@@ -1387,9 +1318,17 @@ object Clip {
                 this.numContacts++
                 val contactz = contacts.copyOfRange(numContacts, contacts.size)
                 n = collisionModelManager.Contacts(
-                    contactz, maxContacts - numContacts,
-                    start, dir, depth, trm, trmAxis, contentMask,
-                    touch.Handle(), touch.origin, touch.axis
+                    contactz,
+                    maxContacts - numContacts,
+                    start,
+                    dir,
+                    depth,
+                    trm,
+                    trmAxis,
+                    contentMask,
+                    touch.Handle(),
+                    touch.origin,
+                    touch.axis
                 )
                 j = 0
                 while (j < n) {
@@ -1413,11 +1352,7 @@ object Clip {
         ============
         */
         fun Contents(
-            start: idVec3,
-            mdl: idClipModel?,
-            trmAxis: idMat3,
-            contentMask: Int,
-            passEntity: idEntity?
+            start: idVec3, mdl: idClipModel?, trmAxis: idMat3, contentMask: Int, passEntity: idEntity?
         ): Int {
             var i: Int
             val num: Int
@@ -1427,17 +1362,10 @@ object Clip {
             val traceBounds = sharedTraceBounds
             val trm: idTraceModel?
             trm = TraceModelForClipModel(mdl)
-            contents = if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) {
-                // test world
+            contents = if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) { // test world
                 numContents++
                 collisionModelManager.Contents(
-                    start,
-                    trm,
-                    trmAxis,
-                    contentMask,
-                    0,
-                    vec3_origin,
-                    idMat3.getMat3_default()
+                    start, trm, trmAxis, contentMask, 0, vec3_origin, idMat3.getMat3_default()
                 )
             } else {
                 0
@@ -1479,13 +1407,7 @@ object Clip {
                 }
                 numContents++
                 if (collisionModelManager.Contents(
-                        start,
-                        trm,
-                        trmAxis,
-                        contentMask,
-                        touch.Handle(),
-                        touch.origin,
-                        touch.axis
+                        start, trm, trmAxis, contentMask, touch.Handle(), touch.origin, touch.axis
                     ) != 0
                 ) {
                     contents = contents or (touch.contents and contentMask)
@@ -1497,33 +1419,18 @@ object Clip {
 
         // special case translations versus the rest of the world
         fun TracePoint(
-            results: trace_s,
-            start: idVec3,
-            end: idVec3,
-            contentMask: Int,
-            passEntity: idEntity?
+            results: trace_s, start: idVec3, end: idVec3, contentMask: Int, passEntity: idEntity?
         ): Boolean {
             Translation(results, start, end, null, idMat3.getMat3_identity(), contentMask, passEntity)
             return results.fraction < 1.0f
         }
 
         fun TraceBounds(
-            results: trace_s,
-            start: idVec3,
-            end: idVec3,
-            bounds: idBounds,
-            contentMask: Int,
-            passEntity: idEntity?
+            results: trace_s, start: idVec3, end: idVec3, bounds: idBounds, contentMask: Int, passEntity: idEntity?
         ): Boolean {
             temporaryClipModel.LoadModel(idTraceModel(bounds))
             Translation(
-                results,
-                start,
-                end,
-                temporaryClipModel,
-                idMat3.getMat3_identity(),
-                contentMask,
-                passEntity
+                results, start, end, temporaryClipModel, idMat3.getMat3_identity(), contentMask, passEntity
             )
             return results.fraction < 1.0f
         }
@@ -1532,8 +1439,7 @@ object Clip {
         ============
         idClip::TranslationModel
         ============
-        */
-        // clip versus a specific model
+        */ // clip versus a specific model
         fun TranslationModel(
             results: trace_s,
             start: idVec3,
@@ -1548,15 +1454,7 @@ object Clip {
             val trm = TraceModelForClipModel(mdl)
             numTranslations++
             collisionModelManager.Translation(
-                results,
-                start,
-                end,
-                trm,
-                trmAxis,
-                contentMask,
-                model,
-                modelOrigin,
-                modelAxis
+                results, start, end, trm, trmAxis, contentMask, model, modelOrigin, modelAxis
             )
         }
 
@@ -1579,15 +1477,7 @@ object Clip {
             val trm = TraceModelForClipModel(mdl)!!
             numRotations++
             collisionModelManager.Rotation(
-                results,
-                start,
-                rotation,
-                trm,
-                trmAxis,
-                contentMask,
-                model,
-                modelOrigin,
-                modelAxis
+                results, start, rotation, trm, trmAxis, contentMask, model, modelOrigin, modelAxis
             )
         }
 
@@ -1612,17 +1502,7 @@ object Clip {
             val trm = TraceModelForClipModel(mdl)!!
             numContacts++
             return collisionModelManager.Contacts(
-                contacts,
-                maxContacts,
-                start,
-                dir,
-                depth,
-                trm,
-                trmAxis,
-                contentMask,
-                model,
-                modelOrigin,
-                modelAxis
+                contacts, maxContacts, start, dir, depth, trm, trmAxis, contentMask, model, modelOrigin, modelAxis
             )
         }
 
@@ -1632,19 +1512,13 @@ object Clip {
         ============
         */
         fun ContentsModel(
-            start: idVec3, mdl: idClipModel?, trmAxis: idMat3, contentMask: Int,
-            /*cmHandle_t*/model: Int, modelOrigin: idVec3, modelAxis: idMat3
+            start: idVec3, mdl: idClipModel?, trmAxis: idMat3, contentMask: Int,/*cmHandle_t*/
+            model: Int, modelOrigin: idVec3, modelAxis: idMat3
         ): Int {
             val trm = TraceModelForClipModel(mdl)!!
             numContents++
             return collisionModelManager.Contents(
-                start,
-                trm,
-                trmAxis,
-                contentMask,
-                model,
-                modelOrigin,
-                modelAxis
+                start, trm, trmAxis, contentMask, model, modelOrigin, modelAxis
             )
         }
 
@@ -1652,11 +1526,15 @@ object Clip {
         ============
         idClip::TranslationEntities
         ============
-        */
-        // clip versus all entities but not the world
+        */ // clip versus all entities but not the world
         fun TranslationEntities(
-            results: trace_s, start: idVec3, end: idVec3,
-            mdl: idClipModel?, trmAxis: idMat3, contentMask: Int, passEntity: idEntity?
+            results: trace_s,
+            start: idVec3,
+            end: idVec3,
+            mdl: idClipModel?,
+            trmAxis: idMat3,
+            contentMask: Int,
+            passEntity: idEntity?
         ) {
             var i: Int
             val num: Int
@@ -1696,8 +1574,7 @@ object Clip {
                 } else {
                     numTranslations++
                     collisionModelManager.Translation(
-                        trace, start, end, trm, trmAxis, contentMask,
-                        touch.Handle(), touch.origin, touch.axis
+                        trace, start, end, trm, trmAxis, contentMask, touch.Handle(), touch.origin, touch.axis
                     )
                 }
                 if (trace.fraction < results.fraction) {
@@ -1716,12 +1593,9 @@ object Clip {
         ============
         idClip::GetModelContactFeature
         ============
-        */
-        // get a contact feature
+        */ // get a contact feature
         fun GetModelContactFeature(
-            contact: contactInfo_t,
-            clipModel: idClipModel?,
-            winding: idFixedWinding
+            contact: contactInfo_t, clipModel: idClipModel?, winding: idFixedWinding
         ): Boolean {
             var i: Int
             var   /*cmHandle_t*/handle: Int
@@ -1737,8 +1611,7 @@ object Clip {
                     return true
                 } else if (clipModel.traceModelIndex != -1) {
                     collisionModelManager.SetupTrmModel(
-                        idClipModel.GetCachedTraceModel(clipModel.traceModelIndex),
-                        arrayOf(clipModel.material)
+                        idClipModel.GetCachedTraceModel(clipModel.traceModelIndex), arrayOf(clipModel.material)
                     )
                 } else {
                     clipModel.collisionModelHandle
@@ -1752,10 +1625,7 @@ object Clip {
 
                         // the model contact feature is a collision model edge
                         collisionModelManager.GetModelEdge(
-                            handle,
-                            contact.modelFeature,
-                            start,
-                            end
+                            handle, contact.modelFeature, start, end
                         )
                         winding.plusAssign(start)
                         winding.plusAssign(end)
@@ -1772,9 +1642,7 @@ object Clip {
 
                         // the model contact feature is a collision model polygon
                         collisionModelManager.GetModelPolygon(
-                            handle,
-                            contact.modelFeature,
-                            winding
+                            handle, contact.modelFeature, winding
                         )
                     }
 
@@ -1798,13 +1666,9 @@ object Clip {
         ================
         idClip::EntitiesTouchingBounds
         ================
-        */
-        // get entities/clip models within or touching the given bounds
+        */ // get entities/clip models within or touching the given bounds
         fun EntitiesTouchingBounds(
-            bounds: idBounds,
-            contentMask: Int,
-            entityList: Array<idEntity?>,
-            maxCount: Int
+            bounds: idBounds, contentMask: Int, entityList: Array<idEntity?>, maxCount: Int
         ): Int {
             val clipModelList = sharedClipModelList
             var i: Int
@@ -1848,15 +1712,10 @@ object Clip {
         ================
         */
         fun ClipModelsTouchingBounds(
-            bounds: idBounds,
-            contentMask: Int,
-            clipModelList: Array<idClipModel?>,
-            maxCount: Int
+            bounds: idBounds, contentMask: Int, clipModelList: Array<idClipModel?>, maxCount: Int
         ): Int {
             val parms = listParms_s()
-            if (bounds[0, 0] > bounds[1, 0] || bounds[0, 1] > bounds[1, 1] || bounds[0, 2] > bounds[1, 2]
-            ) {
-                // we should not go through the tree for degenerate or backwards bounds
+            if (bounds[0, 0] > bounds[1, 0] || bounds[0, 1] > bounds[1, 1] || bounds[0, 2] > bounds[1, 2]) { // we should not go through the tree for degenerate or backwards bounds
                 assert(false)
                 return 0
             }
@@ -1883,12 +1742,16 @@ object Clip {
         ============
         idClip::PrintStatistics
         ============
-        */
-        // stats and debug drawing
+        */ // stats and debug drawing
         fun PrintStatistics() {
             Game_local.gameLocal.Printf(
                 "t = %-3d, r = %-3d, m = %-3d, render = %-3d, contents = %-3d, contacts = %-3d\n",
-                numTranslations, numRotations, numMotions, numRenderModelTraces, numContents, numContacts
+                numTranslations,
+                numRotations,
+                numMotions,
+                numRenderModelTraces,
+                numContents,
+                numContacts
             )
             numContacts = 0
             numContents = numContacts
@@ -1922,11 +1785,7 @@ object Clip {
                     Game_local.gameRenderWorld!!.DebugBounds(colorCyan, clipModel.GetAbsBounds())
                 } else {
                     collisionModelManager.DrawModel(
-                        clipModel.Handle(),
-                        clipModel.GetOrigin(),
-                        clipModel.GetAxis(),
-                        eye,
-                        radius
+                        clipModel.Handle(), clipModel.GetOrigin(), clipModel.GetAxis(), eye, radius
                     )
                 }
                 i++
@@ -1948,10 +1807,7 @@ object Clip {
             axis = contact.normal.ToMat3()
             if (winding.GetNumPoints() == 1) {
                 Game_local.gameRenderWorld!!.DebugLine(
-                    colorCyan,
-                    winding[0].ToVec3(),
-                    winding[0].ToVec3() + axis[0] * 2.0f,
-                    lifetime
+                    colorCyan, winding[0].ToVec3(), winding[0].ToVec3() + axis[0] * 2.0f, lifetime
                 )
                 Game_local.gameRenderWorld!!.DebugLine(
                     colorWhite,
@@ -1969,10 +1825,7 @@ object Clip {
                 i = 0
                 while (i < winding.GetNumPoints()) {
                     Game_local.gameRenderWorld!!.DebugLine(
-                        colorCyan,
-                        winding[i].ToVec3(),
-                        winding[(i + 1) % winding.GetNumPoints()].ToVec3(),
-                        lifetime
+                        colorCyan, winding[i].ToVec3(), winding[(i + 1) % winding.GetNumPoints()].ToVec3(), lifetime
                     )
                     i++
                 }
@@ -2003,8 +1856,7 @@ object Clip {
             val anode: clipSector_s
             val size = idVec3()
             val front = idBounds()
-            val back = idBounds()
-            //clipSectors[numClipSectors++] = clipSector_s()
+            val back = idBounds() //clipSectors[numClipSectors++] = clipSector_s()
             anode = clipSectors!![numClipSectors++]
             if (depth == MAX_SECTOR_DEPTH) {
                 anode.axis = -1
@@ -2085,8 +1937,7 @@ object Clip {
                 }
 
                 // if the bounds really do overlap
-                if (check.absBounds[0, 0] > parms.bounds[1, 0] || check.absBounds[1, 0] < parms.bounds[0, 0] || check.absBounds[0, 1] > parms.bounds[1, 1] || check.absBounds[1, 1] < parms.bounds[0, 1] || check.absBounds[0, 2] > parms.bounds[1, 2] || check.absBounds[1, 2] < parms.bounds[0, 2]
-                ) {
+                if (check.absBounds[0, 0] > parms.bounds[1, 0] || check.absBounds[1, 0] < parms.bounds[0, 0] || check.absBounds[0, 1] > parms.bounds[1, 1] || check.absBounds[1, 1] < parms.bounds[0, 1] || check.absBounds[0, 2] > parms.bounds[1, 2] || check.absBounds[1, 2] < parms.bounds[0, 2]) {
                     link = link.nextInSector
                     continue
                 }
@@ -2119,8 +1970,7 @@ object Clip {
                         )
                     } else {
                         idGameLocal.Error(
-                            "TraceModelForClipModel: clip model %d is not a trace model\n",
-                            mdl.GetId()
+                            "TraceModelForClipModel: clip model %d is not a trace model\n", mdl.GetId()
                         )
                     }
                 }
@@ -2140,10 +1990,7 @@ object Clip {
          ====================
          */
         private fun GetTraceClipModels(
-            bounds: idBounds,
-            contentMask: Int,
-            passEntity: idEntity?,
-            clipModelList: Array<idClipModel?>
+            bounds: idBounds, contentMask: Int, passEntity: idEntity?, clipModelList: Array<idClipModel?>
         ): Int {
             var i: Int
             val num: Int
@@ -2185,12 +2032,7 @@ object Clip {
         ============
         */
         private fun TraceRenderModel(
-            trace: trace_s,
-            start: idVec3,
-            end: idVec3,
-            radius: Float,
-            axis: idMat3,
-            touch: idClipModel
+            trace: trace_s, start: idVec3, end: idVec3, radius: Float, axis: idMat3, touch: idClipModel
         ) {
             trace.fraction = 1.0f
 
@@ -2210,8 +2052,7 @@ object Clip {
                     trace.c.modelFeature = 0
                     trace.c.trmFeature = 0
                     trace.c.contents = modelTrace.material!!.GetContentFlags()
-                    trace.c.material = modelTrace.material
-                    // NOTE: trace.c.id will be the joint number
+                    trace.c.material = modelTrace.material // NOTE: trace.c.id will be the joint number
                     touch.id = JOINT_HANDLE_TO_CLIPMODEL_ID(modelTrace.jointNumber)
                 }
             }

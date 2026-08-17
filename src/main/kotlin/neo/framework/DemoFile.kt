@@ -110,8 +110,7 @@ object DemoFile {
          ================
          */
         fun Log(p: String?) {
-            if (fLog != null && p != null && p.isNotEmpty()) {
-                // FIX: C++ uses fLog->Write(p, strlen(p)), raw write without length prefix
+            if (fLog != null && p != null && p.isNotEmpty()) { // FIX: C++ uses fLog->Write(p, strlen(p)), raw write without length prefix
                 val bytes = p.toByteArray()
                 fLog!!.Write(ByteBuffer.wrap(bytes), bytes.size)
             }
@@ -141,9 +140,7 @@ object DemoFile {
                 f!!.Read(fileImage!!, fileLength)
                 FileSystem_h.fileSystem.CloseFile(f!!)
                 f = idFile_Memory(
-                    Str.va("preloaded(%s)", fileName),
-                    fileImage!!,
-                    fileLength
+                    Str.va("preloaded(%s)", fileName), fileImage!!, fileLength
                 )
             }
 
@@ -158,12 +155,11 @@ object DemoFile {
 
             // FIX: Compare bytes directly like C++ memcmp, including null terminator
             val expectedMagic = ByteArray(magicLen)
-            DEMO_MAGIC.toByteArray().copyInto(expectedMagic)
-            // expectedMagic[DEMO_MAGIC.length] is already 0 (null terminator, matching C++)
+            DEMO_MAGIC.toByteArray()
+                .copyInto(expectedMagic) // expectedMagic[DEMO_MAGIC.length] is already 0 (null terminator, matching C++)
             if (magicBuffer.array().contentEquals(expectedMagic)) {
                 f!!.ReadInt(compression)
-            } else {
-                // Ideally we would error out if the magic string isn't there,
+            } else { // Ideally we would error out if the magic string isn't there,
                 // but for backwards compatibility we are going to assume it's just an uncompressed demo file
                 compression._val = 0
                 f!!.Rewind()
@@ -198,8 +194,8 @@ object DemoFile {
             // including the null terminator. The original Kotlin used WriteString which adds
             // a 4-byte length prefix - completely wrong format.
             val magicBytes = ByteArray(magicLen)
-            DEMO_MAGIC.toByteArray().copyInto(magicBytes)
-            // magicBytes[DEMO_MAGIC.length] is already 0 (null terminator, matching C++)
+            DEMO_MAGIC.toByteArray()
+                .copyInto(magicBytes) // magicBytes[DEMO_MAGIC.length] is already 0 (null terminator, matching C++)
             f!!.Write(ByteBuffer.wrap(magicBytes), magicLen)
 
             f!!.WriteInt(com_compressDemos.GetInteger())
@@ -249,16 +245,16 @@ object DemoFile {
             val index = CInt()
 
             if (log && fLog != null) {
-                val text = Str.va("%s > Reading hash string\n", logStr.toString())
-                // FIX: C++ uses fLog->Write(text, strlen(text)), raw write without length prefix
+                val text = Str.va(
+                    "%s > Reading hash string\n", logStr.toString()
+                ) // FIX: C++ uses fLog->Write(text, strlen(text)), raw write without length prefix
                 val bytes = text.toByteArray()
                 fLog!!.Write(ByteBuffer.wrap(bytes), bytes.size)
             }
 
             ReadInt(index)
 
-            if (index._val == -1) {
-                // read a new string for the table
+            if (index._val == -1) { // read a new string for the table
                 val data = idStr()
                 ReadString(data)
                 demoStrings.Append(data)
@@ -280,8 +276,9 @@ object DemoFile {
          */
         fun WriteHashString(str: String) {
             if (log && fLog != null) {
-                val text = Str.va("%s > Writing hash string\n", logStr.toString())
-                // FIX: C++ uses fLog->Write(text, strlen(text)), raw write without length prefix
+                val text = Str.va(
+                    "%s > Writing hash string\n", logStr.toString()
+                ) // FIX: C++ uses fLog->Write(text, strlen(text)), raw write without length prefix
                 val bytes = text.toByteArray()
                 fLog!!.Write(ByteBuffer.wrap(bytes), bytes.size)
             }
@@ -295,8 +292,7 @@ object DemoFile {
             }
 
             // add it to our table and the demo table
-            val copy = idStr(str)
-            //common.Printf( "hash:%i = %s\n", demoStrings.Num(), str );
+            val copy = idStr(str) //common.Printf( "hash:%i = %s\n", demoStrings.Num(), str );
             demoStrings.Append(copy)
             val cmd = -1
             WriteInt(cmd)
@@ -346,8 +342,7 @@ object DemoFile {
 
         override fun Read(buffer: ByteBuffer, len: Int): Int {
             val read = compressor!!.Read(buffer, len)
-            if (read == 0 && len >= 4) {
-                // FIX: C++ writes at buffer start: *(demoSystem_t *)buffer = DS_FINISHED
+            if (read == 0 && len >= 4) { // FIX: C++ writes at buffer start: *(demoSystem_t *)buffer = DS_FINISHED
                 // Use absolute putInt(index, value) to write at position 0 regardless of
                 // the current buffer position after compressor.Read.
                 buffer.putInt(0, demoSystem_t.DS_FINISHED.ordinal)
@@ -359,8 +354,7 @@ object DemoFile {
          ================
          idDemoFile::Write
          ================
-         */
-        // FIX: Must override Write(ByteBuffer) to delegate to Write(ByteBuffer, Int).
+         */ // FIX: Must override Write(ByteBuffer) to delegate to Write(ByteBuffer, Int).
         // The base idFile.Write(ByteBuffer) fatal errors instead of delegating (unlike
         // Read(ByteBuffer) which correctly delegates). Without this override, all calls
         // through WriteInt/WriteString on idDemoFile would crash.
@@ -380,12 +374,7 @@ object DemoFile {
                 "com_compressDemos",
                 "1",
                 CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_ARCHIVE,
-                "Compression scheme for demo files\n" +
-                        "0: None    (Fast, large files)\n" +
-                        "1: LZW     (Fast to compress, Fast to decompress, medium/small files)\n" +
-                        "2: LZSS    (Slow to compress, Fast to decompress, small files)\n" +
-                        "3: Huffman (Fast to compress, Slow to decompress, medium files)\n" +
-                        "See also: The 'CompressDemo' command"
+                "Compression scheme for demo files\n" + "0: None    (Fast, large files)\n" + "1: LZW     (Fast to compress, Fast to decompress, medium/small files)\n" + "2: LZSS    (Slow to compress, Fast to decompress, small files)\n" + "3: Huffman (Fast to compress, Slow to decompress, medium files)\n" + "See also: The 'CompressDemo' command"
             )
 
             private val com_logDemos: idCVar = idCVar(

@@ -75,11 +75,7 @@ object DeviceContext {
     }
 
     fun CstAdjustParmsForAnchor(
-        anchor: CstAnchor,
-        _xScale: CFloat,
-        _yScale: CFloat,
-        _xOffset: CFloat,
-        _yOffset: CFloat
+        anchor: CstAnchor, _xScale: CFloat, _yScale: CFloat, _xOffset: CFloat, _yOffset: CFloat
     ) {
         val vidWidth = VIRTUAL_WIDTH.toFloat()
         val vidHeight = VIRTUAL_HEIGHT.toFloat()
@@ -276,8 +272,7 @@ object DeviceContext {
         //#modified-fva; BEGIN
         private var cst_xOffset: Float = 0.0f
         private var cst_yOffset: Float = 0.0f
-        private var cstAdjustCoords: Boolean = false
-        //#modified-fva; END
+        private var cstAdjustCoords: Boolean = false //#modified-fva; END
 
         // DG: this is used for the "make sure menus are rendered as 4:3" hack
         val fixScaleForMenu = idVec2()
@@ -357,8 +352,7 @@ object DeviceContext {
                 val h = renderSystem.GetScreenHeight().toFloat()
                 val aspectRatio = w / h
                 val virtualAspectRatio = VIRTUAL_WIDTH.toFloat() / VIRTUAL_HEIGHT.toFloat() // 4:3
-                if (aspectRatio > 1.4f) {
-                    // widescreen (4:3 is 1.333 3:2 is 1.5, 16:10 is 1.6, 16:9 is 1.7778)
+                if (aspectRatio > 1.4f) { // widescreen (4:3 is 1.333 3:2 is 1.5, 16:10 is 1.6, 16:9 is 1.7778)
                     // => we need to scale and offset X
                     // All the coordinates here assume 640x480 (VIRTUAL_WIDTH x VIRTUAL_HEIGHT)
                     // screensize, so to fit a 4:3 menu into 640x480 stretched to a widescreen,
@@ -368,8 +362,7 @@ object DeviceContext {
                     val offsetX = (1.0f - scaleX) * (VIRTUAL_WIDTH * 0.5f) // (640 - scale*640)/2
                     fixScaleForMenu.set(scaleX, 1f)
                     fixOffsetForMenu.set(offsetX, 0f)
-                } else if (aspectRatio < 1.24f) {
-                    // portrait-mode, "thinner" than 5:4 (which is 1.25)
+                } else if (aspectRatio < 1.24f) { // portrait-mode, "thinner" than 5:4 (which is 1.25)
                     // => we need to scale and offset Y
                     // it's analogue to the other case, but inverted and with height and Y
                     val scaleY = aspectRatio / virtualAspectRatio
@@ -406,13 +399,7 @@ object DeviceContext {
 
 
         fun DrawMaterial(
-            x: Float,
-            y: Float,
-            w: Float,
-            h: Float,
-            mat: idMaterial?,
-            color: idVec4?,
-            scalex: Float = 1.0f
+            x: Float, y: Float, w: Float, h: Float, mat: idMaterial?, color: idVec4?, scalex: Float = 1.0f
         ) {
             DrawMaterial(x, y, w, h, mat, color, scalex, 1.0f)
         }
@@ -437,9 +424,7 @@ object DeviceContext {
             val x1 = floatArrayOf(x)
             val y1 = floatArrayOf(y)
             val w1 = floatArrayOf(w)
-            val h1 = floatArrayOf(h)
-            //
-//  handle negative scales as well
+            val h1 = floatArrayOf(h) // //  handle negative scales as well
             if (scaleX < 0) {
                 w1[0] *= -1.0f
                 scaleX *= -1.0f
@@ -447,8 +432,7 @@ object DeviceContext {
             if (scaleY < 0) {
                 h1[0] *= -1.0f
                 scaleY *= -1.0f
-            }
-            //
+            } //
             if (w1[0] < 0) {    // flip about vertical
                 w1[0] = -w1[0]
                 s0[0] = 1 * scaleX
@@ -475,8 +459,7 @@ object DeviceContext {
 
             DrawStretchPic(x1[0], y1[0], w1[0], h1[0], s0[0], t0[0], s1[0], t1[0], mat)
             */
-            DrawStretchPic(x1[0], y1[0], w1[0], h1[0], s0[0], t0[0], s1[0], t1[0], mat, true)
-            //#modified-fva; END
+            DrawStretchPic(x1[0], y1[0], w1[0], h1[0], s0[0], t0[0], s1[0], t1[0], mat, true) //#modified-fva; END
         }
 
         fun DrawRect(x: Float, y: Float, width: Float, height: Float, size: Float, color: idVec4?) {
@@ -490,8 +473,7 @@ object DeviceContext {
             renderSystem.SetColor(color)
             if (ClippedCoords(x1, y1, w1, h1, null, null, null, null)) {
                 return
-            }
-            //#modified-fva; BEGIN
+            } //#modified-fva; BEGIN
             /*
             AdjustCoords(x1, y1, w1, h1)
             DrawStretchPic(x1[0], y1[0], size, h1[0], 0.0f, 0.0f, 0.0f, 0.0f, whiteImage)
@@ -501,20 +483,19 @@ object DeviceContext {
             */
             DrawStretchPic(x1[0], y1[0] + size, size, h1[0] - 2.0f * size, 0f, 0f, 0f, 0f, whiteImage, true)
             DrawStretchPic(
-                x1[0] + w1[0] - size,
-                y1[0] + size,
+                x1[0] + w1[0] - size, y1[0] + size, size, h1[0] - 2.0f * size, 0f, 0f, 0f, 0f, whiteImage, true
+            )
+            DrawStretchPic(x1[0], y1[0], w1[0], size, 0f, 0f, 0f, 0f, whiteImage, true)
+            DrawStretchPic(
+                x1[0], y1[0] + h1[0] - size, w1[0],
                 size,
-                h1[0] - 2.0f * size,
                 0f,
                 0f,
                 0f,
                 0f,
                 whiteImage,
                 true
-            )
-            DrawStretchPic(x1[0], y1[0], w1[0], size, 0f, 0f, 0f, 0f, whiteImage, true)
-            DrawStretchPic(x1[0], y1[0] + h1[0] - size, w1[0], size, 0f, 0f, 0f, 0f, whiteImage, true)
-            //#modified-fva; END
+            ) //#modified-fva; END
 
         }
 
@@ -536,8 +517,7 @@ object DeviceContext {
             AdjustCoords(x1, y1, w1, h1)
             DrawStretchPic(x1[0], y1[0], w1[0], h1[0], 0.0f, 0.0f, 0.0f, 0.0f, whiteImage)
             */
-            DrawStretchPic(x1[0], y1[0], w1[0], h1[0], 0.0f, 0.0f, 0.0f, 0.0f, whiteImage, true)
-            //#modified-fva; END
+            DrawStretchPic(x1[0], y1[0], w1[0], h1[0], 0.0f, 0.0f, 0.0f, 0.0f, whiteImage, true) //#modified-fva; END
         }
 
 
@@ -595,13 +575,13 @@ object DeviceContext {
                         p = text[p_i++]
                     }
                 }
-                var nextCharWidth = (if (CharIsPrintable(p.code)) CharWidth(p, textScale) else cursorSkip).toInt()
-                // FIXME: this is a temp hack until the guis can be fixed not not overflow the bounding rectangles
+                var nextCharWidth = (if (CharIsPrintable(p.code)) CharWidth(
+                    p, textScale
+                ) else cursorSkip).toInt() // FIXME: this is a temp hack until the guis can be fixed not not overflow the bounding rectangles
                 //	      the side-effect is that list boxes and edit boxes will draw over their scroll bars
                 //  The following line and the !linebreak in the if statement below should be removed
                 nextCharWidth = 0
-                if (!lineBreak && textWidth + nextCharWidth > rectDraw.w) {
-                    // The next character will cause us to overflow, if we haven't yet found a suitable
+                if (!lineBreak && textWidth + nextCharWidth > rectDraw.w) { // The next character will cause us to overflow, if we haven't yet found a suitable
                     // break spot, set it to be this character
                     if (len > 0 && newLine == 0) {
                         newLine = len
@@ -609,8 +589,7 @@ object DeviceContext {
                         newLineWidth = textWidth.toInt()
                     }
                     wordBreak = true
-                } else if (lineBreak || wrap && (p == ' ' || p == '\t')) {
-                    // The next character is in view, so if we are a break character, store our position
+                } else if (lineBreak || wrap && (p == ' ' || p == '\t')) { // The next character is in view, so if we are a break character, store our position
                     newLine = len
                     newLinePtr = p_i + 1
                     newLineWidth = textWidth.toInt()
@@ -622,8 +601,7 @@ object DeviceContext {
                     } else if (textAlign == (ALIGN.ALIGN_CENTER).ordinal) {
                         x = rectDraw.x + (rectDraw.w - newLineWidth) / 2
                     }
-                    if (wrap || newLine > 0) {
-                        // This is a special case to handle breaking in the middle of a word.
+                    if (wrap || newLine > 0) { // This is a special case to handle breaking in the middle of a word.
                         // if we didn't do this, the cursor would appear on the end of this line
                         // and the beginning of the next.
                         if (wordBreak && cursor >= newLine && newLine == len) {
@@ -632,17 +610,7 @@ object DeviceContext {
                     }
                     if (!calcOnly) {
                         count += DrawText(
-                            x,
-                            y,
-                            textScale,
-                            color,
-                            text,
-                            lineStart,
-                            lineStart + newLine,
-                            0.0f,
-                            0,
-                            0,
-                            cursor
+                            x, y, textScale, color, text, lineStart, lineStart + newLine, 0.0f, 0, 0, cursor
                         )
                     }
                     if (cursor < newLine) {
@@ -672,11 +640,9 @@ object DeviceContext {
                     continue
                 }
                 p_i++
-                len++
-                // update the width
+                len++ // update the width
                 if (p.code != C_COLOR_ESCAPE && (len <= 1 || text[p_i - 2].code != C_COLOR_ESCAPE)) {
-                    textWidth += textScale * useFont!!.glyphScale * useFont!!.glyphs[p.code]!!.xSkip
-                    // Jim Dosé, I don't know who you are..but I hate you.
+                    textWidth += textScale * useFont!!.glyphScale * useFont!!.glyphs[p.code]!!.xSkip // Jim Dosé, I don't know who you are..but I hate you.
                 }
             }
             return FtoiFast(rectDraw.w / charSkip)
@@ -709,13 +675,7 @@ object DeviceContext {
         }
 
         fun DrawMaterialRect(
-            x: Float,
-            y: Float,
-            w: Float,
-            h: Float,
-            size: Float,
-            mat: idMaterial?,
-            color: idVec4
+            x: Float, y: Float, w: Float, h: Float, size: Float, mat: idMaterial?, color: idVec4
         ) {
             if (color.w == 0.0f) {
                 return
@@ -815,15 +775,13 @@ object DeviceContext {
 
             //#modified-fva; BEGIN
             if (adjustCoords) {
-                for (i in 0 until 4) {
-                    // Note: if cstAdjustCoords == false; cst_*Offset is 0, so that doesn't require special handling
+                for (i in 0 until 4) { // Note: if cstAdjustCoords == false; cst_*Offset is 0, so that doesn't require special handling
                     val x = verts[i].xyz[0] * xScale + cst_xOffset
                     val y = verts[i].xyz[1] * yScale + cst_yOffset
                     verts[i].xyz[0] = x * fixScaleForMenu.x + fixOffsetForMenu.x
                     verts[i].xyz[1] = y * fixScaleForMenu.y + fixOffsetForMenu.y
                 }
-            }
-            //#modified-fva; END
+            } //#modified-fva; END
 
             renderSystem.DrawStretchPic(verts, indexes, 4, 6, shader, identity)
         }
@@ -849,8 +807,7 @@ object DeviceContext {
             val x1 = floatArrayOf(x)
             val y1 = floatArrayOf(y)
             val w1 = floatArrayOf(w)
-            val h1 = floatArrayOf(h)
-            //
+            val h1 = floatArrayOf(h) //
             //  handle negative scales as well
             if (scalex < 0) {
                 w1[0] *= -1.0f
@@ -859,8 +816,7 @@ object DeviceContext {
             if (scaley < 0) {
                 h1[0] *= -1.0f
                 scaley *= -1.0f
-            }
-            //
+            } //
             if (w1[0] < 0) {    // flip about vertical
                 w1[0] = -w1[0]
                 s0[0] = 1 * scalex
@@ -879,15 +835,15 @@ object DeviceContext {
             }
             if (angle == 0.0f && ClippedCoords(x1, y1, w1, h1, s0, t0, s1, t1)) {
                 return
-            }
-            //#modified-fva; BEGIN
+            } //#modified-fva; BEGIN
             /*
             AdjustCoords(x1, y1, w1, h1)
 
             DrawStretchPicRotated(x1[0], y1[0], w1[0], h1[0], s0[0], t0[0], s1[0], t1[0], mat, angle)
             */
-            DrawStretchPicRotated(x1[0], y1[0], w1[0], h1[0], s0[0], t0[0], s1[0], t1[0], mat, angle, true)
-            //#modified-fva; END
+            DrawStretchPicRotated(
+                x1[0], y1[0], w1[0], h1[0], s0[0], t0[0], s1[0], t1[0], mat, angle, true
+            ) //#modified-fva; END
         }
 
         //#modified-fva; BEGIN
@@ -921,75 +877,75 @@ object DeviceContext {
             val verts = stretchPicRotatedVerts
             val indexes = stretchPicRotatedIndexes
             verts[0].xyz[0] = x
-            verts[0]!!.xyz[1] = y
-            verts[0]!!.xyz[2] = 0.0f
-            verts[0]!!.st[0] = s0
-            verts[0]!!.st[1] = t0
-            verts[0]!!.normal[0] = 0.0f
-            verts[0]!!.normal[1] = 0.0f
-            verts[0]!!.normal[2] = 1.0f
-            verts[0]!!.tangents[0][0] = 1.0f
-            verts[0]!!.tangents[0][1] = 0.0f
-            verts[0]!!.tangents[0][2] = 0.0f
-            verts[0]!!.tangents[1][0] = 0.0f
-            verts[0]!!.tangents[1][1] = 1.0f
-            verts[0]!!.tangents[1][2] = 0.0f
-            verts[1]!!.xyz[0] = x + w
-            verts[1]!!.xyz[1] = y
-            verts[1]!!.xyz[2] = 0.0f
-            verts[1]!!.st[0] = s1
-            verts[1]!!.st[1] = t0
-            verts[1]!!.normal[0] = 0.0f
-            verts[1]!!.normal[1] = 0.0f
-            verts[1]!!.normal[2] = 1.0f
-            verts[1]!!.tangents[0][0] = 1.0f
-            verts[1]!!.tangents[0][1] = 0.0f
-            verts[1]!!.tangents[0][2] = 0.0f
-            verts[1]!!.tangents[1][0] = 0.0f
-            verts[1]!!.tangents[1][1] = 1.0f
-            verts[1]!!.tangents[1][2] = 0.0f
-            verts[2]!!.xyz[0] = x + w
-            verts[2]!!.xyz[1] = y + h
-            verts[2]!!.xyz[2] = 0.0f
-            verts[2]!!.st[0] = s1
-            verts[2]!!.st[1] = t1
-            verts[2]!!.normal[0] = 0.0f
-            verts[2]!!.normal[1] = 0.0f
-            verts[2]!!.normal[2] = 1.0f
-            verts[2]!!.tangents[0][0] = 1.0f
-            verts[2]!!.tangents[0][1] = 0.0f
-            verts[2]!!.tangents[0][2] = 0.0f
-            verts[2]!!.tangents[1][0] = 0.0f
-            verts[2]!!.tangents[1][1] = 1.0f
-            verts[2]!!.tangents[1][2] = 0.0f
-            verts[3]!!.xyz[0] = x
-            verts[3]!!.xyz[1] = y + h
-            verts[3]!!.xyz[2] = 0.0f
-            verts[3]!!.st[0] = s0
-            verts[3]!!.st[1] = t1
-            verts[3]!!.normal[0] = 0.0f
-            verts[3]!!.normal[1] = 0.0f
-            verts[3]!!.normal[2] = 1.0f
-            verts[3]!!.tangents[0][0] = 1.0f
-            verts[3]!!.tangents[0][1] = 0.0f
-            verts[3]!!.tangents[0][2] = 0.0f
-            verts[3]!!.tangents[1][0] = 0.0f
-            verts[3]!!.tangents[1][1] = 1.0f
-            verts[3]!!.tangents[1][2] = 0.0f
+            verts[0].xyz[1] = y
+            verts[0].xyz[2] = 0.0f
+            verts[0].st[0] = s0
+            verts[0].st[1] = t0
+            verts[0].normal[0] = 0.0f
+            verts[0].normal[1] = 0.0f
+            verts[0].normal[2] = 1.0f
+            verts[0].tangents[0][0] = 1.0f
+            verts[0].tangents[0][1] = 0.0f
+            verts[0].tangents[0][2] = 0.0f
+            verts[0].tangents[1][0] = 0.0f
+            verts[0].tangents[1][1] = 1.0f
+            verts[0].tangents[1][2] = 0.0f
+            verts[1].xyz[0] = x + w
+            verts[1].xyz[1] = y
+            verts[1].xyz[2] = 0.0f
+            verts[1].st[0] = s1
+            verts[1].st[1] = t0
+            verts[1].normal[0] = 0.0f
+            verts[1].normal[1] = 0.0f
+            verts[1].normal[2] = 1.0f
+            verts[1].tangents[0][0] = 1.0f
+            verts[1].tangents[0][1] = 0.0f
+            verts[1].tangents[0][2] = 0.0f
+            verts[1].tangents[1][0] = 0.0f
+            verts[1].tangents[1][1] = 1.0f
+            verts[1].tangents[1][2] = 0.0f
+            verts[2].xyz[0] = x + w
+            verts[2].xyz[1] = y + h
+            verts[2].xyz[2] = 0.0f
+            verts[2].st[0] = s1
+            verts[2].st[1] = t1
+            verts[2].normal[0] = 0.0f
+            verts[2].normal[1] = 0.0f
+            verts[2].normal[2] = 1.0f
+            verts[2].tangents[0][0] = 1.0f
+            verts[2].tangents[0][1] = 0.0f
+            verts[2].tangents[0][2] = 0.0f
+            verts[2].tangents[1][0] = 0.0f
+            verts[2].tangents[1][1] = 1.0f
+            verts[2].tangents[1][2] = 0.0f
+            verts[3].xyz[0] = x
+            verts[3].xyz[1] = y + h
+            verts[3].xyz[2] = 0.0f
+            verts[3].st[0] = s0
+            verts[3].st[1] = t1
+            verts[3].normal[0] = 0.0f
+            verts[3].normal[1] = 0.0f
+            verts[3].normal[2] = 1.0f
+            verts[3].tangents[0][0] = 1.0f
+            verts[3].tangents[0][1] = 0.0f
+            verts[3].tangents[0][2] = 0.0f
+            verts[3].tangents[1][0] = 0.0f
+            verts[3].tangents[1][1] = 1.0f
+            verts[3].tangents[1][2] = 0.0f
             val ident = !mat.IsIdentity()
             if (ident) {
-                verts[0]!!.xyz.minusAssign(origin)
-                verts[0]!!.xyz.timesAssign(mat)
-                verts[0]!!.xyz.plusAssign(origin)
-                verts[1]!!.xyz.minusAssign(origin)
-                verts[1]!!.xyz.timesAssign(mat)
-                verts[1]!!.xyz.plusAssign(origin)
-                verts[2]!!.xyz.minusAssign(origin)
-                verts[2]!!.xyz.timesAssign(mat)
-                verts[2]!!.xyz.plusAssign(origin)
-                verts[3]!!.xyz.minusAssign(origin)
-                verts[3]!!.xyz.timesAssign(mat)
-                verts[3]!!.xyz.plusAssign(origin)
+                verts[0].xyz.minusAssign(origin)
+                verts[0].xyz.timesAssign(mat)
+                verts[0].xyz.plusAssign(origin)
+                verts[1].xyz.minusAssign(origin)
+                verts[1].xyz.timesAssign(mat)
+                verts[1].xyz.plusAssign(origin)
+                verts[2].xyz.minusAssign(origin)
+                verts[2].xyz.timesAssign(mat)
+                verts[2].xyz.plusAssign(origin)
+                verts[3].xyz.minusAssign(origin)
+                verts[3].xyz.timesAssign(mat)
+                verts[3].xyz.plusAssign(origin)
             }
 
             //Generate a translation so we can translate to the center of the image rotate and draw
@@ -1007,12 +963,11 @@ object DeviceContext {
             rotz[0, 1] = sinAng
             rotz[1, 0] = -sinAng
             rotz[1, 1] = cosAng
-            for (i in 0 until 4) {
-                //Translate to origin
-                verts[i]!!.xyz.minusAssign(origTrans)
+            for (i in 0 until 4) { //Translate to origin
+                verts[i].xyz.minusAssign(origTrans)
 
                 //Rotate
-                verts[i]!!.xyz.set(rotz.times(verts[i]!!.xyz))
+                verts[i].xyz.set(rotz.times(verts[i].xyz))
 
                 //Translate back
                 verts[i].xyz.plusAssign(origTrans)
@@ -1020,15 +975,13 @@ object DeviceContext {
 
             //#modified-fva; BEGIN
             if (adjustCoords) {
-                for (i in 0 until 4) {
-                    // Note: if cstAdjustCoords == false; cst_*Offset is 0, so that doesn't require special handling
+                for (i in 0 until 4) { // Note: if cstAdjustCoords == false; cst_*Offset is 0, so that doesn't require special handling
                     val x = verts[i].xyz[0] * xScale + cst_xOffset
                     val y = verts[i].xyz[1] * yScale + cst_yOffset
                     verts[i].xyz[0] = x * fixScaleForMenu.x + fixOffsetForMenu.x
                     verts[i].xyz[1] = y * fixScaleForMenu.y + fixOffsetForMenu.y
                 }
-            }
-            //#modified-fva; END
+            } //#modified-fva; END
 
             renderSystem.DrawStretchPic(verts, indexes, 4, 6, shader, angle != 0.0f)
         }
@@ -1105,8 +1058,7 @@ object DeviceContext {
                 while (count < len && s < len) {
                     if (IsColorAt(text, s, len)) {
                         s += 2
-                        count += 2
-                        //                        continue;
+                        count += 2 //                        continue;
                     } else {
                         glyph = font.glyphs[text[s].code]!!
                         if (max < glyph.height) {
@@ -1146,8 +1098,7 @@ object DeviceContext {
             val fontInfo = fontInfoEx_t()  // DG: initialize this
             val index = fonts.Append(fontInfo)
             return if (renderSystem.RegisterFont(fileName.toString(), fonts[index])) {
-                fonts[index].name =
-                    name //idStr.Copynz(fonts.oGet(index).name, name, fonts.oGet(index).name.length());
+                fonts[index].name = name //idStr.Copynz(fonts.oGet(index).name, name, fonts.oGet(index).name.length());
                 index
             } else {
                 common.Printf("Could not register font %s [%s]\n", name, fileName)
@@ -1170,13 +1121,8 @@ object DeviceContext {
         }
 
         fun GetTextRegion(
-            text: String?,
-            textScale: Float,
-            rectDraw: idRectangle?,
-            xStart: Float,
-            yStart: Float
-        ): idRegion? {
-// if (false){
+            text: String?, textScale: Float, rectDraw: idRectangle?, xStart: Float, yStart: Float
+        ): idRegion? { // if (false){
             // const char	*p, *textPtr, *newLinePtr;
             // char		buff[1024];
             // int			len, textWidth, newLine, newLineWidth;
@@ -1186,9 +1132,8 @@ object DeviceContext {
             // float lineSkip = MaxCharHeight(textScale);
             // textWidth = 0;
             // newLinePtr = NULL;
-// }
-            return null
-            /*
+            // }
+            return null/*
              if (text == NULL) {
              return;
              }
@@ -1248,14 +1193,12 @@ object DeviceContext {
             vidWidth = VIRTUAL_WIDTH.toFloat()
             vidHeight = VIRTUAL_HEIGHT.toFloat()
             yScale = 1.0f
-            xScale = yScale
-            //#modified-fva; BEGIN
+            xScale = yScale //#modified-fva; BEGIN
             cst_xOffset = 0.0f
             cst_yOffset = 0.0f
             cstAdjustCoords = false
             if ((width != vidWidth || height != vidHeight) && width > 0.0f && height > 0.0f) {
-                cstAdjustCoords = true
-                //#modified-fva; END
+                cstAdjustCoords = true //#modified-fva; END
                 xScale = vidWidth * (1.0f / width)
                 yScale = vidHeight * (1.0f / height)
             }
@@ -1296,8 +1239,7 @@ object DeviceContext {
                 y[0] *= yScale
             }
 
-            renderSystem.SetColor(colorWhite)
-            // the *actual* sizes and position used (but not set to *x and *y) need to apply the menu fixes
+            renderSystem.SetColor(colorWhite) // the *actual* sizes and position used (but not set to *x and *y) need to apply the menu fixes
             val sizeW = size * fixScaleForMenu.x * xScale
             val sizeH = size * fixScaleForMenu.y * yScale
             val fixedX = x[0] * fixScaleForMenu.x + fixOffsetForMenu.x
@@ -1394,8 +1336,7 @@ object DeviceContext {
                     var ns1: Float
                     var ns2: Float
                     var nt1: Float
-                    var nt2: Float
-                    // upper left
+                    var nt2: Float // upper left
                     var u = (x[0] - ox) / ow
                     ns1 = s1[0] * (1.0f - u) + s2[0] * u
 
@@ -1422,14 +1363,7 @@ object DeviceContext {
         }
 
         private fun ClippedCoords(
-            x: Float,
-            y: Float,
-            w: Float,
-            h: Float,
-            s1: Float,
-            t1: Float,
-            s2: Float,
-            t2: Float
+            x: Float, y: Float, w: Float, h: Float, s1: Float, t1: Float, s2: Float, t2: Float
         ): Boolean {
             clippedX = x
             clippedY = y
@@ -1597,8 +1531,7 @@ object DeviceContext {
             if (text.isNotEmpty() && color!!.w != 0.0f) {
                 var s = text[0] //(const unsigned char*)text;
                 var s_i = 0
-                renderSystem.SetColor(color)
-                //		memcpy(newColor[0], color[0], sizeof(idVec4));
+                renderSystem.SetColor(color) //		memcpy(newColor[0], color[0], sizeof(idVec4));
                 newColor.set(color)
                 len = end
                 if (limit > 0 && len - start > limit) {
@@ -1681,25 +1614,14 @@ object DeviceContext {
         ) {
             if (ClippedCoords(x, y, width * scale, height * scale, s, t, s2, t2)) {
                 return
-            }
-            //#modified-fva; BEGIN
+            } //#modified-fva; BEGIN
             /*
             AdjustCoords(x1, y1, w, h)
             DrawStretchPic(x1[0], y1[0], w[0], h[0], s1[0], t1[0], s3[0], t3[0], hShader)
             */
             DrawStretchPic(
-                clippedX,
-                clippedY,
-                clippedW,
-                clippedH,
-                clippedS1,
-                clippedT1,
-                clippedS2,
-                clippedT2,
-                hShader,
-                true
-            )
-            //#modified-fva; END
+                clippedX, clippedY, clippedW, clippedH, clippedS1, clippedT1, clippedS2, clippedT2, hShader, true
+            ) //#modified-fva; END
         }
 
         private fun SetFontByScale(scale: Float) {

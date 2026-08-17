@@ -17,7 +17,7 @@ class idMatX {
     private var alloced = 0 // floats allocated, if -1 then mat points to data set with SetData
     private var mat: FloatArray = FloatArray(0) // memory the matrix is stored
     private var numColumns = 0 // number of columns
-    private var numRows = 0// number of rows
+    private var numRows = 0 // number of rows
 
     constructor() {
         alloced = 0
@@ -51,8 +51,7 @@ class idMatX {
     }
 
     operator fun set(rows: Int, columns: Int, src: FloatArray) {
-        SetSize(rows, columns)
-        //mat = src.copyOf(src.size)
+        SetSize(rows, columns) //mat = src.copyOf(src.size)
         System.arraycopy(src, 0, mat, 0, src.size)
     }
 
@@ -327,8 +326,7 @@ class idMatX {
                     System.arraycopy(mat, i * numColumns + 0, mat, i * columns + 0, numColumns - 1 + 1)
                 }
             }
-            if (makeZero && rows > numRows) {
-//			memset( mat + numRows * columns, 0, ( rows - numRows ) * columns * sizeof( float ) );
+            if (makeZero && rows > numRows) { //			memset( mat + numRows * columns, 0, ( rows - numRows ) * columns * sizeof( float ) );
                 val from = numRows * columns
                 val length = (rows - numRows) * columns
                 val to = from + length
@@ -556,8 +554,7 @@ class idMatX {
     }
 
 
-    fun IsZero(epsilon: Float): Boolean {
-        // returns true if (*this) == Zero
+    fun IsZero(epsilon: Float): Boolean { // returns true if (*this) == Zero
         for (i in 0 until numRows) {
             for (j in 0 until numColumns) {
                 if (abs(mat[i * numColumns + j]) > epsilon) {
@@ -569,8 +566,7 @@ class idMatX {
     }
 
 
-    fun IsIdentity(epsilon: Float): Boolean {
-        // returns true if (*this) == Identity
+    fun IsIdentity(epsilon: Float): Boolean { // returns true if (*this) == Identity
         assert(numRows == numColumns)
         for (i in 0 until numRows) {
             for (j in 0 until numColumns) {
@@ -583,8 +579,7 @@ class idMatX {
     }
 
 
-    fun IsDiagonal(epsilon: Float): Boolean {
-        // returns true if all elements are zero except for the elements on the diagonal
+    fun IsDiagonal(epsilon: Float): Boolean { // returns true if all elements are zero except for the elements on the diagonal
         assert(numRows == numColumns)
         for (i in 0 until numRows) {
             for (j in 0 until numColumns) {
@@ -597,8 +592,7 @@ class idMatX {
     }
 
 
-    fun IsTriDiagonal(epsilon: Float): Boolean {
-        // returns true if all elements are zero except for the elements on the diagonal plus or minus one column
+    fun IsTriDiagonal(epsilon: Float): Boolean { // returns true if all elements are zero except for the elements on the diagonal plus or minus one column
         if (numRows != numColumns) {
             return false
         }
@@ -616,8 +610,7 @@ class idMatX {
     }
 
 
-    fun IsSymmetric(epsilon: Float): Boolean {
-        // (*this)[i][j] == (*this)[j][i]
+    fun IsSymmetric(epsilon: Float): Boolean { // (*this)[i][j] == (*this)[j][i]
         if (numRows != numColumns) {
             return false
         }
@@ -688,8 +681,7 @@ class idMatX {
                 }
                 if (abs(sum) > epsilon) {
                     return false
-                }
-                // row j, col i - this works because numRows == numColumns
+                } // row j, col i - this works because numRows == numColumns
                 colVecSum += mat[colVecPtr] * mat[colVecPtr]
                 colVecPtr += numColumns // next row, same column
             }
@@ -728,7 +720,7 @@ class idMatX {
             return true
         }
 
-//	m.SetData( numRows - 1, numColumns - 1, MATX_ALLOCA( ( numRows - 1 ) * ( numColumns - 1 ) ) );
+        //	m.SetData( numRows - 1, numColumns - 1, MATX_ALLOCA( ( numRows - 1 ) * ( numColumns - 1 ) ) );
         m.SetSize(numRows - 1, numColumns - 1)
         var i = 1
         while (i < numRows) {
@@ -803,8 +795,8 @@ class idMatX {
         }
 
         // copy matrix
-//	m.SetData( numRows, numColumns, MATX_ALLOCA( numRows * numColumns ) );
-//	m = *this;
+        //	m.SetData( numRows, numColumns, MATX_ALLOCA( numRows * numColumns ) );
+        //	m = *this;
         m.SetData(numRows, numColumns, m.mat)
 
         // add transpose
@@ -862,8 +854,8 @@ class idMatX {
         }
 
         // copy matrix
-//	m.SetData( numRows, numColumns, MATX_ALLOCA( numRows * numColumns ) );
-//	m = *this;
+        //	m.SetData( numRows, numColumns, MATX_ALLOCA( numRows * numColumns ) );
+        //	m = *this;
         m.SetData(numRows, numColumns, mat)
 
         // being able to obtain Cholesky factors is both a necessary and sufficient condition for positive definiteness
@@ -892,8 +884,8 @@ class idMatX {
         }
 
         // copy original matrix
-//	m.SetData( numRows, numColumns, MATX_ALLOCA( numRows * numColumns ) );
-//	m = *this;
+        //	m.SetData( numRows, numColumns, MATX_ALLOCA( numRows * numColumns ) );
+        //	m = *this;
         m.SetData(numRows, numColumns, mat)
 
         // add transpose
@@ -953,11 +945,8 @@ class idMatX {
     }
 
 
-    fun IsSymmetricPositiveSemiDefinite(epsilon: Float): Boolean {
-        // the matrix must be symmetric
-        return if (!IsSymmetric(epsilon)) {
-            false
-        } else IsPositiveSemiDefinite(epsilon)
+    fun IsSymmetricPositiveSemiDefinite(epsilon: Float): Boolean { // the matrix must be symmetric
+        return IsSymmetric(epsilon) && IsPositiveSemiDefinite(epsilon)
     }
 
     fun Trace(): Float { // returns product of diagonal elements
@@ -991,8 +980,7 @@ class idMatX {
                 mat[0] + mat[7] + mat[14] + mat[21] + mat[28] + mat[35]
 
             else -> DeterminantGeneric()
-        }
-        //            return 0.0f;
+        } //            return 0.0f;
     }
 
     fun Transpose(): idMatX { // returns transpose
@@ -1020,8 +1008,8 @@ class idMatX {
     fun Inverse(): idMatX { // returns the inverse ( m * m.Inverse() = identity )
         val invMat = idMatX()
 
-//	invMat.SetTempSize( numRows, numColumns );
-//	memcpy( invMat.mat, mat, numRows * numColumns * sizeof( float ) );
+        //	invMat.SetTempSize( numRows, numColumns );
+        //	memcpy( invMat.mat, mat, numRows * numColumns * sizeof( float ) );
         invMat.SetData(numRows, numColumns, mat)
         val r = invMat.InverseSelf()
         assert(r)
@@ -1542,8 +1530,7 @@ class idMatX {
 
     @Deprecated("returns readonly vector")
     fun SubVec6(row: Int): idVec6 { // interpret beginning of row as a const idVec6
-        assert(numColumns >= 6 && row >= 0 && row < numRows)
-        //	return *reinterpret_cast<const idVec6 *>(mat + row * numColumns);
+        assert(numColumns >= 6 && row >= 0 && row < numRows) //	return *reinterpret_cast<const idVec6 *>(mat + row * numColumns);
         val temp = FloatArray(6)
         System.arraycopy(mat, row * numColumns, temp, 0, 6)
         return idVec6(temp)
@@ -1788,8 +1775,7 @@ class idMatX {
 
         // elimination with full pivoting
         var i = 0
-        while (i < numRows) {
-            // search the whole matrix except for pivoted rows for the maximum absolute value
+        while (i < numRows) { // search the whole matrix except for pivoted rows for the maximum absolute value
             max = 0.0f
             c = 0
             r = c
@@ -1811,8 +1797,7 @@ class idMatX {
                 }
                 j++
             }
-            if (max == 0.0f) {
-                // matrix is not invertible
+            if (max == 0.0f) { // matrix is not invertible
                 return false
             }
             pivot[c] = true
@@ -1929,10 +1914,7 @@ class idMatX {
         s.SetData(Max(numRows, numColumns), FloatArray(Max(numRows, numColumns)))
         s.Zero()
         s[r] = 1.0f
-        if (!Inverse_UpdateRankOne(v, s, 1.0f)) {
-            return false
-        }
-        return Inverse_UpdateRankOne(s, w, 1.0f)
+        return Inverse_UpdateRankOne(v, s, 1.0f) && Inverse_UpdateRankOne(s, w, 1.0f)
     }
 
     /**
@@ -2042,12 +2024,10 @@ class idMatX {
         while (i < min) {
             newi = i
             s = abs(this[i, i])
-            if (index != null) {
-                // find the largest absolute pivot
+            if (index != null) { // find the largest absolute pivot
                 j = i + 1
                 while (j < numRows) {
-                    t = abs(this[j, i])
-                    //                    System.out.println(t);
+                    t = abs(this[j, i]) //                    System.out.println(t);
                     if (t > s) {
                         newi = j
                         s = t
@@ -2187,8 +2167,7 @@ class idMatX {
      where: a = v[0,r-1], b = v[r], c = v[r+1,numRows-1], d = w[0,r-1], w[r] = 0.0f, e = w[r+1,numColumns-1]
      ============
      */
-    fun LU_UpdateRowColumn(v: idVecX, w: idVecX, r: Int, index: IntArray?): Boolean {
-//    #else
+    fun LU_UpdateRowColumn(v: idVecX, w: idVecX, r: Int, index: IntArray?): Boolean { //    #else
         var i: Int
         var j: Int
         val min: Int
@@ -2401,8 +2380,7 @@ class idMatX {
                 return false
             }
             if (p != r) {
-                if (abs(u.p[p]) < 1e-4f) {
-                    // NOTE: an additional row interchange is required for numerical stability
+                if (abs(u.p[p]) < 1e-4f) { // NOTE: an additional row interchange is required for numerical stability
                 }
 
                 // move row index[r] of the original matrix to row index[p] of the original matrix
@@ -2741,9 +2719,7 @@ class idMatX {
         )
         s.Zero()
         s.p[r] = 1.0f
-        return if (!QR_UpdateRankOne(R, v, s, 1.0f)) {
-            false
-        } else QR_UpdateRankOne(R, s, w, 1.0f)
+        return QR_UpdateRankOne(R, v, s, 1.0f) && QR_UpdateRankOne(R, s, w, 1.0f)
     }
 
     /**
@@ -3315,7 +3291,7 @@ class idMatX {
         var sum: Float
         assert(numRows == numColumns)
 
-//	invSqrt = (float *) _alloca16( numRows * sizeof( float ) );
+        //	invSqrt = (float *) _alloca16( numRows * sizeof( float ) );
         var i = 0
         while (i < numRows) {
             j = 0
@@ -3369,8 +3345,8 @@ class idMatX {
         assert(v.GetSize() >= numRows)
         assert(offset in 0 until numRows)
 
-//	y = (float *) _alloca16( v.GetSize() * sizeof( float ) );
-//	memcpy( y, v.ToFloatPtr(), v.GetSize() * sizeof( float ) );
+        //	y = (float *) _alloca16( v.GetSize() * sizeof( float ) );
+        //	memcpy( y, v.ToFloatPtr(), v.GetSize() * sizeof( float ) );
         val y: FloatArray = v.ToFloatPtr()
         var i: Int = offset
         while (i < numColumns) {
@@ -3424,7 +3400,7 @@ class idMatX {
         assert(v.GetSize() >= numRows)
         assert(r >= 0 && r < numRows)
 
-//	addSub.SetData( numColumns, (float *) _alloca16( numColumns * sizeof( float ) ) );
+        //	addSub.SetData( numColumns, (float *) _alloca16( numColumns * sizeof( float ) ) );
         addSub.SetData(numColumns, FloatArray(numColumns))
         if (r == 0) {
             if (numColumns == 1) {
@@ -3445,8 +3421,8 @@ class idMatX {
             }
         } else {
 
-//		original = (float *) _alloca16( numColumns * sizeof( float ) );
-//		y = (float *) _alloca16( numColumns * sizeof( float ) );
+            //		original = (float *) _alloca16( numColumns * sizeof( float ) );
+            //		y = (float *) _alloca16( numColumns * sizeof( float ) );
             original = FloatArray(numColumns)
             y = FloatArray(numColumns)
 
@@ -3477,8 +3453,7 @@ class idMatX {
             }
 
             // if the last row/column of the matrix is updated
-            if (r == numColumns - 1) {
-                // only calculate new diagonal
+            if (r == numColumns - 1) { // only calculate new diagonal
                 sum = (original[r] + v.p[r])
                 j = 0
                 while (j < r) {
@@ -3507,7 +3482,7 @@ class idMatX {
         }
 
         // add row/column to the lower right sub matrix starting at (r, r)
-//#else
+        //#else
         var diag: Float
         var invDiag: Float
         var diagSqr: Float
@@ -3519,8 +3494,8 @@ class idMatX {
         var p2: Float
         var d: Float
 
-//	v1 = (float *) _alloca16( numColumns * sizeof( float ) );
-//	v2 = (float *) _alloca16( numColumns * sizeof( float ) );
+        //	v1 = (float *) _alloca16( numColumns * sizeof( float ) );
+        //	v2 = (float *) _alloca16( numColumns * sizeof( float ) );
         val v1 = FloatArray(numColumns)
         val v2 = FloatArray(numColumns)
         d = idMath.SQRT_1OVER2
@@ -3573,7 +3548,7 @@ class idMatX {
             i++
         }
 
-//#endif
+        //#endif
         return true
     }
 
@@ -3598,7 +3573,7 @@ class idMatX {
         assert(v.GetSize() >= numRows + 1)
         ChangeSize(numRows + 1, numColumns + 1, false)
 
-//	x = (float *) _alloca16( numRows * sizeof( float ) );
+        //	x = (float *) _alloca16( numRows * sizeof( float ) );
         val x = FloatArray(numRows)
 
         // solve for x in L * x = v
@@ -3652,12 +3627,11 @@ class idMatX {
 
         // NOTE:	msvc compiler bug: the this pointer stored in edi is expected to stay
         //			untouched when calling Cholesky_UpdateRowColumn in the if statement
-//#if 0
-//	if ( !Cholesky_UpdateRowColumn( v1, r ) ) {
-//#else
+        //#if 0
+        //	if ( !Cholesky_UpdateRowColumn( v1, r ) ) {
+        //#else
         val ret = Cholesky_UpdateRowColumn(v1, r)
-        if (!ret) {
-//#endif
+        if (!ret) { //#endif
             return false
         }
 
@@ -3748,8 +3722,7 @@ class idMatX {
         var sum: Float
         m.SetSize(numRows, numColumns)
         var r = 0
-        while (r < numRows) {
-            // calculate row of matrix
+        while (r < numRows) { // calculate row of matrix
             i = 0
             while (i < numRows) {
                 sum = 0.0f
@@ -3784,7 +3757,7 @@ class idMatX {
         var sum: Float
         assert(numRows == numColumns)
 
-//	v = (float *) _alloca16( numRows * sizeof( float ) );
+        //	v = (float *) _alloca16( numRows * sizeof( float ) );
         val v = FloatArray(numRows)
         var i = 0
         while (i < numRows) {
@@ -3837,8 +3810,8 @@ class idMatX {
         assert(v.GetSize() >= numRows)
         assert(offset >= 0 && offset < numRows)
 
-//	y = (float *) _alloca16( v.GetSize() * sizeof( float ) );
-//	memcpy( y, v.ToFloatPtr(), v.GetSize() * sizeof( float ) );
+        //	y = (float *) _alloca16( v.GetSize() * sizeof( float ) );
+        //	memcpy( y, v.ToFloatPtr(), v.GetSize() * sizeof( float ) );
         val y: FloatArray = v.ToFloatPtr()
         var i: Int = offset
         while (i < numColumns) {
@@ -3959,8 +3932,7 @@ class idMatX {
             }
 
             // if the last row/column of the matrix is updated
-            if (r == numColumns - 1) {
-                // only calculate new diagonal
+            if (r == numColumns - 1) { // only calculate new diagonal
                 sum = (original[r] + v.p[r])
                 j = 0
                 while (j < r) {
@@ -3998,7 +3970,7 @@ class idMatX {
         }
 
         // add row/column to the lower right sub matrix starting at (r, r)
-//#else
+        //#else
         var d: Float
         var diag: Float
         var newDiag: Float
@@ -4055,7 +4027,7 @@ class idMatX {
             i++
         }
 
-//#endif
+        //#endif
         return true
     }
 
@@ -4120,12 +4092,11 @@ class idMatX {
 
         // NOTE:	msvc compiler bug: the this pointer stored in edi is expected to stay
         //			untouched when calling LDLT_UpdateRowColumn in the if statement
-//#if 0
-//	if ( !LDLT_UpdateRowColumn( v1, r ) ) {
-//#else
+        //#if 0
+        //	if ( !LDLT_UpdateRowColumn( v1, r ) ) {
+        //#else
         val ret = LDLT_UpdateRowColumn(v1, r)
-        if (!ret) {
-//#endif
+        if (!ret) { //#endif
             return false
         }
 
@@ -4483,8 +4454,7 @@ class idMatX {
         assert(newSize < MATX_MAX_TEMP)
         if (tempIndex + newSize > MATX_MAX_TEMP) {
             tempIndex = 0
-        }
-        //            mat = idMatX::tempPtr + idMatX::tempIndex;
+        } //            mat = idMatX::tempPtr + idMatX::tempIndex;
         mat = FloatArray(newSize)
         tempIndex += newSize
         alloced = newSize
@@ -4749,8 +4719,7 @@ class idMatX {
                     while (j < numColumns) {
                         V[j, i] = (this[i, j] / this[i, l] / g)
                         j++
-                    }
-                    // double division to reduce underflow
+                    } // double division to reduce underflow
                     j = l
                     while (j < numColumns) {
                         s = 0.0f
@@ -5160,8 +5129,7 @@ class idMatX {
                     while (i <= high) {
                         g += v.p[i] * this[i, j]
                         i++
-                    }
-                    // float division to avoid possible underflow
+                    } // float division to avoid possible underflow
                     g = g / v.p[m] / H[m, m - 1]
                     i = m
                     while (i <= high) {
@@ -5581,8 +5549,7 @@ class idMatX {
                             ComplexDivision(-ra, -sa, w, q, cr, ci)
                             H[i, n - 1] = cr._val
                             H[i, n] = ci._val
-                        } else {
-                            // solve complex equations
+                        } else { // solve complex equations
                             x = H[i, i + 1]
                             y = H[i + 1, i]
                             vr =
@@ -6042,8 +6009,7 @@ class idMatX {
             m2.LU_Inverse(m1, null)
             m1.timesAssign(original)
             if (!m1.IsIdentity(1e-4f)) {
-                idLib.common.Warning("idMatX::LU_Inverse failed")
-                //System.exit(9);
+                idLib.common.Warning("idMatX::LU_Inverse failed") //System.exit(9);
             }
 
             /*

@@ -56,22 +56,20 @@ class AI_Vagary {
 
             init {
                 eventCallbacks.putAll(idAI.getEventCallBacks())
-                eventCallbacks[AI_Vagary_ChooseObjectToThrow] = eventCallback_t5 { obj: idAI_Vagary,
-                                                                                   mins: idEventArg<*>?,
-                                                                                   maxs: idEventArg<*>?,
-                                                                                   speed: idEventArg<*>?,
-                                                                                   minDist: idEventArg<*>?,
-                                                                                   offset: idEventArg<*>? ->
-                    obj.Event_ChooseObjectToThrow(
-                        mins as idEventArg<idVec3>, maxs as idEventArg<idVec3>, speed as idEventArg<Float>,
-                        minDist as idEventArg<Float>, offset as idEventArg<Float>
-                    )
-                }
-                eventCallbacks[AI_Vagary_ThrowObjectAtEnemy] = eventCallback_t2 { obj: idAI_Vagary,
-                                                                                  _ent: idEventArg<*>?,
-                                                                                  _speed: idEventArg<*>? ->
-                    obj.Event_ThrowObjectAtEnemy(_ent as idEventArg<idEntity>, _speed as idEventArg<Float>)
-                }
+                eventCallbacks[AI_Vagary_ChooseObjectToThrow] =
+                    eventCallback_t5 { obj: idAI_Vagary, mins: idEventArg<*>?, maxs: idEventArg<*>?, speed: idEventArg<*>?, minDist: idEventArg<*>?, offset: idEventArg<*>? ->
+                        obj.Event_ChooseObjectToThrow(
+                            mins as idEventArg<idVec3>,
+                            maxs as idEventArg<idVec3>,
+                            speed as idEventArg<Float>,
+                            minDist as idEventArg<Float>,
+                            offset as idEventArg<Float>
+                        )
+                    }
+                eventCallbacks[AI_Vagary_ThrowObjectAtEnemy] =
+                    eventCallback_t2 { obj: idAI_Vagary, _ent: idEventArg<*>?, _speed: idEventArg<*>? ->
+                        obj.Event_ThrowObjectAtEnemy(_ent as idEventArg<idEntity>, _speed as idEventArg<Float>)
+                    }
             }
         }
 
@@ -81,8 +79,11 @@ class AI_Vagary {
          ================
          */
         private fun Event_ChooseObjectToThrow(
-            mins: idEventArg<idVec3>, maxs: idEventArg<idVec3>,
-            speed: idEventArg<Float>, minDist: idEventArg<Float>, offset: idEventArg<Float>
+            mins: idEventArg<idVec3>,
+            maxs: idEventArg<idVec3>,
+            speed: idEventArg<Float>,
+            minDist: idEventArg<Float>,
+            offset: idEventArg<Float>
         ) {
             var ent: idEntity
             val entityList = arrayOfNulls<idEntity?>(Game_local.MAX_GENTITIES)
@@ -94,8 +95,7 @@ class AI_Vagary {
             val offsetVec = idVec3(0.0f, 0.0f, offset.value)
             val enemyEnt: idEntity? = enemy.GetEntity()
             if (null == enemyEnt) {
-                idThread.ReturnEntity(null)
-                // FIX: C++ also lacks return here (original bug), but in Kotlin enemyEnt!! below
+                idThread.ReturnEntity(null) // FIX: C++ also lacks return here (original bug), but in Kotlin enemyEnt!! below
                 // throws NPE. Adding return to avoid Kotlin-specific crash.
                 return
             }
@@ -117,8 +117,7 @@ class AI_Vagary {
                     index++
                     continue
                 }
-                if (ent.fl.hidden) {
-                    // don't throw hidden objects
+                if (ent.fl.hidden) { // don't throw hidden objects
                     i++
                     index++
                     continue
@@ -132,8 +131,7 @@ class AI_Vagary {
                     continue
                 }
                 val expandedBounds = myBounds.Expand(entPhys.GetBounds().GetRadius())
-                if (expandedBounds.LineIntersection(entOrg, enemyEyePos)) {
-                    // ignore objects that are behind us
+                if (expandedBounds.LineIntersection(entOrg, enemyEyePos)) { // ignore objects that are behind us
                     i++
                     index++
                     continue
@@ -144,10 +142,7 @@ class AI_Vagary {
                         speed.value,
                         entPhys.GetGravity(),
                         entPhys.GetClipModel()!!,
-                        entPhys.GetClipMask(),
-                        MAX_WORLD_SIZE.toFloat(),
-                        null,
-                        enemyEnt!!,
+                        entPhys.GetClipMask(), MAX_WORLD_SIZE.toFloat(), null, enemyEnt,
                         if (SysCvar.ai_debugTrajectory.GetBool()) 4000 else 0,
                         vel
                     )

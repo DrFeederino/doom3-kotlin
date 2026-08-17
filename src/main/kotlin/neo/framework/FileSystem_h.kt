@@ -237,8 +237,7 @@ object FileSystem_h {
      for instance to base a mod of D3 + D3XP assets, fs_game mymod, fs_game_base d3xp
 
      =============================================================================
-     */
-    // define to fix special-cases for GetPackStatus so that files that shipped in
+     */ // define to fix special-cases for GetPackStatus so that files that shipped in
     // the wrong place for Doom 3 don't break pure servers.
     const val DOOM3_PURE_SPECIAL_CASES = true
     const val FILE_HASH_SIZE = 1024
@@ -271,11 +270,7 @@ object FileSystem_h {
         pureExclusion_s(0, 0, null, ".lang", excludeExtension.getInstance()),
         pureExclusion_s(0, 0, "sound/VO", ".ogg", excludePathPrefixAndExtension.getInstance()),
         pureExclusion_s(
-            0,
-            0,
-            "sound/VO",
-            ".wav",
-            excludePathPrefixAndExtension.getInstance()
+            0, 0, "sound/VO", ".wav", excludePathPrefixAndExtension.getInstance()
         ),  // add any special-case files or paths for pure servers here
         pureExclusion_s(0, 0, "sound/ed/marscity/vo_intro_cutscene.ogg", null, excludeFullName.getInstance()),
         pureExclusion_s(0, 0, "sound/weapons/soulcube/energize_01.ogg", null, excludeFullName.getInstance()),
@@ -383,12 +378,8 @@ object FileSystem_h {
         constructor()
 
         companion object {
-            val SIZE: Int = (idStr.SIZE
-                    + 8 * MAX_STRING_CHARS
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + CPP_class.ENUM_SIZE)
+            val SIZE: Int =
+                (idStr.SIZE + 8 * MAX_STRING_CHARS + Integer.SIZE + Integer.SIZE + Integer.SIZE + CPP_class.ENUM_SIZE)
         }
     }
 
@@ -405,9 +396,7 @@ object FileSystem_h {
         constructor()
 
         companion object {
-            val SIZE = (Integer.SIZE
-                    + Integer.SIZE
-                    + CPP_class.POINTER_SIZE) //void * buffer
+            val SIZE = (Integer.SIZE + Integer.SIZE + CPP_class.POINTER_SIZE) //void * buffer
         }
     }
 
@@ -437,11 +426,8 @@ object FileSystem_h {
         companion object {
 
             val SIZE = (CPP_class.POINTER_SIZE //backgroundDownload_s next
-                    + CPP_class.ENUM_SIZE
-                    + CPP_class.POINTER_SIZE //idFile f
-                    + fileDownload_s.SIZE
-                    + urlDownload_s.SIZE
-                    + CPP_class.BOOL_SIZE) //TODO:volatile?
+                    + CPP_class.ENUM_SIZE + CPP_class.POINTER_SIZE //idFile f
+                    + fileDownload_s.SIZE + urlDownload_s.SIZE + CPP_class.BOOL_SIZE) //TODO:volatile?
         }
     }
 
@@ -520,18 +506,11 @@ object FileSystem_h {
         abstract fun ListFiles(relativePath: String, extension: String): idFileList
         abstract fun ListFiles(relativePath: String, extension: String, sort: Boolean): idFileList
         abstract fun ListFiles(
-            relativePath: String,
-            extension: String,
-            sort: Boolean,
-            fullRelativePath: Boolean
+            relativePath: String, extension: String, sort: Boolean, fullRelativePath: Boolean
         ): idFileList
 
         abstract fun ListFiles(
-            relativePath: String,
-            extension: String,
-            sort: Boolean,
-            fullRelativePath: Boolean,
-            gamedir: String?
+            relativePath: String, extension: String, sort: Boolean, fullRelativePath: Boolean, gamedir: String?
         ): idFileList
 
         // Lists files in the given directory and all subdirectories with the given extension.
@@ -541,10 +520,7 @@ object FileSystem_h {
         abstract fun ListFilesTree(relativePath: String, extension: String): idFileList
         abstract fun ListFilesTree(relativePath: String, extension: String, sort: Boolean): idFileList
         abstract fun ListFilesTree(
-            relativePath: String,
-            extension: String,
-            sort: Boolean,
-            gamedir: String?
+            relativePath: String, extension: String, sort: Boolean, gamedir: String?
         ): idFileList
 
         // Frees the given file list.
@@ -590,10 +566,7 @@ object FileSystem_h {
         // it returns wether the switch was successfull, and sets the missing checksums
         // the process is verbosive when fs_debug 1
         abstract fun SetPureServerChecksums(
-            pureChecksums: IntArray,
-            gamePakChecksum: Int,
-            missingChecksums: IntArray,
-            missingGamePakChecksum: IntArray
+            pureChecksums: IntArray, gamePakChecksum: Int, missingChecksums: IntArray, missingGamePakChecksum: IntArray
         ): fsPureReply_t
 
         // fills a 0-terminated list of pak checksums for a client
@@ -634,16 +607,11 @@ object FileSystem_h {
         // Writes a complete file, will create any needed subdirectories.
         // Returns the length of the file, or -1 on failure.
         abstract fun WriteFile(
-            relativePath: String,
-            buffer: ByteBuffer,
-            size: Int /*, final String basePath = "fs_savepath" */
+            relativePath: String, buffer: ByteBuffer, size: Int /*, final String basePath = "fs_savepath" */
         ): Int
 
         abstract fun WriteFile(
-            relativePath: String,
-            buffer: ByteBuffer,
-            size: Int,
-            basePath: String /* = "fs_savepath" */
+            relativePath: String, buffer: ByteBuffer, size: Int, basePath: String /* = "fs_savepath" */
         ): Int
 
         // Removes the given file.
@@ -735,11 +703,7 @@ object FileSystem_h {
     }
 
     class pureExclusion_s(
-        var nameLen: Int,
-        var extLen: Int,
-        var name: String?,
-        var ext: String?,
-        var func: pureExclusionFunc_t?
+        var nameLen: Int, var extLen: Int, var name: String?, var ext: String?, var func: pureExclusionFunc_t?
     )
 
     internal class excludeExtension : pureExclusionFunc_t() {
@@ -756,11 +720,11 @@ object FileSystem_h {
     }
 
     internal class excludePathPrefixAndExtension : pureExclusionFunc_t() {
-        override fun run(excl: pureExclusion_s, l: Int, name: idStr): Boolean {
-            // FIX: C++ checks `l > excl.nameLen`, not `l > excl.extLen`
+        override fun run(
+            excl: pureExclusion_s, l: Int, name: idStr
+        ): Boolean { // FIX: C++ checks `l > excl.nameLen`, not `l > excl.extLen`
             return l > excl.nameLen && 0 == idStr.Icmp(
-                name.toString().substring(l - excl.extLen),
-                excl.ext!!
+                name.toString().substring(l - excl.extLen), excl.ext!!
             ) && 0 == name.IcmpPrefixPath(excl.name!!)
         }
 
@@ -842,8 +806,7 @@ object FileSystem_h {
 
         //public	virtual				~idDEntry() {}
         fun Matches(directory: String, extension: String): Boolean {
-            return (0 == this.directory.Icmp(directory)
-                    && 0 == this.extension.Icmp(extension))
+            return (0 == this.directory.Icmp(directory) && 0 == this.extension.Icmp(extension))
         }
 
         fun Init(directory: String, extension: String, list: idStrList) {
@@ -1004,9 +967,8 @@ object FileSystem_h {
                 return null
             }
             return try {
-                val process = ProcessBuilder("reg", "query", "HKLM\\$subkey", "/v", name)
-                    .redirectErrorStream(true)
-                    .start()
+                val process =
+                    ProcessBuilder("reg", "query", "HKLM\\$subkey", "/v", name).redirectErrorStream(true).start()
                 if (!process.waitFor(2, TimeUnit.SECONDS) || process.exitValue() != 0) {
                     process.destroy()
                     return null
@@ -1026,11 +988,9 @@ object FileSystem_h {
         }
 
         private fun ReadWindowsInstallPath(subkey: String): String? {
-            return ReadWindowsRegistryString(subkey, "InstallPath")
-                ?: ReadWindowsRegistryString(
-                    "SOFTWARE\\WOW6432Node\\" + subkey.removePrefix("SOFTWARE\\"),
-                    "InstallPath"
-                )
+            return ReadWindowsRegistryString(subkey, "InstallPath") ?: ReadWindowsRegistryString(
+                "SOFTWARE\\WOW6432Node\\" + subkey.removePrefix("SOFTWARE\\"), "InstallPath"
+            )
         }
 
         private fun FindRegistryDoom3Path(): String? {
@@ -1174,8 +1134,8 @@ object FileSystem_h {
                 }
             }
             return candidates.firstOrNull { Files.isDirectory(it.parent ?: it) }
+                ?.let { NormalizeFilesystemPath(it.toString(), "fs_savepath") } ?: candidates.firstOrNull()
                 ?.let { NormalizeFilesystemPath(it.toString(), "fs_savepath") }
-                ?: candidates.firstOrNull()?.let { NormalizeFilesystemPath(it.toString(), "fs_savepath") }
         }
 
         private fun UnixDataPath(): String? {
@@ -1186,8 +1146,7 @@ object FileSystem_h {
             val home = System.getenv("HOME") ?: System.getProperty("user.home")
             return if (!home.isNullOrBlank()) {
                 NormalizeFilesystemPath(
-                    Paths.get(home).resolve(".local").resolve("share").resolve("dhewm3").toString(),
-                    "fs_savepath"
+                    Paths.get(home).resolve(".local").resolve("share").resolve("dhewm3").toString(), "fs_savepath"
                 )
             } else {
                 null
@@ -1202,8 +1161,7 @@ object FileSystem_h {
             val home = System.getenv("HOME") ?: System.getProperty("user.home")
             return if (!home.isNullOrBlank()) {
                 NormalizeFilesystemPath(
-                    Paths.get(home).resolve(".config").resolve("dhewm3").toString(),
-                    "fs_configpath"
+                    Paths.get(home).resolve(".config").resolve("dhewm3").toString(), "fs_configpath"
                 )
             } else {
                 null
@@ -1282,8 +1240,7 @@ object FileSystem_h {
          is resetting due to a game change
          ================
          */
-        override fun Init() {
-            // allow command line parms to override our defaults
+        override fun Init() { // allow command line parms to override our defaults
             // we have to specially handle this, because normal command
             // line variable sets don't happen until after the filesystem
             // has already been initialized
@@ -1347,18 +1304,14 @@ object FileSystem_h {
             }
             backgroundDownloadExit = false
             win_main.Sys_CreateThread(
-                Companion::BackgroundDownloadThreadFn,
-                null,
-                backgroundThread,
-                "backgroundDownload"
+                Companion::BackgroundDownloadThreadFn, null, backgroundThread, "backgroundDownload"
             )
             if (backgroundThread.threadHandle == null) {
                 idLib.common.Warning("idFileSystemLocal::StartBackgroundDownloadThread: failed")
             }
         }
 
-        override fun Restart() {
-            // free anything we currently have loaded
+        override fun Restart() { // free anything we currently have loaded
             Shutdown(true)
             Startup()
 
@@ -1380,8 +1333,7 @@ object FileSystem_h {
          Frees all resources and closes all files
          ================
          */
-        override fun Shutdown(reloading: Boolean) {
-            // stop the background download thread
+        override fun Shutdown(reloading: Boolean) { // stop the background download thread
             if (backgroundThread.threadHandle != null) {
                 backgroundDownloadExit = true
                 Sys_TriggerEvent() // wake the thread so it can exit
@@ -1409,23 +1361,18 @@ object FileSystem_h {
                 while (sp != null) {
                     next = sp.next
                     if (sp.pack != null) {
-                        try {
-                            //                        unzClose(sp.pack.handle);
+                        try { //                        unzClose(sp.pack.handle);
                             sp.pack!!.handle!!.close()
                         } catch (ex: IOException) {
                             Logger.getLogger(FileSystem_h::class.java.name).log(Level.SEVERE, null, ex)
-                        }
-                        //				delete [] sp.pack.buildBuffer;
+                        } //				delete [] sp.pack.buildBuffer;
                         if (sp.pack!!.addon_info != null) {
-                            sp.pack!!.addon_info!!.mapDecls.DeleteContents(true)
-                            //					delete sp.pack.addon_info;
+                            sp.pack!!.addon_info!!.mapDecls.DeleteContents(true) //					delete sp.pack.addon_info;
                             sp.pack!!.addon_info = null
-                        }
-                        //				delete sp.pack;
+                        } //				delete sp.pack;
                         sp.pack = null
                     }
-                    if (sp.dir != null) {
-//				delete sp.dir;
+                    if (sp.dir != null) { //				delete sp.dir;
                         sp.dir = null
                     }
                     sp = next
@@ -1458,10 +1405,7 @@ object FileSystem_h {
             val pk4s = idStrList()
             val list = idModList()
             val search = arrayOf(
-                fs_savepath.GetString()!!,
-                fs_devpath.GetString()!!,
-                fs_basepath.GetString()!!,
-                fs_cdpath.GetString()!!
+                fs_savepath.GetString()!!, fs_devpath.GetString()!!, fs_basepath.GetString()!!, fs_cdpath.GetString()!!
             )
             var isearch: Int
             isearch = 0
@@ -1471,8 +1415,7 @@ object FileSystem_h {
                     continue
                 }
                 dirs.clear()
-                pk4s.clear()
-                // scan for directories
+                pk4s.clear() // scan for directories
                 ListOSFiles(search[isearch], "/", dirs)
                 dirs.remove(idStr("."))
                 dirs.remove(idStr(".."))
@@ -1484,12 +1427,10 @@ object FileSystem_h {
                 while (i < dirs.size()) {
                     val gamepath = idStr(BuildOSPath(search[isearch], dirs[i].toString(), ""))
                     ListOSFiles(gamepath.toString(), ".pk4", pk4s)
-                    if (pk4s.size() != 0) {
-                        // FIX: C++ `if (!list->mods.Find(dirs[i]))` checks for NOT found (NULL pointer = falsy).
+                    if (pk4s.size() != 0) { // FIX: C++ `if (!list->mods.Find(dirs[i]))` checks for NOT found (NULL pointer = falsy).
                         // Kotlin Find() returns null when not found, not 0. Was `0 == Find()` which is always
                         // false when null, preventing any mod from being added to the list.
-                        if (null == list.mods.Find(dirs[i])) {
-                            // DG: ignore d3xp, it's added explicitly later, if available
+                        if (null == list.mods.Find(dirs[i])) { // DG: ignore d3xp, it's added explicitly later, if available
                             if (dirs[i].Icmp("d3xp") != 0) {
                                 list.mods.add(dirs[i])
                             }
@@ -1509,16 +1450,14 @@ object FileSystem_h {
                     val descfile = idStr(BuildOSPath(search[isearch], list.mods[i].toString(), "description.txt"))
                     val f = OpenOSFile(descfile.toString(), "r")
                     if (f != null) {
-                        try {
-                            // FIX: clear ByteBuffer before each read — C++ uses stack-local char[256]
+                        try { // FIX: clear ByteBuffer before each read — C++ uses stack-local char[256]
                             // that gets overwritten by fgets each iteration
                             desc.clear()
                             val bytesRead = f.read(desc)
-                            if (bytesRead > 0) {
-                                // FIX: use only bytes actually read, not entire 256-byte array.
+                            if (bytesRead > 0) { // FIX: use only bytes actually read, not entire 256-byte array.
                                 // Also mimic C++ fgets: only take first line, trim newlines/nulls.
-                                val descStr = String(desc.array(), 0, bytesRead)
-                                    .substringBefore('\n').trimEnd('\r', '\u0000')
+                                val descStr =
+                                    String(desc.array(), 0, bytesRead).substringBefore('\n').trimEnd('\r', '\u0000')
                                 list.descriptions.add(idStr(descStr))
                                 f.close()
                                 break
@@ -1553,8 +1492,7 @@ object FileSystem_h {
             return list
         }
 
-        override fun FreeModList(modList: idModList) {
-//	delete modList;
+        override fun FreeModList(modList: idModList) { //	delete modList;
         }
 
         override fun ListFiles(relativePath: String, extension: String): idFileList {
@@ -1566,20 +1504,13 @@ object FileSystem_h {
         }
 
         override fun ListFiles(
-            relativePath: String,
-            extension: String,
-            sort: Boolean,
-            fullRelativePath: Boolean
+            relativePath: String, extension: String, sort: Boolean, fullRelativePath: Boolean
         ): idFileList {
             return ListFiles(relativePath, extension, sort, fullRelativePath, null)
         }
 
         override fun ListFiles(
-            relativePath: String,
-            extension: String,
-            sort: Boolean,
-            fullRelativePath: Boolean,
-            gamedir: String?
+            relativePath: String, extension: String, sort: Boolean, fullRelativePath: Boolean, gamedir: String?
         ): idFileList {
             val hashIndex = idHashIndex(4096, 4096)
             val extensionList = idStrList()
@@ -1602,10 +1533,7 @@ object FileSystem_h {
         }
 
         override fun ListFilesTree(
-            relativePath: String,
-            extension: String,
-            sort: Boolean,
-            gamedir: String?
+            relativePath: String, extension: String, sort: Boolean, gamedir: String?
         ): idFileList {
             val hashIndex = idHashIndex(4096, 4096)
             val extensionList = idStrList()
@@ -1620,8 +1548,7 @@ object FileSystem_h {
             return fileList
         }
 
-        override fun FreeFileList(fileList: idFileList) {
-//            delete fileList;
+        override fun FreeFileList(fileList: idFileList) { //            delete fileList;
         }
 
         /*
@@ -1661,8 +1588,7 @@ object FileSystem_h {
                     break
                 }
                 base = OSPath.indexOf(Licensee.BASE_GAMEDIR, base + 1)
-            }
-            // fs_game and fs_game_base support - look for first complete name with a mod path
+            } // fs_game and fs_game_base support - look for first complete name with a mod path
             // ( fs_game searched before fs_game_base )
             var fsgame: String = ""
             var iGame: Int
@@ -1690,8 +1616,7 @@ object FileSystem_h {
                 }
                 iGame++
             }
-            if (base > 0) {
-                // DG: dhewm3 added .pk4/ path handling for paths inside pk4 files
+            if (base > 0) { // DG: dhewm3 added .pk4/ path handling for paths inside pk4 files
                 s = OSPath.indexOf(".pk4/", base)
                 if (s != -1) {
                     s += 4 // skip ".pk4", but not the following '/', that'll be skipped below
@@ -1701,18 +1626,17 @@ object FileSystem_h {
                         s = OSPath.indexOf('\\', base)
                     }
                 }
-                if (s != -1) {
-//                    strcpy(relativePath, s + 1);
+                if (s != -1) { //                    strcpy(relativePath, s + 1);
                     relativePath = OSPath.substring(s + 1)
                     if (fs_debug.GetInteger() > 1) {
                         idLib.common.Printf("idFileSystem::OSPathToRelativePath: %s becomes %s\n", OSPath, relativePath)
                     }
                     return relativePath
                 }
-            }
-            // DG: dhewm3 removed ignoreWarning
-            idLib.common.Warning("idFileSystem::OSPathToRelativePath failed on %s", OSPath)
-            //            strcpy(relativePath, "");
+            } // DG: dhewm3 removed ignoreWarning
+            idLib.common.Warning(
+                "idFileSystem::OSPathToRelativePath failed on %s", OSPath
+            ) //            strcpy(relativePath, "");
             return ""
         }
 
@@ -1734,8 +1658,7 @@ object FileSystem_h {
         override fun BuildOSPath(base: String, game: String, relativePath: String): String {
             val OSPath = StringBuilder(MAX_STRING_CHARS)
             val newPath: idStr
-            if (fs_caseSensitiveOS.GetBool() || Common.com_developer.GetBool()) {
-                // extract the path, make sure it's all lowercase
+            if (fs_caseSensitiveOS.GetBool() || Common.com_developer.GetBool()) { // extract the path, make sure it's all lowercase
                 val testPath: idStr
                 val fileName: idStr
 
@@ -1748,8 +1671,7 @@ object FileSystem_h {
                     if (fs_caseSensitiveOS.GetBool()) {
                         testPath.ToLower()
                         fileName = idStr(relativePath)
-                        fileName.StripPath()
-                        //				sprintf( newPath, "%s/%s/%s", base, testPath.c_str(), fileName.c_str() );
+                        fileName.StripPath() //				sprintf( newPath, "%s/%s/%s", base, testPath.c_str(), fileName.c_str() );
                         newPath = idStr(String.format("%s/%s/%s", base, testPath, fileName))
                         ReplaceSeparators(newPath)
                         idLib.common.DPrintf("Fixed up to %s\n", newPath)
@@ -1760,8 +1682,7 @@ object FileSystem_h {
             }
             val strBase = idStr(base)
             strBase.StripTrailing('/')
-            strBase.StripTrailing('\\')
-            //	sprintf( newPath, "%s/%s/%s", strBase.c_str(), game, relativePath );
+            strBase.StripTrailing('\\') //	sprintf( newPath, "%s/%s/%s", strBase.c_str(), game, relativePath );
             newPath = idStr(String.format("%s/%s/%s", strBase, game, relativePath))
             ReplaceSeparators(newPath)
             idStr.Copynz(OSPath, newPath.toString())
@@ -1789,8 +1710,7 @@ object FileSystem_h {
             val path = idStr(OSPath)
             ofs = 1
             while (ofs < path.Length()) {
-                if (path[ofs] == PATHSEPERATOR_CHAR) {
-                    // create the directory
+                if (path[ofs] == PATHSEPERATOR_CHAR) { // create the directory
                     // FIX: C++ uses null-termination (*ofs = 0) which doesn't work in Kotlin strings.
                     // Use substring to pass only the path up to this separator.
                     win_main.Sys_Mkdir(idStr(path.toString().substring(0, ofs)))
@@ -1814,8 +1734,7 @@ object FileSystem_h {
             }
 
             // qpaths are not supposed to have a leading slash
-            if (relativePath[0] == '/' || relativePath[0] == '\\') {
-//		relativePath++;
+            if (relativePath[0] == '/' || relativePath[0] == '\\') { //		relativePath++;
                 relativePath = relativePath.substring(1)
             }
 
@@ -1848,8 +1767,7 @@ object FileSystem_h {
                     // look through all the pak file elements
                     pak = search.pack!!
                     pakFile = pak.hashTable[hash.toInt()]
-                    do {
-                        // case and separator insensitive comparisons
+                    do { // case and separator insensitive comparisons
                         if (FilenameCompare(pakFile!!.name.toString(), relativePath)) {
                             return true
                         }
@@ -1911,7 +1829,7 @@ object FileSystem_h {
             var id: Int
             confHash = HashFileName(BINARY_CONFIG).toInt()
 
-//	memset( gamePakForOS, 0, sizeof( gamePakForOS ) );
+            //	memset( gamePakForOS, 0, sizeof( gamePakForOS ) );
             search = searchPaths
             while (search != null) {
                 if (null == search.pack) {
@@ -1923,10 +1841,12 @@ object FileSystem_h {
                 while (pakFile != null) {
                     if (FilenameCompare(pakFile.name.toString(), BINARY_CONFIG)) {
                         search.pack!!.binary = binaryStatus_t.BINARY_YES
-                        confFile = ReadFileFromZip(search.pack!!, pakFile, BINARY_CONFIG)
-                        //				buf = new char[ confFile.Length() + 1 ];
-                        confFile.Read(ByteBuffer.allocate(confFile.Length()).also { buf = it }, confFile.Length())
-                        //				buf[ confFile.Length() ] = '\0';
+                        confFile = ReadFileFromZip(
+                            search.pack!!, pakFile, BINARY_CONFIG
+                        ) //				buf = new char[ confFile.Length() + 1 ];
+                        confFile.Read(
+                            ByteBuffer.allocate(confFile.Length()).also { buf = it }, confFile.Length()
+                        ) //				buf[ confFile.Length() ] = '\0';
                         lexConf = idLexer(String(buf.array()), confFile.Length(), confFile.GetFullPath())
                         while (lexConf.ReadToken(token)) {
                             if (token.IsNumeric()) {
@@ -1944,9 +1864,8 @@ object FileSystem_h {
                                 }
                             }
                         }
-                        CloseFile(confFile)
-                        //				delete lexConf;
-//				delete[] buf;
+                        CloseFile(confFile) //				delete lexConf;
+                        //				delete[] buf;
                     }
                     pakFile = pakFile.next
                 }
@@ -1959,9 +1878,7 @@ object FileSystem_h {
                 idLib.common.Warning("No game code pak reference found for the local OS")
                 return false
             }
-            if (!CVarSystem.cvarSystem.GetCVarBool("net_serverAllowServerMod")
-                && gamePakChecksum != gamePakForOS[BUILD_OS_ID]
-            ) {
+            if (!CVarSystem.cvarSystem.GetCVarBool("net_serverAllowServerMod") && gamePakChecksum != gamePakForOS[BUILD_OS_ID]) {
                 idLib.common.Warning("The current game code doesn't match pak files (net_serverAllowServerMod is off)")
                 return false
             }
@@ -1984,10 +1901,7 @@ object FileSystem_h {
          =====================
          */
         override fun SetPureServerChecksums(
-            pureChecksums: IntArray,
-            _gamePakChecksum: Int,
-            missingChecksums: IntArray,
-            missingGamePakChecksum: IntArray
+            pureChecksums: IntArray, _gamePakChecksum: Int, missingChecksums: IntArray, missingGamePakChecksum: IntArray
         ): fsPureReply_t {
             var pack: pack_t?
             var i: Int
@@ -2007,8 +1921,7 @@ object FileSystem_h {
                 ClearPureChecksums()
                 return fsPureReply_t.PURE_OK
             }
-            if (0 == serverPaks.Num()) {
-                // there was no pure lockdown yet - lock to what we already have
+            if (0 == serverPaks.Num()) { // there was no pure lockdown yet - lock to what we already have
                 UpdatePureServerChecksums()
             }
             i = 0
@@ -2020,8 +1933,7 @@ object FileSystem_h {
                     j++ // the pak is matched, is in the right order, continue..
                 } else {
                     pack = GetPackForChecksum(pureChecksums[i], true)
-                    if (pack != null && pack.addon && !pack.addon_search) {
-                        // this is an addon pack, and it's not on our current search list
+                    if (pack != null && pack.addon && !pack.addon_search) { // this is an addon pack, and it's not on our current search list
                         // setting success to false meaning that a restart including this addon is required
                         if (fs_debug.GetBool()) {
                             idLib.common.Printf(
@@ -2032,8 +1944,7 @@ object FileSystem_h {
                         }
                         success = false
                     }
-                    if (pack != null && pack.isNew) {
-                        // that's a downloaded pack, we will need to restart
+                    if (pack != null && pack.isNew) { // that's a downloaded pack, we will need to restart
                         if (fs_debug.GetBool()) {
                             idLib.common.Printf(
                                 "pak %s checksumed 0x%x is a newly downloaded file. Restart required.\n",
@@ -2044,8 +1955,7 @@ object FileSystem_h {
                         success = false
                     }
                     if (pack != null) {
-                        if (canPrepend) {
-                            // we still have a chance
+                        if (canPrepend) { // we still have a chance
                             if (fs_debug.GetBool()) {
                                 idLib.common.Printf(
                                     "prepend pak %s checksumed 0x%x at index %d\n",
@@ -2053,15 +1963,13 @@ object FileSystem_h {
                                     pack.checksum,
                                     j
                                 )
-                            }
-                            // NOTE: there is a light possibility this adds at the end of the list if UpdatePureServerChecksums didn't set anything
+                            } // NOTE: there is a light possibility this adds at the end of the list if UpdatePureServerChecksums didn't set anything
                             serverPaks.Insert(pack, j)
                             i++
                             j++ // continue..
                         } else {
                             success = false
-                            if (fs_debug.GetBool()) {
-                                // verbose the situation
+                            if (fs_debug.GetBool()) { // verbose the situation
                                 if (serverPaks.Find(pack) != null) {
                                     idLib.common.Printf(
                                         "pak %s checksumed 0x%x is in the pure list at wrong index. Current index is %d, found at %d\n",
@@ -2080,8 +1988,7 @@ object FileSystem_h {
                             }
                             i++ // advance server checksums only
                         }
-                    } else {
-                        // didn't find a matching checksum
+                    } else { // didn't find a matching checksum
                         success = false
                         missingChecksums[imissing++] = pureChecksums[i]
                         missingChecksums[imissing] = 0
@@ -2189,20 +2096,17 @@ object FileSystem_h {
             var i: Int
             var pack: pack_t?
             restartChecksums.Clear()
-            i = 0
-            // FIX: C++ uses `while ( pureChecksums[ i ] )` (0-terminated sentinel),
+            i = 0 // FIX: C++ uses `while ( pureChecksums[ i ] )` (0-terminated sentinel),
             // not `while (i < pureChecksums.size)` which processes the entire array
             while (i < pureChecksums.size && pureChecksums[i] != 0) {
                 pack = GetPackForChecksum(pureChecksums[i], true)
                 if (null == pack) {
                     idLib.common.FatalError(
-                        "SetRestartChecksums failed: no pak for checksum 0x%x\n",
-                        pureChecksums[i]
+                        "SetRestartChecksums failed: no pak for checksum 0x%x\n", pureChecksums[i]
                     )
                     return
                 }
-                if (pack.addon && addonChecksums.FindIndex(pack.checksum) < 0) {
-                    // can't mark it pure if we're not even gonna search it :-)
+                if (pack.addon && addonChecksums.FindIndex(pack.checksum) < 0) { // can't mark it pure if we're not even gonna search it :-)
                     addonChecksums.Append(pack.checksum)
                 }
                 restartChecksums.Append(pureChecksums[i])
@@ -2258,11 +2162,10 @@ object FileSystem_h {
                 buffer[0] = null //TODO:
             }
 
-//            buf = null;	// quiet compiler warning
+            //            buf = null;	// quiet compiler warning
             // if this is a .cfg file and we are playing back a journal, read
             // it from the journal file
-            if (relativePath.endsWith(".cfg")) {
-//            if (relativePath.indexOf(".cfg") == relativePath.length() - 4) {
+            if (relativePath.endsWith(".cfg")) { //            if (relativePath.indexOf(".cfg") == relativePath.length() - 4) {
                 isConfig = true
                 if (EventLoop.eventLoop.JournalLevel() == 2) {
                     var r: Int
@@ -2314,7 +2217,7 @@ object FileSystem_h {
             f.Read(buf, len._val)
 
             // guarantee that it will have a trailing 0 for string operations
-//            buf.put(len[0], (byte) 0);
+            //            buf.put(len[0], (byte) 0);
             CloseFile(f)
 
             // if we are journalling and it is a config file, write it to the journal file
@@ -2340,7 +2243,7 @@ object FileSystem_h {
             }
             loadStack--
 
-//            Heap.Mem_Free(buffer);
+            //            Heap.Mem_Free(buffer);
             //buffer[0] = null
         }
 
@@ -2356,10 +2259,7 @@ object FileSystem_h {
         }
 
         override fun WriteFile(
-            relativePath: String,
-            buffer: ByteBuffer,
-            size: Int,
-            basePath: String /*"fs_savepath"*/
+            relativePath: String, buffer: ByteBuffer, size: Int, basePath: String /*"fs_savepath"*/
         ): Int {
             var size = size
             val f: idFile?
@@ -2446,8 +2346,7 @@ object FileSystem_h {
             // make sure the doomkey file is only readable by game at initialization
             // any other time the key should only be accessed in memory using the provided functions
             if (idLib.common.IsInitialized() && (idStr.Icmp(
-                    relativePath,
-                    Licensee.CDKEY_FILE
+                    relativePath, Licensee.CDKEY_FILE
                 ) == 0 || idStr.Icmp(relativePath, Licensee.XPKEY_FILE) == 0)
             ) {
                 return null
@@ -2459,8 +2358,7 @@ object FileSystem_h {
             hash = HashFileName(relativePath)
             search = searchPaths
             while (search != null) {
-                if (search.dir != null && searchFlags and FSFLAG_SEARCH_DIRS != 0) {
-                    // check a file in the directory tree
+                if (search.dir != null && searchFlags and FSFLAG_SEARCH_DIRS != 0) { // check a file in the directory tree
 
                     // if we are running restricted, the only files we
                     // will allow to come from the directory are .cfg files
@@ -2534,14 +2432,11 @@ object FileSystem_h {
                                     CopyFile(netpath.toString(), copypath.toString())
                                 } else if (isFromSavePath || isFromBasePath) {
                                     val sourcepath: idStr
-                                    sourcepath =
-                                        idStr(
-                                            BuildOSPath(
-                                                fs_cdpath.GetString()!!,
-                                                dir.gamedir.toString(),
-                                                relativePath
-                                            )
+                                    sourcepath = idStr(
+                                        BuildOSPath(
+                                            fs_cdpath.GetString()!!, dir.gamedir.toString(), relativePath
                                         )
+                                    )
                                     val t1 = win_main.Sys_FileTimeStamp(sourcepath.toString())
                                     val t2 = win_main.Sys_FileTimeStamp(copypath.toString())
                                     if (t1 > t2) {
@@ -2576,11 +2471,9 @@ object FileSystem_h {
 
                     // look through all the pak file elements
                     pak = search.pack!!
-                    if (searchFlags and FSFLAG_BINARY_ONLY != 0) {
-                        // make sure this pak is tagged as a binary file
+                    if (searchFlags and FSFLAG_BINARY_ONLY != 0) { // make sure this pak is tagged as a binary file
                         if (pak.binary == binaryStatus_t.BINARY_UNKNOWN) {
-                            var confHash: Int
-                            //					fileInPack_s	pakFile;
+                            var confHash: Int //					fileInPack_s	pakFile;
                             confHash = HashFileName(BINARY_CONFIG).toInt()
                             pak.binary = binaryStatus_t.BINARY_NO
                             pakFile = search.pack!!.hashTable[confHash]
@@ -2606,8 +2499,7 @@ object FileSystem_h {
                             if (foundInPak != null) {
                                 foundInPak[0] = pak
                             }
-                            if (!pak.referenced && 0 == searchFlags and FSFLAG_PURE_NOREF) {
-                                // mark this pak referenced
+                            if (!pak.referenced && 0 == searchFlags and FSFLAG_PURE_NOREF) { // mark this pak referenced
                                 if (fs_debug.GetInteger() != 0) {
                                     idLib.common.Printf(
                                         "idFileSystem::OpenFileRead: %s . adding %s to referenced paks\n",
@@ -2634,8 +2526,7 @@ object FileSystem_h {
             if (searchFlags and FSFLAG_SEARCH_ADDONS != 0) {
                 search = addonPaks
                 while (search != null) {
-                    assert(search.pack != null)
-                    //			fileInPack_s	pakFile;
+                    assert(search.pack != null) //			fileInPack_s	pakFile;
                     pak = search.pack!!
                     pakFile = pak.hashTable[hash.toInt()]
                     while (pakFile != null) {
@@ -2643,8 +2534,7 @@ object FileSystem_h {
                             val file = ReadFileFromZip(pak, pakFile, relativePath)
                             if (foundInPak != null) {
                                 foundInPak[0] = pak
-                            }
-                            // we don't toggle pure on paks found in addons - they can't be used without a reloadEngine anyway
+                            } // we don't toggle pure on paks found in addons - they can't be used without a reloadEngine anyway
                             if (fs_debug.GetInteger() != 0) {
                                 idLib.common.Printf(
                                     "idFileSystem::OpenFileRead: %s (found in addon pk4 '%s')\n",
@@ -2675,11 +2565,7 @@ object FileSystem_h {
 
         override fun OpenFileRead(relativePath: String, allowCopyFiles: Boolean, gamedir: String?): idFile? {
             return OpenFileReadFlags(
-                relativePath,
-                FSFLAG_SEARCH_DIRS or FSFLAG_SEARCH_PAKS,
-                null,
-                allowCopyFiles,
-                gamedir
+                relativePath, FSFLAG_SEARCH_DIRS or FSFLAG_SEARCH_PAKS, null, allowCopyFiles, gamedir
             )
         }
 
@@ -2706,8 +2592,7 @@ object FileSystem_h {
             CreateOSPath(OSpath)
             f = idFile_Permanent()
             f.o = OpenOSFile(OSpath, "wb")
-            if (f.o == null) {
-//		delete f;
+            if (f.o == null) { //		delete f;
                 return null
             }
             f.name.set(relativePath)
@@ -2733,8 +2618,8 @@ object FileSystem_h {
             if (null == searchPaths) {
                 idLib.common.FatalError("Filesystem call made without initialization\n")
             }
-            path = CVarSystem.cvarSystem.GetCVarString(basePath)
-            // FIX: C++ checks `if ( !path[0] )` meaning "if path is empty", not "if path is NOT empty"
+            path =
+                CVarSystem.cvarSystem.GetCVarString(basePath) // FIX: C++ checks `if ( !path[0] )` meaning "if path is empty", not "if path is NOT empty"
             if (path.isEmpty()) {
                 path = fs_savepath.GetString()!!
             }
@@ -2745,8 +2630,7 @@ object FileSystem_h {
             }
             f = idFile_Permanent()
             f.o = OpenOSFile(OSpath, "ab")
-            if (f.o == null) {
-//		delete f;
+            if (f.o == null) { //		delete f;
                 return null
             }
             f.name.set(filename)
@@ -2762,8 +2646,7 @@ object FileSystem_h {
                 fsMode_t.FS_READ -> return OpenFileRead(relativePath)
                 fsMode_t.FS_WRITE -> return OpenFileWrite(relativePath)
                 fsMode_t.FS_APPEND -> return OpenFileAppend(relativePath, true)
-            }
-            //idLib.common.FatalError("idFileSystemLocal::OpenFileByMode: bad mode")
+            } //idLib.common.FatalError("idFileSystemLocal::OpenFileByMode: bad mode")
         }
 
         override fun OpenExplicitFileRead(OSPath: String): idFile? {
@@ -2777,8 +2660,7 @@ object FileSystem_h {
             idLib.common.DPrintf("idFileSystem::OpenExplicitFileRead - reading from: %s\n", OSPath)
             f = idFile_Permanent()
             f.o = OpenOSFile(OSPath, "rb")
-            if (f.o == null) {
-//		delete f;
+            if (f.o == null) { //		delete f;
                 return null
             }
             f.name.set(OSPath)
@@ -2801,8 +2683,7 @@ object FileSystem_h {
             CreateOSPath(OSPath)
             f = idFile_Permanent()
             f.o = OpenOSFile(OSPath, "wb")
-            if (f.o == null) {
-//		delete f;
+            if (f.o == null) { //		delete f;
                 return null
             }
             f.name.set(OSPath)
@@ -2824,15 +2705,13 @@ object FileSystem_h {
 
         override fun BackgroundDownload(bgl: backgroundDownload_s) {
             if (bgl.opcode == dlType_t.DLTYPE_FILE) {
-                if ( /*dynamic_cast<idFile_Permanent *>*/bgl.f != null) {
-                    // add the bgl to the background download list
+                if ( /*dynamic_cast<idFile_Permanent *>*/bgl.f != null) { // add the bgl to the background download list
                     Sys_EnterCriticalSection()
                     bgl.next = backgroundDownloads
                     backgroundDownloads = bgl
                     Sys_TriggerEvent()
                     Sys_LeaveCriticalSection()
-                } else {
-                    // read zipped file directly
+                } else { // read zipped file directly
                     bgl.f!!.Seek(bgl.file.position.toLong(), fsOrigin_t.FS_SEEK_SET)
                     bgl.f!!.Read(bgl.file.buffer!!, bgl.file.length)
                     bgl.completed = true
@@ -2860,8 +2739,7 @@ object FileSystem_h {
 
         override fun FindDLL(basename: String, _dllPath: CharArray, updateChecksum: Boolean) {
             var updateChecksum = updateChecksum
-            var dllFile: idFile? = null
-            //            char[] __dllName = new char[MAX_OSPATH];
+            var dllFile: idFile? = null //            char[] __dllName = new char[MAX_OSPATH];
             val __dllName = arrayOf<String>("")
             var dllPath = idStr()
             val dllHash: Long
@@ -2872,11 +2750,10 @@ object FileSystem_h {
             idLib.sys.DLL_GetFileName("" + basename, __dllName, MAX_OSPATH)
             dllHash = HashFileName(__dllName[0])
 
-// #if ID_FAKE_PURE
+            // #if ID_FAKE_PURE
             // if ( 1 ) {
-// #else
-            if (0 == serverPaks.Num()) {
-// #endif
+            // #else
+            if (0 == serverPaks.Num()) { // #endif
                 // from executable directory first - this is handy for developement
                 dllName = __dllName[0]
                 dllPath.set(win_main.Sys_EXEPath())
@@ -2885,12 +2762,9 @@ object FileSystem_h {
                 dllFile = OpenExplicitFileRead(dllPath.toString())
             }
             if (null == dllFile) {
-                if (0 == serverPaks.Num()) {
-                    // not running in pure mode, try to extract from a pak file first
+                if (0 == serverPaks.Num()) { // not running in pure mode, try to extract from a pak file first
                     dllFile = OpenFileReadFlags(
-                        dllName,
-                        FSFLAG_SEARCH_PAKS or FSFLAG_PURE_NOREF or FSFLAG_BINARY_ONLY,
-                        inPak
+                        dllName, FSFLAG_SEARCH_PAKS or FSFLAG_PURE_NOREF or FSFLAG_BINARY_ONLY, inPak
                     )
                     if (dllFile != null) {
                         idLib.common.Printf("found DLL in pak file: %s\n", dllFile.GetFullPath())
@@ -2905,13 +2779,13 @@ object FileSystem_h {
                             gamePakChecksum = inPak[0]!!.checksum
                             updateChecksum = false // don't try again below
                         }
-                    } else {
-                        // didn't find a source in a pak file, try in the directory
+                    } else { // didn't find a source in a pak file, try in the directory
                         dllFile = OpenFileReadFlags(dllName, FSFLAG_SEARCH_DIRS)
                         if (dllFile != null) {
                             if (updateChecksum) {
-                                val gameDLLChecksum = intArrayOf(GetFileChecksum(dllFile).also { gameDLLChecksum = it })
-                                // see if we can mark a pak file
+                                val gameDLLChecksum = intArrayOf(GetFileChecksum(dllFile).also {
+                                    gameDLLChecksum = it
+                                }) // see if we can mark a pak file
                                 pak = FindPakForFileChecksum(dllName, gameDLLChecksum, false)
                                 this.gameDLLChecksum = gameDLLChecksum[0]
                                 gamePakChecksum = pak?.checksum ?: 0
@@ -2919,17 +2793,14 @@ object FileSystem_h {
                             }
                         }
                     }
-                } else {
-                    // we are in pure mode. this path to be reached only for game DLL situations
+                } else { // we are in pure mode. this path to be reached only for game DLL situations
                     // with a code pak checksum given by server
                     assert(gamePakChecksum != 0)
                     assert(updateChecksum)
                     pak = GetPackForChecksum(gamePakChecksum)
-                    if (null == pak) {
-                        // not supposed to happen, bug in pure code?
+                    if (null == pak) { // not supposed to happen, bug in pure code?
                         idLib.common.Warning("FindDLL in pure mode: game pak not found ( 0x%x )\n", gamePakChecksum)
-                    } else {
-                        // extract and copy
+                    } else { // extract and copy
                         pakFile = pak.hashTable[dllHash.toInt()]
                         while (pakFile != null) {
                             if (FilenameCompare(pakFile.name.toString(), dllName)) {
@@ -2957,8 +2828,7 @@ object FileSystem_h {
             }
             if (dllFile != null) {
                 dllPath = idStr(dllFile.GetFullPath())
-                CloseFile(dllFile)
-                //                dllFile = null;
+                CloseFile(dllFile) //                dllFile = null;
             } else {
                 dllPath = idStr()
             }
@@ -2990,10 +2860,7 @@ object FileSystem_h {
             // checking wether the pak is loaded by checksum wouldn't be enough:
             // we may have a different fs_game right now but still need to reply that it's installed
             val search = arrayOf(
-                fs_savepath.GetString()!!,
-                fs_devpath.GetString()!!,
-                fs_basepath.GetString()!!,
-                fs_cdpath.GetString()!!
+                fs_savepath.GetString()!!, fs_devpath.GetString()!!, fs_basepath.GetString()!!, fs_cdpath.GetString()!!
             )
             var pakfile: idFile?
             i = 0
@@ -3005,8 +2872,7 @@ object FileSystem_h {
                     return true
                 }
                 i++
-            }
-            // if we didn't find a pk4 file then the user might have unpacked so look for default.cfg file
+            } // if we didn't find a pk4 file then the user might have unpacked so look for default.cfg file
             // that's the old way mostly used during developement. don't think it hurts to leave it there
             ListOSFiles(fs_basepath.GetString()!!, "/", dirs)
             i = 0
@@ -3021,17 +2887,16 @@ object FileSystem_h {
                     }
                 }
                 i++
-            }
-            //#endif
+            } //#endif
             d3xp = -1
             return false
         }
 
-        override fun RunningD3XP(): Boolean {
-            // TODO: mark the checksum of the gold XP and check for it being referenced ( for double mod support )
+        override fun RunningD3XP(): Boolean { // TODO: mark the checksum of the gold XP and check for it being referenced ( for double mod support )
             // a simple fs_game check should be enough for now..
-            return (0 == idStr.Icmp(fs_game.GetString()!!, "d3xp")
-                    || 0 == idStr.Icmp(fs_game_base.GetString()!!, "d3xp"))
+            return (0 == idStr.Icmp(fs_game.GetString()!!, "d3xp") || 0 == idStr.Icmp(
+                fs_game_base.GetString()!!, "d3xp"
+            ))
         }
 
         /*
@@ -3050,30 +2915,25 @@ object FileSystem_h {
             if (null == f) {
                 return
             }
-            try {
-//            fseek(f, 0, SEEK_END);
-//            len = ftell(f);
-//            fseek(f, 0, SEEK_SET);
+            try { //            fseek(f, 0, SEEK_END);
+                //            len = ftell(f);
+                //            fseek(f, 0, SEEK_SET);
                 len = f.size()
                 buf = ByteBuffer.allocate(len.toInt())
-                if (f.read(buf).toLong() != len) {
-//            if (fread(buf, 1, len, f) != len) {
+                if (f.read(buf).toLong() != len) { //            if (fread(buf, 1, len, f) != len) {
                     idLib.common.FatalError("short read in idFileSystemLocal::CopyFile()\n")
                 }
                 f.close()
                 CreateOSPath(toOSPath)
                 f = OpenOSFile(toOSPath, "wb")
                 if (null == f) {
-                    idLib.common.Printf("could not create destination file\n")
-                    //                Heap.Mem_Free(buf);
+                    idLib.common.Printf("could not create destination file\n") //                Heap.Mem_Free(buf);
                     return
                 }
-                if (f.write(buf).toLong() != len) {
-//            if (fwrite(buf, 1, len, f) != len) {
+                if (f.write(buf).toLong() != len) { //            if (fwrite(buf, 1, len, f) != len) {
                     idLib.common.FatalError("short write in idFileSystemLocal::CopyFile()\n")
                 }
-                f.close()
-                //            Heap.Mem_Free(buf);
+                f.close() //            Heap.Mem_Free(buf);
             } catch (ex: IOException) {
                 Logger.getLogger(FileSystem_h::class.java.name).log(Level.SEVERE, null, ex)
             }
@@ -3112,8 +2972,9 @@ object FileSystem_h {
             testList.add(fs_cdpath.GetString()!!)
             i = 0
             while (i < testList.size()) {
-                if (testList[i].Length() != 0
-                    && testList[i].Icmpn(pak.pakFilename.toString(), testList[i].Length()) == 0
+                if (testList[i].Length() != 0 && testList[i].Icmpn(
+                        pak.pakFilename.toString(), testList[i].Length()
+                    ) == 0
                 ) {
                     relativePath.set(pak.pakFilename.toString().substring(testList[i].Length() + 1))
                     break
@@ -3134,12 +2995,10 @@ object FileSystem_h {
         override fun MakeTemporaryFile(): idFile {
             var f: FileChannel?
             try {
-                f = win_main.tmpfile()
-                //            if (NOT(f)) {
+                f = win_main.tmpfile() //            if (NOT(f)) {
             } catch (e: IOException) {
                 idLib.common.Warning(
-                    "idFileSystem::MakeTemporaryFile failed: %s",
-                    e.message!!
+                    "idFileSystem::MakeTemporaryFile failed: %s", e.message!!
                 ) // strerror(System.err));
                 f = null
             }
@@ -3169,8 +3028,7 @@ object FileSystem_h {
             if (null == pak) {
                 idLib.common.Warning("AddZipFile %s failed\n", path)
                 return 0
-            }
-            // insert the pak at the end of the search list - temporary until we restart
+            } // insert the pak at the end of the search list - temporary until we restart
             pak.isNew = true
             search = searchpath_s()
             search.dir = null
@@ -3186,24 +3044,17 @@ object FileSystem_h {
         }
 
         override fun FindFile(path: String, scheduleAddons: Boolean): findFile_t {
-            val pak = arrayOfNulls<pack_t?>(1)
-            // FIX: Capture the returned file so it can be closed (resource leak)
+            val pak = arrayOfNulls<pack_t?>(1) // FIX: Capture the returned file so it can be closed (resource leak)
             val f = OpenFileReadFlags(
-                path,
-                FSFLAG_SEARCH_DIRS or FSFLAG_SEARCH_PAKS or FSFLAG_SEARCH_ADDONS,
-                pak
-            )
-                ?: return findFile_t.FIND_NO
-            if (null == pak[0]) {
-                // found in FS, not even in paks
+                path, FSFLAG_SEARCH_DIRS or FSFLAG_SEARCH_PAKS or FSFLAG_SEARCH_ADDONS, pak
+            ) ?: return findFile_t.FIND_NO
+            if (null == pak[0]) { // found in FS, not even in paks
                 CloseFile(f)
                 return findFile_t.FIND_YES
-            }
-            // marking addons for inclusion on reload - may need to do that even when already in the search path
+            } // marking addons for inclusion on reload - may need to do that even when already in the search path
             if (scheduleAddons && pak[0]!!.addon && addonChecksums.FindIndex(pak[0]!!.checksum) < 0) {
                 addonChecksums.Append(pak[0]!!.checksum)
-            }
-            // an addon that's not on search list yet? that will require a restart
+            } // an addon that's not on search list yet? that will require a restart
             CloseFile(f)
             return if (pak[0]!!.addon && !pak[0]!!.addon_search) {
                 findFile_t.FIND_ADDON
@@ -3278,8 +3129,7 @@ object FileSystem_h {
                     if (null == search.pack || !search.pack!!.addon || null == search.pack!!.addon_info) {
                         search = search.next
                         continue
-                    }
-                    // each addon may have a bunch of map decls
+                    } // each addon may have a bunch of map decls
                     if (idecl < search.pack!!.addon_info!!.mapDecls.Num()) {
                         mapDict.set(search.pack!!.addon_info!!.mapDecls[idecl])
                         return mapDict
@@ -3299,11 +3149,9 @@ object FileSystem_h {
             mapname.StripPath()
             mapname.StripFileExtension()
             idStr.snPrintf(buf, len, "guis/assets/splash/%s.tga", mapname.toString())
-            if (ReadFile(buf.toString(), null, null) == -1) {
-                // try to extract from an addon
+            if (ReadFile(buf.toString(), null, null) == -1) { // try to extract from an addon
                 file = OpenFileReadFlags(buf.toString(), FSFLAG_SEARCH_ADDONS)
-                if (file != null) {
-                    // save it out to an addon splash directory
+                if (file != null) { // save it out to an addon splash directory
                     val dlen = file.Length()
                     var data = ByteBuffer.allocate(dlen)
                     file.Read(data, dlen)
@@ -3324,8 +3172,9 @@ object FileSystem_h {
          Ignore case and separator char distinctions
          ===========
          */
-        override fun FilenameCompare(s1: String, s2: String): Boolean {
-            // normalize '\\' and ':' to '/' before comparing, matching C++ behavior
+        override fun FilenameCompare(
+            s1: String, s2: String
+        ): Boolean { // normalize '\\' and ':' to '/' before comparing, matching C++ behavior
             val n1 = s1.replace('\\', '/').replace(':', '/')
             val n2 = s2.replace('\\', '/').replace(':', '/')
             return n1.equals(n2, ignoreCase = true)
@@ -3383,11 +3232,8 @@ object FileSystem_h {
             var list = list
             var i: Int
             var j: Int
-            val ret: Int
-            // no need, better to call it with empty string then null
-//            if (null == extension) {
-//                extension = ""
-//            }
+            val ret: Int // no need, better to call it with empty string then null //            if (null == extension) { //                extension = ""
+            //            }
             if (!fs_caseSensitiveOS.GetBool()) {
                 return Sys_ListFiles(directory, extension, list)
             }
@@ -3397,16 +3243,14 @@ object FileSystem_h {
             while (i >= dir_cache_index - dir_cache_count) {
                 j = (i + MAX_CACHED_DIRS) % MAX_CACHED_DIRS
                 if (dir_cache[j].Matches(directory, extension)) {
-                    if (fs_debug.GetInteger() != 0) {
-                        //common.Printf( "idFileSystemLocal::ListOSFiles: cache hit: %s\n", directory );
+                    if (fs_debug.GetInteger() != 0) { //common.Printf( "idFileSystemLocal::ListOSFiles: cache hit: %s\n", directory );
                     }
                     list = dir_cache[j]
                     return list.size()
                 }
                 i--
             }
-            if (fs_debug.GetInteger() != 0) {
-                //common.Printf( "idFileSystemLocal::ListOSFiles: cache miss: %s\n", directory );
+            if (fs_debug.GetInteger() != 0) { //common.Printf( "idFileSystemLocal::ListOSFiles: cache miss: %s\n", directory );
             }
             ret = Sys_ListFiles(directory, extension, list)
             if (ret == -1) {
@@ -3429,9 +3273,7 @@ object FileSystem_h {
          ================
          */
         private fun OpenOSFile(
-            fileName: String,
-            mode: String?,
-            caseSensitiveName: idStr? = null /*= NULL*/
+            fileName: String, mode: String?, caseSensitiveName: idStr? = null /*= NULL*/
         ): FileChannel? {
             var i: Int
             var fp: Path?
@@ -3439,22 +3281,20 @@ object FileSystem_h {
             var entry: idStr
             val list = idStrList()
 
-//if( __MWERKS__&&
-// WIN32 ){
-//	// some systems will let you fopen a directory
-//	struct stat buf;
-//	if ( stat( fileName, &buf ) != -1 && !S_ISREG(buf.st_mode) ) {
-//		return NULL;
-//	}
-//}
+            //if( __MWERKS__&&
+            // WIN32 ){
+            //	// some systems will let you fopen a directory
+            //	struct stat buf;
+            //	if ( stat( fileName, &buf ) != -1 && !S_ISREG(buf.st_mode) ) {
+            //		return NULL;
+            //	}
+            //}
             fp = try {
                 Paths.get(fileName) //fp = fopen(fileName, mode);
             } catch (e: InvalidPathException) {
                 return null
             }
-            if (Files.notExists(fp, LinkOption.NOFOLLOW_LINKS)
-                && fs_caseSensitiveOS.GetBool()
-            ) {
+            if (Files.notExists(fp, LinkOption.NOFOLLOW_LINKS) && fs_caseSensitiveOS.GetBool()) {
                 fpath = idStr(fileName)
                 fpath.StripFilename()
                 fpath.StripTrailing(PATHSEPERATOR_CHAR)
@@ -3473,17 +3313,13 @@ object FileSystem_h {
                             }
                             if (fs_debug.GetInteger() != 0) {
                                 idLib.common.Printf(
-                                    "idFileSystemLocal::OpenFileRead: changed %s to %s\n",
-                                    fileName,
-                                    entry
+                                    "idFileSystemLocal::OpenFileRead: changed %s to %s\n", fileName, entry
                                 )
                             }
                             break
-                        } else {
-                            // not supposed to happen if ListOSFiles is doing it's job correctly
+                        } else { // not supposed to happen if ListOSFiles is doing it's job correctly
                             idLib.common.Warning(
-                                "idFileSystemLocal::OpenFileRead: fs_caseSensitiveOS 1 could not open %s",
-                                entry
+                                "idFileSystemLocal::OpenFileRead: fs_caseSensitiveOS 1 could not open %s", entry
                             )
                         }
                     }
@@ -3498,11 +3334,10 @@ object FileSystem_h {
                     return null
                 }
             }
-            try {
-                //                return new FileInputStream(fp.toFile()).getChannel();
+            try { //                return new FileInputStream(fp.toFile()).getChannel();
                 return FileChannel.open(fp, fopenOptions(mode))
             } catch (ex: NoSuchFileException) { //TODO:turn exceptions back on.
-//                Logger.getLogger(FileSystem_h.class.getName()).log(Level.WARNING, null, ex);
+                //                Logger.getLogger(FileSystem_h.class.getName()).log(Level.WARNING, null, ex);
             } catch (ex: IOException) {
                 Logger.getLogger(FileSystem_h::class.java.name).log(Level.SEVERE, null, ex)
             }
@@ -3514,10 +3349,9 @@ object FileSystem_h {
                 return false
             }
             val normalized = mode.replace("b", "").replace("t", "")
-            return normalized.contains("r") &&
-                    !normalized.contains("+") &&
-                    !normalized.contains("w") &&
-                    !normalized.contains("a")
+            return normalized.contains("r") && !normalized.contains("+") && !normalized.contains("w") && !normalized.contains(
+                "a"
+            )
         }
 
         private fun IsRegularFileNoException(path: Path?): Boolean {
@@ -3542,14 +3376,13 @@ object FileSystem_h {
         }
 
         private fun DirectFileLength(o: FileChannel): Long {
-            try {
-                //            int pos;
-//            int end;
-//
-//            pos = ftell(o);
-//            fseek(o, 0, SEEK_END);
-//            end = ftell(o);
-//            fseek(o, pos, SEEK_SET);
+            try { //            int pos;
+                //            int end;
+                //
+                //            pos = ftell(o);
+                //            fseek(o, 0, SEEK_END);
+                //            end = ftell(o);
+                //            fseek(o, pos, SEEK_SET);
                 return o.size()
             } catch (ex: IOException) {
                 Logger.getLogger(FileSystem_h::class.java.name).log(Level.SEVERE, null, ex)
@@ -3572,17 +3405,14 @@ object FileSystem_h {
             CreateOSPath(toOSPath)
             f = OpenOSFile(toOSPath, "wb")
             if (null == f) {
-                idLib.common.Printf("could not create destination file\n")
-                //                Heap.Mem_Free(buf);
+                idLib.common.Printf("could not create destination file\n") //                Heap.Mem_Free(buf);
                 return
             }
             try {
-                if (f.write(buf) != len) {
-//            if (fwrite(buf, 1, len, f) != len) {
+                if (f.write(buf) != len) { //            if (fwrite(buf, 1, len, f) != len) {
                     idLib.common.FatalError("Short write in idFileSystemLocal::CopyFile()\n")
                 }
-                f.close()
-                //            Heap.Mem_Free(buf);
+                f.close() //            Heap.Mem_Free(buf);
             } catch (ex: IOException) {
                 Logger.getLogger(FileSystem_h::class.java.name).log(Level.SEVERE, null, ex)
             }
@@ -3703,13 +3533,11 @@ object FileSystem_h {
                         }
                         i++
                     }
-                } else if (search.pack != null) {
-                    // look through all the pak file elements
+                } else if (search.pack != null) { // look through all the pak file elements
 
                     // exclude any extra packs if we have server paks to search
                     if (serverPaks.Num() != 0) {
-                        GetPackStatus(search.pack!!)
-                        // FIX: C++ `!serverPaks.Find()` checks for NOT found (NULL = falsy).
+                        GetPackStatus(search.pack!!) // FIX: C++ `!serverPaks.Find()` checks for NOT found (NULL = falsy).
                         // Kotlin Find() returns null when not found, not 0.
                         if (search.pack!!.pureStatus != pureStatus_t.PURE_NEVER && null == serverPaks.Find(search.pack!!)) {
                             search = search.next
@@ -3757,9 +3585,7 @@ object FileSystem_h {
                         // check for extension match
                         j = 0
                         while (j < extensions.size()) {
-                            if (length >= extensions[j].Length() && extensions[j]
-                                    .Icmp(name.substring(length - extensions[j].Length())) == 0
-                            ) {
+                            if (length >= extensions[j].Length() && extensions[j].Icmp(name.substring(length - extensions[j].Length())) == 0) {
                                 break
                             }
                             j++
@@ -3865,8 +3691,11 @@ object FileSystem_h {
             searchPaths = search
 
             // find all pak files in this directory
-            pakfile = idStr(BuildOSPath(path, dir, ""))
-            //            pakfile.oSet(pakfile.Length() - 1, (char) 0);	// strip the trailing slash
+            pakfile = idStr(
+                BuildOSPath(
+                    path, dir, ""
+                )
+            ) //            pakfile.oSet(pakfile.Length() - 1, (char) 0);	// strip the trailing slash
             ListOSFiles(pakfile.toString(), ".pk4", pakfiles)
 
             // sort them so that later alphabetic matches override
@@ -3879,8 +3708,7 @@ object FileSystem_h {
                 if (null == pak) {
                     i++
                     continue
-                }
-                // insert the pak after the directory it comes from
+                } // insert the pak after the directory it comes from
                 search = searchpath_s()
                 search.dir = null
                 search.pack = pak
@@ -3937,16 +3765,14 @@ object FileSystem_h {
             }
             if (addonChecksums.Num() != 0) {
                 idLib.common.Printf(
-                    "restarting filesystem with %d addon pak file(s) to include\n",
-                    addonChecksums.Num()
+                    "restarting filesystem with %d addon pak file(s) to include\n", addonChecksums.Num()
                 )
             }
             SetupGameDirectories(Licensee.BASE_GAMEDIR)
 
             // fs_game_base override
             if (!fs_game_base.GetString()!!.isEmpty() && idStr.Icmp(
-                    fs_game_base.GetString()!!,
-                    Licensee.BASE_GAMEDIR
+                    fs_game_base.GetString()!!, Licensee.BASE_GAMEDIR
                 ) != 0
             ) {
                 SetupGameDirectories(fs_game_base.GetString()!!)
@@ -3954,8 +3780,7 @@ object FileSystem_h {
 
             // fs_game override
             if (!fs_game.GetString()!!.isEmpty() && idStr.Icmp(
-                    fs_game.GetString()!!,
-                    Licensee.BASE_GAMEDIR
+                    fs_game.GetString()!!, Licensee.BASE_GAMEDIR
                 ) != 0 && idStr.Icmp(fs_game.GetString()!!, fs_game_base.GetString()!!) != 0
             ) {
                 SetupGameDirectories(fs_game.GetString()!!)
@@ -3970,8 +3795,7 @@ object FileSystem_h {
                     continue
                 }
                 pak = search.pack!!
-                if (fs_searchAddons.GetBool()) {
-                    // when we have fs_searchAddons on we should never have addonChecksums
+                if (fs_searchAddons.GetBool()) { // when we have fs_searchAddons on we should never have addonChecksums
                     assert(0 == addonChecksums.Num())
                     pak.addon_search = true
                     search = search.next
@@ -4005,16 +3829,13 @@ object FileSystem_h {
                         pak.checksum
                     )
                     search = search.next
-                } else {
-                    // remove from search list, put in addons list
+                } else { // remove from search list, put in addons list
                     val paksearch = search
                     search = search.next
                     paksearch.next = addonPaks
                     addonPaks = paksearch
                     idLib.common.Printf(
-                        "Addon pk4 %s with checksum 0x%x is on addon list\n",
-                        pak.pakFilename.toString(),
-                        pak.checksum
+                        "Addon pk4 %s with checksum 0x%x is on addon list\n", pak.pakFilename.toString(), pak.checksum
                     )
                 }
             }
@@ -4028,8 +3849,7 @@ object FileSystem_h {
                         continue
                     }
                     if (restartChecksums.FindIndex(search.pack!!.checksum).also { i = it } != -1) {
-                        if (i == 0) {
-                            // this pak is the next one in the pure search order
+                        if (i == 0) { // this pak is the next one in the pure search order
                             serverPaks.Append(search.pack!!)
                             restartChecksums.RemoveIndex(0)
                             if (0 == restartChecksums.Num()) {
@@ -4037,12 +3857,10 @@ object FileSystem_h {
                             }
                             search = search.next
                             continue
-                        } else {
-                            // this pak will be on the pure list, but order is not right yet
+                        } else { // this pak will be on the pure list, but order is not right yet
                             var aux: searchpath_s?
                             aux = search.next
-                            if (null == aux) {
-                                // last of the list can't be swapped back
+                            if (null == aux) { // last of the list can't be swapped back
                                 if (fs_debug.GetBool()) {
                                     idLib.common.Printf(
                                         "found pure checksum %x at index %d, but the end of search path is reached\n",
@@ -4064,14 +3882,11 @@ object FileSystem_h {
                                         i++
                                     }
                                     idLib.common.Printf(
-                                        "%d paks left - %s\n",
-                                        restartChecksums.Num(),
-                                        checks.toString()
+                                        "%d paks left - %s\n", restartChecksums.Num(), checks.toString()
                                     )
                                 }
                                 idLib.common.FatalError("Failed to restart with pure mode restrictions for server connect")
-                            }
-                            // put this search path at the end of the list
+                            } // put this search path at the end of the list
                             var search_end: searchpath_s?
                             search_end = search.next
                             while (search_end!!.next != null) {
@@ -4082,11 +3897,9 @@ object FileSystem_h {
                             search_end.next!!.next = null
                             continue
                         }
-                    }
-                    // this pak is not on the pure list
+                    } // this pak is not on the pure list
                     search = search.next
-                }
-                // the list must be empty
+                } // the list must be empty
                 if (restartChecksums.Num() != 0) {
                     if (fs_debug.GetBool()) {
                         val checks = idStr()
@@ -4106,8 +3919,7 @@ object FileSystem_h {
                         idLib.common.Printf("%d paks left - %s\n", restartChecksums.Num(), checks)
                     }
                     idLib.common.FatalError("Failed to restart with pure mode restrictions for server connect")
-                }
-                // also the game pak checksum
+                } // also the game pak checksum
                 // we could check if the game pak is actually present, but we would not be restarting if there wasn't one @ first pure check
                 gamePakChecksum = restartGamePakChecksum
             }
@@ -4121,23 +3933,14 @@ object FileSystem_h {
                 ArgCompletion_FileName.getInstance()
             )
             CmdSystem.cmdSystem.AddCommand(
-                "dirtree",
-                DirTree_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "lists a folder with subfolders"
+                "dirtree", DirTree_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "lists a folder with subfolders"
             )
             CmdSystem.cmdSystem.AddCommand("path", Path_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "lists search paths")
             CmdSystem.cmdSystem.AddCommand(
-                "touchFile",
-                TouchFile_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "touches a file"
+                "touchFile", TouchFile_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "touches a file"
             )
             CmdSystem.cmdSystem.AddCommand(
-                "touchFileList",
-                TouchFileList_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "touches a list of files"
+                "touchFileList", TouchFileList_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "touches a list of files"
             )
 
             // print the current search paths
@@ -4156,18 +3959,14 @@ object FileSystem_h {
          */
         private fun SetRestrictions() {
             if (ID_DEMO_BUILD) {
-                idLib.common.Printf("\nRunning in restricted demo mode.\n\n")
-                // make sure that the pak file has the header checksum we expect
+                idLib.common.Printf("\nRunning in restricted demo mode.\n\n") // make sure that the pak file has the header checksum we expect
                 var search: searchpath_s?
                 search = searchPaths
                 while (search != null) {
-                    if (search.pack != null) {
-                        // a tiny attempt to keep the checksum from being scannable from the exe
+                    if (search.pack != null) { // a tiny attempt to keep the checksum from being scannable from the exe
                         if ((search.pack!!.checksum xor -0x7bd97bca).toLong() != DemoChecksum.DEMO_PAK_CHECKSUM xor -0x7bd97bca) {
                             idLib.common.FatalError(
-                                "Corrupted %s: 0x%x",
-                                search.pack!!.pakFilename.toString(),
-                                search.pack!!.checksum
+                                "Corrupted %s: 0x%x", search.pack!!.pakFilename.toString(), search.pack!!.checksum
                             )
                         }
                     }
@@ -4184,33 +3983,20 @@ object FileSystem_h {
             if ( // for config files
                 path.endsWith(".cfg") ||  // for journal files
                 path.endsWith(".dat") ||  // dynamic modules are handled a different way for pure
-                path.endsWith("dll") ||
-                path.endsWith(".so") ||
-                path.endsWith(".dylib") ||
-                path.endsWith(".scriptcfg") ||  // configuration script, such as map cycle
+                path.endsWith("dll") || path.endsWith(".so") || path.endsWith(".dylib") || path.endsWith(".scriptcfg") ||  // configuration script, such as map cycle
                 ID_PURE_ALLOWDDS && path.endsWith("dds")
-            ) {
-                // note: cd and xp keys, as well as config.spec are opened through an explicit OS path and don't hit this
+            ) { // note: cd and xp keys, as well as config.spec are opened through an explicit OS path and don't hit this
                 return true
-            }
-            // savegames
-            if (path.startsWith("savegames")
-                && (path.endsWith(".tga") || path.endsWith(".txt") || path.endsWith(".save"))
-            ) {
+            } // savegames
+            if (path.startsWith("savegames") && (path.endsWith(".tga") || path.endsWith(".txt") || path.endsWith(".save"))) {
                 return true
-            }
-            // screen shots
+            } // screen shots
             if (path.startsWith("screenshots") && path.endsWith(".tga")) {
                 return true
-            }
-            // objective tgas
-            return if (path.startsWith("maps/game")
-                && path.endsWith(".tga")
-            ) {
-                true
-            } else path.startsWith("guis/assets/splash/addon")
-                    && path.endsWith(".tga")
-            // splash screens extracted from addons
+            } // objective tgas
+            return path.startsWith("maps/game") && path.endsWith(".tga") || path.startsWith("guis/assets/splash/addon") && path.endsWith(
+                ".tga"
+            ) // splash screens extracted from addons
         }
 
         private fun GetPackForChecksum(checksum: Int, searchAddons: Boolean = false /*= false*/): pack_t? {
@@ -4240,9 +4026,7 @@ object FileSystem_h {
         }
 
         private fun FindPakForFileChecksum(
-            relativePath: String,
-            findChecksum: IntArray,
-            bReference: Boolean
+            relativePath: String, findChecksum: IntArray, bReference: Boolean
         ): pack_t? {
             var search: searchpath_s?
             var pak: pack_t
@@ -4268,8 +4052,7 @@ object FileSystem_h {
                                     )
                                 }
                                 if (bReference) {
-                                    pak.referenced = true
-                                    // FIXME: use dependencies for pak references
+                                    pak.referenced = true // FIXME: use dependencies for pak references
                                 }
                                 CloseFile(file)
                                 return pak
@@ -4298,11 +4081,8 @@ object FileSystem_h {
         private fun LoadZipFile(zipfile: String): pack_t? {
             val buildBuffer: Array<fileInPack_s>
             val pack: pack_t
-            val uf: ZipFile
-            //            int err;
-//            unz_global_info gi;
-            var filename_inzip: String //= new char[MAX_ZIPPED_FILE_NAME];
-            //            unz_file_info file_info;
+            val uf: ZipFile //            int err; //            unz_global_info gi;
+            var filename_inzip: String //= new char[MAX_ZIPPED_FILE_NAME]; //            unz_file_info file_info;
             var i: Int
             var hash: Long
             var fs_numHeaderLongs: Int
@@ -4315,19 +4095,18 @@ object FileSystem_h {
             if (null == f) {
                 return null
             }
-            try {
-                //            fseek(f, 0, SEEK_END);
+            try { //            fseek(f, 0, SEEK_END);
                 len = f.size().toInt()
                 f.close()
                 fs_numHeaderLongs = 0
                 uf = ZipFile(zipfile)
 
-//            err = unzGetGlobalInfo(uf, gi);
-//
-//            if (err != UNZ_OK) {
-//                return null;
-//            }
-//
+                //            err = unzGetGlobalInfo(uf, gi);
+                //
+                //            if (err != UNZ_OK) {
+                //                return null;
+                //            }
+                //
                 buildBuffer = Array(uf.size()) { fileInPack_s() } //int) gi.number_entry];
                 pack = pack_t()
                 i = 0
@@ -4348,7 +4127,7 @@ object FileSystem_h {
                 pack.isNew = false
                 pack.length = len
 
-//            unzGoToFirstFile(uf);
+                //            unzGoToFirstFile(uf);
                 fs_headerLongs =
                     IntArray(uf.size()) // gi.number_entry];//Mem_ClearedAlloc(gi.number_entry sizeof(int));
                 val entries = uf.entries()
@@ -4356,14 +4135,12 @@ object FileSystem_h {
                 while (i < uf.size() /*gi.number_entry*/) {
 
                     // go to the next file in the zip
-                    val entry = entries.nextElement()
-                    //                err = unzGetCurrentFileInfo(uf, file_info, filename_inzip, sizeof(filename_inzip), null, 0, null, 0);
-//                if (err != UNZ_OK) {
-//                    break;
-//                }
-//                if (file_info.uncompressed_size > 0) {
-//                    fs_headerLongs[fs_numHeaderLongs++] = LittleLong(file_info.crc);
-//                }
+                    val entry =
+                        entries.nextElement() //                err = unzGetCurrentFileInfo(uf, file_info, filename_inzip, sizeof(filename_inzip), null, 0, null, 0); //                if (err != UNZ_OK) { //                    break;
+                    //                }
+                    //                if (file_info.uncompressed_size > 0) {
+                    //                    fs_headerLongs[fs_numHeaderLongs++] = LittleLong(file_info.crc);
+                    //                }
                     filename_inzip = entry.name
                     if (entry.size > 0) {
                         fs_headerLongs[fs_numHeaderLongs++] = LittleLong(entry.crc)
@@ -4372,11 +4149,9 @@ object FileSystem_h {
                     buildBuffer[i] = fileInPack_s()
                     buildBuffer[i].name = idStr(filename_inzip)
                     buildBuffer[i].name.ToLower()
-                    buildBuffer[i].name.BackSlashesToSlashes()
-                    // store the file position in the zip
-//                unzGetCurrentFileInfoPosition(uf, buildBuffer[i].pos);
-                    buildBuffer[i].pos = i
-                    // add the file to the hash
+                    buildBuffer[i].name.BackSlashesToSlashes() // store the file position in the zip
+                    //                unzGetCurrentFileInfoPosition(uf, buildBuffer[i].pos);
+                    buildBuffer[i].pos = i // add the file to the hash
                     buildBuffer[i].next = pack.hashTable[hash.toInt()]
                     pack.hashTable[hash.toInt()] = buildBuffer[i]
                     buildBuffer[i].entry = entry //TODO:remove all the other shit
@@ -4390,15 +4165,15 @@ object FileSystem_h {
                 while (pakFile != null) {
                     if (FilenameCompare(pakFile.name.toString(), ADDON_CONFIG)) {
                         pack.addon = true
-                        val file = ReadFileFromZip(pack, pakFile, ADDON_CONFIG)
-                        // may be just an empty file if you don't bother about the mapDef
+                        val file = ReadFileFromZip(
+                            pack, pakFile, ADDON_CONFIG
+                        ) // may be just an empty file if you don't bother about the mapDef
                         if (file != null && file.Length() != 0) {
                             val buf: ByteBuffer?
                             buf = ByteBuffer.allocate(file.Length() + 1)
                             file.Read( /*(void *)*/buf, file.Length())
                             buf.put(file.Length(), '\u0000'.code.toByte())
-                            pack.addon_info = ParseAddonDef(String(buf.array()), file.Length())
-                            //				delete[] buf;
+                            pack.addon_info = ParseAddonDef(String(buf.array()), file.Length()) //				delete[] buf;
                         }
                         file.let { CloseFile(it) }
                         break
@@ -4408,7 +4183,7 @@ object FileSystem_h {
                 pack.checksum = MD4_BlockChecksum(fs_headerLongs, fs_numHeaderLongs * 4).toInt()
                 pack.checksum = LittleLong(pack.checksum)
 
-//            Mem_Free(fs_headerLongs);
+                //            Mem_Free(fs_headerLongs);
                 return pack
             } catch (ex: IOException) {
                 Logger.getLogger(FileSystem_h::class.java.name).log(Level.SEVERE, null, ex)
@@ -4481,9 +4256,7 @@ object FileSystem_h {
                     }
                     if (abrt) {
                         idLib.common.DPrintf(
-                            "pak '%s' candidate for pure: '%s'\n",
-                            pak.pakFilename.toString(),
-                            file.name.toString()
+                            "pak '%s' candidate for pure: '%s'\n", pak.pakFilename.toString(), file.name.toString()
                         )
                         break
                     }
@@ -4525,21 +4298,17 @@ object FileSystem_h {
                 src.Warning("Expected {")
                 return null
             }
-            info = addonInfo_t()
-            // read addonDef
+            info = addonInfo_t() // read addonDef
             while (true) {
-                if (!src.ReadToken(token)) {
-//			delete info;
+                if (!src.ReadToken(token)) { //			delete info;
                     return null
-                }
-                // FIX: C++ `!token.Icmp("}")` returns true when token IS "}".
+                } // FIX: C++ `!token.Icmp("}")` returns true when token IS "}".
                 // Kotlin had `!= "}"` which is the opposite — breaks immediately on non-"}" tokens.
                 if (token.toString() == "}") {
                     break
                 }
                 if (token.type != Token.TT_STRING) {
-                    src.Warning("Expected quoted string, but found '%s'", token.toString())
-                    //			delete info;
+                    src.Warning("Expected quoted string, but found '%s'", token.toString()) //			delete info;
                     return null
                 }
                 var checksum: Int
@@ -4549,52 +4318,45 @@ object FileSystem_h {
                 try {
                     checksum = java.lang.Long.decode(token.toString()).toInt()
                 } catch (e: NumberFormatException) {
-                    src.Warning("Could not parse checksum '%s'", token.toString())
-                    //			delete info;
+                    src.Warning("Could not parse checksum '%s'", token.toString()) //			delete info;
                     return null
                 }
                 info.depends.Append(checksum)
-            }
-            // read any number of mapDef entries
+            } // read any number of mapDef entries
             while (true) {
                 if (!src.SkipUntilString("mapDef")) {
                     return info
                 }
                 if (!src.ReadToken(token)) {
                     src.Warning("Expected map path")
-                    info.mapDecls.DeleteContents(true)
-                    //			delete info;
+                    info.mapDecls.DeleteContents(true) //			delete info;
                     return null
                 }
                 val dict = idDict()
                 dict.Set("path", token.toString())
                 if (!src.ReadToken(token)) {
                     src.Warning("Expected {")
-                    info.mapDecls.DeleteContents(true)
-                    //			delete dict;
-//			delete info;
+                    info.mapDecls.DeleteContents(true) //			delete dict;
+                    //			delete info;
                     return null
                 }
                 while (true) {
                     if (!src.ReadToken(token)) {
                         break
-                    }
-                    // FIX: Same inverted comparison as above — C++ `!token.Icmp("}")` means equal
+                    } // FIX: Same inverted comparison as above — C++ `!token.Icmp("}")` means equal
                     if (token.toString() == "}") {
                         break
                     }
                     if (token.type != Token.TT_STRING) {
                         src.Warning("Expected quoted string, but found '%s'", token.toString())
-                        info.mapDecls.DeleteContents(true)
-                        //				delete dict;
-//				delete info;
+                        info.mapDecls.DeleteContents(true) //				delete dict;
+                        //				delete info;
                         return null
                     }
                     if (!src.ReadToken(token2)) {
                         src.Warning("Unexpected end of file")
-                        info.mapDecls.DeleteContents(true)
-                        //				delete dict;
-//				delete info;
+                        info.mapDecls.DeleteContents(true) //				delete dict;
+                        //				delete info;
                         return null
                     }
                     if (dict.FindKey(token.toString()) != null) {
@@ -4603,9 +4365,8 @@ object FileSystem_h {
                     dict.Set(token, token2)
                 }
                 info.mapDecls.Append(dict)
-            }
-            //            assert (false);
-//            return null;
+            } //            assert (false);
+            //            return null;
         }
 
         private fun FollowAddonDependencies(pak: pack_t) {
@@ -4618,10 +4379,8 @@ object FileSystem_h {
             i = 0
             while (i < num) {
                 val deppak = GetPackForChecksum(pak.addon_info!!.depends[i], true)
-                if (deppak != null) {
-                    // make sure it hasn't been marked for search already
-                    if (!deppak.addon_search) {
-                        // must clean addonChecksums as we go
+                if (deppak != null) { // make sure it hasn't been marked for search already
+                    if (!deppak.addon_search) { // must clean addonChecksums as we go
                         val addon_index = addonChecksums.FindIndex(deppak.checksum)
                         if (addon_index >= 0) {
                             addonChecksums.RemoveIndex(addon_index)
@@ -4776,9 +4535,7 @@ object FileSystem_h {
                     sp = sp.next
                 }
                 idLib.common.Printf(
-                    "game DLL: 0x%x in pak: 0x%x\n",
-                    fileSystemLocal.gameDLLChecksum,
-                    fileSystemLocal.gamePakChecksum
+                    "game DLL: 0x%x in pak: 0x%x\n", fileSystemLocal.gameDLLChecksum, fileSystemLocal.gamePakChecksum
                 )
                 i = 0
                 while (i < MAX_GAME_OS) {
@@ -4786,17 +4543,13 @@ object FileSystem_h {
                         idLib.common.Printf("OS %d - pak 0x%x\n", i, fileSystemLocal.gamePakForOS[i])
                     }
                     i++
-                }
-                // show addon packs that are *not* in the search lists
+                } // show addon packs that are *not* in the search lists
                 idLib.common.Printf("Addon pk4s:\n")
                 sp = fileSystemLocal.addonPaks
                 while (sp != null) {
                     if (Common.com_developer.GetBool()) {
                         idLib.common.Printf(
-                            "%s (%d files - 0x%x)\n",
-                            sp.pack!!.pakFilename,
-                            sp.pack!!.numfiles,
-                            sp.pack!!.checksum
+                            "%s (%d files - 0x%x)\n", sp.pack!!.pakFilename, sp.pack!!.numfiles, sp.pack!!.checksum
                         )
                     } else {
                         idLib.common.Printf("%s (%d files)\n", sp.pack!!.pakFilename, sp.pack!!.numfiles)
@@ -4898,8 +4651,7 @@ object FileSystem_h {
                         Sys_LeaveCriticalSection()
                         win_main.Sys_WaitForEvent()
                         continue
-                    }
-                    // remove from list
+                    } // remove from list
                     fileSystemLocal.backgroundDownloads = bgl.next
                     Sys_LeaveCriticalSection()
 
@@ -4926,10 +4678,9 @@ object FileSystem_h {
             private const val MAX_URL_REDIRECTS = 5
             private const val MAX_URL_DOWNLOAD_BYTES = 2147483647L
 
-            private val downloadHttpClient: HttpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(DOWNLOAD_CONNECT_TIMEOUT_SECONDS))
-                .followRedirects(HttpClient.Redirect.NEVER)
-                .build()
+            private val downloadHttpClient: HttpClient =
+                HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(DOWNLOAD_CONNECT_TIMEOUT_SECONDS))
+                    .followRedirects(HttpClient.Redirect.NEVER).build()
 
             private fun DownloadURLToFile(bgl: backgroundDownload_s) {
                 bgl.url.status = dlStatus_t.DL_INPROGRESS
@@ -4953,11 +4704,9 @@ object FileSystem_h {
                             return
                         }
 
-                        val request = HttpRequest.newBuilder(uri)
-                            .timeout(Duration.ofSeconds(DOWNLOAD_REQUEST_TIMEOUT_SECONDS))
-                            .header("User-Agent", "doom3-kotlin/0.3")
-                            .GET()
-                            .build()
+                        val request =
+                            HttpRequest.newBuilder(uri).timeout(Duration.ofSeconds(DOWNLOAD_REQUEST_TIMEOUT_SECONDS))
+                                .header("User-Agent", "doom3-kotlin/0.3").GET().build()
                         val response = downloadHttpClient.send(request, HttpResponse.BodyHandlers.ofInputStream())
                         val status = response.statusCode()
 
@@ -4999,10 +4748,7 @@ object FileSystem_h {
             }
 
             private fun DownloadResponseBody(
-                bgl: backgroundDownload_s,
-                file: idFile,
-                response: HttpResponse<InputStream>,
-                stream: InputStream
+                bgl: backgroundDownload_s, file: idFile, response: HttpResponse<InputStream>, stream: InputStream
             ): Boolean {
                 val advertisedSize = bgl.url.dltotal
                 val contentLength = response.headers().firstValueAsLong("content-length").orElse(-1L)
@@ -5063,8 +4809,7 @@ object FileSystem_h {
 
             private fun ValidateDownloadURI(url: String): URI {
                 val uri = URI(url.trim())
-                val scheme = uri.scheme?.lowercase(Locale.ROOT)
-                    ?: throw IOException("download URL has no scheme")
+                val scheme = uri.scheme?.lowercase(Locale.ROOT) ?: throw IOException("download URL has no scheme")
                 if (scheme != "http" && scheme != "https") {
                     throw IOException("unsupported download URL scheme '$scheme'")
                 }
@@ -5086,10 +4831,7 @@ object FileSystem_h {
             private val fs_basepath: idCVar =
                 idCVar("fs_basepath", "", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INIT, "")
             private val fs_caseSensitiveOS: idCVar = idCVar(
-                "fs_caseSensitiveOS",
-                if (WIN32) "0" else "1",
-                CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_BOOL,
-                ""
+                "fs_caseSensitiveOS", if (WIN32) "0" else "1", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_BOOL, ""
             )
             private val fs_cdpath: idCVar = idCVar("fs_cdpath", "", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INIT, "")
             private val fs_configpath: idCVar =
@@ -5117,10 +4859,7 @@ object FileSystem_h {
             private val fs_devpath: idCVar =
                 idCVar("fs_devpath", "", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INIT, "")
             private val fs_game: idCVar = idCVar(
-                "fs_game",
-                "",
-                CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INIT or CVarSystem.CVAR_SERVERINFO,
-                "mod path"
+                "fs_game", "", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INIT or CVarSystem.CVAR_SERVERINFO, "mod path"
             )
             private val fs_game_base: idCVar = idCVar(
                 "fs_game_base",
@@ -5142,18 +4881,13 @@ object FileSystem_h {
             private fun  /*size_t*/CurlWriteFunction(
                 ptr: ByteBuffer,    /*size_t*/size: Int,  /*size_t*/
                 nmemb: Int, stream: Array<Any>
-            ): Int {
-                // libcurl write callback. Curl integration isn't ported — return bytes
+            ): Int { // libcurl write callback. Curl integration isn't ported — return bytes
                 // consumed so the (unused) caller treats it as a successful write.
                 return size * nmemb
             }
 
             private fun CurlProgressFunction(
-                clientp: Array<Any>,
-                dltotal: Float,
-                dlnow: Float,
-                ultotal: Float,
-                ulnow: Float
+                clientp: Array<Any>, dltotal: Float, dlnow: Float, ultotal: Float, ulnow: Float
             ): Int {
                 val bgl = clientp[0] as backgroundDownload_s
                 if (bgl.url.status == dlStatus_t.DL_ABORTING) {

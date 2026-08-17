@@ -52,11 +52,10 @@ import neo.ui.UserInterface
 import neo.ui.UserInterface.idUserInterface
 
 class Session {
-    fun RandomizeStack() {
-        // attempt to force uninitialized stack memory bugs
+    fun RandomizeStack() { // attempt to force uninitialized stack memory bugs
         val bytes = 4000000
-        val buf = ByteArray(bytes)
-        // FIX: Math.random() returns [0.0, 1.0), toInt() truncates to 0, so fill was always 0.
+        val buf =
+            ByteArray(bytes) // FIX: Math.random() returns [0.0, 1.0), toInt() truncates to 0, so fill was always 0.
         // C++ uses rand()&255 which produces a random byte value.
         val fill = ((Math.random() * 256).toInt() and 255).toByte()
         for (i in 0 until bytes) {
@@ -107,8 +106,7 @@ class Session {
         abstract fun run(input: String): String
     }
 
-    abstract class idSession {
-        // The renderer and sound system will write changes to writeDemo.
+    abstract class idSession { // The renderer and sound system will write changes to writeDemo.
         // Demos can be recorded and played at the same time when splicing.
 
         var readDemo: idDemoFile? = null
@@ -227,21 +225,15 @@ class Session {
 
         // monitor this download in a progress box to either abort or completion
         abstract fun DownloadProgressBox(
-            bgl: backgroundDownload_s,
-            title: String /*, int progress_start = 0, int progress_end = 100*/
+            bgl: backgroundDownload_s, title: String /*, int progress_start = 0, int progress_end = 100*/
         )
 
         abstract fun DownloadProgressBox(
-            bgl: backgroundDownload_s,
-            title: String,
-            progress_start: Int /*= 0, int progress_end = 100*/
+            bgl: backgroundDownload_s, title: String, progress_start: Int /*= 0, int progress_end = 100*/
         )
 
         abstract fun DownloadProgressBox(
-            bgl: backgroundDownload_s,
-            title: String,
-            progress_start: Int,
-            progress_end: Int
+            bgl: backgroundDownload_s, title: String, progress_start: Int, progress_end: Int
         )
 
         abstract fun SetPlayingSoundWorld()
@@ -316,8 +308,7 @@ class Session {
             val ff: findFile_t
             val rl_args = CmdArgs.idCmdArgs()
             map = idStr(args!!.Argv(1))
-            if (0 == map.Length()) {
-                // DG: if called without arguments, print the current map
+            if (0 == map.Length()) { // DG: if called without arguments, print the current map
                 val curmap = sessLocal.mapSpawnData.serverInfo.GetString("si_map")
                 if (curmap.isNotEmpty()) {
                     Common.common.Printf("Current Map: %s\n", curmap)
@@ -479,59 +470,58 @@ class Session {
                 Common.common.Warning("promptKey recursed - aborted")
                 return
             }
-            recursed = true
-            //HACKME::5:disable the serial messageBox
-//            do {
-//                // in case we're already waiting for an auth to come back to us ( may happen exceptionally )
-//                if (sessLocal.MaybeWaitOnCDKey()) {
-//                    if (sessLocal.CDKeysAreValid(true)) {
-//                        recursed = false;
-//                        return;
-//                    }
-//                }
-//                // the auth server may have replied and set an error message, otherwise use a default
-//                String prompt_msg = sessLocal.GetAuthMsg();
-//                if (prompt_msg.isEmpty()/*[ 0 ] == '\0'*/) {
-//                    prompt_msg = common.GetLanguageDict().GetString("#str_04308");
-//                }
-////                for (int d = 0; d < common.GetLanguageDict().args.Size(); d++) {
-////                    LangDict.idLangKeyValue bla = common.GetLanguageDict().args.get(d);
-////                    System.out.println(bla.key + " >>> " + bla.value);
-////                }
-//                retkey = sessLocal.MessageBox(MSG_CDKEY, prompt_msg, common.GetLanguageDict().GetString("#str_04305"), true, null, null, true);
-//                if (retkey != null) {
-//                    if (sessLocal.CheckKey(retkey, false, valid)) {
-//                        // if all went right, then we may have sent an auth request to the master ( unless the prompt is used during a net connect )
-//                        boolean canExit = true;
-//                        if (sessLocal.MaybeWaitOnCDKey()) {
-//                            // wait on auth reply, and got denied, prompt again
-//                            if (!sessLocal.CDKeysAreValid(true)) {
-//                                // server says key is invalid - MaybeWaitOnCDKey was interrupted by a CDKeysAuthReply call, which has set the right error message
-//                                // the invalid keys have also been cleared in the process
-//                                sessLocal.MessageBox(MSG_OK, sessLocal.GetAuthMsg(), common.GetLanguageDict().GetString("#str_04310"), true, null, null, true);
-//                                canExit = false;
-//                            }
-//                        }
-//                        if (canExit) {
-//                            // make sure that's saved on file
-//                            sessLocal.WriteCDKey();
-//                            sessLocal.MessageBox(MSG_OK, common.GetLanguageDict().GetString("#str_04307"), common.GetLanguageDict().GetString("#str_04305"), true, null, null, true);
-//                            break;
-//                        }
-//                    } else {
-//                        // offline check sees key invalid
-//                        // build a message about keys being wrong. do not attempt to change the current key state though
-//                        // ( the keys may be valid, but user would have clicked on the dialog anyway, that kind of thing )
-//                        idStr msg = new idStr();
-//                        idAsyncNetwork.BuildInvalidKeyMsg(msg, valid);
-//                        sessLocal.MessageBox(MSG_OK, msg.toString(), common.GetLanguageDict().GetString("#str_04310"), true, null, null, true);
-//                    }
-//                } else if (args.Argc() == 2 && idStr.Icmp(args.Argv(1), "force") == 0) {
-//                    // cancelled in force mode
-//                    cmdSystem.BufferCommandText(CMD_EXEC_APPEND, "quit\n");
-//                    cmdSystem.ExecuteCommandBuffer();
-//                }
-//            } while (retkey != null);
+            recursed = true //HACKME::5:disable the serial messageBox
+            //            do {
+            //                // in case we're already waiting for an auth to come back to us ( may happen exceptionally )
+            //                if (sessLocal.MaybeWaitOnCDKey()) {
+            //                    if (sessLocal.CDKeysAreValid(true)) {
+            //                        recursed = false;
+            //                        return;
+            //                    }
+            //                }
+            //                // the auth server may have replied and set an error message, otherwise use a default
+            //                String prompt_msg = sessLocal.GetAuthMsg();
+            //                if (prompt_msg.isEmpty()/*[ 0 ] == '\0'*/) {
+            //                    prompt_msg = common.GetLanguageDict().GetString("#str_04308");
+            //                }
+            ////                for (int d = 0; d < common.GetLanguageDict().args.Size(); d++) {
+            ////                    LangDict.idLangKeyValue bla = common.GetLanguageDict().args.get(d);
+            ////                    System.out.println(bla.key + " >>> " + bla.value);
+            ////                }
+            //                retkey = sessLocal.MessageBox(MSG_CDKEY, prompt_msg, common.GetLanguageDict().GetString("#str_04305"), true, null, null, true);
+            //                if (retkey != null) {
+            //                    if (sessLocal.CheckKey(retkey, false, valid)) {
+            //                        // if all went right, then we may have sent an auth request to the master ( unless the prompt is used during a net connect )
+            //                        boolean canExit = true;
+            //                        if (sessLocal.MaybeWaitOnCDKey()) {
+            //                            // wait on auth reply, and got denied, prompt again
+            //                            if (!sessLocal.CDKeysAreValid(true)) {
+            //                                // server says key is invalid - MaybeWaitOnCDKey was interrupted by a CDKeysAuthReply call, which has set the right error message
+            //                                // the invalid keys have also been cleared in the process
+            //                                sessLocal.MessageBox(MSG_OK, sessLocal.GetAuthMsg(), common.GetLanguageDict().GetString("#str_04310"), true, null, null, true);
+            //                                canExit = false;
+            //                            }
+            //                        }
+            //                        if (canExit) {
+            //                            // make sure that's saved on file
+            //                            sessLocal.WriteCDKey();
+            //                            sessLocal.MessageBox(MSG_OK, common.GetLanguageDict().GetString("#str_04307"), common.GetLanguageDict().GetString("#str_04305"), true, null, null, true);
+            //                            break;
+            //                        }
+            //                    } else {
+            //                        // offline check sees key invalid
+            //                        // build a message about keys being wrong. do not attempt to change the current key state though
+            //                        // ( the keys may be valid, but user would have clicked on the dialog anyway, that kind of thing )
+            //                        idStr msg = new idStr();
+            //                        idAsyncNetwork.BuildInvalidKeyMsg(msg, valid);
+            //                        sessLocal.MessageBox(MSG_OK, msg.toString(), common.GetLanguageDict().GetString("#str_04310"), true, null, null, true);
+            //                    }
+            //                } else if (args.Argc() == 2 && idStr.Icmp(args.Argv(1), "force") == 0) {
+            //                    // cancelled in force mode
+            //                    cmdSystem.BufferCommandText(CMD_EXEC_APPEND, "quit\n");
+            //                    cmdSystem.ExecuteCommandBuffer();
+            //                }
+            //            } while (retkey != null);
             recursed = false
         }
 
@@ -680,8 +670,7 @@ class Session {
     internal class Session_TimeDemoQuit_f : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
             sessLocal.TimeRenderDemo(Str.va("demos/%s", args!!.Argv(1)))
-            if (sessLocal.timeDemo == timeDemo_t.TD_YES) {
-                // this allows hardware vendors to automate some testing
+            if (sessLocal.timeDemo == timeDemo_t.TD_YES) { // this allows hardware vendors to automate some testing
                 sessLocal.timeDemo = timeDemo_t.TD_YES_THEN_QUIT
             }
         }
@@ -716,8 +705,7 @@ class Session {
      ================
      Session_AVIGame_f
      ================
-     */
-    // NOTE: C++ Session_AVIGame_f simply passes args.Argv(1) as const char* to AVIGame().
+     */ // NOTE: C++ Session_AVIGame_f simply passes args.Argv(1) as const char* to AVIGame().
     // The Kotlin AVIGame() in Session_local.kt takes Array<String> to simulate pointer
     // write-back for the generated filename. The args.set(Argv[0]) call after AVIGame
     // modifies args, which the C++ original does NOT do. This is an over-engineered
@@ -846,8 +834,7 @@ class Session {
      ================
      Session_EndOfDemo_f
      ================
-     */
-    // NOTE: Kotlin-only, no C++ counterpart. This command does not exist in dhewm3.
+     */ // NOTE: Kotlin-only, no C++ counterpart. This command does not exist in dhewm3.
     // Appears to be a custom addition for demo version support.
     internal class Session_EndOfDemo_f : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
@@ -942,8 +929,10 @@ class Session {
     internal class SaveGame_f : cmdFunction_t() {
         @Throws(idException::class)
         override fun run(args: CmdArgs.idCmdArgs?) {
-            if (args!!.Argc() < 2 || idStr.Icmp(args.Argv(1), "quick") == 0) {
-                // FIX: C++ calls sessLocal.QuickSave() which handles save rotation
+            if (args!!.Argc() < 2 || idStr.Icmp(
+                    args.Argv(1), "quick"
+                ) == 0
+            ) { // FIX: C++ calls sessLocal.QuickSave() which handles save rotation
                 // via com_numQuicksaves. The original Kotlin called SaveGame directly
                 // with a hardcoded name, losing the rotation logic.
                 sessLocal.QuickSave()

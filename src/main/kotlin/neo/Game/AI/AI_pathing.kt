@@ -119,8 +119,7 @@ fun PointInsideObstacle(obstacles: Array<obstacle_s>, numObstacles: Int, point: 
     i = 0
     while (i < numObstacles) {
         val bounds = obstacles[i].bounds
-        if (point.x < bounds[0].x || point.y < bounds[0].y || point.x > bounds[1].x || point.y > bounds[1].y
-        ) {
+        if (point.x < bounds[0].x || point.y < bounds[0].y || point.x > bounds[1].x || point.y > bounds[1].y) {
             i++
             continue
         }
@@ -140,11 +139,7 @@ fun PointInsideObstacle(obstacles: Array<obstacle_s>, numObstacles: Int, point: 
  ============
  */
 fun GetPointOutsideObstacles(
-    obstacles: Array<obstacle_s>,
-    numObstacles: Int,
-    point: idVec2,
-    obstacle: CInt,
-    edgeNum: CInt
+    obstacles: Array<obstacle_s>, numObstacles: Int, point: idVec2, obstacle: CInt, edgeNum: CInt
 ) {
     var i: Int
     var j: Int
@@ -184,8 +179,7 @@ fun GetPointOutsideObstacles(
             bestd = d
             bestPlane.set(plane)
             bestEdgeNum = i
-        }
-        // if this is a wall always try to pop out at the first edge
+        } // if this is a wall always try to pop out at the first edge
         if (obstacles[bestObstacle].entity == null) {
             break
         }
@@ -209,10 +203,9 @@ fun GetPointOutsideObstacles(
     queueEnd = 1
     queue[0] = bestObstacle
 
-//	memset( obstacleVisited, 0, numObstacles * sizeof( obstacleVisited[0] ) );
+    //	memset( obstacleVisited, 0, numObstacles * sizeof( obstacleVisited[0] ) );
     obstacleVisited[bestObstacle] = true
-    bestd = idMath.INFINITY
-    // FIX: Restructured from C++ for-loop pattern to avoid OOB on queue array.
+    bestd = idMath.INFINITY // FIX: Restructured from C++ for-loop pattern to avoid OOB on queue array.
     // C++ for(i=queue[0]; queueStart<queueEnd; i=queue[++queueStart]) reads past
     // array end in the update clause when loop terminates (benign UB in C++, OOB crash in Kotlin).
     while (queueStart < queueEnd) {
@@ -226,10 +219,8 @@ fun GetPointOutsideObstacles(
             if (obstacleVisited[j]) {
                 j++
                 continue
-            }
-            // if the bounds do not intersect
-            if (obstacles[j].bounds[0].x > obstacles[i].bounds[1].x || obstacles[j].bounds[0].y > obstacles[i].bounds[1].y || obstacles[j].bounds[1].x < obstacles[i].bounds[0].x || obstacles[j].bounds[1].y < obstacles[i].bounds[0].y
-            ) {
+            } // if the bounds do not intersect
+            if (obstacles[j].bounds[0].x > obstacles[i].bounds[1].x || obstacles[j].bounds[0].y > obstacles[i].bounds[1].y || obstacles[j].bounds[1].x < obstacles[i].bounds[0].x || obstacles[j].bounds[1].y < obstacles[i].bounds[0].y) {
                 j++
                 continue
             }
@@ -310,8 +301,7 @@ fun GetFirstBlockingObstacle(
             i++
             continue
         }
-        if (bounds[0].x > obstacles[i].bounds[1].x || bounds[0].y > obstacles[i].bounds[1].y || bounds[1].x < obstacles[i].bounds[0].x || bounds[1].y < obstacles[i].bounds[0].y
-        ) {
+        if (bounds[0].x > obstacles[i].bounds[1].x || bounds[0].y > obstacles[i].bounds[1].y || bounds[1].x < obstacles[i].bounds[0].x || bounds[1].y < obstacles[i].bounds[0].y) {
             i++
             continue
         }
@@ -397,10 +387,7 @@ fun GetObstacles(
 
     // find all obstacles touching the clip bounds
     numListedClipModels = Game_local.gameLocal.clip.ClipModelsTouchingBounds(
-        clipBounds,
-        clipMask,
-        clipModelList,
-        Game_local.MAX_GENTITIES
+        clipBounds, clipMask, clipModelList, Game_local.MAX_GENTITIES
     )
     i = 0
     while (i < numListedClipModels && numObstacles < MAX_OBSTACLES) {
@@ -411,36 +398,30 @@ fun GetObstacles(
             continue
         }
         if (obEnt is idActor) {
-            obPhys = obEnt.GetPhysics()
-            // ignore myself, my enemy, and dead bodies
+            obPhys = obEnt.GetPhysics() // ignore myself, my enemy, and dead bodies
             if (obPhys === physics || obEnt === ignore || obEnt.health <= 0) {
                 i++
                 continue
-            }
-            // if the actor is moving
+            } // if the actor is moving
             val v1 = idVec3(obPhys.GetLinearVelocity())
             if (v1.LengthSqr() > Square(10.0f)) {
                 val v2 = idVec3(physics.GetLinearVelocity())
-                if (v2.LengthSqr() > Square(10.0f)) {
-                    // if moving in about the same direction
+                if (v2.LengthSqr() > Square(10.0f)) { // if moving in about the same direction
                     if (v1.times(v2) > 0.0f) {
                         i++
                         continue
                     }
                 }
             }
-        } else if (obEnt is idMoveable) {
-            // moveables are considered obstacles
-        } else {
-            // ignore everything else
+        } else if (obEnt is idMoveable) { // moveables are considered obstacles
+        } else { // ignore everything else
             i++
             continue
         }
 
         // check if we can step over the object
         clipModel.GetAbsBounds().AxisProjection(physics.GetGravityNormal().unaryMinus(), min, max)
-        if (max._val < stepHeight._val || min._val > headHeight._val) {
-            // can step over this one
+        if (max._val < stepHeight._val || min._val > headHeight._val) { // can step over this one
             i++
             continue
         }
@@ -466,10 +447,7 @@ fun GetObstacles(
             j = 0
             while (j < numVerts) {
                 Game_local.gameRenderWorld!!.DebugArrow(
-                    idDeviceContext.colorWhite,
-                    silVerts[j],
-                    silVerts[(j + 1) % numVerts],
-                    4
+                    idDeviceContext.colorWhite, silVerts[j], silVerts[(j + 1) % numVerts], 4
                 )
                 j++
             }
@@ -507,8 +485,7 @@ fun GetObstacles(
     // create obstacles for AAS walls
     if (aas != null) {
         val halfBoundsSize = (expBounds[1].x - expBounds[0].x) * 0.5f
-        numWallEdges =
-            aas.GetWallEdges(areaNum, clipBounds, AASFile.TFL_WALK, wallEdges, MAX_AAS_WALL_EDGES)
+        numWallEdges = aas.GetWallEdges(areaNum, clipBounds, AASFile.TFL_WALK, wallEdges, MAX_AAS_WALL_EDGES)
         aas.SortWallEdges(wallEdges, numWallEdges)
         lastVerts[1] = 0
         lastVerts[0] = lastVerts[1]
@@ -550,7 +527,7 @@ fun GetObstacles(
             obstacle.winding.GetBounds(obstacle.bounds)
             obstacle.entity = null
 
-//			memcpy( lastVerts, verts, sizeof( lastVerts ) );
+            //			memcpy( lastVerts, verts, sizeof( lastVerts ) );
             System.arraycopy(verts, 0, lastVerts, 0, lastVerts.size)
             lastEdgeNormal.set(edgeNormal)
             i++
@@ -571,10 +548,7 @@ fun GetObstacles(
             j = 0
             while (j < obstacle.winding.GetNumPoints()) {
                 Game_local.gameRenderWorld!!.DebugArrow(
-                    idDeviceContext.colorGreen,
-                    silVerts[j],
-                    silVerts[(j + 1) % obstacle.winding.GetNumPoints()],
-                    4
+                    idDeviceContext.colorGreen, silVerts[j], silVerts[(j + 1) % obstacle.winding.GetNumPoints()], 4
                 )
                 j++
             }
@@ -638,10 +612,7 @@ fun DrawPathTree(root: pathNode_s, height: Float) {
  ============
  */
 fun GetPathNodeDelta(
-    node: pathNode_s,
-    obstacles: Array<obstacle_s>,
-    seekPos: idVec2,
-    blocked: Boolean
+    node: pathNode_s, obstacles: Array<obstacle_s>, seekPos: idVec2, blocked: Boolean
 ): Boolean {
     val numPoints: Int
     var edgeNum: Int
@@ -676,8 +647,7 @@ fun GetPathNodeDelta(
     }
 
     // if the delta is along the obstacle edge
-    if (node.edgeNum != -1) {
-        // if the edge is found going from this node to the root node
+    if (node.edgeNum != -1) { // if the edge is found going from this node to the root node
         n = node.parent
         while (n != null) {
             if (node.obstacle != n.obstacle || node.edgeNum != n.edgeNum) {
@@ -721,8 +691,7 @@ fun BuildPathTree(
     val blockingScale = CFloat()
     val root: pathNode_s
     var node: pathNode_s?
-    var child: pathNode_s
-    // gcc 4.0f
+    var child: pathNode_s // gcc 4.0f
     val pathNodeQueue = idQueueTemplate<pathNode_s?>()
     val treeQueue = idQueueTemplate<pathNode_s?>()
     root = pathNode_s() //pathNodeAllocator.Alloc();
@@ -743,8 +712,7 @@ fun BuildPathTree(
 
         // don't move outside of the clip bounds
         val endPos = node.pos + node.delta
-        if (endPos.x - CLIP_BOUNDS_EPSILON < clipBounds[0].x || endPos.x + CLIP_BOUNDS_EPSILON > clipBounds[1].x || endPos.y - CLIP_BOUNDS_EPSILON < clipBounds[0].y || endPos.y + CLIP_BOUNDS_EPSILON > clipBounds[1].y
-        ) {
+        if (endPos.x - CLIP_BOUNDS_EPSILON < clipBounds[0].x || endPos.x + CLIP_BOUNDS_EPSILON > clipBounds[1].x || endPos.y - CLIP_BOUNDS_EPSILON < clipBounds[0].y || endPos.y + CLIP_BOUNDS_EPSILON > clipBounds[1].y) {
             node = pathNodeQueue.Get()
             continue
         }
@@ -939,8 +907,7 @@ fun OptimizePath(
             // test if the shortcut intersects with any obstacles
             i = 0
             while (i < numObstacles) {
-                if (bounds[0].x > obstacles[i].bounds[1].x || bounds[0].y > obstacles[i].bounds[1].y || bounds[1].x < obstacles[i].bounds[0].x || bounds[1].y < obstacles[i].bounds[0].y
-                ) {
+                if (bounds[0].x > obstacles[i].bounds[1].x || bounds[0].y > obstacles[i].bounds[1].y || bounds[1].x < obstacles[i].bounds[0].x || bounds[1].y < obstacles[i].bounds[0].y) {
                     i++
                     continue
                 }
@@ -1002,12 +969,7 @@ fun PathLength(optimizedPath: Array<idVec2> /*[MAX_OBSTACLE_PATH]*/, numPathPoin
  ============
  */
 fun FindOptimalPath(
-    root: pathNode_s,
-    obstacles: Array<obstacle_s>,
-    numObstacles: Int,
-    height: Float,
-    curDir: idVec3,
-    seekPos: idVec3
+    root: pathNode_s, obstacles: Array<obstacle_s>, numObstacles: Int, height: Float, curDir: idVec3, seekPos: idVec3
 ): Boolean {
     var i: Int
     var numPathPoints: Int
@@ -1020,8 +982,7 @@ fun FindOptimalPath(
     var bestPathLength: Float
     var pathToGoalExists: Boolean
     var optimizedPathCalculated: Boolean
-    optimizedPath[1] =
-        idVec2(-107374176.0f, -107374176.0f)
+    optimizedPath[1] = idVec2(-107374176.0f, -107374176.0f)
     seekPos.Zero()
     seekPos.z = height
     pathToGoalExists = false
@@ -1034,8 +995,7 @@ fun FindOptimalPath(
         if (node.dist <= bestNode.dist) {
             if (abs(node.dist - bestNode.dist) < 0.1f) {
                 if (!optimizedPathCalculated) {
-                    bestNumPathPoints =
-                        OptimizePath(root, bestNode, obstacles, numObstacles, optimizedPath)
+                    bestNumPathPoints = OptimizePath(root, bestNode, obstacles, numObstacles, optimizedPath)
                     bestPathLength = PathLength(optimizedPath, bestNumPathPoints, curDir.ToVec2())
                     seekPos.set(optimizedPath[1])
                 }
@@ -1106,8 +1066,7 @@ fun FindOptimalPath(
  period of time based on an initial position and velocity.
 
  ===============================================================================
- */
-/*
+ *//*
  ============
  PathTrace
 
@@ -1115,22 +1074,21 @@ fun FindOptimalPath(
  ============
  */
 fun PathTrace(
-    ent: idEntity,
-    aas: idAAS?,
-    start: idVec3,
-    end: idVec3,
-    stopEvent: Int,
-    trace: pathTrace_s,
-    path: predictedPath_s
+    ent: idEntity, aas: idAAS?, start: idVec3, end: idVec3, stopEvent: Int, trace: pathTrace_s, path: predictedPath_s
 ): Boolean {
     val clipTrace = trace_s()
     val aasTrace = aasTrace_s()
 
-//	memset( &trace, 0, sizeof( trace ) );
+    //	memset( &trace, 0, sizeof( trace ) );
     if (null == aas || aas.GetSettings() == null) {
         Game_local.gameLocal.clip.Translation(
-            clipTrace, start, end, ent.GetPhysics().GetClipModel(),
-            ent.GetPhysics().GetClipModel()!!.GetAxis(), Game_local.MASK_MONSTERSOLID, ent
+            clipTrace,
+            start,
+            end,
+            ent.GetPhysics().GetClipModel(),
+            ent.GetPhysics().GetClipModel()!!.GetAxis(),
+            Game_local.MASK_MONSTERSOLID,
+            ent
         )
 
         // NOTE: could do (expensive) ledge detection here for when there is no AAS file
@@ -1148,8 +1106,13 @@ fun PathTrace(
         }
         aas.Trace(aasTrace, start, end)
         Game_local.gameLocal.clip.TranslationEntities(
-            clipTrace, start, aasTrace.endpos, ent.GetPhysics().GetClipModel(),
-            ent.GetPhysics().GetClipModel()!!.GetAxis(), Game_local.MASK_MONSTERSOLID, ent
+            clipTrace,
+            start,
+            aasTrace.endpos,
+            ent.GetPhysics().GetClipModel(),
+            ent.GetPhysics().GetClipModel()!!.GetAxis(),
+            Game_local.MASK_MONSTERSOLID,
+            ent
         )
         if (clipTrace.fraction >= 1.0f) {
             trace.fraction = aasTrace.fraction
@@ -1165,9 +1128,7 @@ fun PathTrace(
                         path.blockingEntity = trace.blockingEntity
                         if (SysCvar.ai_debugMove.GetBool()) {
                             Game_local.gameRenderWorld!!.DebugLine(
-                                idDeviceContext.colorRed,
-                                start,
-                                aasTrace.endpos
+                                idDeviceContext.colorRed, start, aasTrace.endpos
                             )
                         }
                         return true
@@ -1181,9 +1142,7 @@ fun PathTrace(
                         path.blockingEntity = trace.blockingEntity
                         if (SysCvar.ai_debugMove.GetBool()) {
                             Game_local.gameRenderWorld!!.DebugLine(
-                                idDeviceContext.colorRed,
-                                start,
-                                aasTrace.endpos
+                                idDeviceContext.colorRed, start, aasTrace.endpos
                             )
                         }
                         return true
@@ -1212,11 +1171,7 @@ fun PathTrace(
  =====================
  */
 fun Ballistics(
-    start: idVec3,
-    end: idVec3,
-    speed: Float,
-    gravity: Float,
-    bal: Array<ballistics_s> /*[2]*/
+    start: idVec3, end: idVec3, speed: Float, gravity: Float, bal: Array<ballistics_s> /*[2]*/
 ): Int {
     var n: Int
     var i: Int
@@ -1253,8 +1208,7 @@ fun Ballistics(
             continue
         }
         d = idMath.Sqrt(p[i])
-        bal[n].angle =
-            atan2((0.5f * (2.0f * y * p[i] - gravity) / d).toDouble(), (d * x).toDouble()).toFloat()
+        bal[n].angle = atan2((0.5f * (2.0f * y * p[i] - gravity) / d).toDouble(), (d * x).toDouble()).toFloat()
         bal[n].time = (x / (cos(bal[n].angle) * speed))
         bal[n].angle = idMath.AngleNormalize180(RAD2DEG(bal[n].angle))
         n++
@@ -1273,8 +1227,7 @@ fun Ballistics(
 fun HeightForTrajectory(start: idVec3, zVel: Float, gravity: Float): Float {
     val maxHeight: Float
     val t: Float
-    t = zVel / gravity
-    // maximum height of projectile
+    t = zVel / gravity // maximum height of projectile
     maxHeight = start.z - 0.5f * gravity * (t * t)
     return maxHeight
 }

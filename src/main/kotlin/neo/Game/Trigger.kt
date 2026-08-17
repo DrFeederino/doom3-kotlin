@@ -108,8 +108,7 @@ object Trigger {
                             continue
                         }
                         Game_local.gameRenderWorld!!.DebugBounds(
-                            colorOrange,
-                            ent.GetPhysics().GetAbsBounds()
+                            colorOrange, ent.GetPhysics().GetAbsBounds()
                         )
                         if (viewTextBounds.IntersectsBounds(ent.GetPhysics().GetAbsBounds())) {
                             Game_local.gameRenderWorld!!.DrawText(
@@ -156,9 +155,7 @@ object Trigger {
                                     0
                                 )
                                 Game_local.gameRenderWorld!!.DebugBounds(
-                                    colorGreen,
-                                    box,
-                                    target.GetPhysics().GetOrigin()
+                                    colorGreen, box, target.GetPhysics().GetOrigin()
                                 )
                                 if (viewTextBounds.IntersectsBounds(target.GetPhysics().GetAbsBounds())) {
                                     Game_local.gameRenderWorld!!.DrawText(
@@ -184,10 +181,8 @@ object Trigger {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[EV_Enable] =
-                    eventCallback_t0 { obj: idTrigger -> obj.Event_Enable() }
-                eventCallbacks[EV_Disable] =
-                    eventCallback_t0 { obj: idTrigger -> obj.Event_Disable() }
+                eventCallbacks[EV_Enable] = eventCallback_t0 { obj: idTrigger -> obj.Event_Enable() }
+                eventCallbacks[EV_Disable] = eventCallback_t0 { obj: idTrigger -> obj.Event_Disable() }
             }
         }
 
@@ -345,18 +340,15 @@ object Trigger {
                 eventCallbacks[EV_Touch] =
                     eventCallback_t2 { obj: idTrigger_Multi, _other: idEventArg<*>?, trace: idEventArg<*>? ->
                         obj.Event_Touch(
-                            _other as idEventArg<idEntity?>,
-                            trace as idEventArg<trace_s>
+                            _other as idEventArg<idEntity?>, trace as idEventArg<trace_s>
                         )
                     }
-                eventCallbacks[EV_Activate] =
-                    eventCallback_t1 { obj: idTrigger_Multi, _activator: idEventArg<*>? ->
-                        obj.Event_Trigger(_activator as idEventArg<idEntity?>)
-                    }
-                eventCallbacks[EV_TriggerAction] =
-                    eventCallback_t1 { obj: idTrigger_Multi, activator: idEventArg<*>? ->
-                        obj.Event_TriggerAction(activator as idEventArg<idEntity?>)
-                    }
+                eventCallbacks[EV_Activate] = eventCallback_t1 { obj: idTrigger_Multi, _activator: idEventArg<*>? ->
+                    obj.Event_Trigger(_activator as idEventArg<idEntity?>)
+                }
+                eventCallbacks[EV_TriggerAction] = eventCallback_t1 { obj: idTrigger_Multi, activator: idEventArg<*>? ->
+                    obj.Event_TriggerAction(activator as idEventArg<idEntity?>)
+                }
             }
         }
 
@@ -385,8 +377,7 @@ object Trigger {
          ================
          */
         override fun Spawn() {
-            super.Spawn()
-            // FIX: Default strings had trailing 'f' not in C++ originals
+            super.Spawn() // FIX: Default strings had trailing 'f' not in C++ originals
             wait = spawnArgs.GetFloat("wait", "0.5")
             random = spawnArgs.GetFloat("random", "0")
             delay = spawnArgs.GetFloat("delay", "0")
@@ -394,17 +385,13 @@ object Trigger {
             if (random != 0.0f && random >= wait && wait >= 0) {
                 random = wait - 1
                 Game_local.gameLocal.Warning(
-                    "idTrigger_Multi '%s' at (%s) has random >= wait",
-                    name,
-                    GetPhysics().GetOrigin().ToString(0)
+                    "idTrigger_Multi '%s' at (%s) has random >= wait", name, GetPhysics().GetOrigin().ToString(0)
                 )
             }
             if (random_delay != 0.0f && random_delay >= delay && delay >= 0) {
                 random_delay = delay - 1
                 Game_local.gameLocal.Warning(
-                    "idTrigger_Multi '%s' at (%s) has random_delay >= delay",
-                    name,
-                    GetPhysics().GetOrigin().ToString(0)
+                    "idTrigger_Multi '%s' at (%s) has random_delay >= delay", name, GetPhysics().GetOrigin().ToString(0)
                 )
             }
             spawnArgs.GetString("requires", "", requires)
@@ -481,15 +468,14 @@ object Trigger {
             if (wait >= 0) {
                 nextTriggerTime =
                     (Game_local.gameLocal.time + SEC2MS(wait + random * Game_local.gameLocal.random.CRandomFloat()))
-            } else {
-                // we can't just remove (this) here, because this is a touch function
+            } else { // we can't just remove (this) here, because this is a touch function
                 // called while looping through area links...
-                nextTriggerTime = if (isD3XP) {
-                    // D3XP: If the player spawned inside the trigger, prevents double-fire of trigger_once
-                    Game_local.gameLocal.time + 99999
-                } else {
-                    Game_local.gameLocal.time + 1
-                }
+                nextTriggerTime =
+                    if (isD3XP) { // D3XP: If the player spawned inside the trigger, prevents double-fire of trigger_once
+                        Game_local.gameLocal.time + 99999
+                    } else {
+                        Game_local.gameLocal.time + 1
+                    }
                 PostEventMS(EV_Remove, 0)
             }
         }
@@ -510,8 +496,7 @@ object Trigger {
          */
         protected fun Event_Trigger(_activator: idEventArg<idEntity?>) {
             val activator = _activator.value
-            if (nextTriggerTime > Game_local.gameLocal.time) {
-                // can't retrigger until the wait is over
+            if (nextTriggerTime > Game_local.gameLocal.time) { // can't retrigger until the wait is over
                 return
             }
 
@@ -529,10 +514,8 @@ object Trigger {
 
             // don't allow it to trigger twice in a single frame
             nextTriggerTime = Game_local.gameLocal.time + 1
-            if (delay > 0) {
-                // don't allow it to trigger again until our delay has passed
-                nextTriggerTime += SEC2MS(delay + random_delay * Game_local.gameLocal.random.CRandomFloat())
-                // FIX: Was passing _activator (idEventArg wrapper) instead of activator (unwrapped entity).
+            if (delay > 0) { // don't allow it to trigger again until our delay has passed
+                nextTriggerTime += SEC2MS(delay + random_delay * Game_local.gameLocal.random.CRandomFloat()) // FIX: Was passing _activator (idEventArg wrapper) instead of activator (unwrapped entity).
                 // C++ passes the raw entity pointer to PostEventSec.
                 PostEventSec(EV_TriggerAction, delay, activator)
             } else {
@@ -550,14 +533,13 @@ object Trigger {
                 if (!touchClient) {
                     return
                 }
-                if ((other as idPlayer).spectating) {
+                if (other.spectating) {
                     return
                 }
             } else if (!touchOther) {
                 return
             }
-            if (nextTriggerTime > Game_local.gameLocal.time) {
-                // can't retrigger until the wait is over
+            if (nextTriggerTime > Game_local.gameLocal.time) { // can't retrigger until the wait is over
                 return
             }
 
@@ -572,8 +554,7 @@ object Trigger {
                 triggerFirst = true
             }
             nextTriggerTime = Game_local.gameLocal.time + 1
-            if (delay > 0) {
-                // don't allow it to trigger again until our delay has passed
+            if (delay > 0) { // don't allow it to trigger again until our delay has passed
                 nextTriggerTime += SEC2MS(delay + random_delay * Game_local.gameLocal.random.CRandomFloat())
                 PostEventSec(EV_TriggerAction, delay, other)
             } else {
@@ -615,13 +596,11 @@ object Trigger {
             init {
                 eventCallbacks.putAll(idTrigger.getEventCallBacks())
                 eventCallbacks[EV_Touch] =
-                    eventCallback_t2<idTrigger_EntityName> { obj: idTrigger_EntityName, _other: idEventArg<*>?, trace: idEventArg<*>? ->
-                        // FIX: Changed to nullable idEntity? to match C++ null checks
+                    eventCallback_t2<idTrigger_EntityName> { obj: idTrigger_EntityName, _other: idEventArg<*>?, trace: idEventArg<*>? -> // FIX: Changed to nullable idEntity? to match C++ null checks
                         obj.Event_Touch(_other as idEventArg<idEntity?>, trace as idEventArg<trace_s>)
                     }
                 eventCallbacks[EV_Activate] =
-                    eventCallback_t1<idTrigger_EntityName> { obj: idTrigger_EntityName, _activator: idEventArg<*>? ->
-                        // FIX: Changed to nullable idEntity? to match C++ null checks
+                    eventCallback_t1<idTrigger_EntityName> { obj: idTrigger_EntityName, _activator: idEventArg<*>? -> // FIX: Changed to nullable idEntity? to match C++ null checks
                         obj.Event_Trigger(_activator as idEventArg<idEntity?>)
                     }
                 eventCallbacks[EV_TriggerAction] =
@@ -661,8 +640,7 @@ object Trigger {
         }
 
         override fun Spawn() {
-            super.Spawn()
-            // FIX: Default strings had trailing 'f' not in C++ originals
+            super.Spawn() // FIX: Default strings had trailing 'f' not in C++ originals
             wait = spawnArgs.GetFloat("wait", "0.5")
             random = spawnArgs.GetFloat("random", "0")
             delay = spawnArgs.GetFloat("delay", "0")
@@ -670,9 +648,7 @@ object Trigger {
             if (random != 0.0f && random >= wait && wait >= 0) {
                 random = wait - 1
                 Game_local.gameLocal.Warning(
-                    "idTrigger_EntityName '%s' at (%s) has random >= wait",
-                    name,
-                    GetPhysics().GetOrigin().ToString(0)
+                    "idTrigger_EntityName '%s' at (%s) has random >= wait", name, GetPhysics().GetOrigin().ToString(0)
                 )
             }
             if (random_delay != 0.0f && random_delay >= delay && delay >= 0) {
@@ -704,8 +680,7 @@ object Trigger {
             if (wait >= 0) {
                 nextTriggerTime =
                     (Game_local.gameLocal.time + SEC2MS(wait + random * Game_local.gameLocal.random.CRandomFloat()))
-            } else {
-                // we can't just remove (this) here, because this is a touch function
+            } else { // we can't just remove (this) here, because this is a touch function
                 // called while looping through area links...
                 nextTriggerTime = Game_local.gameLocal.time + 1
                 PostEventMS(EV_Remove, 0)
@@ -728,11 +703,9 @@ object Trigger {
          */
         private fun Event_Trigger(_activator: idEventArg<idEntity?>) {
             val activator = _activator.value
-            if (nextTriggerTime > Game_local.gameLocal.time) {
-                // can't retrigger until the wait is over
+            if (nextTriggerTime > Game_local.gameLocal.time) { // can't retrigger until the wait is over
                 return
-            }
-            // FIX: Added null check for activator — C++ has: if ( !activator || ( activator->name != entityName ) )
+            } // FIX: Added null check for activator — C++ has: if ( !activator || ( activator->name != entityName ) )
             if (activator == null || activator.name != entityName) {
                 return
             }
@@ -743,8 +716,7 @@ object Trigger {
 
             // don't allow it to trigger twice in a single frame
             nextTriggerTime = Game_local.gameLocal.time + 1
-            if (delay > 0) {
-                // don't allow it to trigger again until our delay has passed
+            if (delay > 0) { // don't allow it to trigger again until our delay has passed
                 nextTriggerTime += SEC2MS(delay + random_delay * Game_local.gameLocal.random.CRandomFloat())
                 PostEventSec(EV_TriggerAction, delay, activator)
             } else {
@@ -762,17 +734,14 @@ object Trigger {
             if (triggerFirst) {
                 return
             }
-            if (nextTriggerTime > Game_local.gameLocal.time) {
-                // can't retrigger until the wait is over
+            if (nextTriggerTime > Game_local.gameLocal.time) { // can't retrigger until the wait is over
                 return
-            }
-            // FIX: Added null check for other — C++ has: if ( !other || ( other->name != entityName ) )
+            } // FIX: Added null check for other — C++ has: if ( !other || ( other->name != entityName ) )
             if (other == null || other.name != entityName) {
                 return
             }
             nextTriggerTime = Game_local.gameLocal.time + 1
-            if (delay > 0) {
-                // don't allow it to trigger again until our delay has passed
+            if (delay > 0) { // don't allow it to trigger again until our delay has passed
                 nextTriggerTime += SEC2MS(delay + random_delay * Game_local.gameLocal.random.CRandomFloat())
                 PostEventSec(EV_TriggerAction, delay, other)
             } else {
@@ -867,9 +836,7 @@ object Trigger {
             if (random >= wait && wait >= 0) {
                 random = wait - 0.001f
                 Game_local.gameLocal.Warning(
-                    "idTrigger_Timer '%s' at (%s) has random >= wait",
-                    name,
-                    GetPhysics().GetOrigin().ToString(0)
+                    "idTrigger_Timer '%s' at (%s) has random >= wait", name, GetPhysics().GetOrigin().ToString(0)
                 )
             }
             if (on) {
@@ -877,16 +844,14 @@ object Trigger {
             }
         }
 
-        override fun Enable() {
-            // if off, turn it on
+        override fun Enable() { // if off, turn it on
             if (!on) {
                 on = true
                 PostEventSec(EV_Timer, delay)
             }
         }
 
-        override fun Disable() {
-            // if on, turn it off
+        override fun Disable() { // if on, turn it off
             if (on) {
                 on = false
                 CancelEvents(EV_Timer)
@@ -903,16 +868,14 @@ object Trigger {
         }
 
         private fun Event_Use(_activator: idEventArg<idEntity>) {
-            val activator = _activator.value
-            // if on, turn it off
+            val activator = _activator.value // if on, turn it off
             if (on) {
                 if (offName.Length() != 0 && offName.Icmp(activator.GetName()) != 0) {
                     return
                 }
                 on = false
                 CancelEvents(EV_Timer)
-            } else {
-                // turn it on
+            } else { // turn it on
                 if (onName.Length() != 0 && onName.Icmp(activator.GetName()) != 0) {
                     return
                 }
@@ -989,8 +952,7 @@ object Trigger {
             count = 0
         }
 
-        private fun Event_Trigger(activator: idEventArg<idEntity?>) {
-            // goal of -1 means trigger has been exhausted
+        private fun Event_Trigger(activator: idEventArg<idEntity?>) { // goal of -1 means trigger has been exhausted
             if (goal >= 0) {
                 count++
                 if (count >= goal) {
@@ -1048,8 +1010,7 @@ object Trigger {
                 eventCallbacks[EV_Touch] =
                     eventCallback_t2<idTrigger_Hurt> { obj: idTrigger_Hurt, _other: idEventArg<*>?, trace: idEventArg<*>? ->
                         obj.Event_Touch(
-                            _other as idEventArg<idEntity>,
-                            trace as idEventArg<trace_s>
+                            _other as idEventArg<idEntity>, trace as idEventArg<trace_s>
                         )
                     }
                 eventCallbacks[EV_Activate] =
@@ -1099,8 +1060,7 @@ object Trigger {
          */
         private fun Event_Touch(_other: idEventArg<idEntity>, trace: idEventArg<trace_s>) {
             val other = _other.value
-            val damage: String
-            // FIX: Added null check for other — C++ has: if ( on && other && gameLocal.time >= nextTime )
+            val damage: String // FIX: Added null check for other — C++ has: if ( on && other && gameLocal.time >= nextTime )
             if (on && other != null && Game_local.gameLocal.time >= nextTime) {
                 if (isD3XP) {
                     val playerOnly = spawnArgs.GetBool("playerOnly")
@@ -1222,8 +1182,7 @@ object Trigger {
 
         private var clipModel: idClipModel? = null
         override fun Spawn() {
-            super.Spawn()
-            // get the clip model
+            super.Spawn() // get the clip model
             clipModel = idClipModel(GetPhysics().GetClipModel()!!)
 
             // remove the collision model from the physics object
@@ -1282,10 +1241,14 @@ object Trigger {
                     i++
                     continue
                 }
-                if (
-                    Game_local.gameLocal.clip.ContentsModel(
-                        cm.GetOrigin(), cm, cm.GetAxis(), -1,
-                        clipModel!!.Handle(), clipModel!!.GetOrigin(), clipModel!!.GetAxis()
+                if (Game_local.gameLocal.clip.ContentsModel(
+                        cm.GetOrigin(),
+                        cm,
+                        cm.GetAxis(),
+                        -1,
+                        clipModel!!.Handle(),
+                        clipModel!!.GetOrigin(),
+                        clipModel!!.GetAxis()
                     ) == 0
                 ) {
                     i++
@@ -1340,8 +1303,7 @@ object Trigger {
                 eventCallbacks[EV_Touch] =
                     eventCallback_t2 { obj: idTrigger_Flag, _other: idEventArg<*>?, trace: idEventArg<*>? ->
                         obj.Event_Touch_Flag(
-                            _other as idEventArg<idEntity?>,
-                            trace as idEventArg<trace_s>
+                            _other as idEventArg<idEntity?>, trace as idEventArg<trace_s>
                         )
                     }
             }
@@ -1360,8 +1322,7 @@ object Trigger {
                 eventFlag = idEventDef.FindEvent(funcname.toString())
                 if (eventFlag == null) {
                     Game_local.gameLocal.Warning(
-                        "trigger '%s' at (%s) event unknown '%s'",
-                        name, GetPhysics().GetOrigin().ToString(0), funcname
+                        "trigger '%s' at (%s) event unknown '%s'", name, GetPhysics().GetOrigin().ToString(0), funcname
                     )
                 }
             } else {
@@ -1396,9 +1357,7 @@ object Trigger {
                 // flag is captured if:
                 // 1) flag is truly bound to the player
                 // 2) opponent flag has been returned
-                if (flags[iFriend]!!.carried && !flags[iFriend]!!.dropped &&
-                    !flags[iOpp]!!.carried && !flags[iOpp]!!.dropped
-                ) {
+                if (flags[iFriend]!!.carried && !flags[iFriend]!!.dropped && !flags[iOpp]!!.carried && !flags[iOpp]!!.dropped) {
                     flag = flags[iFriend]
                 } else {
                     return

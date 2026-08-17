@@ -12,10 +12,7 @@ import kotlin.math.abs
 class Ode {
     abstract class deriveFunction_t {
         abstract fun run(
-            t: Float,
-            userData: Any,
-            state: FloatArray,
-            derivatives: FloatArray
+            t: Float, userData: Any, state: FloatArray, derivatives: FloatArray
         )
     }
 
@@ -48,10 +45,7 @@ class Ode {
 
         //	virtual				~idODE_Euler( void );
         override fun Evaluate(
-            state: FloatArray,
-            newState: FloatArray,
-            t0: Float,
-            t1: Float
+            state: FloatArray, newState: FloatArray, t0: Float, t1: Float
         ): Float {
             val delta: Float
             var i: Int
@@ -89,15 +83,13 @@ class Ode {
             val halfDelta: Float
             var i: Int
             delta = t1 - t0
-            halfDelta = delta * 0.5f
-            // first step
+            halfDelta = delta * 0.5f // first step
             derive.run(t0, userData, state, derivatives)
             i = 0
             while (i < dimension) {
                 tmpState[i] = (state[i] + halfDelta * derivatives[i])
                 i++
-            }
-            // second step
+            } // second step
             derive.run(t0 + halfDelta, userData, tmpState, derivatives)
             i = 0
             while (i < dimension) {
@@ -138,29 +130,25 @@ class Ode {
             val sixthDelta: Float
             var i: Int
             delta = t1 - t0
-            halfDelta = delta * 0.5f
-            // first step
+            halfDelta = delta * 0.5f // first step
             derive.run(t0, userData, state, d1)
             i = 0
             while (i < dimension) {
                 tmpState[i] = state[i] + halfDelta * d1[i]
                 i++
-            }
-            // second step
+            } // second step
             derive.run(t0 + halfDelta, userData, tmpState, d2)
             i = 0
             while (i < dimension) {
                 tmpState[i] = state[i] + halfDelta * d2[i]
                 i++
-            }
-            // third step
+            } // third step
             derive.run(t0 + halfDelta, userData, tmpState, d3)
             i = 0
             while (i < dimension) {
                 tmpState[i] = state[i] + delta * d3[i]
                 i++
-            }
-            // fourth step
+            } // fourth step
             derive.run(t0 + delta, userData, tmpState, d4)
             sixthDelta = delta * (1.0f / 6.0f)
             i = 0
@@ -223,28 +211,24 @@ class Ode {
                 while (i < dimension) {
                     tmpState[i] = state[i] + fourthDelta * d1[i]
                     i++
-                }
-                // second step of first half delta
+                } // second step of first half delta
                 derive.run(t0 + fourthDelta, userData, tmpState, d2)
                 i = 0
                 while (i < dimension) {
                     tmpState[i] = state[i] + fourthDelta * d2[i]
                     i++
-                }
-                // third step of first half delta
+                } // third step of first half delta
                 derive.run(t0 + fourthDelta, userData, tmpState, d3)
                 i = 0
                 while (i < dimension) {
                     tmpState[i] = state[i] + halfDelta * d3[i]
                     i++
-                }
-                // fourth step of first half delta
+                } // fourth step of first half delta
                 derive.run(t0 + halfDelta, userData, tmpState, d4)
                 sixthDelta = halfDelta * (1.0f / 6.0f)
                 i = 0
                 while (i < dimension) {
-                    tmpState[i] =
-                        state[i] + sixthDelta * (d1[i] + 2.0f * (d2[i] + d3[i]) + d4[i])
+                    tmpState[i] = state[i] + sixthDelta * (d1[i] + 2.0f * (d2[i] + d3[i]) + d4[i])
                     i++
                 }
 
@@ -254,28 +238,24 @@ class Ode {
                 while (i < dimension) {
                     tmpState[i] = state[i] + fourthDelta * d1half[i]
                     i++
-                }
-                // second step of second half delta
+                } // second step of second half delta
                 derive.run(t0 + halfDelta + fourthDelta, userData, tmpState, d2)
                 i = 0
                 while (i < dimension) {
                     tmpState[i] = state[i] + fourthDelta * d2[i]
                     i++
-                }
-                // third step of second half delta
+                } // third step of second half delta
                 derive.run(t0 + halfDelta + fourthDelta, userData, tmpState, d3)
                 i = 0
                 while (i < dimension) {
                     tmpState[i] = state[i] + halfDelta * d3[i]
                     i++
-                }
-                // fourth step of second half delta
+                } // fourth step of second half delta
                 derive.run(t0 + delta, userData, tmpState, d4)
                 sixthDelta = halfDelta * (1.0f / 6.0f)
                 i = 0
                 while (i < dimension) {
-                    newState[i] =
-                        state[i] + sixthDelta * (d1[i] + 2.0f * (d2[i] + d3[i]) + d4[i])
+                    newState[i] = state[i] + sixthDelta * (d1[i] + 2.0f * (d2[i] + d3[i]) + d4[i])
                     i++
                 }
 
@@ -284,28 +264,24 @@ class Ode {
                 while (i < dimension) {
                     tmpState[i] = state[i] + halfDelta * d1[i]
                     i++
-                }
-                // second step of full delta
+                } // second step of full delta
                 derive.run(t0 + halfDelta, userData, tmpState, d2)
                 i = 0
                 while (i < dimension) {
                     tmpState[i] = state[i] + halfDelta * d2[i]
                     i++
-                }
-                // third step of full delta
+                } // third step of full delta
                 derive.run(t0 + halfDelta, userData, tmpState, d3)
                 i = 0
                 while (i < dimension) {
                     tmpState[i] = state[i] + delta * d3[i]
                     i++
-                }
-                // fourth step of full delta
+                } // fourth step of full delta
                 derive.run(t0 + delta, userData, tmpState, d4)
                 sixthDelta = delta * (1.0f / 6.0f)
                 i = 0
                 while (i < dimension) {
-                    tmpState[i] =
-                        state[i] + sixthDelta * (d1[i] + 2.0f * (d2[i] + d3[i]) + d4[i])
+                    tmpState[i] = state[i] + sixthDelta * (d1[i] + 2.0f * (d2[i] + d3[i]) + d4[i])
                     i++
                 }
 

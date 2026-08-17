@@ -56,8 +56,7 @@ class JointTransform {
 
         constructor(mat: idJointMat) : this(mat.mat)
 
-        fun SetRotation(m: idMat3) {
-            // NOTE: idMat3 is transposed because it is column-major
+        fun SetRotation(m: idMat3) { // NOTE: idMat3 is transposed because it is column-major
             mat[0 * 4 + 0] = m[0][0]
             mat[0 * 4 + 1] = m[1][0]
             mat[0 * 4 + 2] = m[2][0]
@@ -254,9 +253,15 @@ class JointTransform {
 
         fun ToMat3(): idMat3 {
             return idMat3(
-                mat[0 * 4 + 0], mat[1 * 4 + 0], mat[2 * 4 + 0],
-                mat[0 * 4 + 1], mat[1 * 4 + 1], mat[2 * 4 + 1],
-                mat[0 * 4 + 2], mat[1 * 4 + 2], mat[2 * 4 + 2]
+                mat[0 * 4 + 0],
+                mat[1 * 4 + 0],
+                mat[2 * 4 + 0],
+                mat[0 * 4 + 1],
+                mat[1 * 4 + 1],
+                mat[2 * 4 + 1],
+                mat[0 * 4 + 2],
+                mat[1 * 4 + 2],
+                mat[2 * 4 + 2]
             )
         }
 
@@ -269,9 +274,7 @@ class JointTransform {
 
         fun ToVec3(): idVec3 {
             return idVec3(
-                mat[0 * 4 + 3],
-                mat[1 * 4 + 3],
-                mat[2 * 4 + 3]
+                mat[0 * 4 + 3], mat[1 * 4 + 3], mat[2 * 4 + 3]
             )
         }
 

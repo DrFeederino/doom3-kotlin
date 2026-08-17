@@ -62,8 +62,7 @@ class DebugGraph {
         fun SetNumSamples(num: Int) {
             index = 0
             samples.Clear()
-            samples.SetNum(num)
-            // NOTE: Differs from C++ — C++ uses memset(samples.Ptr(), 0, samples.MemoryUsed())
+            samples.SetNum(num) // NOTE: Differs from C++ — C++ uses memset(samples.Ptr(), 0, samples.MemoryUsed())
             // to zero-initialize. idList.Resize uses arrayOfNulls internally, so unwritten
             // entries are null and would NPE when unboxed to Float. Explicitly zero-initialize.
             for (i in 0 until samples.Num()) {

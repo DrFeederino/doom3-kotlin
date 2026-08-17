@@ -54,12 +54,7 @@ class idPluecker {
         assert(a != 0.0f)
         inva = 1.0f / a
         return idPluecker(
-            p[0] * inva,
-            p[1] * inva,
-            p[2] * inva,
-            p[3] * inva,
-            p[4] * inva,
-            p[5] * inva
+            p[0] * inva, p[1] * inva, p[2] * inva, p[3] * inva, p[4] * inva, p[5] * inva
         )
     }
 
@@ -69,23 +64,13 @@ class idPluecker {
 
     operator fun minus(a: idPluecker): idPluecker {
         return idPluecker(
-            p[0] - a[0],
-            p[1] - a[1],
-            p[2] - a[2],
-            p[3] - a[3],
-            p[4] - a[4],
-            p[5] - a[5]
+            p[0] - a[0], p[1] - a[1], p[2] - a[2], p[3] - a[3], p[4] - a[4], p[5] - a[5]
         )
     }
 
     operator fun plus(a: idPluecker): idPluecker {
         return idPluecker(
-            p[0] + a[0],
-            p[1] + a[1],
-            p[2] + a[2],
-            p[3] + a[3],
-            p[4] + a[4],
-            p[5] + a[5]
+            p[0] + a[0], p[1] + a[1], p[2] + a[2], p[3] + a[3], p[4] + a[4], p[5] + a[5]
         )
     }
 
@@ -133,8 +118,7 @@ class idPluecker {
     }
 
     fun Compare(a: idPluecker): Boolean { // exact compare, no epsilon
-        return (p[0] == a.p[0] && p[1] == a.p[1] && p[2] == a.p[2]
-                && p[3] == a.p[3] && p[4] == a.p[4] && p[5] == a.p[5])
+        return (p[0] == a.p[0] && p[1] == a.p[1] && p[2] == a.p[2] && p[3] == a.p[3] && p[4] == a.p[4] && p[5] == a.p[5])
     }
 
     fun Compare(a: idPluecker, epsilon: Float): Boolean { // compare with epsilon
@@ -312,9 +296,8 @@ class idPluecker {
         if (dir[0] == 0.0f && dir[1] == 0.0f && dir[2] == 0.0f) {
             return -1.0f    // FIXME: implement for parallel lines
         }
-        val d = a.p[4] * (p[2] * dir[1] - (-p[5]) * dir[0]) +
-                a.p[5] * (p[2] * dir[2] - p[4] * dir[0]) +
-                a.p[2] * ((-p[5]) * dir[2] - p[4] * dir[1])
+        val d =
+            a.p[4] * (p[2] * dir[1] - (-p[5]) * dir[0]) + a.p[5] * (p[2] * dir[2] - p[4] * dir[0]) + a.p[2] * ((-p[5]) * dir[2] - p[4] * dir[1])
         val s = PermutedInnerProduct(a) / d
         return (dir * dir) * (s * s)
     }
@@ -334,12 +317,7 @@ class idPluecker {
         }
         val invSqrt = idMath.InvSqrt(d)
         return idPluecker(
-            p[0] * invSqrt,
-            p[1] * invSqrt,
-            p[2] * invSqrt,
-            p[3] * invSqrt,
-            p[4] * invSqrt,
-            p[5] * invSqrt
+            p[0] * invSqrt, p[1] * invSqrt, p[2] * invSqrt, p[3] * invSqrt, p[4] * invSqrt, p[5] * invSqrt
         )
     }
 
@@ -371,7 +349,12 @@ class idPluecker {
     fun ToString(precision: Int = 2): String {
         return String.format(
             "%." + precision + "f %." + precision + "f %." + precision + "f %." + precision + "f %." + precision + "f %." + precision + "f",
-            p[0], p[1], p[2], p[3], p[4], p[5]
+            p[0],
+            p[1],
+            p[2],
+            p[3],
+            p[4],
+            p[5]
         )
     }
 

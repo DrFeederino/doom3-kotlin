@@ -180,15 +180,15 @@ object Physics_RigidBody {
     }
 
     class rigidBodyPState_s {
-        var atRest = 0// set when simulation is suspended
+        var atRest = 0 // set when simulation is suspended
         val externalForce: idVec3 = idVec3() // external force relative to center of mass
 
         // external torque relative to center of mass
         val externalTorque: idVec3 = idVec3()
-        var i: rigidBodyIState_s = rigidBodyIState_s()// state used for integration
-        var lastTimeStep = 0.0f// length of last time step
-        val localAxis: idMat3 = idMat3()// axis relative to master
-        val localOrigin: idVec3 = idVec3()// origin relative to master
+        var i: rigidBodyIState_s = rigidBodyIState_s() // state used for integration
+        var lastTimeStep = 0.0f // length of last time step
+        val localAxis: idMat3 = idMat3() // axis relative to master
+        val localOrigin: idVec3 = idVec3() // origin relative to master
         val pushVelocity: idVec6 = idVec6() // push velocity
 
         fun copy(): rigidBodyPState_s {
@@ -323,8 +323,7 @@ object Physics_RigidBody {
          ================
          idPhysics_RigidBody::SetFriction
          ================
-         */
-        // initialisation
+         */ // initialisation
         fun SetFriction(linear: Float, angular: Float, contact: Float) {
             if (linear < 0.0f || linear > 1.0f || angular < 0.0f || angular > 1.0f || contact < 0.0f || contact > 1.0f) {
                 return
@@ -350,8 +349,7 @@ object Physics_RigidBody {
          ================
          idPhysics_RigidBody::DropToFloor
          ================
-         */
-        // same as above but drop to the floor first
+         */ // same as above but drop to the floor first
         fun DropToFloor() {
             dropToFloor = true
             testSolid = true
@@ -361,8 +359,7 @@ object Physics_RigidBody {
          ================
          idPhysics_RigidBody::NoContact
          ================
-         */
-        // no contact determination and contact friction
+         */ // no contact determination and contact friction
         fun NoContact() {
             noContact = true
         }
@@ -371,8 +368,7 @@ object Physics_RigidBody {
          ================
          idPhysics_RigidBody::EnableImpact
          ================
-         */
-        // enable/disable activation by impact
+         */ // enable/disable activation by impact
         fun EnableImpact() {
             noImpact = false
         }
@@ -390,8 +386,7 @@ object Physics_RigidBody {
          ================
          idPhysics_RigidBody::SetClipModel
          ================
-         */
-        // common physics interface
+         */ // common physics interface
         override fun SetClipModel(model: idClipModel?, density: Float, id: Int /*= 0*/, freeOld: Boolean /*= true*/) {
             val minIndex: Int
             val inertiaScale = idMat3()
@@ -610,8 +605,7 @@ object Physics_RigidBody {
             // set the new state
             current = next
 
-            if (collided) {
-                // apply collision impulse
+            if (collided) { // apply collision impulse
                 if (CollisionImpulse(collision, impulse)) {
                     current.atRest = Game_local.gameLocal.time
                 }
@@ -625,38 +619,33 @@ object Physics_RigidBody {
             if (!noContact) {
                 if (RB_TIMINGS) {
                     timer_collision.Start()
-                }
-                // get contacts
+                } // get contacts
                 EvaluateContacts()
                 if (RB_TIMINGS) {
                     timer_collision.Stop()
                 }
 
                 // check if the body has come to rest
-                if (TestIfAtRest()) {
-                    // put to rest
+                if (TestIfAtRest()) { // put to rest
                     Rest()
                     cameToRest = true
-                } else {
-                    // apply contact friction
+                } else { // apply contact friction
                     ContactFriction(timeStep)
                 }
             }
             if (current.atRest < 0) {
                 ActivateContactEntities()
             }
-            if (collided) {
-                // if the rigid body didn't come to rest or the other entity is not at rest
+            if (collided) { // if the rigid body didn't come to rest or the other entity is not at rest
                 ent = Game_local.gameLocal.entities[collision.c.entityNum]
-                if (ent != null && (!cameToRest || !ent.IsAtRest())) {
-                    // apply impact to other entity
+                if (ent != null && (!cameToRest || !ent.IsAtRest())) { // apply impact to other entity
                     ent.ApplyImpulse(self, collision.c.id, collision.c.point, impulse.unaryMinus())
                 }
             }
 
             // move the rigid body velocity back into the world frame
-//	current.i.linearMomentum += current.pushVelocity.SubVec3( 0 ) * mass;
-//	current.i.angularMomentum += current.pushVelocity.SubVec3( 1 ) * inertiaTensor;
+            //	current.i.linearMomentum += current.pushVelocity.SubVec3( 0 ) * mass;
+            //	current.i.angularMomentum += current.pushVelocity.SubVec3( 1 ) * inertiaTensor;
             current.pushVelocity.Zero()
             current.lastTimeStep = timeStep
             current.externalForce.Zero()
@@ -674,10 +663,7 @@ object Physics_RigidBody {
                 timer_total.Stop()
                 if (SysCvar.rb_showTimings.GetInteger() == 1) {
                     Game_local.gameLocal.Printf(
-                        "%12s: t %d cd %d\n",
-                        self!!.name,
-                        timer_total.Milliseconds(),
-                        timer_collision.Milliseconds()
+                        "%12s: t %d cd %d\n", self!!.name, timer_total.Milliseconds(), timer_collision.Milliseconds()
                     )
                     lastTimerReset = 0
                 } else if (SysCvar.rb_showTimings.GetInteger() == 2) {
@@ -1176,8 +1162,7 @@ object Physics_RigidBody {
             val masterOrigin = idVec3()
             val masterAxis = idMat3()
             if (master != null) {
-                if (!hasMaster) {
-                    // transform from world space to master space
+                if (!hasMaster) { // transform from world space to master space
                     self!!.GetMasterPosition(masterOrigin, masterAxis)
                     current.localOrigin.set(current.i.position.minus(masterOrigin).times(masterAxis.Transpose()))
                     if (orientated) {
@@ -1363,8 +1348,9 @@ object Physics_RigidBody {
          If there is a collision the next state is set to the state at the moment of impact.
          ================
          */
-        private fun CheckForCollisions(deltaTime: Float, next: rigidBodyPState_s, collision: trace_s): Boolean {
-//#define TEST_COLLISION_DETECTION
+        private fun CheckForCollisions(
+            deltaTime: Float, next: rigidBodyPState_s, collision: trace_s
+        ): Boolean { //#define TEST_COLLISION_DETECTION
             val axis = idMat3()
             val rotation: idRotation
             var collided = false
@@ -1412,8 +1398,7 @@ object Physics_RigidBody {
                     clipMask,
                     self
                 )
-            ) {
-                // Clip.Motion() sets collision.fraction = Max(translationalFraction, rotationalFraction).
+            ) { // Clip.Motion() sets collision.fraction = Max(translationalFraction, rotationalFraction).
                 // When translation collides (fraction ≈ 0) but rotation doesn't (fraction = 1.0),
                 // the returned fraction is 1.0, hiding the translational collision. This breaks
                 // the damping check in CollisionImpulse (fraction < 0.0001). Compute the actual
@@ -1476,14 +1461,12 @@ object Physics_RigidBody {
             info = ent.GetImpactInfo(self, collision.c.id, collision.c.point)
 
             // collision point relative to the body center of mass
-            r.set(collision.c.point.minus(current.i.position.plus(centerOfMass.times(current.i.orientation))))
-            // the velocity at the collision point
+            r.set(collision.c.point.minus(current.i.position.plus(centerOfMass.times(current.i.orientation)))) // the velocity at the collision point
             linearVelocity.set(current.i.linearMomentum.times(inverseMass))
             inverseWorldInertiaTensor =
                 current.i.orientation.Transpose().times(inverseInertiaTensor.times(current.i.orientation))
             angularVelocity.set(inverseWorldInertiaTensor.times(current.i.angularMomentum))
-            velocity.set(linearVelocity.plus(angularVelocity.Cross(r)))
-            // subtract velocity of other entity
+            velocity.set(linearVelocity.plus(angularVelocity.Cross(r))) // subtract velocity of other entity
             velocity.minusAssign(info.velocity)
 
             // velocity in normal direction
@@ -1567,8 +1550,7 @@ object Physics_RigidBody {
                 current.i.angularMomentum.plusAssign(r.Cross(impulse))
 
                 // if moving towards the surface at the contact point
-                if (normalVelocity.times(contacts[i].normal) < 0.0f) {
-                    // calculate impulse
+                if (normalVelocity.times(contacts[i].normal) < 0.0f) { // calculate impulse
                     normal.set(normalVelocity.unaryMinus())
                     impulseNumerator = normal.Normalize()
                     impulseDenominator =
@@ -1621,8 +1603,7 @@ object Physics_RigidBody {
             clipModel!!.Link(Game_local.gameLocal.clip, self, clipModel!!.GetId(), tr.endpos, current.i.orientation)
 
             // if on the floor already
-            if (tr.fraction == 0.0f) {
-                // test if we are really at rest
+            if (tr.fraction == 0.0f) { // test if we are really at rest
                 EvaluateContacts()
                 if (!TestIfAtRest()) {
                     Game_local.gameLocal.DWarning(
@@ -1721,17 +1702,14 @@ object Physics_RigidBody {
             }
 
             // linear velocity of body
-            v.set(current.i.linearMomentum.times(inverseMass))
-            // linear velocity in gravity direction
-            gv = v.times(gravityNormal)
-            // linear velocity orthogonal to gravity direction
+            v.set(current.i.linearMomentum.times(inverseMass)) // linear velocity in gravity direction
+            gv = v.times(gravityNormal) // linear velocity orthogonal to gravity direction
             v.minusAssign(gravityNormal.times(gv))
 
             // if too much velocity orthogonal to gravity direction
             if (v.Length() > STOP_SPEED) {
                 return false
-            }
-            // if too much velocity in gravity direction
+            } // if too much velocity in gravity direction
             if (gv > 2.0f * STOP_SPEED || gv < -2.0f * STOP_SPEED) {
                 return false
             }
@@ -1849,18 +1827,15 @@ object Physics_RigidBody {
          ================
          RigidBodyDerivatives
          ================
-         */
-        /*friend*/   class RigidBodyDerivatives : deriveFunction_t() {
+         *//*friend*/   class RigidBodyDerivatives : deriveFunction_t() {
             override fun run(t: Float, clientData: Any, state: FloatArray, derivatives: FloatArray) {
                 val p = clientData as idPhysics_RigidBody
-                val s = rigidBodyIState_s(state)
-                // NOTE: this struct should be build conform rigidBodyIState_t
+                val s = rigidBodyIState_s(state) // NOTE: this struct should be build conform rigidBodyIState_t
                 val d = rigidBodyDerivatives_s(derivatives)
                 val angularVelocity = idVec3()
                 val inverseWorldInertiaTensor: idMat3
                 inverseWorldInertiaTensor = s.orientation.times(p.inverseInertiaTensor.times(s.orientation.Transpose()))
-                angularVelocity.set(inverseWorldInertiaTensor.times(s.angularMomentum))
-                // derivatives
+                angularVelocity.set(inverseWorldInertiaTensor.times(s.angularMomentum)) // derivatives
                 d.linearVelocity.set(s.linearMomentum.times(p.inverseMass))
                 d.angularMatrix.set(idMat3.SkewSymmetric(angularVelocity).times(s.orientation))
                 d.force.set(s.linearMomentum.times(-p.linearFriction).plus(p.current.externalForce))
@@ -1898,13 +1873,12 @@ object Physics_RigidBody {
             SetFriction(0.6f, 0.6f, 0.0f)
             clipModel = null
 
-//	memset( &current, 0, sizeof( current ) );
+            //	memset( &current, 0, sizeof( current ) );
             current = rigidBodyPState_s()
             current.atRest = -1
             current.lastTimeStep = UsercmdGen.USERCMD_MSEC.toFloat()
             current.i = rigidBodyIState_s()
-            current.i.orientation.set(idMat3.getMat3_identity())
-            // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias
+            current.i.orientation.set(idMat3.getMat3_identity()) // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias
             saved = current.copy()
             mass = 1.0f
             inverseMass = 1.0f

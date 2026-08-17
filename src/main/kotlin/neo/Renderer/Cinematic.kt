@@ -44,7 +44,9 @@ import neo.framework.File_h.idFile
 import neo.idlib.LittleLong
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.wrapToNativeBuffer
-import java.nio.*
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.IntBuffer
 
 object Cinematic {
     const val CIN_hold = 4
@@ -222,8 +224,7 @@ object Cinematic {
      A single idCinematic can be reused for multiple files if desired.
 
      ===============================================================================
-     */
-    // cinematic states
+     */ // cinematic states
     enum class cinStatus_t {
         FMV_IDLE,
         FMV_PLAY,
@@ -295,12 +296,9 @@ object Cinematic {
                     i++
                 }
                 file = IntArray(65536)
-                vq2 = ByteBuffer.allocate(256 * 16 * 4 * 2)
-                    .order(ByteOrder.LITTLE_ENDIAN)
-                vq4 = ByteBuffer.allocate(256 * 64 * 4 * 2)
-                    .order(ByteOrder.LITTLE_ENDIAN)
-                vq8 = ByteBuffer.allocate(256 * 256 * 4 * 2)
-                    .order(ByteOrder.LITTLE_ENDIAN)
+                vq2 = ByteBuffer.allocate(256 * 16 * 4 * 2).order(ByteOrder.LITTLE_ENDIAN)
+                vq4 = ByteBuffer.allocate(256 * 64 * 4 * 2).order(ByteOrder.LITTLE_ENDIAN)
+                vq8 = ByteBuffer.allocate(256 * 256 * 4 * 2).order(ByteOrder.LITTLE_ENDIAN)
             }
 
             // shutdown cinematic play back data
@@ -333,8 +331,7 @@ object Cinematic {
             showWaveform = false
         }
 
-        override fun deconstruct() {
-            // nothing to do
+        override fun deconstruct() { // nothing to do
         }
 
         override fun InitFromFile(qpath: String, looping: Boolean): Boolean {
@@ -353,8 +350,7 @@ object Cinematic {
         }
     }
 
-    internal class idCinematicLocal() :
-        idCinematic() {
+    internal class idCinematicLocal() : idCinematic() {
         private val mComp = LongArray(256)
         private val t = LongArray(2)
         private var CIN_WIDTH = 0
@@ -622,8 +618,7 @@ object Cinematic {
             do {
                 if (0 == newd.toInt()) {
                     newd = 7
-                    celdata = (data[offset + d_index + 0]
-                            + (data[offset + d_index + 1] shl 8))
+                    celdata = (data[offset + d_index + 0] + (data[offset + d_index + 1] shl 8))
                     d_index += 2
                 } else {
                     newd--
@@ -740,8 +735,8 @@ object Cinematic {
             }
             framedata = 0 //file;
             //
-// new frame is ready
-//
+            // new frame is ready
+            //
             do {
                 redump = false
                 when (roq_id) {
@@ -759,11 +754,7 @@ object Cinematic {
                         }
                         if (numQuads == 0L) {        // first frame
                             System.arraycopy(
-                                image!!.array(),
-                                0,
-                                image!!.array(),
-                                screenDelta,
-                                samplesPerLine.toInt() * ySize
+                                image!!.array(), 0, image!!.array(), screenDelta, samplesPerLine.toInt() * ySize
                             )
                         }
                         numQuads++
@@ -797,20 +788,15 @@ object Cinematic {
                         normalBuffer0 = t[0]
                         JPEGBlit(image, file!!, framedata, RoQFrameSize)
                         System.arraycopy(
-                            image!!.array(),
-                            0,
-                            image!!.array(),
-                            screenDelta,
-                            samplesPerLine.toInt() * ySize
+                            image!!.array(), 0, image!!.array(), screenDelta, samplesPerLine.toInt() * ySize
                         )
                         numQuads++
                     }
 
                     else -> status = cinStatus_t.FMV_EOF
-                }
+                } //
+                // read in next frame data
                 //
-// read in next frame data
-//
                 if (RoQPlayed >= ROQSize) {
                     if (looping) {
                         RoQReset()
@@ -838,10 +824,9 @@ object Cinematic {
                     framedata += 8
                     redump = true
                 }
-            } while (redump)
-//
-// one more frame hits the dust
-//
+            } while (redump) //
+            // one more frame hits the dust
+            //
             RoQPlayed += (RoQFrameSize + 8).toLong()
         }
 
@@ -1147,10 +1132,9 @@ object Cinematic {
             bptr = vq2!!.duplicate().order(ByteOrder.LITTLE_ENDIAN)
             i_ptr = offset
             if (!half) {
-                if (!smoothedDouble) {
-////////////////////////////////////////////////////////////////////////////////
-// normal height
-////////////////////////////////////////////////////////////////////////////////
+                if (!smoothedDouble) { ////////////////////////////////////////////////////////////////////////////////
+                    // normal height
+                    ////////////////////////////////////////////////////////////////////////////////
                     if (samplesPerPixel == 2L) {
                         i = 0
                         while (i < two) {
@@ -1213,10 +1197,9 @@ object Cinematic {
                             i++
                         }
                     }
-                } else {
-////////////////////////////////////////////////////////////////////////////////
-// double height, smoothed
-////////////////////////////////////////////////////////////////////////////////
+                } else { ////////////////////////////////////////////////////////////////////////////////
+                    // double height, smoothed
+                    ////////////////////////////////////////////////////////////////////////////////
                     if (samplesPerPixel == 2L) {
                         i = 0
                         while (i < two) {
@@ -1286,10 +1269,9 @@ object Cinematic {
                         }
                     }
                 }
-            } else {
-////////////////////////////////////////////////////////////////////////////////
-// 1/4 screen
-////////////////////////////////////////////////////////////////////////////////
+            } else { ////////////////////////////////////////////////////////////////////////////////
+                // 1/4 screen
+                ////////////////////////////////////////////////////////////////////////////////
                 if (samplesPerPixel == 2L) {
                     i = 0
                     while (i < two) {

@@ -139,8 +139,8 @@ object SecurityCamera {
             if (health != 0) {
                 fl.takedamage = true
             }
-            pvsArea = Game_local.gameLocal.pvs.GetPVSArea(GetPhysics().GetOrigin())
-            // if no target specified use ourself
+            pvsArea =
+                Game_local.gameLocal.pvs.GetPVSArea(GetPhysics().GetOrigin()) // if no target specified use ourself
             str = idStr(spawnArgs.GetString("cameraTarget"))
             if (str.Length() == 0) {
                 spawnArgs.Set("cameraTarget", spawnArgs.GetString("name"))
@@ -156,8 +156,7 @@ object SecurityCamera {
                 return
             }
             GetPhysics().SetContents(Material.CONTENTS_SOLID)
-            GetPhysics().SetClipMask(Game_local.MASK_SOLID or Material.CONTENTS_BODY or Material.CONTENTS_CORPSE or Material.CONTENTS_MOVEABLECLIP)
-            // setup the physics
+            GetPhysics().SetClipMask(Game_local.MASK_SOLID or Material.CONTENTS_BODY or Material.CONTENTS_CORPSE or Material.CONTENTS_MOVEABLECLIP) // setup the physics
             UpdateChangeableSpawnArgs(null)
         }
 
@@ -289,11 +288,7 @@ object SecurityCamera {
         }
 
         override fun Pain(
-            inflictor: idEntity?,
-            attacker: idEntity?,
-            damage: Int,
-            dir: idVec3,
-            location: Int
+            inflictor: idEntity?, attacker: idEntity?, damage: Int, dir: idVec3, location: Int
         ): Boolean {
             val fx = spawnArgs.GetString("fx_damage")
             if (fx.isNotEmpty()) { //fx[0] != '\0' ) {
@@ -309,8 +304,7 @@ object SecurityCamera {
          Present is called to allow entities to generate refEntities, lights, etc for the renderer.
          ================
          */
-        override fun Present() {
-            // don't present to the renderer if the entity hasn't changed
+        override fun Present() { // don't present to the renderer if the entity hasn't changed
             if (0 == thinkFlags and TH_UPDATEVISUALS) {
                 return
             }
@@ -378,11 +372,7 @@ object SecurityCamera {
                 val eye = idVec3()
                 eye.set(ent.EyeOffset())
                 Game_local.gameLocal.clip.TracePoint(
-                    tr,
-                    GetPhysics().GetOrigin(),
-                    ent.GetPhysics().GetOrigin().plus(eye),
-                    Game_local.MASK_OPAQUE,
-                    this
+                    tr, GetPhysics().GetOrigin(), ent.GetPhysics().GetOrigin().plus(eye), Game_local.MASK_OPAQUE, this
                 )
                 if (tr.fraction == 1.0f || Game_local.gameLocal.GetTraceEntity(tr) == ent) {
                     Game_local.gameLocal.pvs.FreeCurrentPVS(handle)

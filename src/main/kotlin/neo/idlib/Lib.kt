@@ -50,14 +50,13 @@ fun BigLong(l: Int): Int {
  ===============================================================================
  */
 fun AssertFailed(file: String, line: Int, expression: String) {
-    idLib.sys.DebugPrintf("\n\nASSERTION FAILED!\n%s(%d): '%s'\n", file, line, expression)
-    //#ifdef _WIN32
-//	__asm int 0x03
-//#elif defined( __linux__ )
-//	__asm__ __volatile__ ("int $0x03");
-//#elif defined( MACOS_X )
-//	kill( getpid(), SIGINT );
-//#endif
+    idLib.sys.DebugPrintf("\n\nASSERTION FAILED!\n%s(%d): '%s'\n", file, line, expression) //#ifdef _WIN32
+    //	__asm int 0x03
+    //#elif defined( __linux__ )
+    //	__asm__ __volatile__ ("int $0x03");
+    //#elif defined( MACOS_X )
+    //	kill( getpid(), SIGINT );
+    //#endif
 }
 
 /*
@@ -89,13 +88,12 @@ object idLib {
     lateinit var sys: idSys
     fun Init() {
 
-//	assert( sizeof( bool ) == 1 );
+        //	assert( sizeof( bool ) == 1 );
         // initialize little/big endian conversion
-        Swap_Init()
+        Swap_Init() //
+        //            // initialize memory manager
+        //            Heap.Mem_Init();
         //
-//            // initialize memory manager
-//            Heap.Mem_Init();
-//
         // init string memory allocator
         idStr.InitMemory()
 
@@ -126,20 +124,19 @@ object idLib {
         // shut down the SIMD engine
         idSIMD.Shutdown()
 
-//            // shut down the memory manager
-//            Heap.Mem_Shutdown();
+        //            // shut down the memory manager
+        //            Heap.Mem_Shutdown();
     }
 
     // wrapper to idCommon functions
-    fun Error(vararg fmt: String?) {
-//	va_list		argptr;
-//	char		text[MAX_STRING_CHARS];
-//
-//	va_start( argptr, fmt );
-//	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
-//	va_end( argptr );
-//
-//	common->Error( "%s", text );
+    fun Error(vararg fmt: String?) { //	va_list		argptr;
+        //	char		text[MAX_STRING_CHARS];
+        //
+        //	va_start( argptr, fmt );
+        //	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
+        //	va_end( argptr );
+        //
+        //	common->Error( "%s", text );
     }
 
     fun Warning(vararg fmt: String?) {}
@@ -150,13 +147,11 @@ open class idException : RuntimeException {
             : String = String()
 
     constructor() : super()
-    constructor(text: String) : super(text) {
-//            strcpy(error, text);
+    constructor(text: String) : super(text) { //            strcpy(error, text);
         error = text
     }
 
-    constructor(text: CharArray) : super(ctos(text)) {
-//            strcpy(error, text);
+    constructor(text: CharArray) : super(ctos(text)) { //            strcpy(error, text);
         error = ctos(text)
     }
 
@@ -497,22 +492,20 @@ fun LongNoSwap(l: Int): Int {
 FloatSwap
 ================
 */
-fun FloatSwap(f: Float): Float {
-//	union {
-//		float	f;
-//		byte	b[4];
-//	} dat1, dat2;
-//
-//
-//	dat1.f = f;
-//	dat2.b[0] = dat1.b[3];
-//	dat2.b[1] = dat1.b[2];
-//	dat2.b[2] = dat1.b[1];
-//	dat2.b[3] = dat1.b[0];
-//
-//	return dat2.f;
-    return ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putFloat(f).order(ByteOrder.BIG_ENDIAN)
-        .getFloat(0)
+fun FloatSwap(f: Float): Float { //	union {
+    //		float	f;
+    //		byte	b[4];
+    //	} dat1, dat2;
+    //
+    //
+    //	dat1.f = f;
+    //	dat2.b[0] = dat1.b[3];
+    //	dat2.b[1] = dat1.b[2];
+    //	dat2.b[2] = dat1.b[1];
+    //	dat2.b[3] = dat1.b[0];
+    //
+    //	return dat2.f;
+    return ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putFloat(f).order(ByteOrder.BIG_ENDIAN).getFloat(0)
 }
 
 /*
@@ -664,9 +657,7 @@ SixtetsForIntLittle
 fun SixtetsForIntLittle(out: ByteArray, src: Int) {
     val b = intArrayOf(
         src shr 0 and 0xff,  //TODO:check order
-        src shr 8 and 0xff,
-        src shr 16 and 0xff,
-        src shr 24 and 0xff
+        src shr 8 and 0xff, src shr 16 and 0xff, src shr 24 and 0xff
     )
     out[0] = (b[0] and 0xfc shr 2).toByte()
     out[1] = ((b[0] and 0x3 shl 4) + (b[1] and 0xf0 shr 4)).toByte()
@@ -749,38 +740,37 @@ fun Min(x: Int, y: Int): Int {
     return if (x < y) x else y
 }
 
-fun Swap_Init() {
-////	byte	swaptest[2] = {1,0};
-//
-//	// set the byte swapping variables in a portable manner
-//	if ( !Swap_IsBigEndian() ) {
-////	if ( *(short *)swaptest == 1) {
-//		// little endian ex: x86
-//		_BigShort = ShortSwap;
-//		_LittleShort = ShortNoSwap;
-//		_BigLong = LongSwap;
-//		_LittleLong = LongNoSwap;
-//		_BigFloat = FloatSwap;
-//		_LittleFloat = FloatNoSwap;
-//		_BigRevBytes = RevBytesSwap;
-//		_LittleRevBytes = RevBytesNoSwap;
-//		_LittleBitField = RevBitFieldNoSwap;
-//		_SixtetsForInt = SixtetsForIntLittle;
-//		_IntForSixtets = IntForSixtetsLittle;
-//	} else {
-//		// big endian ex: ppc
-//		_BigShort = ShortNoSwap;
-//		_LittleShort = ShortSwap;
-//		_BigLong = LongNoSwap;
-//		_LittleLong = LongSwap;
-//		_BigFloat = FloatNoSwap;
-//		_LittleFloat = FloatSwap;
-//		_BigRevBytes = RevBytesNoSwap;
-//		_LittleRevBytes = RevBytesSwap;
-//		_LittleBitField = RevBitFieldSwap;
-//		_SixtetsForInt = SixtetsForIntBig;
-//		_IntForSixtets = IntForSixtetsBig;
-//	}
+fun Swap_Init() { ////	byte	swaptest[2] = {1,0};
+    //
+    //	// set the byte swapping variables in a portable manner
+    //	if ( !Swap_IsBigEndian() ) {
+    ////	if ( *(short *)swaptest == 1) {
+    //		// little endian ex: x86
+    //		_BigShort = ShortSwap;
+    //		_LittleShort = ShortNoSwap;
+    //		_BigLong = LongSwap;
+    //		_LittleLong = LongNoSwap;
+    //		_BigFloat = FloatSwap;
+    //		_LittleFloat = FloatNoSwap;
+    //		_BigRevBytes = RevBytesSwap;
+    //		_LittleRevBytes = RevBytesNoSwap;
+    //		_LittleBitField = RevBitFieldNoSwap;
+    //		_SixtetsForInt = SixtetsForIntLittle;
+    //		_IntForSixtets = IntForSixtetsLittle;
+    //	} else {
+    //		// big endian ex: ppc
+    //		_BigShort = ShortNoSwap;
+    //		_LittleShort = ShortSwap;
+    //		_BigLong = LongNoSwap;
+    //		_LittleLong = LongSwap;
+    //		_BigFloat = FloatNoSwap;
+    //		_LittleFloat = FloatSwap;
+    //		_BigRevBytes = RevBytesNoSwap;
+    //		_LittleRevBytes = RevBytesSwap;
+    //		_LittleBitField = RevBitFieldSwap;
+    //		_SixtetsForInt = SixtetsForIntBig;
+    //		_IntForSixtets = IntForSixtetsBig;
+    //	}
 }
 
 /*
@@ -788,8 +778,7 @@ fun Swap_Init() {
 Swap_IsBigEndian
 ==========
 */
-fun Swap_IsBigEndian(): Boolean {
-//	byte	swaptest[2] = {1,0};
-//	return *(short *)swaptest != 1;
+fun Swap_IsBigEndian(): Boolean { //	byte	swaptest[2] = {1,0};
+    //	return *(short *)swaptest != 1;
     return ByteOrder.BIG_ENDIAN == ByteOrder.nativeOrder()
 }

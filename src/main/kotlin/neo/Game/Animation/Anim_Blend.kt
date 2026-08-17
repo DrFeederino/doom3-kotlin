@@ -120,8 +120,7 @@ class idAnim {
         this.modelDef = modelDef
         numAnims = anim.numAnims
         name.set(anim.name)
-        realname.set(anim.realname)
-        // FIX: C++ copies animFlags_t by value; Kotlin reference-copy shares the same object.
+        realname.set(anim.realname) // FIX: C++ copies animFlags_t by value; Kotlin reference-copy shares the same object.
         // Deep-copy the boolean fields instead.
         flags = animFlags_t()
         flags.ai_no_turn = anim.flags.ai_no_turn
@@ -204,7 +203,7 @@ class idAnim {
             i++
         }
 
-//	memset( &flags, 0, sizeof( flags ) );
+        //	memset( &flags, 0, sizeof( flags ) );
         flags = animFlags_t()
 
         // C++ deletes frameCommands[i].string here; not needed in Kotlin (GC handles it)
@@ -314,12 +313,11 @@ class idAnim {
         // frame numbers are 1 based in .def files, but 0 based internally
         framenum--
 
-//	memset( &fc, 0, sizeof( fc ) );
+        //	memset( &fc, 0, sizeof( fc ) );
         fc = frameCommand_t()
         if (!src.ReadTokenOnLine(token)) {
             return "Unexpected end of line"
-        }
-        //System.out.printf("Anim Token is %s%n", token.toString());
+        } //System.out.printf("Anim Token is %s%n", token.toString());
         if (token.toString() == "call") {
             if (!src.ReadTokenOnLine(token)) {
                 return "Unexpected end of line"
@@ -339,8 +337,8 @@ class idAnim {
             if (!src.ReadTokenOnLine(token)) {
                 return "Unexpected end of line"
             }
-            fc.type = frameCommandType_t.FC_EVENTFUNCTION
-            // FIX: C++ checks for NULL return from FindEvent and returns error string;
+            fc.type =
+                frameCommandType_t.FC_EVENTFUNCTION // FIX: C++ checks for NULL return from FindEvent and returns error string;
             // Kotlin was using !! which throws NPE instead of returning the error message
             val ev: Event.idEventDef? = Event.idEventDef.FindEvent(token.toString())
             if (ev == null) {
@@ -586,16 +584,13 @@ class idAnim {
             }
             fc.type = frameCommandType_t.FC_FIREMISSILEATTARGET
             fc.string.set(token)
-            fc.index = jointInfo.num
-            // D3XP: new frame command types
+            fc.index = jointInfo.num // D3XP: new frame command types
         } else if (isD3XP && token.toString() == "launch_projectile") {
             if (!src.ReadTokenOnLine(token)) {
                 return "Unexpected end of line"
             }
             if (DeclManager.declManager.FindDeclWithoutParsing(
-                    declType_t.DECL_ENTITYDEF,
-                    token.toString(),
-                    false
+                    declType_t.DECL_ENTITYDEF, token.toString(), false
                 ) == null
             ) {
                 return "Unknown projectile def"
@@ -938,10 +933,7 @@ class idAnim {
                             }
                         } else {
                             ent.StartSoundShader(
-                                command.soundShader,
-                                gameSoundChannel_t.SND_CHANNEL_ANY.ordinal,
-                                Sound.SSF_GLOBAL,
-                                false
+                                command.soundShader, gameSoundChannel_t.SND_CHANNEL_ANY.ordinal, Sound.SSF_GLOBAL, false
                             )
                         }
                     }
@@ -1003,8 +995,7 @@ class idAnim {
                     frameCommandType_t.FC_TRIGGER -> {
                         var target: idEntity?
                         target = Game_local.gameLocal.FindEntity(command.string.toString())
-                        if (target != null) {
-                            // D3XP: switch to target's time group
+                        if (target != null) { // D3XP: switch to target's time group
                             if (isD3XP) {
                                 SetTimeState(target.timeGroup).use {
                                     target.Signal(signalNum_t.SIG_TRIGGER)
@@ -1061,12 +1052,9 @@ class idAnim {
 
                     frameCommandType_t.FC_FIREMISSILEATTARGET -> {
                         ent.ProcessEvent(
-                            AI_FireMissileAtTarget,
-                            modelDef!!.GetJointName(command.index),
-                            command.string.toString()
+                            AI_FireMissileAtTarget, modelDef!!.GetJointName(command.index), command.string.toString()
                         )
-                    }
-                    // D3XP: new frame command dispatch
+                    } // D3XP: new frame command dispatch
                     // hidden behind ifdef, this shouldn't be called in base game
                     frameCommandType_t.FC_LAUNCH_PROJECTILE -> {
                         ent.ProcessEvent(AI_LaunchProjectile, command.string.toString())
@@ -1074,9 +1062,7 @@ class idAnim {
 
                     frameCommandType_t.FC_TRIGGER_FX -> {
                         ent.ProcessEvent(
-                            AI_TriggerFX,
-                            modelDef!!.GetJointName(command.index),
-                            command.string.toString()
+                            AI_TriggerFX, modelDef!!.GetJointName(command.index), command.string.toString()
                         )
                     }
 
@@ -1086,10 +1072,7 @@ class idAnim {
                             val emitterName = command.string.toString().substring(0, index)
                             val particle = command.string.toString().substring(index + 1)
                             ent.ProcessEvent(
-                                AI_StartEmitter,
-                                emitterName,
-                                modelDef!!.GetJointName(command.index),
-                                particle
+                                AI_StartEmitter, emitterName, modelDef!!.GetJointName(command.index), particle
                             )
                         }
                     }
@@ -1243,6 +1226,7 @@ class idDeclModelDef : idDecl {
         }
         return arr
     }
+
     private val joints: List.idList<jointInfo_t> = List.idList()
     private val offset: idVec3 = idVec3()
     private var modelHandle: idRenderModel?
@@ -1296,8 +1280,7 @@ class idDeclModelDef : idDecl {
                     MakeDefault()
                     return false
                 }
-                val copy =
-                    DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, token2, false) as idDeclModelDef?
+                val copy = DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, token2, false) as idDeclModelDef?
                 if (null == copy) {
                     idLib.common.Warning("Unknown model definition '%s'", token2)
                 } else if (copy.GetState() == declState_t.DS_DEFAULTED) {
@@ -1374,8 +1357,7 @@ class idDeclModelDef : idDecl {
                     i++
                     md5joint++
                 }
-            } else if (token.toString() == "remove") {
-                // removes any anims whos name matches
+            } else if (token.toString() == "remove") { // removes any anims whos name matches
                 if (!src.ReadToken(token2)) {
                     src.Warning("Unexpected end of file")
                     MakeDefault()
@@ -1384,8 +1366,7 @@ class idDeclModelDef : idDecl {
                 num = 0
                 i = 0
                 while (i < anims.Num()) {
-                    if (token2.toString() == anims[i].Name() || token2.toString() == anims[i].FullName()) {
-//					delete anims[ i ];
+                    if (token2.toString() == anims[i].Name() || token2.toString() == anims[i].FullName()) { //					delete anims[ i ];
                         anims.RemoveIndex(i) // remove handles both delete and RemoveIndex
                         if (i >= numDefaultAnims) {
                             src.Warning(
@@ -1428,8 +1409,7 @@ class idDeclModelDef : idDecl {
                     src.Warning("Must specify mesh before defining channels")
                     MakeDefault()
                     return false
-                }
-                // set the channel for a group of joints
+                } // set the channel for a group of joints
                 if (!src.ReadToken(token2)) {
                     src.Warning("Unexpected end of file")
                     MakeDefault()
@@ -1536,8 +1516,7 @@ class idDeclModelDef : idDecl {
         val num: Int
         val pose: Array<idJointQuat>?
         val list: Array<idJointMat>
-        if (null == modelHandle || modelHandle!!.IsDefaultModel()) {
-            // C++: Mem_Free16(jointList);  (not needed in Kotlin — GC handles it)
+        if (null == modelHandle || modelHandle!!.IsDefaultModel()) { // C++: Mem_Free16(jointList);  (not needed in Kotlin — GC handles it)
             jointList[0] = null
             frameBounds.Clear()
             return
@@ -1598,8 +1577,7 @@ class idDeclModelDef : idDecl {
         num = modelHandle!!.NumJoints()
 
         // split on and skip whitespaces
-        for (name in jointnames.split(regex = "\\s+".toRegex()).dropLastWhile { it.isEmpty() }) {
-            // copy joint name
+        for (name in jointnames.split(regex = "\\s+".toRegex()).dropLastWhile { it.isEmpty() }) { // copy joint name
             jointname = name
             if (jointname.startsWith("-")) {
                 subtract = true
@@ -1625,8 +1603,7 @@ class idDeclModelDef : idDecl {
             } else {
                 jointList.Remove(joint.num)
             }
-            if (getChildren) {
-                // include all joint's children
+            if (getChildren) { // include all joint's children
                 child_i = joints.Find(joint)!! + 1
                 i = joint.num + 1
                 while (i < num) {
@@ -1690,8 +1667,7 @@ class idDeclModelDef : idDecl {
 
         // find a specific animation
         i = 0
-        while (i < anims.Num()) {
-            // FIX: was startsWith — C++ uses !strcmp which is exact match
+        while (i < anims.Num()) { // FIX: was startsWith — C++ uses !strcmp which is exact match
             if (anims[i].FullName() == name) {
                 return i + 1 // 1-based anim index (0 means "no anim")
             }
@@ -1709,8 +1685,7 @@ class idDeclModelDef : idDecl {
         var numAnims: Int
         val len: Int
         len = name.length
-        if (len != 0 && idStr.CharIsNumeric(name[len - 1].code)) {
-            // find a specific animation
+        if (len != 0 && idStr.CharIsNumeric(name[len - 1].code)) { // find a specific animation
             return GetSpecificAnim(name)
         }
 
@@ -1884,8 +1859,7 @@ class idDeclModelDef : idDecl {
         }
         if (i < numDefaultAnims) {
             anim = anims[i]
-        } else {
-            // create the alias associated with this animation
+        } else { // create the alias associated with this animation
             anim = idAnim()
             anims.Append(anim)
         }
@@ -1926,8 +1900,7 @@ class idDeclModelDef : idDecl {
                 return false
             }
             md5anim.CheckModelHierarchy(modelHandle!!)
-            if (numAnims > 0) {
-                // make sure it's the same length as the other anims
+            if (numAnims > 0) { // make sure it's the same length as the other anims
                 if (md5anim.Length() != md5anims[0]!!.Length()) {
                     src.Warning(
                         "Anim '%s' does not match length of anim '%s'", md5anim.Name(), md5anims[0]!!.Name()
@@ -1971,8 +1944,7 @@ class idDeclModelDef : idDecl {
                     flags.ai_no_turn = true
                 } else if (token.toString() == "anim_turn") {
                     flags.anim_turn = true
-                } else if (token.toString() == "frame") {
-                    // create a frame command
+                } else if (token.toString() == "frame") { // create a frame command
                     var framenum: Int
                     var err: String?
 
@@ -2083,7 +2055,7 @@ class idAnimBlend {
         allowFrameCommands = true
         animNum = 0
 
-//	memset( animWeights, 0, sizeof( animWeights ) );
+        //	memset( animWeights, 0, sizeof( animWeights ) );
         animWeights = FloatArray(animWeights.size)
         blendStartValue = 0.0f
         blendEndValue = 0.0f
@@ -2104,8 +2076,7 @@ class idAnimBlend {
         if (null == anim || !anim.HasFrameCommands()) {
             return
         }
-        if (totime <= starttime) {
-            // don't play until next frame or we'll play commands twice.
+        if (totime <= starttime) { // don't play until next frame or we'll play commands twice.
             // this happens on the player sometimes.
             return
         }
@@ -2117,8 +2088,7 @@ class idAnimBlend {
         md5anim = anim.MD5Anim(0)!!
         md5anim.ConvertTimeToFrame(fromFrameTime, cycle, frame1)
         md5anim.ConvertTimeToFrame(toFrameTime, cycle, frame2)
-        if (fromFrameTime <= 0) {
-            // make sure first frame is called
+        if (fromFrameTime <= 0) { // make sure first frame is called
             anim.CallFrameCommands(ent, -1, frame2.frame1)
         } else {
             anim.CallFrameCommands(ent, frame1.frame1, frame2.frame1)
@@ -2176,12 +2146,12 @@ class idAnimBlend {
         animWeights[0] = 1.0f
         endtime = -1
         cycle = -1
-        starttime = if (_anim.GetAnimFlags().random_cycle_start) {
-            // start the animation at a random time so that characters don't walk in sync
-            (currentTime - Game_local.gameLocal.random.RandomFloat() * _anim.Length()).toInt()
-        } else {
-            currentTime
-        }
+        starttime =
+            if (_anim.GetAnimFlags().random_cycle_start) { // start the animation at a random time so that characters don't walk in sync
+                (currentTime - Game_local.gameLocal.random.RandomFloat() * _anim.Length()).toInt()
+            } else {
+                currentTime
+            }
 
         // set up blend
         blendEndValue = 1.0f
@@ -2249,13 +2219,12 @@ class idAnimBlend {
                 blendWeight._val = 1.0f - weight
             }
         }
-        jointFrame = if (channel == ANIMCHANNEL_ALL && 0.0f == blendWeight._val) {
-            // we don't need a temporary buffer, so just store it directly in the blend frame
-            blendFrame
-        } else {
-            // allocate a temporary buffer to copy the joints from
-            Array<idJointQuat>(numJoints) { idJointQuat() }
-        }
+        jointFrame =
+            if (channel == ANIMCHANNEL_ALL && 0.0f == blendWeight._val) { // we don't need a temporary buffer, so just store it directly in the blend frame
+                blendFrame
+            } else { // allocate a temporary buffer to copy the joints from
+                Array<idJointQuat>(numJoints) { idJointQuat() }
+            }
         time = AnimTime(currentTime)
         numAnims = anim.NumAnims()
         if (numAnims == 1) {
@@ -2276,8 +2245,7 @@ class idAnimBlend {
                     modelDef!!.NumJointsOnChannel(channel)
                 )
             }
-        } else {
-            //
+        } else { //
             // need to mix the multipoint anim together first
             //
             // allocate a temporary buffer to copy the joints to
@@ -2570,8 +2538,7 @@ class idAnimBlend {
         while (i < Anim.ANIM_MaxSyncedAnims) {
             savefile.WriteFloat(animWeights[i])
             i++
-        }
-        // FIX: C++ uses WriteShort for cycle, frame, animNum (they are short in C++)
+        } // FIX: C++ uses WriteShort for cycle, frame, animNum (they are short in C++)
         savefile.WriteShort(cycle.toShort())
         savefile.WriteShort(frame.toShort())
         savefile.WriteShort(animNum.toShort())
@@ -2601,8 +2568,7 @@ class idAnimBlend {
         while (i < Anim.ANIM_MaxSyncedAnims) {
             animWeights[i] = savefile.ReadFloat()
             i++
-        }
-        // FIX: C++ uses ReadShort for cycle, frame, animNum (they are short in C++)
+        } // FIX: C++ uses ReadShort for cycle, frame, animNum (they are short in C++)
         cycle = savefile.ReadShort().toInt()
         frame = savefile.ReadShort().toInt()
         animNum = savefile.ReadShort().toInt()
@@ -2681,14 +2647,10 @@ class idAnimBlend {
     }
 
     fun IsDone(currentTime: Int): Boolean {
-        if (0 == frame && endtime > 0 && currentTime >= endtime) {
-            return true
-        }
-        return blendEndValue <= 0.0f && currentTime >= blendStartTime + blendDuration
+        return 0 == frame && endtime > 0 && currentTime >= endtime || blendEndValue <= 0.0f && currentTime >= blendStartTime + blendDuration
     }
 
-    fun FrameHasChanged(currentTime: Int): Boolean {
-        // if we don't have an anim, no change
+    fun FrameHasChanged(currentTime: Int): Boolean { // if we don't have an anim, no change
         if (0 == animNum) {
             return false
         }
@@ -2732,8 +2694,7 @@ class idAnimBlend {
                 } else {
                     -1
                 }
-            } else {
-                // most of the time we're running at the original frame rate, so avoid the int-to-float-to-int conversion
+            } else { // most of the time we're running at the original frame rate, so avoid the int-to-float-to-int conversion
                 endtime = if (rate == 1.0f) {
                     starttime - timeOffset + Length() * cycle
                 } else if (rate != 0.0f) {
@@ -2870,8 +2831,7 @@ class idAnimBlend {
         return animNum
     }
 
-    companion object {
-        // friend class				idAnimator;
+    companion object { // friend class				idAnimator;
     }
 }
 
@@ -3148,9 +3108,7 @@ class idAnimator {
     }
 
     fun HasAnim(name: String): Boolean {
-        return if (null == modelDef) {
-            false
-        } else modelDef!!.HasAnim(name)
+        return null != modelDef && modelDef!!.HasAnim(name)
     }
 
     fun HasAnim(name: idStr): Boolean {
@@ -3233,8 +3191,7 @@ class idAnimator {
         num = modelDef!!.NumJoints()
         if (0 == num) {
             return jointnum
-        }
-        // FIX: was calling GetJoint(++i) which accesses past-the-end on last iteration
+        } // FIX: was calling GetJoint(++i) which accesses past-the-end on last iteration
         i = 0
         while (i < num) {
             joint = modelDef!!.GetJoint(i)
@@ -3341,8 +3298,7 @@ class idAnimator {
             }
         }
         lastTransformTime = currentTime
-        stoppedAnimatingUpdate = false
-        //numJoints = modelDef!!.Joints().size();
+        stoppedAnimatingUpdate = false //numJoints = modelDef!!.Joints().size();
         if (entity != null && (SysCvar.g_debugAnim.GetInteger() == entity!!.entityNumber || SysCvar.g_debugAnim.GetInteger() == -2)) {
             debugInfo = true
             Game_local.gameLocal.Printf(
@@ -3354,23 +3310,20 @@ class idAnimator {
         }
 
         // init the joint buffer
-        if (AFPoseJoints.Num() != 0) {
-            // initialize with AF pose anim for the case where there are no other animations and no AF pose joint modifications
+        if (AFPoseJoints.Num() != 0) { // initialize with AF pose anim for the case where there are no other animations and no AF pose joint modifications
             defaultPose = AFPoseJointFrame.getList(Array<idJointQuat>::class.java)!!
         } else {
             defaultPose = modelDef!!.GetDefaultPose()
         }
-        if (null == defaultPose) {
-            //gameLocal.Warning( "idAnimator::CreateFrame: no defaultPose on '%s'", modelDef!!.Name() );
+        if (null == defaultPose) { //gameLocal.Warning( "idAnimator::CreateFrame: no defaultPose on '%s'", modelDef!!.Name() );
             return false
         }
         numJoints = modelDef!!.Joints().Num()
-        val jointFrame = Array<idJointQuat>(numJoints) { idJointQuat() }
-        //SIMDProcessor.Memcpy(jointFrame, defaultPose, numJoints /* sizeof( jointFrame[0] )*/);
+        val jointFrame =
+            Array<idJointQuat>(numJoints) { idJointQuat() } //SIMDProcessor.Memcpy(jointFrame, defaultPose, numJoints /* sizeof( jointFrame[0] )*/);
         for (i in 0 until numJoints) {
             jointFrame[i] = idJointQuat(defaultPose[i])  // copy constructor
-        }
-        //System.arraycopy(defaultPose, 0, jointFrame, 0, numJoints)
+        } //System.arraycopy(defaultPose, 0, jointFrame, 0, numJoints)
         hasAnim = false
 
         // blend the all channel
@@ -3379,14 +3332,7 @@ class idAnimator {
         j = ANIMCHANNEL_ALL
         while (j < Anim.ANIM_MaxAnimsPerChannel) {
             if (blend[j].BlendAnim(
-                    currentTime,
-                    ANIMCHANNEL_ALL,
-                    numJoints,
-                    jointFrame,
-                    baseBlend,
-                    removeOriginOffset,
-                    false,
-                    debugInfo
+                    currentTime, ANIMCHANNEL_ALL, numJoints, jointFrame, baseBlend, removeOriginOffset, false, debugInfo
                 )
             ) {
                 hasAnim = true
@@ -3405,8 +3351,7 @@ class idAnimator {
                     i++
                     continue
                 }
-                if (i == Anim.ANIMCHANNEL_EYELIDS) {
-                    // eyelids blend over any previous anims, so skip it and blend it later
+                if (i == Anim.ANIMCHANNEL_EYELIDS) { // eyelids blend over any previous anims, so skip it and blend it later
                     i++
                     continue
                 }
@@ -3419,8 +3364,7 @@ class idAnimator {
                         )
                     ) {
                         hasAnim = true
-                        if (blendWeight._val >= 1.0f) {
-                            // fully blended
+                        if (blendWeight._val >= 1.0f) { // fully blended
                             break
                         }
                     }
@@ -3456,8 +3400,7 @@ class idAnimator {
                     )
                 ) {
                     hasAnim = true
-                    if (blendWeight._val >= 1.0f) {
-                        // fully blended
+                    if (blendWeight._val >= 1.0f) { // fully blended
                         break
                     }
                 }
@@ -3469,8 +3412,7 @@ class idAnimator {
         if (BlendAFPose(jointFrame)) {
             hasAnim = true
         }
-        if (!hasAnim && 0 == jointMods.Num()) {
-            // no animations were updated
+        if (!hasAnim && 0 == jointMods.Num()) { // no animations were updated
             return false
         }
 
@@ -3527,7 +3469,7 @@ class idAnimator {
 
             // transform any joints preceding the joint modifier
             SIMDProcessor!!.TransformJoints(
-                joints!!, jointParent!!.toIntArray(), i, jointMod.jointnum - 1
+                joints!!, jointParent.toIntArray(), i, jointMod.jointnum - 1
             )
             i = jointMod.jointnum
             parentNum = jointParent[i]
@@ -3590,7 +3532,7 @@ class idAnimator {
 
         // transform the rest of the hierarchy
         SIMDProcessor!!.TransformJoints(
-            joints!!, jointParent!!.toIntArray(), i, numJoints - 1
+            joints!!, jointParent.toIntArray(), i, numJoints - 1
         )
         return true
     }
@@ -3844,8 +3786,9 @@ class idAnimator {
         var toBlend = channels[channelNum][0]
         val weight = fromBlend.blendEndValue
         if (fromBlend.Anim() !== toBlend.Anim() || fromBlend.GetStartTime() != toBlend.GetStartTime() || fromBlend.GetEndTime() != toBlend.GetEndTime()) {
-            PushAnims(channelNum, currentTime, blendTime)
-            // FIX: C++ copies only channels[channelNum][0] = channels[fromChannelNum][0]
+            PushAnims(
+                channelNum, currentTime, blendTime
+            ) // FIX: C++ copies only channels[channelNum][0] = channels[fromChannelNum][0]
             // The old code copied ALL channels, destroying PushAnims' blend-out data
             channels[channelNum][0] = idAnimBlend(channels[fromChannelNum][0])
             toBlend = channels[channelNum][0]  // now points to TO channel
@@ -3926,8 +3869,7 @@ class idAnimator {
         }
         i = 0
         while (i < jointMods.Num()) {
-            if (jointMods[i].jointnum == jointnum) {
-                // C++: delete jointMods[ i ];  (not needed in Kotlin)
+            if (jointMods[i].jointnum == jointnum) { // C++: delete jointMods[ i ];  (not needed in Kotlin)
                 jointMods.RemoveIndex(i)
                 ForceUpdate()
                 break
@@ -4054,7 +3996,7 @@ class idAnimator {
 
             // transform any joints preceding the joint modifier
             SIMDProcessor!!.TransformJoints(
-                joints, jointParent!!.toIntArray(), i, jointMod - 1
+                joints, jointParent.toIntArray(), i, jointMod - 1
             )
             i = jointMod
             parentNum = jointParent[i]
@@ -4085,12 +4027,12 @@ class idAnimator {
 
         // transform the rest of the hierarchy
         SIMDProcessor!!.TransformJoints(
-            joints, jointParent!!.toIntArray(), i, numJoints - 1
+            joints, jointParent.toIntArray(), i, numJoints - 1
         )
 
         // untransform hierarchy
         SIMDProcessor!!.UntransformJoints(
-            joints, jointParent!!.toIntArray(), 1, numJoints - 1
+            joints, jointParent.toIntArray(), 1, numJoints - 1
         )
 
         // convert joint matrices back to joint quaternions
@@ -4143,11 +4085,7 @@ class idAnimator {
         for (i in 0 until n) idx[i] = AFPoseJoints[i]
 
         SIMDProcessor!!.BlendJoints(
-            blendFrame,
-            AFPoseJointFrame.getList(Array<idJointQuat>::class.java)!!,
-            AFPoseBlendWeight,
-            idx,
-            n
+            blendFrame, AFPoseJointFrame.getList(Array<idJointQuat>::class.java)!!, AFPoseBlendWeight, idx, n
         )
         return true
     }
@@ -4241,7 +4179,7 @@ class idAnimator {
             return anim.GetAnimFlags()
         }
 
-//	memset( &result, 0, sizeof( result ) );
+        //	memset( &result, 0, sizeof( result ) );
         result = animFlags_t()
         return result
     }
@@ -4305,7 +4243,7 @@ class idAnimator {
         }
         jointMods.DeleteContents(true)
 
-//	Mem_Free16( joints );
+        //	Mem_Free16( joints );
         joints = null
         numJoints._val = 0
         modelDef = null

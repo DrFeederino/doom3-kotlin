@@ -14,10 +14,8 @@ import java.nio.CharBuffer
 import java.util.*
 
 object Lexer {
-    val LEXFL_ALLOWBACKSLASHSTRINGCONCAT: Int =
-        BIT(12) // allow multiple strings seperated by '\' to be concatenated
-    val LEXFL_ALLOWFLOATEXCEPTIONS: Int =
-        BIT(10) // allow float exceptions like 1.#INF or 1.#IND to be parsed
+    val LEXFL_ALLOWBACKSLASHSTRINGCONCAT: Int = BIT(12) // allow multiple strings seperated by '\' to be concatenated
+    val LEXFL_ALLOWFLOATEXCEPTIONS: Int = BIT(10) // allow float exceptions like 1.#INF or 1.#IND to be parsed
     val LEXFL_ALLOWIPADDRESSES: Int = BIT(9) // allow ip addresses to be parsed as numbers
     val LEXFL_ALLOWMULTICHARLITERALS: Int = BIT(11) // allow multi character literals
     val LEXFL_ALLOWNUMBERNAMES: Int = BIT(8) // allow names to start with a number
@@ -43,22 +41,19 @@ object Lexer {
      *
      *
      * ===============================================================================
-     */
-    // lexer flags
+     */ // lexer flags
     val LEXFL_NOERRORS: Int = BIT(0) // don't print any errors
 
 
     val LEXFL_NOFATALERRORS: Int = BIT(2) // errors aren't fatal
 
 
-    val LEXFL_NOSTRINGCONCAT: Int =
-        BIT(3) // multiple strings seperated by whitespaces are not concatenated
+    val LEXFL_NOSTRINGCONCAT: Int = BIT(3) // multiple strings seperated by whitespaces are not concatenated
 
 
     val LEXFL_NOSTRINGESCAPECHARS: Int = BIT(4) // no escape characters inside strings
     val LEXFL_NOWARNINGS: Int = BIT(1) // don't print any warnings
-    val LEXFL_ONLYSTRINGS: Int =
-        BIT(13) // parse as whitespace deliminated strings (quoted strings keep quotes)
+    val LEXFL_ONLYSTRINGS: Int = BIT(13) // parse as whitespace deliminated strings (quoted strings keep quotes)
     const val P_PRECOMP = 51
     const val PUNCTABLE = true
     const val P_ADD = 29
@@ -187,7 +182,7 @@ object Lexer {
     var default_setup = false
 
     // punctuation
-    class punctuation_t(// punctuation character(s)
+    class punctuation_t( // punctuation character(s)
         var p: String?, // punctuation id
         var n: Int
     )
@@ -346,8 +341,7 @@ object Lexer {
         // load a script from the given file at the given offset with the given length
 
         @Throws(idException::class)
-        fun LoadFile(filename: String, OSPath: Boolean = false /*= false*/): Boolean {
-//        TODO:NIO
+        fun LoadFile(filename: String, OSPath: Boolean = false /*= false*/): Boolean { //        TODO:NIO
             val fp: idFile?
             val pathname: String
             val length: Int
@@ -356,12 +350,11 @@ object Lexer {
                 idLib.common.Error("this.LoadFile: another script already loaded")
                 return false
             }
-            pathname =
-                if (!OSPath && baseFolder.length > 0 && baseFolder[0] != '\u0000') { //TODO: use length isntead
-                    Str.va("%s/%s", baseFolder, filename)
-                } else {
-                    filename
-                }
+            pathname = if (!OSPath && baseFolder.length > 0 && baseFolder[0] != '\u0000') { //TODO: use length isntead
+                Str.va("%s/%s", baseFolder, filename)
+            } else {
+                filename
+            }
             fp = if (OSPath) {
                 idLib.fileSystem.OpenExplicitFileRead(pathname)
             } else {
@@ -382,11 +375,9 @@ object Lexer {
                 cb.get(arr)
                 arr
             }
-            this.length = length
-            // pointer in script buffer
-//            this.script_p = this.buffer;
-            script_p = 0
-            // pointer in script buffer before reading token
+            this.length = length // pointer in script buffer
+            //            this.script_p = this.buffer;
+            script_p = 0 // pointer in script buffer before reading token
             lastScript_p = 0 //this.buffer;
             // pointer to end of script buffer
             end_p = buffer.size //(this.buffer[length]);
@@ -426,8 +417,7 @@ object Lexer {
             arr[length] = '\u0000'
             buffer = arr
             fileTime = 0
-            this.length = length
-            // pointer in script buffer
+            this.length = length // pointer in script buffer
             script_p = 0 //this.buffer;
             // pointer in script buffer before reading token
             lastScript_p = 0 //this.buffer;
@@ -470,19 +460,14 @@ object Lexer {
         }
 
         // free the script
-        fun FreeSource() {
-//#ifdef PUNCTABLE
-            if (punctuationTable.isNotEmpty() && !punctuationTable.contentEquals(default_punctuationtable)) {
-//                Mem_Free((void *) this.punctuationtable);
+        fun FreeSource() { //#ifdef PUNCTABLE
+            if (punctuationTable.isNotEmpty() && !punctuationTable.contentEquals(default_punctuationtable)) { //                Mem_Free((void *) this.punctuationtable);
                 punctuationTable = IntArray(0)
             }
-            if (nextPunctuation.isNotEmpty() && !nextPunctuation.contentEquals(default_nextpunctuation)) {
-//                Mem_Free((void *) this.nextpunctuation);
+            if (nextPunctuation.isNotEmpty() && !nextPunctuation.contentEquals(default_nextpunctuation)) { //                Mem_Free((void *) this.nextpunctuation);
                 nextPunctuation = IntArray(0)
-            }
-            //#endif //PUNCTABLE
-            if (allocated) {
-//                Mem_Free((void *) this.buffer);
+            } //#endif //PUNCTABLE
+            if (allocated) { //                Mem_Free((void *) this.buffer);
                 buffer = CharArray(0)
                 allocated = false
             }
@@ -510,46 +495,33 @@ object Lexer {
                 tokenAvailable = false
                 token.set(this.token)
                 return true
-            }
-            // save script pointer
-            lastScript_p = script_p
-            // save line counter
-            lastline = line
-            // clear the token stuff
+            } // save script pointer
+            lastScript_p = script_p // save line counter
+            lastline = line // clear the token stuff
             token.data = ""
-            token.len = 0
-            // start of the white space
+            token.len = 0 // start of the white space
             token.whiteSpaceStart_p = script_p
-            whiteSpaceStart_p = token.whiteSpaceStart_p
-            // read white space before token
+            whiteSpaceStart_p = token.whiteSpaceStart_p // read white space before token
             if (!ReadWhiteSpace()) {
                 return false
-            }
-            // end of the white space
+            } // end of the white space
             token.whiteSpaceEnd_p = script_p
-            whiteSpaceEnd_p = token.whiteSpaceEnd_p
-            // line the token is on
-            token.line = line
-            // number of lines crossed before token
-            token.linesCrossed = line - lastline
-            // clear token flags
+            whiteSpaceEnd_p = token.whiteSpaceEnd_p // line the token is on
+            token.line = line // number of lines crossed before token
+            token.linesCrossed = line - lastline // clear token flags
             token.flags = 0
             c = buffer[script_p]
 
             // if we're keeping everything as whitespace deliminated strings
-            if (flags and LEXFL_ONLYSTRINGS != 0) {
-                // if there is a leading quote
+            if (flags and LEXFL_ONLYSTRINGS != 0) { // if there is a leading quote
                 return if (c == '\"' || c == '\'') {
                     ReadString(token, c.code)
                 } else ReadName(token)
             } // if there is a number
-            else if (
-                (c in '0'..'9') || (c == '.' && ((buffer[script_p + 1]) in '0'..'9'))
-            ) {
+            else if ((c in '0'..'9') || (c == '.' && ((buffer[script_p + 1]) in '0'..'9'))) {
                 if (!ReadNumber(token)) {
                     return false
-                }
-                // if names are allowed to start with a number
+                } // if names are allowed to start with a number
                 if (flags and LEXFL_ALLOWNUMBERNAMES != 0) {
                     c = buffer[script_p]
                     if (Character.isLetter(c) || c == '_') {
@@ -569,8 +541,7 @@ object Lexer {
             else if (!ReadPunctuation(token)) {
                 Error("unknown punctuation %c", c)
                 return false
-            }
-            // succesfully read a token
+            } // succesfully read a token
             return true
         }
 
@@ -670,12 +641,10 @@ object Lexer {
             val tok = _tempToken
             if (!ReadToken(tok)) {
                 return false
-            }
-            // if the given string is available
+            } // if the given string is available
             if (tok.toString().compareTo(string) == 0) {
                 return true
-            }
-            // unread token
+            } // unread token
             script_p = lastScript_p
             line = lastline
             return false
@@ -687,13 +656,11 @@ object Lexer {
             val tok = _tempToken
             if (!ReadToken(tok)) {
                 return 0
-            }
-            // if the type matches
+            } // if the type matches
             if (tok.type == type && (tok.subtype and subtype) == subtype) {
                 token.set(tok)
                 return 1
-            }
-            // unread token
+            } // unread token
             script_p = lastScript_p
             line = lastline
             return 0
@@ -766,8 +733,7 @@ object Lexer {
          Skips until a matching close brace is found.
          Internal brace depths are properly skipped.
          =================
-         */
-        // skip the braced section
+         */ // skip the braced section
 
         @Throws(idException::class)
         fun SkipBracedSection(parseFirstBrace: Boolean = true): Boolean {
@@ -808,13 +774,11 @@ object Lexer {
                 script_p = lastScript_p
                 line = lastline
                 return false
-            }
-            // if no lines were crossed before this token
+            } // if no lines were crossed before this token
             if (0 == tok.linesCrossed) {
                 token.set(tok)
                 return true
-            }
-            // restore our position
+            } // restore our position
             script_p = lastScript_p
             line = lastline
             token.Clear()
@@ -1024,8 +988,7 @@ object Lexer {
          Parses until a matching close brace is found.
          Internal brace depths are properly skipped.
          =================
-         */
-        // parse a braced section into a string
+         */ // parse a braced section into a string
         @Throws(idException::class)
         fun ParseBracedSection(out: idStr): String {
             val token = idToken()
@@ -1145,8 +1108,7 @@ object Lexer {
 
          FIXME: this should use ReadToken and replace the token white space with correct indents and newlines
          =================
-         */
-        // parse a braced section into a string, maintaining indents and newlines
+         */ // parse a braced section into a string, maintaining indents and newlines
         //public	String	ParseBracedSectionExact ( idStr &out, int tabs = -1 );
         @Throws(idException::class)
         fun ParseBracedSectionExact(out: idStr, tabs: Int): String {
@@ -1297,22 +1259,16 @@ object Lexer {
         }
 
         // reset the lexer
-        fun Reset() {
-            // pointer in script buffer
-//            this.script_p = this.buffer;
-            script_p = 0
-            // pointer in script buffer before reading token
-//            this.lastScript_p = this.buffer;
-            lastScript_p = 0
-            // begin of white space
-            whiteSpaceStart_p = 0
-            // end of white space
-            whiteSpaceEnd_p = 0
-            // set if there's a token available in this.token
+        fun Reset() { // pointer in script buffer
+            //            this.script_p = this.buffer;
+            script_p = 0 // pointer in script buffer before reading token
+            //            this.lastScript_p = this.buffer;
+            lastScript_p = 0 // begin of white space
+            whiteSpaceStart_p = 0 // end of white space
+            whiteSpaceEnd_p = 0 // set if there's a token available in this.token
             tokenAvailable = false
             line = 1
-            lastline = 1
-            // clear the saved token
+            lastline = 1 // clear the saved token
             token = idToken()
         }
 
@@ -1344,16 +1300,14 @@ object Lexer {
         // print an error message
         @Throws(idException::class)
         fun Error(fmt: String, vararg str: Any) { //id_attribute((format(printf,2,3)));
-            val text: String //[MAX_STRING_CHARS];
-            //            va_list ap;
+            val text: String //[MAX_STRING_CHARS]; //            va_list ap;
             hadError = true
             if (flags and LEXFL_NOERRORS != 0) {
                 return
             }
-            text = String.format(fmt, *str)
-            //            va_start(ap, str);
-//            vsprintf(text, str, ap);
-//            va_end(ap);
+            text = String.format(fmt, *str) //            va_start(ap, str);
+            //            vsprintf(text, str, ap);
+            //            va_end(ap);
             if (flags and LEXFL_NOFATALERRORS != 0) {
                 idLib.common.Warning("file %s, line %d: %s", filename.toString(), line, text)
             } else {
@@ -1364,15 +1318,13 @@ object Lexer {
         // print a warning message
         @Throws(idException::class)
         fun Warning(fmt: String, vararg str: Any) { //id_attribute((format(printf,2,3)));
-            val text: String //[MAX_STRING_CHARS];
-            //	va_list ap;
+            val text: String //[MAX_STRING_CHARS]; //	va_list ap;
             if (flags and LEXFL_NOWARNINGS != 0) {
                 return
             }
-            text = String.format(fmt, *str)
-            //	va_start( ap, str );
-//	vsprintf( text, str, ap );
-//	va_end( ap );
+            text = String.format(fmt, *str) //	va_start( ap, str );
+            //	vsprintf( text, str, ap );
+            //	va_end( ap );
             idLib.common.Warning("file %s, line %d: %s", filename.toString(), line, text)
         }
 
@@ -1398,12 +1350,10 @@ object Lexer {
                 default_setup = true
                 i = default_punctuations.size
             } else {
-                if (punctuationTable.isEmpty() || punctuationTable.contentEquals(default_punctuationtable)
-                ) {
+                if (punctuationTable.isEmpty() || punctuationTable.contentEquals(default_punctuationtable)) {
                     punctuationTable = IntArray(256) // (int *) Mem_Alloc(256 * sizeof(int));
                 }
-                if (nextPunctuation.isNotEmpty() && !nextPunctuation.contentEquals(default_nextpunctuation)) {
-//			Mem_Free( this.nextPunctuation );
+                if (nextPunctuation.isNotEmpty() && !nextPunctuation.contentEquals(default_nextpunctuation)) { //			Mem_Free( this.nextPunctuation );
                     nextPunctuation = IntArray(0)
                 }
                 i = 0
@@ -1418,8 +1368,7 @@ object Lexer {
             i = 0
             while (punctuations[i].p != null) {
                 newp = punctuations[i]
-                lastp = -1
-                //sort the punctuations in this table entry on length (longer punctuations first)
+                lastp = -1 //sort the punctuations in this table entry on length (longer punctuations first)
                 n = punctuationTable[newp.p!![0].code]
                 while (n >= 0) {
                     p = punctuations[n]
@@ -1456,12 +1405,10 @@ object Lexer {
          ================
          */
         @Throws(idException::class)
-        private fun ReadWhiteSpace(): Boolean {
-//            if (filename.CheckExtension("roq")) {
-//                return false
-//            }
-            while (true) {
-                // skip white space
+        private fun ReadWhiteSpace(): Boolean { //            if (filename.CheckExtension("roq")) {
+            //                return false
+            //            }
+            while (true) { // skip white space
                 while (buffer[script_p] <= ' ') {
                     if (buffer[script_p] == Char(0)) {
                         return false
@@ -1470,10 +1417,8 @@ object Lexer {
                         line++
                     }
                     script_p++
-                }
-                // skip comments
-                if (buffer[script_p] == '/') {
-                    // comments //
+                } // skip comments
+                if (buffer[script_p] == '/') { // comments //
                     if (buffer[script_p + 1] == '/') {
                         script_p++
                         do {
@@ -1488,8 +1433,7 @@ object Lexer {
                             return false
                         }
                         continue
-                    }
-                    // comments /* */
+                    } // comments /* */
                     else if (buffer[script_p + 1] == '*') {
                         script_p++
                         while (true) {
@@ -1595,12 +1539,9 @@ object Lexer {
                     }
                     c = `val`
                 }
-            }
-            // step over the escape character or the last digit of the number
-            script_p++
-            // store the escape character
-            ch[0] = c.toChar()
-            // succesfully read escape character
+            } // step over the escape character or the last digit of the number
+            script_p++ // store the escape character
+            ch[0] = c.toChar() // succesfully read escape character
             return true
         }
 
@@ -1625,26 +1566,20 @@ object Lexer {
 
             // leading quote
             script_p++
-            while (true) {
-                // if there is an escape character and escape characters are allowed
+            while (true) { // if there is an escape character and escape characters are allowed
                 if (buffer[script_p] == '\\' && 0 == (flags and LEXFL_NOSTRINGESCAPECHARS)) {
                     if (!ReadEscapeCharacter(ch)) {
                         return false
                     }
                     token.AppendDirty(ch[0])
                 } // if a trailing quote
-                else if (buffer[script_p].code == quote) {
-                    // step over the quote
-                    script_p++
-                    // if consecutive strings should not be concatenated
-                    if (flags and LEXFL_NOSTRINGCONCAT != 0
-                        && (0 == (flags and LEXFL_ALLOWBACKSLASHSTRINGCONCAT) || quote != '\"'.code)
-                    ) {
+                else if (buffer[script_p].code == quote) { // step over the quote
+                    script_p++ // if consecutive strings should not be concatenated
+                    if (flags and LEXFL_NOSTRINGCONCAT != 0 && (0 == (flags and LEXFL_ALLOWBACKSLASHSTRINGCONCAT) || quote != '\"'.code)) {
                         break
                     }
                     tmpscript_p = script_p
-                    tmpline = line
-                    // read white space between possible two consecutive strings
+                    tmpline = line // read white space between possible two consecutive strings
                     if (!ReadWhiteSpace()) {
                         script_p = tmpscript_p
                         line = tmpline
@@ -1655,8 +1590,7 @@ object Lexer {
                             script_p = tmpscript_p
                             line = tmpline
                             break
-                        }
-                        // step over the '\\'
+                        } // step over the '\\'
                         script_p++
                         if (!ReadWhiteSpace() || buffer[script_p].code != quote) {
                             Error("expecting string after '' terminated line")
@@ -1669,8 +1603,7 @@ object Lexer {
                         script_p = tmpscript_p
                         line = tmpline
                         break
-                    }
-                    // step over the new leading quote
+                    } // step over the new leading quote
                     script_p++
                 } else {
                     if (buffer[script_p] == '\u0000') {
@@ -1683,8 +1616,7 @@ object Lexer {
                     }
                     token.AppendDirty(buffer[script_p++])
                 }
-            }
-            //            token.set(token.len, '\0');
+            } //            token.set(token.len, '\0');
             if (token.type == Token.TT_LITERAL) {
                 if (0 == (flags and LEXFL_ALLOWMULTICHARLITERALS)) {
                     if (token.Length() != 1) {
@@ -1692,8 +1624,7 @@ object Lexer {
                     }
                 }
                 token.subtype = token[0].code
-            } else {
-                // the sub type is the length of the string
+            } else { // the sub type is the length of the string
                 token.subtype = token.Length()
             }
             return true
@@ -1704,15 +1635,12 @@ object Lexer {
             token.type = Token.TT_NAME
             do {
                 token.AppendDirty(buffer[script_p])
-            } while (script_p++ + 1 < buffer.size && (Character.isLowerCase(buffer[script_p].also { c = it })
-                        || Character.isUpperCase(c)
-                        || Character.isDigit(c)
-                        || c == '_' ||  // if treating all tokens as strings, don't parse '-' as a seperate token
-                        flags and LEXFL_ONLYSTRINGS != 0 && c == '-'
-                        ||  // if special path name characters are allowed
+            } while (script_p++ + 1 < buffer.size && (Character.isLowerCase(buffer[script_p].also {
+                    c = it
+                }) || Character.isUpperCase(c) || Character.isDigit(c) || c == '_' ||  // if treating all tokens as strings, don't parse '-' as a seperate token
+                        flags and LEXFL_ONLYSTRINGS != 0 && c == '-' ||  // if special path name characters are allowed
                         flags and LEXFL_ALLOWPATHNAMES != 0 && (c == '/' || c == '\\' || c == ':' || c == '.'))
-            )
-            //            token.set(token.len, '\0');
+            ) //            token.set(token.len, '\0');
             //the sub type is the length of the name
             token.subtype = token.Length()
             return true
@@ -1730,16 +1658,12 @@ object Lexer {
             token.floatValue = 0.0f
             c = buffer[script_p]
             c2 = buffer[script_p + 1]
-            if (c == '0' && c2 != '.') {
-                // check for a hexadecimal number
+            if (c == '0' && c2 != '.') { // check for a hexadecimal number
                 if (c2 == 'x' || c2 == 'X') {
                     token.AppendDirty(buffer[script_p++])
                     token.AppendDirty(buffer[script_p++])
                     c = buffer[script_p]
-                    while (Character.isDigit(c)
-                        || c in 'a'..'f'
-                        || c in 'A'..'F'
-                    ) {
+                    while (Character.isDigit(c) || c in 'a'..'f' || c in 'A'..'F') {
                         token.AppendDirty(c)
                         c = buffer[++script_p]
                     }
@@ -1764,12 +1688,10 @@ object Lexer {
                     }
                     token.subtype = Token.TT_OCTAL or Token.TT_INTEGER
                 }
-            } else {
-                // decimal integer or floating point number or ip address
+            } else { // decimal integer or floating point number or ip address
                 dot = 0
                 while (true) {
-                    if (c in '0'..'9') {
-                        // if (c >= '0' && c <= '9') {
+                    if (c in '0'..'9') { // if (c >= '0' && c <= '9') {
                     } else if (c == '.') {
                         dot++
                     } else {
@@ -1781,16 +1703,12 @@ object Lexer {
                     }
                     c = buffer[++script_p]
                 }
-                if (c == 'e' && dot == 0) {
-                    //We have scientific notation without a decimal point
+                if (c == 'e' && dot == 0) { //We have scientific notation without a decimal point
                     dot++
-                }
-                // if a floating point number
+                } // if a floating point number
                 if (dot == 1) {
-                    token.subtype = Token.TT_DECIMAL or Token.TT_FLOAT
-                    // check for floating point exponent
-                    if (c == 'e') {
-                        //Append the e so that GetFloatValue code works
+                    token.subtype = Token.TT_DECIMAL or Token.TT_FLOAT // check for floating point exponent
+                    if (c == 'e') { //Append the e so that GetFloatValue code works
                         token.AppendDirty(c)
                         c = buffer[++script_p]
                         if (c == '-') {
@@ -1830,8 +1748,7 @@ object Lexer {
                             token.AppendDirty(c)
                             c = buffer[++script_p]
                         }
-                        if (0 == (flags and LEXFL_ALLOWFLOATEXCEPTIONS)) {
-//                            token.AppendDirty('\0');	// zero terminate for c_str
+                        if (0 == (flags and LEXFL_ALLOWFLOATEXCEPTIONS)) { //                            token.AppendDirty('\0');	// zero terminate for c_str
                             Error("parsed %s", token.toString())
                         }
                     }
@@ -1850,8 +1767,7 @@ object Lexer {
                 }
             }
             if (token.subtype and Token.TT_FLOAT != 0) {
-                if (c > ' ') {
-                    // single-precision: float
+                if (c > ' ') { // single-precision: float
                     if (c == 'f' || c == 'F') {
                         token.subtype = token.subtype or Token.TT_SINGLE_PRECISION
                         script_p++
@@ -1867,8 +1783,7 @@ object Lexer {
                     token.subtype = token.subtype or Token.TT_DOUBLE_PRECISION
                 }
             } else if (token.subtype and Token.TT_INTEGER != 0) {
-                if (c > ' ') {
-                    // default: signed long
+                if (c > ' ') { // default: signed long
                     i = 0
                     while (i < 2) {
 
@@ -1895,8 +1810,7 @@ object Lexer {
                     }
                     token.subtype = token.subtype or Token.TT_IPPORT
                 }
-            }
-            //            token.set(token.len, '\0');
+            } //            token.set(token.len, '\0');
             return true
         }
 
@@ -1906,19 +1820,17 @@ object Lexer {
             var p: String
             var punc: punctuation_t
 
-// #ifdef PUNCTABLE
+            // #ifdef PUNCTABLE
             val readCode = buffer[script_p]
             n = punctuationTable[readCode.code]
             while (n >= 0) {
-                punc = punctuations[n]
-                // #else
-//	int i;
-//
-//	for (i = 0; idLexer::punctuations[i].p; i++) {
-//		punc = &idLexer::punctuations[i];
-//#endif
-                p = punc.p!!
-                // check for this punctuation in the script
+                punc = punctuations[n] // #else
+                //	int i;
+                //
+                //	for (i = 0; idLexer::punctuations[i].p; i++) {
+                //		punc = &idLexer::punctuations[i];
+                //#endif
+                p = punc.p!! // check for this punctuation in the script
                 l = 0
                 while (l < p.length && buffer[script_p + l].code != 0) {
                     if (buffer[script_p + l] != p[l]) {
@@ -1926,14 +1838,11 @@ object Lexer {
                     }
                     l++
                 }
-                if (l >= p.length) {
-                    //
+                if (l >= p.length) { //
                     token.data = p
-                    token.len = l
-                    //
+                    token.len = l //
                     script_p += l
-                    token.type = Token.TT_PUNCTUATION
-                    // sub type is the punctuation id
+                    token.type = Token.TT_PUNCTUATION // sub type is the punctuation id
                     token.subtype = punc.n
                     return true
                 }

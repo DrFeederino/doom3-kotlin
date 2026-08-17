@@ -26,9 +26,7 @@ class ListGUI {
         //        public abstract int Num();
         //        
         abstract fun GetSelection(
-            s: Array<String?>?,
-            size: Int,
-            sel: Int /*= 0*/
+            s: Array<String?>?, size: Int, sel: Int /*= 0*/
         ): Int // returns the id, not the list index (or -1)
 
         fun GetSelection(s: Array<String?>?, size: Int): Int {

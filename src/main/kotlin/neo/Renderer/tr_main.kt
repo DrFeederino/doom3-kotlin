@@ -51,14 +51,7 @@ object tr_main {
      ======================
      */
     val colors /*[]*/: Array<idVec4> = arrayOf(
-        colorRed,
-        colorGreen,
-        colorBlue,
-        colorYellow,
-        colorMagenta,
-        colorCyan,
-        colorWhite,
-        colorPurple
+        colorRed, colorGreen, colorBlue, colorYellow, colorMagenta, colorCyan, colorWhite, colorPurple
     )
 
     /*
@@ -68,14 +61,10 @@ object tr_main {
      Sets up the world to view matrix for a given viewParm
      =================
      */
-    private val s_flipMatrix /*[16]*/: FloatArray =
-        floatArrayOf( // convert from our coordinate system (looking down X)
-            // to OpenGL's coordinate system (looking down -Z)
-            -0.0f, 0.0f, -1.0f, 0.0f,
-            -1.0f, 0.0f, -0.0f, 0.0f,
-            -0.0f, 1.0f, -0.0f, 0.0f,
-            -0.0f, 0.0f, -0.0f, 1.0f
-        )
+    private val s_flipMatrix /*[16]*/: FloatArray = floatArrayOf( // convert from our coordinate system (looking down X)
+        // to OpenGL's coordinate system (looking down -Z)
+        -0.0f, 0.0f, -1.0f, 0.0f, -1.0f, 0.0f, -0.0f, 0.0f, -0.0f, 1.0f, -0.0f, 0.0f, -0.0f, 0.0f, -0.0f, 1.0f
+    )
 
     /*
      ================
@@ -116,15 +105,11 @@ object tr_main {
      */
     fun R_ScreenRectFromViewFrustumBounds(bounds: idBounds): idScreenRect {
         val screenRect = idScreenRect()
-        screenRect.x1 =
-            FtoiFast(0.5f * (1.0f - bounds[1].y) * (tr.viewDef!!.viewport.x2 - tr.viewDef!!.viewport.x1))
-        screenRect.x2 =
-            FtoiFast(0.5f * (1.0f - bounds[0].y) * (tr.viewDef!!.viewport.x2 - tr.viewDef!!.viewport.x1))
-        screenRect.y1 =
-            FtoiFast(0.5f * (1.0f + bounds[0].z) * (tr.viewDef!!.viewport.y2 - tr.viewDef!!.viewport.y1))
-        screenRect.y2 =
-            FtoiFast(0.5f * (1.0f + bounds[1].z) * (tr.viewDef!!.viewport.y2 - tr.viewDef!!.viewport.y1))
-        if (r_useDepthBoundsTest!!.GetInteger() != 0) {
+        screenRect.x1 = FtoiFast(0.5f * (1.0f - bounds[1].y) * (tr.viewDef!!.viewport.x2 - tr.viewDef!!.viewport.x1))
+        screenRect.x2 = FtoiFast(0.5f * (1.0f - bounds[0].y) * (tr.viewDef!!.viewport.x2 - tr.viewDef!!.viewport.x1))
+        screenRect.y1 = FtoiFast(0.5f * (1.0f + bounds[0].z) * (tr.viewDef!!.viewport.y2 - tr.viewDef!!.viewport.y1))
+        screenRect.y2 = FtoiFast(0.5f * (1.0f + bounds[1].z) * (tr.viewDef!!.viewport.y2 - tr.viewDef!!.viewport.y1))
+        if (r_useDepthBoundsTest.GetInteger() != 0) {
             val zmin = CFloat(screenRect.zmin)
             val zmax = CFloat(screenRect.zmax)
             R_TransformEyeZToWin(-bounds[0].x, tr.viewDef!!.projectionMatrix, zmin)
@@ -138,9 +123,7 @@ object tr_main {
     fun R_ShowColoredScreenRect(rect: idScreenRect, colorIndex: Int) {
         if (!rect.IsEmpty()) {
             tr.viewDef!!.renderWorld!!.DebugScreenRect(
-                colors[colorIndex and 7],
-                rect,
-                tr.viewDef!!
+                colors[colorIndex and 7], rect, tr.viewDef!!
             )
         }
     }
@@ -443,16 +426,13 @@ object tr_main {
      =================
      */
     fun R_RadiusCullLocalBox(
-        bounds: idBounds,
-        modelMatrix: FloatArray? /*[16]*/,
-        numPlanes: Int,
-        planes: Array<idPlane>
+        bounds: idBounds, modelMatrix: FloatArray? /*[16]*/, numPlanes: Int, planes: Array<idPlane>
     ): Boolean {
         var d: Float
         val worldOrigin = idVec3()
         val worldRadius: Float
         var frust: idPlane
-        if (r_useCulling!!.GetInteger() == 0) {
+        if (r_useCulling.GetInteger() == 0) {
             return false
         }
 
@@ -473,17 +453,14 @@ object tr_main {
     }
 
     fun R_CornerCullLocalBox(
-        bounds: idBounds,
-        modelMatrix: FloatArray? /*[16]*/,
-        numPlanes: Int,
-        planes: Array<idPlane>
+        bounds: idBounds, modelMatrix: FloatArray? /*[16]*/, numPlanes: Int, planes: Array<idPlane>
     ): Boolean {
         var j: Int
         var frust: idPlane
         DBG_R_CornerCullLocalBox++
 
         // we can disable box culling for experimental timing purposes
-        if (r_useCulling!!.GetInteger() < 2) {
+        if (r_useCulling.GetInteger() < 2) {
             return false
         }
 
@@ -510,17 +487,14 @@ object tr_main {
             j = 0
             while (j < 8) {
                 val point = j * 3
-                val dist = frust[0] * transformed[point + 0] +
-                        frust[1] * transformed[point + 1] +
-                        frust[2] * transformed[point + 2] +
-                        frust[3]
+                val dist =
+                    frust[0] * transformed[point + 0] + frust[1] * transformed[point + 1] + frust[2] * transformed[point + 2] + frust[3]
                 if (dist < 0) {
                     break
                 }
                 j++
             }
-            if (j == 8) {
-                // all points were behind one of the planes
+            if (j == 8) { // all points were behind one of the planes
                 tr.pc!!.c_box_cull_out++
                 return true
             }
@@ -539,15 +513,11 @@ object tr_main {
      =================
      */
     fun R_CullLocalBox(
-        bounds: idBounds,
-        modelMatrix: FloatArray? /*[16]*/,
-        numPlanes: Int,
-        planes: Array<idPlane?>?
+        bounds: idBounds, modelMatrix: FloatArray? /*[16]*/, numPlanes: Int, planes: Array<idPlane?>?
     ): Boolean {
-        if (R_RadiusCullLocalBox(bounds, modelMatrix, numPlanes, planes as Array<idPlane>)) {
-            return true
-        }
-        return R_CornerCullLocalBox(bounds, modelMatrix, numPlanes, planes as Array<idPlane>)
+        return R_RadiusCullLocalBox(bounds, modelMatrix, numPlanes, planes as Array<idPlane>) || R_CornerCullLocalBox(
+            bounds, modelMatrix, numPlanes, planes as Array<idPlane>
+        )
     }
 
     /*
@@ -556,26 +526,18 @@ object tr_main {
      ==========================
      */
     fun R_TransformModelToClip(
-        src: idVec3,
-        modelMatrix: FloatArray,
-        projectionMatrix: FloatArray,
-        eye: idPlane,
-        dst: idPlane
+        src: idVec3, modelMatrix: FloatArray, projectionMatrix: FloatArray, eye: idPlane, dst: idPlane
     ) {
         var i = 0
         while (i < 4) {
-            eye[i] = (src[0] * modelMatrix[i + 0 * 4]
-                    ) + (src[1] * modelMatrix[i + 1 * 4]
-                    ) + (src[2] * modelMatrix[i + 2 * 4]
-                    ) + (1 * modelMatrix[i + 3 * 4])
+            eye[i] =
+                (src[0] * modelMatrix[i + 0 * 4]) + (src[1] * modelMatrix[i + 1 * 4]) + (src[2] * modelMatrix[i + 2 * 4]) + (1 * modelMatrix[i + 3 * 4])
             i++
         }
         i = 0
         while (i < 4) {
-            dst[i] = (eye[0] * projectionMatrix[i + 0 * 4]
-                    ) + (eye[1] * projectionMatrix[i + 1 * 4]
-                    ) + (eye[2] * projectionMatrix[i + 2 * 4]
-                    ) + (eye[3] * projectionMatrix[i + 3 * 4])
+            dst[i] =
+                (eye[0] * projectionMatrix[i + 0 * 4]) + (eye[1] * projectionMatrix[i + 1 * 4]) + (eye[2] * projectionMatrix[i + 2 * 4]) + (eye[3] * projectionMatrix[i + 3 * 4])
             i++
         }
     }
@@ -596,35 +558,27 @@ object tr_main {
         if (null == tr.viewDef) {
             i = 0
             while (i < 4) {
-                view[i] = (global[0] * tr.primaryView!!.worldSpace.modelViewMatrix[i + 0 * 4]
-                        ) + (global[1] * tr.primaryView!!.worldSpace.modelViewMatrix[i + 1 * 4]
-                        ) + (global[2] * tr.primaryView!!.worldSpace.modelViewMatrix[i + 2 * 4]
-                        ) + tr.primaryView!!.worldSpace.modelViewMatrix[i + 3 * 4]
+                view[i] =
+                    (global[0] * tr.primaryView!!.worldSpace.modelViewMatrix[i + 0 * 4]) + (global[1] * tr.primaryView!!.worldSpace.modelViewMatrix[i + 1 * 4]) + (global[2] * tr.primaryView!!.worldSpace.modelViewMatrix[i + 2 * 4]) + tr.primaryView!!.worldSpace.modelViewMatrix[i + 3 * 4]
                 i++
             }
             i = 0
             while (i < 4) {
-                clip[i] = (view[0] * tr.primaryView!!.projectionMatrix[i + 0 * 4]
-                        ) + (view[1] * tr.primaryView!!.projectionMatrix[i + 1 * 4]
-                        ) + (view[2] * tr.primaryView!!.projectionMatrix[i + 2 * 4]
-                        ) + (view[3] * tr.primaryView!!.projectionMatrix[i + 3 * 4])
+                clip[i] =
+                    (view[0] * tr.primaryView!!.projectionMatrix[i + 0 * 4]) + (view[1] * tr.primaryView!!.projectionMatrix[i + 1 * 4]) + (view[2] * tr.primaryView!!.projectionMatrix[i + 2 * 4]) + (view[3] * tr.primaryView!!.projectionMatrix[i + 3 * 4])
                 i++
             }
         } else {
             i = 0
             while (i < 4) {
-                view[i] = (global[0] * tr.viewDef!!.worldSpace.modelViewMatrix[i + 0 * 4]
-                        ) + (global[1] * tr.viewDef!!.worldSpace.modelViewMatrix[i + 1 * 4]
-                        ) + (global[2] * tr.viewDef!!.worldSpace.modelViewMatrix[i + 2 * 4]
-                        ) + tr.viewDef!!.worldSpace.modelViewMatrix[i + 3 * 4]
+                view[i] =
+                    (global[0] * tr.viewDef!!.worldSpace.modelViewMatrix[i + 0 * 4]) + (global[1] * tr.viewDef!!.worldSpace.modelViewMatrix[i + 1 * 4]) + (global[2] * tr.viewDef!!.worldSpace.modelViewMatrix[i + 2 * 4]) + tr.viewDef!!.worldSpace.modelViewMatrix[i + 3 * 4]
                 i++
             }
             i = 0
             while (i < 4) {
-                clip[i] = (view[0] * tr.viewDef!!.projectionMatrix[i + 0 * 4]
-                        ) + (view[1] * tr.viewDef!!.projectionMatrix[i + 1 * 4]
-                        ) + (view[2] * tr.viewDef!!.projectionMatrix[i + 2 * 4]
-                        ) + (view[3] * tr.viewDef!!.projectionMatrix[i + 3 * 4])
+                clip[i] =
+                    (view[0] * tr.viewDef!!.projectionMatrix[i + 0 * 4]) + (view[1] * tr.viewDef!!.projectionMatrix[i + 1 * 4]) + (view[2] * tr.viewDef!!.projectionMatrix[i + 2 * 4]) + (view[3] * tr.viewDef!!.projectionMatrix[i + 3 * 4])
                 i++
             }
         }
@@ -753,7 +707,7 @@ object tr_main {
         // random jittering is usefull when multiple
         // frames are going to be blended together
         // for motion blurred anti-aliasing
-        if (r_jitter!!.GetBool()) {
+        if (r_jitter.GetBool()) {
             jitterx = random.RandomFloat()
             jittery = random.RandomFloat()
         } else {
@@ -764,7 +718,7 @@ object tr_main {
         //
         // set up projection matrix
         //
-        var zNear: Float = r_znear!!.GetFloat()
+        var zNear: Float = r_znear.GetFloat()
         if (viewDef.renderView.cramZNear) {
             zNear *= 0.25f
         }
@@ -816,22 +770,18 @@ object tr_main {
         var ang: Float = DEG2RAD(viewDef.renderView.fov_x) * 0.5f
         SinCos(ang, xs, xc)
         viewDef.frustum[0].set(
-            viewDef.renderView.viewaxis[0].times(xs._val)
-                .plus(viewDef.renderView.viewaxis[1].times(xc._val))
+            viewDef.renderView.viewaxis[0].times(xs._val).plus(viewDef.renderView.viewaxis[1].times(xc._val))
         )
         viewDef.frustum[1].set(
-            viewDef.renderView.viewaxis[0].times(xs._val)
-                .minus(viewDef.renderView.viewaxis[1].times(xc._val))
+            viewDef.renderView.viewaxis[0].times(xs._val).minus(viewDef.renderView.viewaxis[1].times(xc._val))
         )
         ang = DEG2RAD(viewDef.renderView.fov_y) * 0.5f
         SinCos(ang, xs, xc)
         viewDef.frustum[2].set(
-            viewDef.renderView.viewaxis[0].times(xs._val)
-                .plus(viewDef.renderView.viewaxis[2].times(xc._val))
+            viewDef.renderView.viewaxis[0].times(xs._val).plus(viewDef.renderView.viewaxis[2].times(xc._val))
         )
         viewDef.frustum[3].set(
-            viewDef.renderView.viewaxis[0].times(xs._val)
-                .minus(viewDef.renderView.viewaxis[2].times(xc._val))
+            viewDef.renderView.viewaxis[0].times(xs._val).minus(viewDef.renderView.viewaxis[2].times(xc._val))
         )
 
         // plane four is the front clipping plane
@@ -841,13 +791,12 @@ object tr_main {
 
             // flip direction so positive side faces out (FIXME: globally unify this)
             viewDef.frustum[i].set(viewDef.frustum[i].Normal().unaryMinus())
-            viewDef.frustum[i][3] =
-                -(viewDef.renderView.vieworg.times(viewDef.frustum[i].Normal()))
+            viewDef.frustum[i][3] = -(viewDef.renderView.vieworg.times(viewDef.frustum[i].Normal()))
             i++
         }
 
         // eventually, plane five will be the rear clipping plane for fog
-        var dNear: Float = r_znear!!.GetFloat()
+        var dNear: Float = r_znear.GetFloat()
         if (viewDef.renderView.cramZNear) {
             dNear *= 0.25f
         }
@@ -880,8 +829,8 @@ object tr_main {
             vEntity = vEntity.next
         }
         tr.viewDef!!.viewFrustum.ConstrainToBounds(bounds)
-        if (r_useFrustumFarDistance!!.GetFloat() > 0.0f) {
-            tr.viewDef!!.viewFrustum.MoveFarDistance(r_useFrustumFarDistance!!.GetFloat())
+        if (r_useFrustumFarDistance.GetFloat() > 0.0f) {
+            tr.viewDef!!.viewFrustum.MoveFarDistance(r_useFrustumFarDistance.GetFloat())
         }
     }
 
@@ -890,8 +839,7 @@ object tr_main {
      R_SortDrawSurfs
      =================
      */
-    fun R_SortDrawSurfs() {
-        // sort the drawsurfs by sort type, then orientation, then shader
+    fun R_SortDrawSurfs() { // sort the drawsurfs by sort type, then orientation, then shader
         if (tr.viewDef!!.drawSurfs != null) {
             Arrays.sort(tr.viewDef!!.drawSurfs, 0, tr.viewDef!!.numDrawSurfs, R_QsortSurfaces())
         }
@@ -945,10 +893,9 @@ object tr_main {
         R_SortDrawSurfs()
 
         // generate any subviews (mirrors, cameras, etc) before adding this view
-        if (tr_subview.R_GenerateSubViews()) {
-            // if we are debugging subviews, allow the skipping of the
+        if (tr_subview.R_GenerateSubViews()) { // if we are debugging subviews, allow the skipping of the
             // main view draw
-            if (r_subviewOnly!!.GetBool()) {
+            if (r_subviewOnly.GetBool()) {
                 return
             }
         }
@@ -971,8 +918,7 @@ object tr_main {
      DRAWSURF SORTING
 
      ==========================================================================================
-     */
-    /*
+     *//*
      =======================
      R_QsortSurfaces
 

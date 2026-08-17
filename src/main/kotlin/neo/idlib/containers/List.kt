@@ -91,8 +91,7 @@ object List {
 
         //public	typedef int		cmp_t( const T *, const T * );
         //public	typedef T	new_t( );
-        constructor() {
-            //            this(16);//disabled to prevent inherited constructors from calling the overridden clear function.
+        constructor() { //            this(16);//disabled to prevent inherited constructors from calling the overridden clear function.
         }
 
         constructor(factory: () -> T) : this() {
@@ -125,9 +124,9 @@ object List {
          ================
          */
         open fun Clear() {                                        // clear the list
-//            if (list) {
-//                delete[] list;
-//            }
+            //            if (list) {
+            //                delete[] list;
+            //            }
             list = null
             num = 0
             size = 0
@@ -167,8 +166,7 @@ object List {
             var newsize: Int
             assert(newgranularity > 0)
             granularity = newgranularity
-            if (list != null) {
-                // resize it to the closest level of granularity
+            if (list != null) { // resize it to the closest level of granularity
                 newsize = num + granularity - 1
                 newsize -= newsize % granularity
                 if (newsize != size) {
@@ -298,8 +296,7 @@ object List {
                 Clear()
                 return
             }
-            if (newsize == size) {
-                // not changing the size, so just exit
+            if (newsize == size) { // not changing the size, so just exit
                 return
             }
             temp = list
@@ -317,9 +314,9 @@ object List {
             }
 
             // delete the old list if it exists
-//	if ( temp ) {
-//		delete[] temp;
-//	}
+            //	if ( temp ) {
+            //		delete[] temp;
+            //	}
         }
 
         /*
@@ -357,9 +354,9 @@ object List {
             }
 
             // delete the old list if it exists
-//	if ( temp ) {
-//		delete[] temp;
-//	}
+            //	if ( temp ) {
+            //		delete[] temp;
+            //	}
         }
 
         /*
@@ -371,8 +368,7 @@ object List {
          */
 
         fun SetNum(
-            newnum: Int,
-            resize: Boolean = true
+            newnum: Int, resize: Boolean = true
         ) {            // set number of elements in list and resize to exactly this number if necessary
             assert(newnum >= 0)
             if (resize || newnum > size) {
@@ -410,8 +406,7 @@ object List {
          ================
          */
         fun AssureSize(
-            newSize: Int,
-            initValue: T
+            newSize: Int, initValue: T
         ) {    // assure list has given number of elements and initialize any new elements
             var newSize = newSize
             val newNum = newSize
@@ -686,7 +681,7 @@ object List {
         fun IndexOf(objptr: T): Int {                    // returns the index for the pointer to an element in the list
             val index: Int
 
-//            index = objptr - list;
+            //            index = objptr - list;
             index = FindIndex(objptr)
             assert(index >= 0)
             assert(index < num)
@@ -731,9 +726,7 @@ object List {
         fun Remove(obj: T): Boolean {                            // remove the element
             val index: Int
             index = FindIndex(obj)
-            return if (index >= 0) {
-                RemoveIndex(index)
-            } else false
+            return index >= 0 && RemoveIndex(index)
         }
 
         /*
@@ -778,9 +771,7 @@ object List {
          */
 
         fun SortSubSection(
-            startIndex: Int,
-            endIndex: Int,
-            compare: cmp_t<T>
+            startIndex: Int, endIndex: Int, compare: cmp_t<T>
         ) {
             var startIndex = startIndex
             var endIndex = endIndex
@@ -846,10 +837,7 @@ object List {
         }
 
         companion object {
-            val SIZE = (Integer.SIZE
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + CPP_class.POINTER_SIZE) //T
+            val SIZE = (Integer.SIZE + Integer.SIZE + Integer.SIZE + CPP_class.POINTER_SIZE) //T
 
             private var DBG_counter = 0
         }

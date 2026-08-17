@@ -29,12 +29,7 @@ class SysCvar {
 
         init {
             string = String.format(
-                "%s.%d%s %s %s",
-                Licensee.ENGINE_VERSION,
-                BUILD_NUMBER,
-                BUILD_DEBUG,
-                BUILD_STRING(),
-                __DATE__
+                "%s.%d%s %s %s", Licensee.ENGINE_VERSION, BUILD_NUMBER, BUILD_DEBUG, BUILD_STRING(), __DATE__
             )
         }
     }
@@ -70,41 +65,24 @@ class SysCvar {
         //
         val aas_test: idCVar = idCVar("aas_test", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER, "")
         val af_contactFrictionScale: idCVar = idCVar(
-            "af_contactFrictionScale",
-            "0",
-            CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT,
-            "scales the contact friction"
+            "af_contactFrictionScale", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "scales the contact friction"
         )
         val af_forceFriction: idCVar = idCVar(
-            "af_forceFriction",
-            "-1",
-            CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT,
-            "force the given friction value"
+            "af_forceFriction", "-1", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "force the given friction value"
         )
         val af_highlightBody: idCVar =
             idCVar("af_highlightBody", "", CVarSystem.CVAR_GAME, "name of the body to highlight")
         val af_highlightConstraint: idCVar =
             idCVar("af_highlightConstraint", "", CVarSystem.CVAR_GAME, "name of the constraint to highlight")
-        val af_jointFrictionScale: idCVar =
-            idCVar(
-                "af_jointFrictionScale",
-                "0",
-                CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT,
-                "scales the joint friction"
-            )
-        val af_maxAngularVelocity: idCVar = idCVar(
-            "af_maxAngularVelocity",
-            "1.57",
-            CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT,
-            "maximum angular velocity"
+        val af_jointFrictionScale: idCVar = idCVar(
+            "af_jointFrictionScale", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "scales the joint friction"
         )
-        val af_maxLinearVelocity: idCVar =
-            idCVar(
-                "af_maxLinearVelocity",
-                "128",
-                CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT,
-                "maximum linear velocity"
-            )
+        val af_maxAngularVelocity: idCVar = idCVar(
+            "af_maxAngularVelocity", "1.57", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "maximum angular velocity"
+        )
+        val af_maxLinearVelocity: idCVar = idCVar(
+            "af_maxLinearVelocity", "128", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "maximum linear velocity"
+        )
         val af_showActive: idCVar = idCVar(
             "af_showActive",
             "0",
@@ -126,29 +104,18 @@ class SysCvar {
         val af_showConstraints: idCVar =
             idCVar("af_showConstraints", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "show constraints")
         val af_showInertia: idCVar = idCVar(
-            "af_showInertia",
-            "0",
-            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
-            "show the inertia tensor of each body"
+            "af_showInertia", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "show the inertia tensor of each body"
         )
         val af_showLimits: idCVar =
             idCVar("af_showLimits", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "show joint limits")
         val af_showMass: idCVar =
             idCVar("af_showMass", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "show the mass of each body")
-        val af_showPrimaryOnly: idCVar =
-            idCVar(
-                "af_showPrimaryOnly",
-                "0",
-                CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
-                "show primary constraints only"
-            )
-        val af_showTimings: idCVar =
-            idCVar(
-                "af_showTimings",
-                "0",
-                CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
-                "show articulated figure cpu usage"
-            )
+        val af_showPrimaryOnly: idCVar = idCVar(
+            "af_showPrimaryOnly", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "show primary constraints only"
+        )
+        val af_showTimings: idCVar = idCVar(
+            "af_showTimings", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "show articulated figure cpu usage"
+        )
         val af_showTotalMass: idCVar = idCVar(
             "af_showTotalMass",
             "0",
@@ -157,22 +124,15 @@ class SysCvar {
         )
         val af_showTrees: idCVar =
             idCVar("af_showTrees", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "show tree-like structures")
-        val af_showVelocity: idCVar =
-            idCVar(
-                "af_showVelocity",
-                "0",
-                CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
-                "show the velocity of each body"
-            )
+        val af_showVelocity: idCVar = idCVar(
+            "af_showVelocity", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "show the velocity of each body"
+        )
         val af_skipFriction: idCVar =
             idCVar("af_skipFriction", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "skip friction")
         val af_skipLimits: idCVar =
             idCVar("af_skipLimits", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "skip joint limits")
         val af_skipSelfCollision: idCVar = idCVar(
-            "af_skipSelfCollision",
-            "0",
-            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
-            "skip self collision detection"
+            "af_skipSelfCollision", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "skip self collision detection"
         )
         val af_testSolid: idCVar = idCVar(
             "af_testSolid",
@@ -202,24 +162,14 @@ class SysCvar {
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
             "use linear time algorithm for tree-like structures"
         )
-        val af_useSymmetry: idCVar =
-            idCVar(
-                "af_useSymmetry",
-                "1",
-                CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
-                "use constraint matrix symmetry"
-            )
+        val af_useSymmetry: idCVar = idCVar(
+            "af_useSymmetry", "1", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "use constraint matrix symmetry"
+        )
         val ai_blockedFailSafe: idCVar = idCVar(
-            "ai_blockedFailSafe",
-            "1",
-            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
-            "enable blocked fail safe handling"
+            "ai_blockedFailSafe", "1", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "enable blocked fail safe handling"
         )
         val ai_debugMove: idCVar = idCVar(
-            "ai_debugMove",
-            "0",
-            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
-            "draws movement information for monsters"
+            "ai_debugMove", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "draws movement information for monsters"
         )
 
         //
@@ -236,10 +186,7 @@ class SysCvar {
             "draws trajectory tests for monsters"
         )
         val ai_showCombatNodes: idCVar = idCVar(
-            "ai_showCombatNodes",
-            "0",
-            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
-            "draws attack cones for monsters"
+            "ai_showCombatNodes", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "draws attack cones for monsters"
         )
         val ai_showObstacleAvoidance: idCVar = idCVar(
             "ai_showObstacleAvoidance",
@@ -324,10 +271,7 @@ class SysCvar {
             "displays information on which animations are playing on the specified entity number.  set to -1 to disable."
         )
         val g_debugBounds: idCVar = idCVar(
-            "g_debugBounds",
-            "0",
-            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
-            "checks for models with bounds > 2048"
+            "g_debugBounds", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "checks for models with bounds > 2048"
         )
         val g_debugCinematic: idCVar = idCVar("g_debugCinematic", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
         val g_debugDamage: idCVar = idCVar("g_debugDamage", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
@@ -454,10 +398,7 @@ class SysCvar {
             idCVar("g_maxShowDistance", "128", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
         val g_monsters: idCVar = idCVar("g_monsters", "1", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
         val g_mpWeaponAngleScale: idCVar = idCVar(
-            "g_mpWeaponAngleScale",
-            "0",
-            CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT,
-            "Control the weapon sway in MP"
+            "g_mpWeaponAngleScale", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "Control the weapon sway in MP"
         )
 
         //
@@ -559,10 +500,7 @@ class SysCvar {
         val g_skipFX: idCVar = idCVar("g_skipFX", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
         val g_skipParticles: idCVar = idCVar("g_skipParticles", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
         val g_skipViewEffects: idCVar = idCVar(
-            "g_skipViewEffects",
-            "0",
-            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
-            "skip damage and other view effects"
+            "g_skipViewEffects", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "skip damage and other view effects"
         )
         val g_stopTime: idCVar = idCVar("g_stopTime", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
         val g_testDeath: idCVar = idCVar("g_testDeath", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
@@ -580,13 +518,9 @@ class SysCvar {
      4 = play anim once
      """.trimIndent(), 0.0f, 4.0f, ArgCompletion_Integer(0, 4)
         )
-        val g_testModelBlend: idCVar =
-            idCVar(
-                "g_testModelBlend",
-                "0",
-                CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER,
-                "number of frames to blend"
-            )
+        val g_testModelBlend: idCVar = idCVar(
+            "g_testModelBlend", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER, "number of frames to blend"
+        )
         val g_testModelRotate: idCVar =
             idCVar("g_testModelRotate", "0", CVarSystem.CVAR_GAME, "test model rotation speed")
 
@@ -598,10 +532,7 @@ class SysCvar {
             "test particle visualation, set by the particle editor"
         )
         val g_testParticleName: idCVar = idCVar(
-            "g_testParticleName",
-            "",
-            CVarSystem.CVAR_GAME,
-            "name of the particle being tested by the particle editor"
+            "g_testParticleName", "", CVarSystem.CVAR_GAME, "name of the particle being tested by the particle editor"
         )
         val g_testPostProcess: idCVar =
             idCVar("g_testPostProcess", "", CVarSystem.CVAR_GAME, "name of material to draw over screen")
@@ -704,13 +635,9 @@ class SysCvar {
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_ARCHIVE,
             "enable server download redirects. 0: off 1: redirect to si_serverURL 2: use builtin download. see net_serverDl cvars for configuration"
         )
-        val password: idCVar =
-            idCVar(
-                "password",
-                "",
-                CVarSystem.CVAR_GAME or CVarSystem.CVAR_NOCHEAT,
-                "client password used when connecting"
-            )
+        val password: idCVar = idCVar(
+            "password", "", CVarSystem.CVAR_GAME or CVarSystem.CVAR_NOCHEAT, "client password used when connecting"
+        )
         val pm_airTics: idCVar = idCVar(
             "pm_air",
             "1800",
@@ -723,27 +650,15 @@ class SysCvar {
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_NETWORKSYNC or CVarSystem.CVAR_FLOAT,
             "x/y size of player's bounding box"
         )
-        val pm_bobpitch: idCVar =
-            idCVar(
-                "pm_bobpitch",
-                "0.002",
-                CVarSystem.CVAR_GAME or CVarSystem.CVAR_NETWORKSYNC or CVarSystem.CVAR_FLOAT,
-                ""
-            )
-        val pm_bobroll: idCVar =
-            idCVar(
-                "pm_bobroll",
-                "0.002",
-                CVarSystem.CVAR_GAME or CVarSystem.CVAR_NETWORKSYNC or CVarSystem.CVAR_FLOAT,
-                ""
-            )
-        val pm_bobup: idCVar =
-            idCVar(
-                "pm_bobup",
-                "0.005",
-                CVarSystem.CVAR_GAME or CVarSystem.CVAR_NETWORKSYNC or CVarSystem.CVAR_FLOAT,
-                ""
-            )
+        val pm_bobpitch: idCVar = idCVar(
+            "pm_bobpitch", "0.002", CVarSystem.CVAR_GAME or CVarSystem.CVAR_NETWORKSYNC or CVarSystem.CVAR_FLOAT, ""
+        )
+        val pm_bobroll: idCVar = idCVar(
+            "pm_bobroll", "0.002", CVarSystem.CVAR_GAME or CVarSystem.CVAR_NETWORKSYNC or CVarSystem.CVAR_FLOAT, ""
+        )
+        val pm_bobup: idCVar = idCVar(
+            "pm_bobup", "0.005", CVarSystem.CVAR_GAME or CVarSystem.CVAR_NETWORKSYNC or CVarSystem.CVAR_FLOAT, ""
+        )
         val pm_crouchbob: idCVar = idCVar(
             "pm_crouchbob",
             "0.5f",
@@ -840,20 +755,12 @@ class SysCvar {
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_NETWORKSYNC or CVarSystem.CVAR_FLOAT,
             "bob faster when running"
         )
-        val pm_runpitch: idCVar =
-            idCVar(
-                "pm_runpitch",
-                "0.002",
-                CVarSystem.CVAR_GAME or CVarSystem.CVAR_NETWORKSYNC or CVarSystem.CVAR_FLOAT,
-                ""
-            )
-        val pm_runroll: idCVar =
-            idCVar(
-                "pm_runroll",
-                "0.005",
-                CVarSystem.CVAR_GAME or CVarSystem.CVAR_NETWORKSYNC or CVarSystem.CVAR_FLOAT,
-                ""
-            )
+        val pm_runpitch: idCVar = idCVar(
+            "pm_runpitch", "0.002", CVarSystem.CVAR_GAME or CVarSystem.CVAR_NETWORKSYNC or CVarSystem.CVAR_FLOAT, ""
+        )
+        val pm_runroll: idCVar = idCVar(
+            "pm_runroll", "0.005", CVarSystem.CVAR_GAME or CVarSystem.CVAR_NETWORKSYNC or CVarSystem.CVAR_FLOAT, ""
+        )
         val pm_runspeed: idCVar = idCVar(
             "pm_runspeed",
             "220",
@@ -961,10 +868,7 @@ class SysCvar {
             2.0f
         )
         val rb_showActive: idCVar = idCVar(
-            "rb_showActive",
-            "0",
-            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
-            "show rigid bodies that are not at rest"
+            "rb_showActive", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "show rigid bodies that are not at rest"
         )
         val rb_showBodies: idCVar =
             idCVar("rb_showBodies", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "show rigid bodies")
@@ -981,10 +885,7 @@ class SysCvar {
         val rb_showTimings: idCVar =
             idCVar("rb_showTimings", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "show rigid body cpu usage")
         val rb_showVelocity: idCVar = idCVar(
-            "rb_showVelocity",
-            "0",
-            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
-            "show the velocity of each rigid body"
+            "rb_showVelocity", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "show the velocity of each rigid body"
         )
         val si_fragLimit: idCVar = idCVar(
             "si_fragLimit",
@@ -1173,10 +1074,7 @@ class SysCvar {
 
         // AI
         val ai_showHealth: idCVar = idCVar(
-            "ai_showHealth",
-            "0",
-            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
-            "Draws the AI's health above its head"
+            "ai_showHealth", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "Draws the AI's health above its head"
         )
 
         // Vehicle / portal sky / shockwave debug
@@ -1212,10 +1110,7 @@ class SysCvar {
             "set to 0, 1, 2 to test multiplayer, -1 is off"
         )
         val g_lowresFullscreenFX: idCVar = idCVar(
-            "g_lowresFullscreenFX",
-            "0",
-            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
-            "enable lores mode for fx"
+            "g_lowresFullscreenFX", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "enable lores mode for fx"
         )
 
         // Damage

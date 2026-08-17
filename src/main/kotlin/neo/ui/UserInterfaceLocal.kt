@@ -97,8 +97,7 @@ class UserInterfaceLocal {
         }
 
         override fun InitFromFile(qpath: String?, rebuild: Boolean /*= true*/, cache: Boolean /*= true*/): Boolean {
-            if (!(qpath != null && !qpath.isEmpty())) {
-                // FIXME: Memory leak!!
+            if (!(qpath != null && !qpath.isEmpty())) { // FIXME: Memory leak!!
                 return false
             }
             loading = true
@@ -156,8 +155,7 @@ class UserInterfaceLocal {
             }
 
             if (event.evType == sysEventType_t.SE_MOUSE || event.evType == sysEventType_t.SE_MOUSE_ABS) {
-                if (desktop == null || (desktop!!.GetFlags() and WIN_MENUGUI) != 0) {
-                    // DG: this is a fullscreen GUI, scale the mousedelta added to cursorX/Y
+                if (desktop == null || (desktop!!.GetFlags() and WIN_MENUGUI) != 0) { // DG: this is a fullscreen GUI, scale the mousedelta added to cursorX/Y
                     //     by 640/w, because the GUI pretends that everything is 640x480
                     //     even if the actual resolution is higher => mouse moved too fast
                     var w = glConfig.winWidth
@@ -169,19 +167,16 @@ class UserInterfaceLocal {
                     val realW = w
                     val realH = h
 
-                    if (IsUserInterfaceScaledTo43(this)) {
-                        // in case we're scaling menus to 4:3, we need to take that into account
+                    if (IsUserInterfaceScaledTo43(this)) { // in case we're scaling menus to 4:3, we need to take that into account
                         // when scaling the mouse events.
                         // no, we can't just call uiManagerLocal.dc.GetFixScaleForMenu() or sth like that,
                         // because when we're here dc.SetMenuScaleFix(true) is not active and it'd just return (1, 1)!
                         var aspectRatio = w / h
                         virtualAspectRatio = (VIRTUAL_WIDTH.toFloat()) / (VIRTUAL_HEIGHT.toFloat()) // 4:3
-                        if (aspectRatio > 1.4f) {
-                            // widescreen (4:3 is 1.333 3:2 is 1.5, 16:10 is 1.6, 16:9 is 1.7778)
+                        if (aspectRatio > 1.4f) { // widescreen (4:3 is 1.333 3:2 is 1.5, 16:10 is 1.6, 16:9 is 1.7778)
                             // => we need to modify cursorX scaling, by modifying w
                             w *= virtualAspectRatio / aspectRatio
-                        } else if (aspectRatio < 1.24f) {
-                            // portrait-mode, "thinner" than 5:4 (which is 1.25)
+                        } else if (aspectRatio < 1.24f) { // portrait-mode, "thinner" than 5:4 (which is 1.25)
                             // => we need to scale cursorY via h
                             h *= aspectRatio / virtualAspectRatio
                         }
@@ -195,14 +190,13 @@ class UserInterfaceLocal {
                         //       to the 4:3 size that fits into the real resolution.
                         //       Otherwise xOffset/yOffset will just be 0
                         var xOffset = (realW - w) * 0.5f
-                        var yOffset = (realH - h) * 0.5f
-                        // offset the mouse coordinates into 4:3 area and scale down to 640x480
+                        var yOffset =
+                            (realH - h) * 0.5f // offset the mouse coordinates into 4:3 area and scale down to 640x480
                         // yes, result could be negative, doesn't matter, code below checks that anyway
                         cursorX = (event.evValue - xOffset) * ((VIRTUAL_WIDTH).toFloat() / w)
                         cursorY = (event.evValue2 - yOffset) * ((VIRTUAL_HEIGHT).toFloat() / h)
                     }
-                } else {
-                    // not a fullscreen GUI but some ingame thing - no scaling needed
+                } else { // not a fullscreen GUI but some ingame thing - no scaling needed
                     cursorX += event.evValue
                     cursorY += event.evValue2
                 }
@@ -242,8 +236,7 @@ class UserInterfaceLocal {
         }
 
         fun IsUserInterfaceScaledTo43(ui: idUserInterface?): Boolean {
-            if (ui == null) {
-                // assert( 0 && "why do you call this without a ui?!" );
+            if (ui == null) { // assert( 0 && "why do you call this without a ui?!" );
                 return false
             }
 
@@ -258,13 +251,11 @@ class UserInterfaceLocal {
             }
 
             val winFlags = win.GetFlags()
-            return if ((winFlags and WIN_MENUGUI) == 0 || !r_scaleMenusTo43.GetBool()) {
-                // if the window is no fullscreen menu (but an ingame menu or noninteractive like the HUD)
+            return if ((winFlags and WIN_MENUGUI) == 0 || !r_scaleMenusTo43.GetBool()) { // if the window is no fullscreen menu (but an ingame menu or noninteractive like the HUD)
                 // or scaling menus to 4:3 by default (r_scaleMenusTo43) is disabled,
                 // they only get scaled if they explicitly requested it with "scaleto43 1"
                 (winFlags and WIN_SCALETO43) != 0
-            } else {
-                // if it's a fullscreen menu and r_scaleMenusTo43 is enabled,
+            } else { // if it's a fullscreen menu and r_scaleMenusTo43 is enabled,
                 // they get scaled to 4:3 unless they explicitly disable it with "scaleto43 0"
                 (winFlags and WIN_NO_SCALETO43) == 0
             }
@@ -325,8 +316,7 @@ class UserInterfaceLocal {
 
         override fun StateChanged(_time: Int, redraw: Boolean) {
             time = _time
-            if (desktop != null) {
-                // DG: allow game DLLs to set scaleto43 via state
+            if (desktop != null) { // DG: allow game DLLs to set scaleto43 via state
                 val scaleTo43 = state.GetInt("scaleto43", "-1")
                 if (scaleTo43 > 0) {
                     desktop!!.SetFlag(WIN_SCALETO43)
@@ -334,19 +324,10 @@ class UserInterfaceLocal {
                 } else if (scaleTo43 == 0) {
                     desktop!!.ClearFlag(WIN_SCALETO43)
                     desktop!!.SetFlag(WIN_NO_SCALETO43)
-                }
-                // DG end
+                } // DG end
                 desktop!!.StateChanged(redraw)
             }
-            interactive = if (state.GetBool("noninteractive")) {
-                false
-            } else {
-                if (desktop != null) {
-                    desktop!!.Interactive()
-                } else {
-                    false
-                }
-            }
+            interactive = !state.GetBool("noninteractive") && desktop != null && desktop!!.Interactive()
         }
 
         override fun Activate(activate: Boolean, _time: Int): String {
@@ -354,8 +335,7 @@ class UserInterfaceLocal {
             active = activate
             if (desktop != null) {
                 activateStr.set("")
-                if (desktop!!.GetFlags() and WIN_MENUGUI != 0) {
-                    // DG: calculate and set the "gui::cst*" window register variables
+                if (desktop!!.GetFlags() and WIN_MENUGUI != 0) { // DG: calculate and set the "gui::cst*" window register variables
                     MaybeSetCstWinRegs(true)
                 }
                 desktop!!.Activate(activate, activateStr)
@@ -371,8 +351,7 @@ class UserInterfaceLocal {
             }
         }
 
-        override fun ReadFromDemoFile(f: idDemoFile) {
-//	idStr work;
+        override fun ReadFromDemoFile(f: idDemoFile) { //	idStr work;
             f.ReadDict(state)
             source.set(state.GetString("name"))
             if (desktop == null) {
@@ -400,8 +379,7 @@ class UserInterfaceLocal {
             }
         }
 
-        override fun WriteToDemoFile(f: idDemoFile) {
-//	idStr work;
+        override fun WriteToDemoFile(f: idDemoFile) { //	idStr work;
             f.WriteDict(state)
             if (desktop != null) {
                 desktop!!.WriteToDemoFile(f)
@@ -457,8 +435,7 @@ class UserInterfaceLocal {
             num = savefile.ReadInt()
             state.Clear()
             i = 0
-            while (i < num) {
-                // Length and filling with empty strings are done in ReadString() when val > 0
+            while (i < num) { // Length and filling with empty strings are done in ReadString() when val > 0
                 len = savefile.ReadInt()
                 key.Fill(' ', len)
                 savefile.Read(key, len)
@@ -490,8 +467,7 @@ class UserInterfaceLocal {
         override fun SetKeyBindingNames() {
             if (null == desktop) {
                 return
-            }
-            // walk the windows
+            } // walk the windows
             RecurseSetKeyBindingNames(desktop!!)
         }
 
@@ -665,8 +641,7 @@ class UserInterfaceLocal {
 
         override fun Touch(name: String?) {
             val gui = Alloc()
-            gui.InitFromFile(name)
-            //	delete gui;
+            gui.InitFromFile(name) //	delete gui;
         }
 
         override fun WritePrecacheCommands(f: idFile) {
@@ -686,8 +661,7 @@ class UserInterfaceLocal {
             val c = guis.Num()
             for (i in 0 until c) {
                 if (guis[i]!!.GetDesktop()!!.GetFlags() and WIN_MENUGUI == 0) {
-                    guis[i]!!.ClearRefs()
-                    /*
+                    guis[i]!!.ClearRefs()/*
                      delete guis[ i ];
                      guis.RemoveIndex( i );
                      i--; c--;
@@ -700,8 +674,7 @@ class UserInterfaceLocal {
             var c = guis.Num()
             var i = 0
             while (i < c) {
-                if (guis[i]!!.GetRefs() == 0) {
-                    //common.Printf( "purging %s.\n", guis[i].GetSourceFile() );
+                if (guis[i]!!.GetRefs() == 0) { //common.Printf( "purging %s.\n", guis[i].GetSourceFile() );
 
                     // use this to make sure no materials still reference this gui
                     var remove = true
@@ -713,8 +686,7 @@ class UserInterfaceLocal {
                             break
                         }
                     }
-                    if (remove) {
-//				delete guis[ i ];
+                    if (remove) { //				delete guis[ i ];
                         guis.RemoveIndex(i)
                         i--
                         c--
@@ -790,8 +762,7 @@ class UserInterfaceLocal {
             if (gui != null) {
                 val c = guis.Num()
                 for (i in 0 until c) {
-                    if (guis[i] == gui) {
-//				delete guis[i];
+                    if (guis[i] == gui) { //				delete guis[i];
                         guis.RemoveIndex(i)
                         return
                     }
@@ -819,9 +790,8 @@ class UserInterfaceLocal {
                 val gui = Alloc()
                 if (gui.InitFromFile(qpath)) {
                     gui.SetUniqued(!forceUnique && needInteractive)
-                    return gui
-                    //                } else {
-//			delete gui;
+                    return gui //                } else {
+                    //			delete gui;
                 }
             }
             return null
@@ -842,9 +812,8 @@ class UserInterfaceLocal {
         }
 
         // This is unnecessary.
-        override fun FreeListGUI(listgui: idListGUI?) {
-//            delete listgui;
-//            listgui = null
+        override fun FreeListGUI(listgui: idListGUI?) { //            delete listgui;
+            //            listgui = null
         }
     }
 }

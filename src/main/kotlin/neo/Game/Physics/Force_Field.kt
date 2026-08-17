@@ -120,8 +120,7 @@ class Force_Field {
         ================
         idForce_Field::Uniform
         ================
-        */
-        // uniform constant force
+        */ // uniform constant force
         fun Uniform(force: idVec3) {
             dir.set(force)
             magnitude = dir.Normalize()
@@ -132,8 +131,7 @@ class Force_Field {
         ================
         idForce_Field::Explosion
         ================
-        */
-        // explosion from clip model origin
+        */ // explosion from clip model origin
         fun Explosion(force: Float) {
             magnitude = force
             type = forceFieldType.FORCEFIELD_EXPLOSION
@@ -143,8 +141,7 @@ class Force_Field {
         ================
         idForce_Field::Implosion
         ================
-        */
-        // implosion towards clip model origin
+        */ // implosion towards clip model origin
         fun Implosion(force: Float) {
             magnitude = force
             type = forceFieldType.FORCEFIELD_IMPLOSION
@@ -154,8 +151,7 @@ class Force_Field {
         ================
         idForce_Field::RandomTorque
         ================
-        */
-        // add random torque
+        */ // add random torque
         fun RandomTorque(force: Float) {
             randomTorque = force
         }
@@ -179,8 +175,7 @@ class Force_Field {
         ================
         idForce_Field::SetClipModel
         ================
-        */
-        // clip model describing the extents of the force field
+        */ // clip model describing the extents of the force field
         fun SetClipModel(clipModel: idClipModel) {
             if (this.clipModel != null && clipModel !== this.clipModel) {
                 idClipModel.delete(this.clipModel!!)
@@ -192,8 +187,7 @@ class Force_Field {
         ================
         idForce_Field::Evaluate
         ================
-        */
-        // common force interface
+        */ // common force interface
         override fun Evaluate(time: Int) {
             val numClipModels: Int
             var i: Int
@@ -232,8 +226,7 @@ class Force_Field {
                         continue
                     }
                 }
-                if (
-                    Game_local.gameLocal.clip.ContentsModel(
+                if (Game_local.gameLocal.clip.ContentsModel(
                         cm.GetOrigin(),
                         cm,
                         cm.GetAxis(),
@@ -285,10 +278,7 @@ class Force_Field {
                             )
                         } else {
                             entity.AddForce(
-                                Game_local.gameLocal.world,
-                                cm.GetId(),
-                                cm.GetOrigin(),
-                                force * magnitude
+                                Game_local.gameLocal.world, cm.GetId(), cm.GetOrigin(), force * magnitude
                             )
                         }
                     }
@@ -313,10 +303,7 @@ class Force_Field {
                             )
                         } else {
                             entity.ApplyImpulse(
-                                Game_local.gameLocal.world,
-                                cm.GetId(),
-                                cm.GetOrigin(),
-                                force * magnitude
+                                Game_local.gameLocal.world, cm.GetId(), cm.GetOrigin(), force * magnitude
                             )
                         }
                     }

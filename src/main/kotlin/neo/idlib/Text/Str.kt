@@ -74,24 +74,22 @@ object Str {
      does a varargs printf into a temp buffer
      NOTE: not thread safe
      ============
-     */
-    //    @Deprecated
+     */ //    @Deprecated
 
-    fun va(fmt: String, vararg args: Any?): String {
-//////	va_list argptr;
-////        char[] argptr;
-////        int index = 0;
-////        char[][] string = new char[4][16384];	// in case called by nested functions
-////        char[] buf;
-////
-////        buf = string[index];
-////        index = (index + 1) & 3;
-////
-//////	va_start( argptr, fmt );
-//////	vsprintf( buf, fmt, argptr );
-//////	va_end( argptr );
-////
-//        return new String(buf);
+    fun va(fmt: String, vararg args: Any?): String { //////	va_list argptr;
+        ////        char[] argptr;
+        ////        int index = 0;
+        ////        char[][] string = new char[4][16384];	// in case called by nested functions
+        ////        char[] buf;
+        ////
+        ////        buf = string[index];
+        ////        index = (index + 1) & 3;
+        ////
+        //////	va_start( argptr, fmt );
+        //////	vsprintf( buf, fmt, argptr );
+        //////	va_end( argptr );
+        ////
+        //        return new String(buf);
         return String.format(fmt, *args)
     }
 
@@ -144,8 +142,7 @@ object Str {
             val l: Int
             Init()
             l = text.Length()
-            EnsureAlloced(l + 1)
-            //	strcpy( data, text.data );
+            EnsureAlloced(l + 1) //	strcpy( data, text.data );
             data = text.data
             len = l
         }
@@ -181,23 +178,21 @@ object Str {
             }
             EnsureAlloced(l + 1)
 
-//	for ( i = 0; i < l; i++ ) {
-//		data[ i ] = text.data[ start + i ];
-//	}
+            //	for ( i = 0; i < l; i++ ) {
+            //		data[ i ] = text.data[ start + i ];
+            //	}
             data = text.data.substring(start, end)
 
-//	data+= '\0';
+            //	data+= '\0';
             len = l
         }
 
         constructor(text: String) {
             val l: Int
             Init()
-            if (text != null) {
-//		l = strlen( text );
+            if (text != null) { //		l = strlen( text );
                 l = text.length
-                EnsureAlloced(l + 1)
-                //		strcpy( data, text );
+                EnsureAlloced(l + 1) //		strcpy( data, text );
                 data = text
                 len = l
             }
@@ -214,8 +209,7 @@ object Str {
         constructor(text: String, start: Int, end: Int) {
             var start = start
             var end = end
-            var i: Int
-            //	int l = strlen( text );
+            var i: Int //	int l = strlen( text );
             var l = text.length
             Init()
             if (end > l) {
@@ -233,23 +227,21 @@ object Str {
             EnsureAlloced(l + 1)
             data = text.substring(start, end)
 
-//	data += '\0';
+            //	data += '\0';
             len = l
         }
 
         constructor(b: Boolean) {
             Init()
             EnsureAlloced(2)
-            data = if (b) "1" else "0"
-            //	data+= '\0';
+            data = if (b) "1" else "0" //	data+= '\0';
             len = 1
         }
 
         constructor(c: Char) {
             Init()
             EnsureAlloced(2)
-            data = "" + c
-            //	data+= '\0';
+            data = "" + c //	data+= '\0';
             len = 1
         }
 
@@ -257,15 +249,12 @@ object Str {
         //	FreeData();
         //}
         //
-        constructor(i: Int) {
-//	char []text=new char[ 64 ];
+        constructor(i: Int) { //	char []text=new char[ 64 ];
             val text = Integer.toString(i)
             val l = text.length
-            Init()
+            Init() //	l = sprintf( text, "%d", i );
             //	l = sprintf( text, "%d", i );
-//	l = sprintf( text, "%d", i );
-            EnsureAlloced(l + 1)
-            //	strcpy( data, text );
+            EnsureAlloced(l + 1) //	strcpy( data, text );
             data = text
             len = l
         }
@@ -273,10 +262,8 @@ object Str {
         constructor(u: Long) {
             val text = java.lang.Long.toString(u)
             val l = text.length
-            Init()
-            //	l = sprintf( text, "%u", u );
-            EnsureAlloced(l + 1)
-            //	strcpy( data, text );
+            Init() //	l = sprintf( text, "%u", u );
+            EnsureAlloced(l + 1) //	strcpy( data, text );
             data = text
             len = l
         }
@@ -288,8 +275,7 @@ object Str {
             val text = f.toString()
             val l = text.length
             Init()
-            EnsureAlloced(l + 1)
-            //	strcpy( data, text );
+            EnsureAlloced(l + 1) //	strcpy( data, text );
             data = text
             len = l
         }
@@ -327,9 +313,8 @@ object Str {
         open fun set(text: idStr) {
             val l: Int
             l = text.Length()
-            EnsureAlloced(l + 1, false)
-            //	memcpy( data, text.data, l );
-//	data[l] = '\0';
+            EnsureAlloced(l + 1, false) //	memcpy( data, text.data, l );
+            //	data[l] = '\0';
             data = text.data
             len = l
         }
@@ -337,8 +322,7 @@ object Str {
         //public	void				operator=( const char *text );
         open fun set(text: String?): idStr {
             val l: Int
-            if (text == null) {
-                // safe behaviour if NULL
+            if (text == null) { // safe behaviour if NULL
                 EnsureAlloced(1, false)
                 len = 0
                 return this
@@ -374,8 +358,7 @@ object Str {
 
          Removes the quotes from the beginning and end of the string
          ============
-         */
-        //public	friend idStr		operator+( const idStr &a, const float b );
+         */ //public	friend idStr		operator+( const idStr &a, const float b );
         operator fun plus(b: Float): idStr {
             val text: String
             val result = idStr(data)
@@ -470,9 +453,7 @@ object Str {
                     return data == obj.data
                 }
             }
-            return if (obj.javaClass == Char::class.java) {
-                data.length == 1 && data[0] == (obj as Char)
-            } else false
+            return obj.javaClass == Char::class.java && data.length == 1 && data[0] == (obj as Char)
         }
 
         // case sensitive compare
@@ -554,14 +535,12 @@ object Str {
         }
 
         fun Empty() {
-            EnsureAlloced(1)
-            //	data ="\0";
+            EnsureAlloced(1) //	data ="\0";
             data = ""
             len = 0
         }
 
-        fun IsEmpty(): Boolean {
-//	return ( this.Cmp( data, "" ) == 0 );
+        fun IsEmpty(): Boolean { //	return ( this.Cmp( data, "" ) == 0 );
             return data.isEmpty()
         }
 
@@ -612,13 +591,11 @@ object Str {
             val newLen: Int
             if (text != null && l > 0) {
                 newLen = len + l
-                EnsureAlloced(newLen + 1)
-                //		for ( i = 0; text[ i ] && i < l; i++ ) {
-//			data[ len + i ] = text[ i ];
-//		}
+                EnsureAlloced(newLen + 1) //		for ( i = 0; text[ i ] && i < l; i++ ) {
+                //			data[ len + i ] = text[ i ];
+                //		}
                 data = data.substring(0, len) + text.substring(0, l)
-                len = newLen
-                //		data[ len ] = '\0';
+                len = newLen //		data[ len ] = '\0';
             }
         }
 
@@ -631,11 +608,10 @@ object Str {
                 index = len
             }
             l = 1
-            EnsureAlloced(len + l + 1)
-            //	for ( i = len; i >= index; i-- ) {
-//		data[i+l] = data[i];
-//	}
-//	data[index] = a;
+            EnsureAlloced(len + l + 1) //	for ( i = len; i >= index; i-- ) {
+            //		data[i+l] = data[i];
+            //	}
+            //	data[index] = a;
             data = data.substring(0, index) + a + data.substring(index)
             len++
         }
@@ -649,40 +625,36 @@ object Str {
                 index = len
             }
 
-//	l = strlen( text );
+            //	l = strlen( text );
             l = text.length
-            EnsureAlloced(len + l + 1)
-            //	for ( i = len; i >= index; i-- ) {
-//		data[i+l] = data[i];
-//	}
-//	for ( i = 0; i < l; i++ ) {
-//		data[index+i] = text[i];
-//	}
+            EnsureAlloced(len + l + 1) //	for ( i = len; i >= index; i-- ) {
+            //		data[i+l] = data[i];
+            //	}
+            //	for ( i = 0; i < l; i++ ) {
+            //		data[index+i] = text[i];
+            //	}
             data = data.substring(0, index) + text + data.substring(index)
             len += l
         }
 
-        fun ToLower() {
-//	for (int i = 0; data[i]; i++ ) {
-//		if ( CharIsUpper( data[i] ) ) {
-//			data[i] += ( 'a' - 'A' );
-//		}
-//	}
+        fun ToLower() { //	for (int i = 0; data[i]; i++ ) {
+            //		if ( CharIsUpper( data[i] ) ) {
+            //			data[i] += ( 'a' - 'A' );
+            //		}
+            //	}
             data = data.lowercase(Locale.getDefault())
         }
 
-        fun ToUpper() {
-//	for (int i = 0; data[i]; i++ ) {
-//		if ( CharIsLower( data[i] ) ) {
-//			data[i] -= ( 'a' - 'A' );
-//		}
-//	}
+        fun ToUpper() { //	for (int i = 0; data[i]; i++ ) {
+            //		if ( CharIsLower( data[i] ) ) {
+            //			data[i] -= ( 'a' - 'A' );
+            //		}
+            //	}
             data = data.uppercase(Locale.getDefault())
         }
 
         fun RemoveColors(): idStr {
-            data = RemoveColors(data)
-            //            len = Length( data );
+            data = RemoveColors(data) //            len = Length( data );
             len = data.length
             return this
         }
@@ -702,7 +674,7 @@ object Str {
             Arrays.fill(arr, ch)
             data = String(arr)
 
-//	data[ len ] = 0;
+            //	data[ len ] = 0;
         }
 
 
@@ -729,15 +701,15 @@ object Str {
         }
 
         fun Last(c: Char): Int { // return the index to the last occurance of 'c', returns -1 if not found
-//	int i;
-//
-//	for( i = Length(); i > 0; i-- ) {
-//		if ( data[ i - 1 ] == c ) {
-//			return i - 1;
-//		}
-//	}
-//
-//	return -1;
+            //	int i;
+            //
+            //	for( i = Length(); i > 0; i-- ) {
+            //		if ( data[ i - 1 ] == c ) {
+            //			return i - 1;
+            //		}
+            //	}
+            //
+            //	return -1;
             return data.lastIndexOf(c)
         }
 
@@ -791,8 +763,8 @@ object Str {
                 len = i - start
             }
 
-//	result.Append( &data[ start ], len );
-//	result.Append( &data[ start ], len );
+            //	result.Append( &data[ start ], len );
+            //	result.Append( &data[ start ], len );
             result.Append(data.substring(start), len)
             return result
         }
@@ -811,11 +783,10 @@ object Str {
         fun StripLeading(string: String) { // strip string from front as many times as the string occurs
             val l: Int
 
-//	l = strlen( string );
+            //	l = strlen( string );
             l = string.length
             if (l > 0) {
-                while (data.startsWith(string)) {
-//			memmove( data, data + l, len - l + 1 );
+                while (data.startsWith(string)) { //			memmove( data, data + l, len - l + 1 );
                     len -= l
                     if (data.length == l) {
                         data = ""
@@ -829,11 +800,9 @@ object Str {
         fun StripLeadingOnce(string: String): Boolean { // strip string from front just once if it occurs
             val l: Int
 
-//	l = strlen( string );
-            l = string.length
-            //	if ( ( l > 0 ) && !Cmpn( string, l ) ) {
-            if (l > 0 && data.startsWith(string)) {
-//		memmove( data, data + l, len - l + 1 );
+            //	l = strlen( string );
+            l = string.length //	if ( ( l > 0 ) && !Cmpn( string, l ) ) {
+            if (l > 0 && data.startsWith(string)) { //		memmove( data, data + l, len - l + 1 );
                 data = data.substring(l)
                 len -= l
                 return true
@@ -845,12 +814,11 @@ object Str {
         fun StripTrailing(string: String) { // strip string from end as many times as the string occurs
             val l: Int
 
-//	l = strlen( string );
+            //	l = strlen( string );
             l = string.length
             if (l > 0) {
                 while (len >= l && data.endsWith(string)) {
-                    len -= l
-                    //			data[len] = '\0';
+                    len -= l //			data[len] = '\0';
                     data = data.substring(0, len)
                 }
             }
@@ -859,11 +827,10 @@ object Str {
         fun StripTrailingOnce(string: String): Boolean { // strip string from end just once if it occurs
             val l: Int
 
-//	l = strlen( string );
+            //	l = strlen( string );
             l = string.length
             if (l > 0 && len >= l && data.endsWith(string)) {
-                len -= l
-                //		data[len] = '\0';
+                len -= l //		data[len] = '\0';
                 data = data.substring(0, len)
                 return true
             }
@@ -881,13 +848,13 @@ object Str {
         }
 
         fun StripTrailingWhitespace() { // strip trailing white space characters
-//	int i;
+            //	int i;
 
             // cast to unsigned char to prevent stripping off high-ASCII characters
-//	for( i = Length(); i > 0 && (data[ i - 1 ]) <= ' '; i-- ) {
-//		data[ i - 1 ] = '\0';
-//		len--;
-//	}
+            //	for( i = Length(); i > 0 && (data[ i - 1 ]) <= ' '; i-- ) {
+            //		data[ i - 1 ] = '\0';
+            //		len--;
+            //	}
             data = data.trim { it <= ' ' }
             len = data.length
         }
@@ -898,57 +865,54 @@ object Str {
             }
 
             // Remove the trailing quote first
-            if (data[len - 1] == '\"') {
-//		data[len-1] = '\0';
+            if (data[len - 1] == '\"') { //		data[len-1] = '\0';
                 data = data.substring(0, len - 1)
                 len--
             }
 
             // Strip the leading quote now
             len--
-            data = data.substring(1)
-            //	memmove( &data[ 0 ], &data[ 1 ], len );
-//	data[len] = '\0';
+            data = data.substring(1) //	memmove( &data[ 0 ], &data[ 1 ], len );
+            //	data[len] = '\0';
             return this
         }
 
         fun Replace(old: String, nw: String) {
             data = data.replace(old, nw)
-            len = data.length
-            //	int		oldLen, newLen, i, j, count;
-//	idStr	oldString=new idStr( data );
-//
-////	oldLen = strlen( old );
-////	newLen = strlen( nw );
-//	oldLen = old.length();
-//	newLen = nw.length();
-//
-//	// Work out how big the new string will be
-//	count = 0;
-//	for( i = 0; i < oldString.Length(); i++ ) {
-//		if( !idStr.Cmpn( oldString[i], old, oldLen ) ) {
-//			count++;
-//			i += oldLen - 1;
-//		}
-//	}
-//
-//	if( count!=0 ) {
-//		EnsureAlloced( len + ( ( newLen - oldLen ) * count ) + 2, false );
-//
-//		// Replace the old data with the new data
-//		for( i = 0, j = 0; i < oldString.Length(); i++ ) {
-//			if( !idStr.Cmpn( oldString[i], old, oldLen ) ) {
-//				memcpy( data + j, nw, newLen );
-//				i += oldLen - 1;
-//				j += newLen;
-//			} else {
-//				data[j] = oldString[i];
-//				j++;
-//			}
-//		}
-//		data[j] = 0;
-//		len = strlen( data );
-//	}
+            len = data.length //	int		oldLen, newLen, i, j, count;
+            //	idStr	oldString=new idStr( data );
+            //
+            ////	oldLen = strlen( old );
+            ////	newLen = strlen( nw );
+            //	oldLen = old.length();
+            //	newLen = nw.length();
+            //
+            //	// Work out how big the new string will be
+            //	count = 0;
+            //	for( i = 0; i < oldString.Length(); i++ ) {
+            //		if( !idStr.Cmpn( oldString[i], old, oldLen ) ) {
+            //			count++;
+            //			i += oldLen - 1;
+            //		}
+            //	}
+            //
+            //	if( count!=0 ) {
+            //		EnsureAlloced( len + ( ( newLen - oldLen ) * count ) + 2, false );
+            //
+            //		// Replace the old data with the new data
+            //		for( i = 0, j = 0; i < oldString.Length(); i++ ) {
+            //			if( !idStr.Cmpn( oldString[i], old, oldLen ) ) {
+            //				memcpy( data + j, nw, newLen );
+            //				i += oldLen - 1;
+            //				j += newLen;
+            //			} else {
+            //				data[j] = oldString[i];
+            //				j++;
+            //			}
+            //		}
+            //		data[j] = 0;
+            //		len = strlen( data );
+            //	}
         }
 
         /*
@@ -957,15 +921,13 @@ object Str {
          filename methods
 
          =====================================================================
-         */
-        // hash key for the filename (skips extension)
+         */ // hash key for the filename (skips extension)
         fun FileNameHash(): Int {
             var i: Int
             var hash: Int
             var letter: Char
             hash = 0
-            i = 0
-            //	while( data[i] != '\0' ) {
+            i = 0 //	while( data[i] != '\0' ) {
             while (i < data.length) {
                 letter = ToLower(data[i])
                 if (letter == '.') {
@@ -982,20 +944,19 @@ object Str {
         }
 
         fun BackSlashesToSlashes(): idStr { // convert slashes
-//	int i;
-//
-//	for ( i = 0; i < len; i++ ) {
-//		if ( data[ i ] == '\\' ) {
-//			data[ i ] = '/';
-//		}
-//	}
+            //	int i;
+            //
+            //	for ( i = 0; i < len; i++ ) {
+            //		if ( data[ i ] == '\\' ) {
+            //			data[ i ] = '/';
+            //		}
+            //	}
             data = data.replace('\\', '/')
             return this
         }
 
         fun SetFileExtension(extension: String): idStr { // set the given file extension
-            StripFileExtension()
-            //	if ( *extension != '.' ) {
+            StripFileExtension() //	if ( *extension != '.' ) {
             if (extension[0] != '.') {
                 Append('.')
             }
@@ -1010,14 +971,14 @@ object Str {
         fun StripFileExtension(): idStr { // remove any file extension
             val i: Int
 
-//            for (i = len - 1; i >= 0; i--) {
-//                if (data.charAt(i) == '.') {
-////			data[i] = '\0';
-//                    len = i;
-//                    data = data.substring(0, len);
-//                    break;
-//                }
-//            }
+            //            for (i = len - 1; i >= 0; i--) {
+            //                if (data.charAt(i) == '.') {
+            ////			data[i] = '\0';
+            //                    len = i;
+            //                    data = data.substring(0, len);
+            //                    break;
+            //                }
+            //            }
             i = data.lastIndexOf('.')
             if (i > -1) {
                 len = i
@@ -1030,8 +991,7 @@ object Str {
             var i: Int
             i = 0
             while (i < len) {
-                if (data[i] == '.') {
-//			data[i] = '\0';
+                if (data[i] == '.') { //			data[i] = '\0';
                     len = i
                     data = data.substring(0, len)
                     break
@@ -1044,11 +1004,10 @@ object Str {
         fun DefaultFileExtension(extension: String): idStr { // if there's no file extension use the default
 
             // do nothing if the string already has an extension
-//            for (i = len - 1; i >= 0; i--) {
+            //            for (i = len - 1; i >= 0; i--) {
             if (data.contains(".")) {
                 return this
-            }
-            //            }
+            } //            }
             if (!extension.startsWith(".")) {
                 Append('.')
             }
@@ -1057,13 +1016,12 @@ object Str {
         }
 
         fun DefaultPath(basepath: CharArray): idStr { // if there's no path use the default
-//	if ( ( ( *this )[ 0 ] == '/' ) || ( ( *this )[ 0 ] == '\\' ) ) {
-            if (data[0] == '/' || data[0] == '\\') {
-                // absolute path location
+            //	if ( ( ( *this )[ 0 ] == '/' ) || ( ( *this )[ 0 ] == '\\' ) ) {
+            if (data[0] == '/' || data[0] == '\\') { // absolute path location
                 return this
             }
 
-//	*this = basepath + *this;
+            //	*this = basepath + *this;
             data = basepath.toString() + data //TODO:bad..where to put the extension
             return this
         }
@@ -1091,8 +1049,7 @@ object Str {
                     }
                     i++
                 }
-                len = pos
-                //		data[ pos ] = '\0';
+                len = pos //		data[ pos ] = '\0';
                 data = ctos(dataArray)
             }
         }
@@ -1182,8 +1139,7 @@ object Str {
             while (pos > 0 && data[pos - 1] != '.') {
                 pos--
             }
-            if (pos == 0) {
-                // no extension
+            if (pos == 0) { // no extension
                 dest.Empty()
             } else {
                 Right(Length() - pos, dest)
@@ -1208,8 +1164,7 @@ object Str {
          be used to specify a range (e.g. a-z, A-Z, 0-9)
 
          ============
-         */
-        /*static*/   fun Filter(filter: String, name: String, casesensitive: Boolean): Boolean {
+         *//*static*/   fun Filter(filter: String, name: String, casesensitive: Boolean): Boolean {
             var name = name
             val buf = idStr()
             var i: Int
@@ -1238,13 +1193,11 @@ object Str {
                         index =  /*new idStr(name).*/Find(buf.toString(), casesensitive) //TODO:remove stuff
                         if (index == -1) {
                             return false
-                        }
-                        //				name += index + strlen(buf);
+                        } //				name += index + strlen(buf);
                         name = name.substring(index + buf.Length(), name.length - 1)
                     }
                 } else if (filterChar.code == 0) {
-                    filterIndex++
-                    //			name++;
+                    filterIndex++ //			name++;
                     name = name.substring(1)
                 } else if (filterChar == '[') {
                     if (filter[filterIndex + 1] == '[') {
@@ -1260,16 +1213,12 @@ object Str {
                             if (filterChar == ']' && filter[filterIndex + 1] != ']') {
                                 break
                             }
-                            if (filter[filterIndex + 1] == '-' && filter.length > filterIndex + 2 && (filter[filterIndex + 2] != ']' || filter[filterIndex + 3] == ']')
-                            ) {
+                            if (filter[filterIndex + 1] == '-' && filter.length > filterIndex + 2 && (filter[filterIndex + 2] != ']' || filter[filterIndex + 3] == ']')) {
                                 if (casesensitive) {
-                                    if (name[0] >= filterChar
-                                        && name[0] <= filter[filterIndex + 2]
-                                    ) {
+                                    if (name[0] >= filterChar && name[0] <= filter[filterIndex + 2]) {
                                         found = true
                                     }
-                                } else {
-//							if ( ::toupper(*name) >= ::toupper(*filterIndex) && ::toupper(*name) <= ::toupper(*(filterIndex+2)) ) {
+                                } else { //							if ( ::toupper(*name) >= ::toupper(*filterIndex) && ::toupper(*name) <= ::toupper(*(filterIndex+2)) ) {
                                     if (name[0] >= filterChar && name[0] <= filter[filterIndex + 2]) {
                                         found = true
                                     }
@@ -1280,8 +1229,7 @@ object Str {
                                     if (filterChar == name[0]) {
                                         found = true
                                     }
-                                } else {
-//							if ( ::toupper(*filterIndex) == ::toupper(*name) ) {
+                                } else { //							if ( ::toupper(*filterIndex) == ::toupper(*name) ) {
                                     if (filterChar == name[0]) {
                                         found = true
                                     }
@@ -1306,8 +1254,7 @@ object Str {
                         if (filterChar != name[0]) {
                             return false
                         }
-                    } else {
-//				if ( ::toupper(*filterIndex) != ::toupper(*name) ) {
+                    } else { //				if ( ::toupper(*filterIndex) != ::toupper(*name) ) {
                         if (filterChar != name[0]) {
                             return false
                         }
@@ -1325,8 +1272,7 @@ object Str {
 
          Sets the value of the string using a printf interface.
          ============
-         */
-        //public	friend int			sprintf( idStr &dest, const char *fmt, ... );
+         */ //public	friend int			sprintf( idStr &dest, const char *fmt, ... );
         //public <T>int sprintf( idStr string, final T...fmt) {
         //return sprintf(string.data.toCharArray(), fmt);
         //}
@@ -1349,22 +1295,19 @@ object Str {
 
          Sets the value of the string using a vprintf interface.
          ============
-         */
-        //public	friend int			vsprintf( idStr &dest, const char *fmt, va_list ap );
+         */ //public	friend int			vsprintf( idStr &dest, const char *fmt, va_list ap );
         fun vsprintf(string: idStr, fmt: String, vararg args: Any): Int { //char[] argptr) {
             val l: Int
             val buffer = emptyArray<String>() //new char[32000];
-            l = vsnPrintf(buffer, 32000, fmt, *args)
-            //	buffer[buffer.length-1] = '\0';
+            l = vsnPrintf(buffer, 32000, fmt, *args) //	buffer[buffer.length-1] = '\0';
 
-//	string = buffer;
+            //	string = buffer;
             string.set(buffer[0])
             return l
         }
 
         // reallocate string data buffer
-        fun ReAllocate(amount: Int, keepold: Boolean) {
-//            char[] newbuffer;
+        fun ReAllocate(amount: Int, keepold: Boolean) { //            char[] newbuffer;
             val newsize: Int
             val mod: Int
             assert(amount > 0)
@@ -1376,34 +1319,33 @@ object Str {
             }
             alloced = newsize
 
-//#ifdef USE_STRING_DATA_ALLOCATOR
-//	newbuffer = stringDataAllocator.Alloc( alloced );
-//#else
-//            newbuffer = new char[alloced];
-//#endif
-//            if ( keepold && data ) {
-//		data[ len ] = '\0';
-//		strcpy( newbuffer, data );
-//            }
-//
-//            if ( data && data != baseBuffer ) {
-//#ifdef USE_STRING_DATA_ALLOCATOR
-//		stringDataAllocator.Free( data );
-//#else
-//		delete [] data;
-//#endif
-//            }
-//	data = newbuffer;
+            //#ifdef USE_STRING_DATA_ALLOCATOR
+            //	newbuffer = stringDataAllocator.Alloc( alloced );
+            //#else
+            //            newbuffer = new char[alloced];
+            //#endif
+            //            if ( keepold && data ) {
+            //		data[ len ] = '\0';
+            //		strcpy( newbuffer, data );
+            //            }
+            //
+            //            if ( data && data != baseBuffer ) {
+            //#ifdef USE_STRING_DATA_ALLOCATOR
+            //		stringDataAllocator.Free( data );
+            //#else
+            //		delete [] data;
+            //#endif
+            //            }
+            //	data = newbuffer;
         }
 
         fun FreeData() { // free allocated string memory
-            if (data != null /*&& data != baseBuffer*/) {
-//#ifdef USE_STRING_DATA_ALLOCATOR
-//		stringDataAllocator.Free( data );
-//#else
-//		delete[] data;
-//#endif
-//		data = baseBuffer;
+            if (data != null /*&& data != baseBuffer*/) { //#ifdef USE_STRING_DATA_ALLOCATOR
+                //		stringDataAllocator.Free( data );
+                //#else
+                //		delete[] data;
+                //#endif
+                //		data = baseBuffer;
             }
         }
 
@@ -1415,8 +1357,7 @@ object Str {
                 unit++
             }
             unit--
-            value /= (1 shl unit * 10).toFloat()
-            //	sprintf( *this, format, value );
+            value /= (1 shl unit * 10).toFloat() //	sprintf( *this, format, value );
             data = String.format(format, value)
             data += " "
             data += units[measure.ordinal][unit] //TODO:ordinal
@@ -1425,15 +1366,13 @@ object Str {
 
         fun SetUnit(format: String, value: Float, unit: Int, measure: Measure_t) {
             var value = value
-            value /= (1 shl unit * 10).toFloat()
-            //	sprintf( *this, format, value );
+            value /= (1 shl unit * 10).toFloat() //	sprintf( *this, format, value );
             data = String.format(format, value)
             data += " "
             data += units[measure.ordinal][unit]
         }
 
-        override fun readFrom(file: idFile) {
-            // Read BYTES raw bytes (fixed-size slot used inside larger structures like function_t).
+        override fun readFrom(file: idFile) { // Read BYTES raw bytes (fixed-size slot used inside larger structures like function_t).
             val sb = StringBuilder()
             var i = 0
             while (i < BYTES) {
@@ -1446,8 +1385,7 @@ object Str {
             alloced = len
         }
 
-        override fun writeTo(file: idFile) {
-            // Write BYTES raw bytes: data bytes truncated/padded with zeros to BYTES.
+        override fun writeTo(file: idFile) { // Write BYTES raw bytes: data bytes truncated/padded with zeros to BYTES.
             val maxLen = BYTES
             var i = 0
             while (i < data.length && i < maxLen) {
@@ -1460,8 +1398,7 @@ object Str {
             }
         }
 
-        fun DynamicMemoryUsed(): Int {
-//	return ( data == baseBuffer )  0 : alloced;
+        fun DynamicMemoryUsed(): Int { //	return ( data == baseBuffer )  0 : alloced;
             return alloced
         }
 
@@ -1492,14 +1429,12 @@ object Str {
         }
 
         class ShowMemoryUsage_f : cmdFunction_t() {
-            override fun run(args: neo.idlib.CmdArgs.idCmdArgs?) {
-//#ifdef USE_STRING_DATA_ALLOCATOR
-                idLib.common.Printf("%6d KB string memory (%d KB free in %d blocks, %d empty base blocks)\n")
-                //                        stringDataAllocator.GetBaseBlockMemory() >> 10,
-//                        stringDataAllocator.GetFreeBlockMemory() >> 10,
-//                        stringDataAllocator.GetNumFreeBlocks(),
-//                        stringDataAllocator.GetNumEmptyBaseBlocks());
-//#endif
+            override fun run(args: neo.idlib.CmdArgs.idCmdArgs?) { //#ifdef USE_STRING_DATA_ALLOCATOR
+                idLib.common.Printf("%6d KB string memory (%d KB free in %d blocks, %d empty base blocks)\n") //                        stringDataAllocator.GetBaseBlockMemory() >> 10,
+                //                        stringDataAllocator.GetFreeBlockMemory() >> 10,
+                //                        stringDataAllocator.GetNumFreeBlocks(),
+                //                        stringDataAllocator.GetNumEmptyBaseBlocks());
+                //#endif
             }
 
             companion object {
@@ -1538,18 +1473,13 @@ object Str {
         class formatList_t(var gran: Int, var count: Int)
         companion object {
 
-            val SIZE = (Integer.SIZE
-                    + CPP_class.POINTER_SIZE
-                    + Integer.SIZE
-                    + Char.SIZE_BITS * STR_ALLOC_BASE)
+            val SIZE = (Integer.SIZE + CPP_class.POINTER_SIZE + Integer.SIZE + Char.SIZE_BITS * STR_ALLOC_BASE)
 
             val BYTES = SIZE / java.lang.Byte.SIZE
 
             // elements of list need to decend in size
             var formatList: Array<formatList_t> = arrayOf(
-                formatList_t(1000000000, 0),
-                formatList_t(1000000, 0),
-                formatList_t(1000, 0)
+                formatList_t(1000000000, 0), formatList_t(1000000, 0), formatList_t(1000, 0)
             )
             var index = 0
 
@@ -1626,28 +1556,22 @@ object Str {
             }
 
             fun HasLower(s: String?): Boolean {
-                return if (s == null) {
-                    false
-                } else s.uppercase(Locale.getDefault()) != s
-                //	while ( *s ) {
-//		if ( CharIsLower( *s ) ) {
-//			return true;
-//		}
-//		s++;
-//	}
+                return s != null && s.uppercase(Locale.getDefault()) != s //	while ( *s ) {
+                //		if ( CharIsLower( *s ) ) {
+                //			return true;
+                //		}
+                //		s++;
+                //	}
             }
 
             //public	friend idStr		operator+( const idStr &a, const bool b );
             fun HasUpper(s: String?): Boolean {
-                return if (s == null) {
-                    false
-                } else s.lowercase(Locale.getDefault()) != s
-                //	while ( *s ) {
-//		if ( CharIsLower( *s ) ) {
-//			return true;
-//		}
-//		s++;
-//	}
+                return s != null && s.lowercase(Locale.getDefault()) != s //	while ( *s ) {
+                //		if ( CharIsLower( *s ) ) {
+                //			return true;
+                //		}
+                //		s++;
+                //	}
             }
 
             fun LengthWithoutColors(s: String?): Int {
@@ -1655,18 +1579,14 @@ object Str {
                 var p = 0
                 if (s == null) {
                     return 0
-                }
-                //char[]sArray=s.toCharArray();
-                len = s.length
-                //	p = s;
-//	while( sArray[p]!=0 ) {
+                } //char[]sArray=s.toCharArray();
+                len = s.length //	p = s;
+                //	while( sArray[p]!=0 ) {
                 if (IsColor(s)) {
-                    p += 2
-                    //			continue;
-                }
-                //		p++;
-//		len++;
-//	}
+                    p += 2 //			continue;
+                } //		p++;
+                //		len++;
+                //	}
                 return len - p
             }
 
@@ -1832,8 +1752,7 @@ object Str {
                         if (c2 == '\\'.code) {
                             d -= ('/'.code - '\\'.code)
                             if (0 == d) break
-                        }
-                        // make sure folders come first
+                        } // make sure folders come first
                         while (c1 != 0) {
                             if (c1 == '/'.code || c1 == '\\'.code) break
                             c1 = if (i1 < s1.length) s1[i1].code else 0
@@ -1848,8 +1767,7 @@ object Str {
                             return -1
                         } else if (c1 == 0 && c2 != 0) {
                             return 1
-                        }
-                        // same folder depth so use the regular compare
+                        } // same folder depth so use the regular compare
                         return (INTSIGNBITNOTSET(d) shl 1) - 1
                     }
                 } while (c1 != 0)
@@ -1898,8 +1816,7 @@ object Str {
                             if (0 == d) {
                                 break
                             }
-                        }
-                        // make sure folders come first
+                        } // make sure folders come first
                         while (c1 != 0) {
                             if (c1 == '/'.code || c1 == '\\'.code) {
                                 break
@@ -1918,8 +1835,7 @@ object Str {
                             return -1
                         } else if (c1 == 0 && c2 != 0) {
                             return 1
-                        }
-                        // same folder depth so use the regular compare
+                        } // same folder depth so use the regular compare
                         return (INTSIGNBITNOTSET(d) shl 1) - 1
                     }
                 } while (c1 != 0)
@@ -2032,11 +1948,9 @@ object Str {
             fun snPrintf(dest: StringBuffer, size: Int, fmt: String, vararg args: Any): Int {
                 var len: Int
                 val bufferSize = 32000
-                val buffer = StringBuffer(bufferSize)
-                //
-//	va_start( argptr, fmt );
-//	len = vsprintf( buffer, fmt, argptr );
-//	va_end( argptr );
+                val buffer =
+                    StringBuffer(bufferSize) // //	va_start( argptr, fmt ); //	len = vsprintf( buffer, fmt, argptr );
+                //	va_end( argptr );
                 len = buffer.append(String.format(fmt, *args)).length
                 if (len >= bufferSize) {
                     idLib.common.Error("idStr::snPrintf: overflowed buffer")
@@ -2044,8 +1958,7 @@ object Str {
                 if (len >= size) {
                     idLib.common.Warning("idStr::snPrintf: overflow of %d in %d\n", len, size)
                     len = size
-                }
-                //            idStr.Copynz(dest, buffer, size);
+                } //            idStr.Copynz(dest, buffer, size);
                 dest.delete(0, dest.capacity()) //clear
                 dest.append(buffer) //TODO: use replace instead
                 return len
@@ -2066,13 +1979,12 @@ object Str {
 
 
             fun snPrintf(offset: Int, dest: CharArray, size: Int, fmt: String, vararg args: Any): Int {
-                var length: Int
-                //            char[] argptr;
+                var length: Int //            char[] argptr;
                 val buffer = StringBuilder(32000) // big, but small enough to fit in PPC stack
 
-//	va_start( argptr, fmt );
-//	len = vsprintf( buffer, fmt, argptr );
-//	va_end( argptr );
+                //	va_start( argptr, fmt );
+                //	len = vsprintf( buffer, fmt, argptr );
+                //	va_end( argptr );
                 length = buffer.append(String.format(fmt, *args)).length
                 if (length >= dest.size) {
                     idLib.common.Error("idStr::snPrintf: overflowed buffer")
@@ -2126,8 +2038,7 @@ object Str {
                 var end = end
                 val strArray = str.toCharArray()
                 var i: Int
-                if (end == -1) {
-//		end = strlen( str ) - 1;
+                if (end == -1) { //		end = strlen( str ) - 1;
                     end = str.length
                 }
                 i = start
@@ -2150,11 +2061,7 @@ object Str {
 
 
             fun FindText(
-                str: String,
-                text: String,
-                casesensitive: Boolean = true,
-                start: Int = 0,
-                end: Int = -1
+                str: String, text: String, casesensitive: Boolean = true, start: Int = 0, end: Int = -1
             ): Int {
                 var end = end
                 if (end == -1) {
@@ -2176,15 +2083,12 @@ object Str {
          makes the string lower case, replaces backslashes with forward slashes, and removes extension
          =============
          */
-            fun StripMediaName(name: String, mediaName: idStr) {
-//	char c;
+            fun StripMediaName(name: String, mediaName: idStr) { //	char c;
                 mediaName.Empty()
-                for (c in name.toCharArray()) {
-                    // truncate at an extension
+                for (c in name.toCharArray()) { // truncate at an extension
                     if (c == '.') {
                         break
-                    }
-                    // convert backslashes to forward slashes
+                    } // convert backslashes to forward slashes
                     if (c == '\\') {
                         mediaName.Append('/')
                     } else {
@@ -2196,8 +2100,7 @@ object Str {
             fun CheckExtension(name: String, ext: String): Boolean {
                 var c1 = name.length - 1
                 var c2 = ext.length - 1
-                var d: Int
-                //TODO:double check if its working
+                var d: Int //TODO:double check if its working
                 do {
                     d = name[c1] - ext[c2]
                     while (d != 0) {
@@ -2282,8 +2185,7 @@ object Str {
                 var i: Int
                 var hash = 0
                 i = 0
-                while (i < string.size && string[i] != '\u0000') {
-                    //TODO:eliminate '\0' from char strings.
+                while (i < string.size && string[i] != '\u0000') { //TODO:eliminate '\0' from char strings.
                     hash += ToLower(string[i]).code * (i + 119)
                     i++
                 }
@@ -2316,25 +2218,20 @@ object Str {
             }
 
 
-            fun CharIsPrintable(c: Int): Boolean {
-                // test for regular ascii and western European high-ascii chars
+            fun CharIsPrintable(c: Int): Boolean { // test for regular ascii and western European high-ascii chars
                 return c >= 0x20 && c <= 0x7E || c >= 0xA1 && c <= 0xFF
             }
 
-            fun CharIsLower(c: Int): Boolean {
-                // test for regular ascii and western European high-ascii chars
+            fun CharIsLower(c: Int): Boolean { // test for regular ascii and western European high-ascii chars
                 return c >= 'a'.code && c <= 'z'.code || c >= 0xE0 && c <= 0xFF
             }
 
-            fun CharIsUpper(c: Int): Boolean {
-                // test for regular ascii and western European high-ascii chars
+            fun CharIsUpper(c: Int): Boolean { // test for regular ascii and western European high-ascii chars
                 return c <= 'Z'.code && c >= 'A'.code || c >= 0xC0 && c <= 0xDF
             }
 
-            fun CharIsAlpha(c: Int): Boolean {
-                // test for regular ascii and western European high-ascii chars
-                return (c >= 'a'.code && c <= 'z'.code || c >= 'A'.code && c <= 'Z'.code
-                        || c >= 0xC0 && c <= 0xFF)
+            fun CharIsAlpha(c: Int): Boolean { // test for regular ascii and western European high-ascii chars
+                return (c >= 'a'.code && c <= 'z'.code || c >= 'A'.code && c <= 'Z'.code || c >= 0xC0 && c <= 0xFF)
             }
 
             fun CharIsNumeric(c: Int): Boolean {
@@ -2365,22 +2262,19 @@ object Str {
                 return g_color_table[i and 15]
             }
 
-            fun InitMemory() {
-//#ifdef USE_STRING_DATA_ALLOCATOR
-//	stringDataAllocator.Init();
-//#endif
+            fun InitMemory() { //#ifdef USE_STRING_DATA_ALLOCATOR
+                //	stringDataAllocator.Init();
+                //#endif
             }
 
-            fun ShutdownMemory() {
-//#ifdef USE_STRING_DATA_ALLOCATOR
-//	stringDataAllocator.Shutdown();
-//#endif
+            fun ShutdownMemory() { //#ifdef USE_STRING_DATA_ALLOCATOR
+                //	stringDataAllocator.Shutdown();
+                //#endif
             }
 
-            fun PurgeMemory() {
-//#ifdef USE_STRING_DATA_ALLOCATOR
-//	stringDataAllocator.FreeEmptyBaseBlocks();
-//#endif
+            fun PurgeMemory() { //#ifdef USE_STRING_DATA_ALLOCATOR
+                //	stringDataAllocator.FreeEmptyBaseBlocks();
+                //#endif
             }
 
 
@@ -2416,21 +2310,17 @@ object Str {
                     if (li.count != 0) {
                         if (!found) {
                             string.plusAssign(va("%d,", li.count))
-                        } else {
-//				string += va( "%3.3i,", li.count );
+                        } else { //				string += va( "%3.3i,", li.count );
                             string.plusAssign(va("%3.3i,", li.count))
                         }
                         found = true
-                    } else if (found) {
-//			string += va( "%3.3i,", li->count );
+                    } else if (found) { //			string += va( "%3.3i,", li->count );
                         string.plusAssign(va("%3.3i,", li.count))
                     }
                 }
-                if (found) {
-//		string += va( "%3.3i", number );
+                if (found) { //		string += va( "%3.3i", number );
                     string.plusAssign(va("%3.3i,", number))
-                } else {
-//		string += va( "%d", number );
+                } else { //		string += va( "%d", number );
                     string.plusAssign(va("%d,", number))
                 }
 

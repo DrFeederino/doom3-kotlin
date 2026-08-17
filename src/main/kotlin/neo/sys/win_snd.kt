@@ -71,7 +71,7 @@ object win_snd {
 
     class idAudioHardwareWIN32 : idAudioHardware() {
         private val bitsPerSample = 0
-        private val blockAlign = 0// channels * bits per sample / 8: sound frame size
+        private val blockAlign = 0 // channels * bits per sample / 8: sound frame size
         private val bufferSize = 0 // allocate buffer handed over to DirectSound
         private val numSpeakers = 0
 
@@ -106,18 +106,16 @@ object win_snd {
             return ShortArray(128)
         }
 
-        override fun Initialize(): Boolean {
-            // Set primary buffer format
+        override fun Initialize(): Boolean { // Set primary buffer format
             SetPrimaryBufferFormat(
-                snd_local.PRIMARYFREQ,
-                16,
-                idSoundSystemLocal.s_numberOfSpeakers.GetInteger()
+                snd_local.PRIMARYFREQ, 16, idSoundSystemLocal.s_numberOfSpeakers.GetInteger()
             )
             return true
         }
 
-        override fun Lock(pDSLockedBuffer: Any, dwDSLockedBufferSize: Long): Boolean {
-            // DirectSound-era API; OpenAL backend never calls these.
+        override fun Lock(
+            pDSLockedBuffer: Any, dwDSLockedBufferSize: Long
+        ): Boolean { // DirectSound-era API; OpenAL backend never calls these.
             return false
         }
 

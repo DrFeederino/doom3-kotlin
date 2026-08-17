@@ -118,10 +118,7 @@ object Projectile {
             }
 
             fun DefaultDamageEffect(
-                soundEnt: idEntity,
-                projectileDef: idDict,
-                collision: trace_s,
-                velocity: idVec3
+                soundEnt: idEntity, projectileDef: idDict, collision: trace_s, velocity: idVec3
             ) {
                 var decal: String?
                 var sound: String?
@@ -146,10 +143,7 @@ object Projectile {
                 }
                 if (sound.isNotEmpty()) { // == '\0' ) {
                     soundEnt.StartSoundShader(
-                        DeclManager.declManager.FindSound(sound),
-                        gameSoundChannel_t.SND_CHANNEL_BODY.ordinal,
-                        0,
-                        false
+                        DeclManager.declManager.FindSound(sound), gameSoundChannel_t.SND_CHANNEL_BODY.ordinal, 0, false
                     )
                 }
 
@@ -205,10 +199,8 @@ object Projectile {
                 }
 
                 // if the projectile causes a damage effect
-                if (addDamageEffect && projectileDef.GetBool("impact_damage_effect")) {
-                    // if the hit entity does not have a special damage effect
-                    if (!ent.spawnArgs.GetBool("bleed")) {
-                        // predict damage effect
+                if (addDamageEffect && projectileDef.GetBool("impact_damage_effect")) { // if the hit entity does not have a special damage effect
+                    if (!ent.spawnArgs.GetBool("bleed")) { // predict damage effect
                         DefaultDamageEffect(soundEnt, projectileDef, collision, velocity)
                     }
                 }
@@ -222,15 +214,12 @@ object Projectile {
             //
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[EV_Explode] =
-                    eventCallback_t0<idProjectile> { obj: idProjectile -> obj.Event_Explode() }
-                eventCallbacks[EV_Fizzle] =
-                    eventCallback_t0<idProjectile> { obj: idProjectile -> obj.Event_Fizzle() }
+                eventCallbacks[EV_Explode] = eventCallback_t0<idProjectile> { obj: idProjectile -> obj.Event_Explode() }
+                eventCallbacks[EV_Fizzle] = eventCallback_t0<idProjectile> { obj: idProjectile -> obj.Event_Fizzle() }
                 eventCallbacks[EV_Touch] =
                     eventCallback_t2<idProjectile> { obj: idProjectile, other: idEventArg<*>?, trace: idEventArg<*>? ->
                         obj.Event_Touch(
-                            other as idEventArg<idEntity>,
-                            trace as idEventArg<trace_s>
+                            other as idEventArg<idEntity>, trace as idEventArg<trace_s>
                         )
                     }
                 eventCallbacks[EV_RadiusDamage] =
@@ -238,22 +227,17 @@ object Projectile {
                         obj.Event_RadiusDamage(ignore as idEventArg<idEntity?>)
                     }
                 eventCallbacks[EV_GetProjectileState] =
-                    eventCallback_t0<idProjectile> { obj: idProjectile -> obj.Event_GetProjectileState() }
-                // D3XP
+                    eventCallback_t0<idProjectile> { obj: idProjectile -> obj.Event_GetProjectileState() } // D3XP
                 eventCallbacks[EV_CreateProjectile] =
                     eventCallback_t3<idProjectile> { obj: idProjectile, owner: idEventArg<*>?, start: idEventArg<*>?, dir: idEventArg<*>? ->
                         obj.Event_CreateProjectile(
-                            owner as idEventArg<idEntity>,
-                            start as idEventArg<idVec3>,
-                            dir as idEventArg<idVec3>
+                            owner as idEventArg<idEntity>, start as idEventArg<idVec3>, dir as idEventArg<idVec3>
                         )
                     }
                 eventCallbacks[EV_LaunchProjectile] =
                     eventCallback_t3<idProjectile> { obj: idProjectile, start: idEventArg<*>?, dir: idEventArg<*>?, push: idEventArg<*>? ->
                         obj.Event_LaunchProjectile(
-                            start as idEventArg<idVec3>,
-                            dir as idEventArg<idVec3>,
-                            push as idEventArg<idVec3>
+                            start as idEventArg<idVec3>, dir as idEventArg<idVec3>, push as idEventArg<idVec3>
                         )
                     }
                 eventCallbacks[EV_SetGravity] =
@@ -314,8 +298,7 @@ object Projectile {
             savefile.WriteInt(lightEndTime)
             savefile.WriteVec3(lightColor)
             savefile.WriteParticle(smokeFly)
-            savefile.WriteInt(smokeFlyTime)
-            // D3XP
+            savefile.WriteInt(smokeFlyTime) // D3XP
             if (isD3XP) {
                 savefile.WriteInt(originalTimeGroup)
             }
@@ -339,8 +322,7 @@ object Projectile {
             lightEndTime = savefile.ReadInt()
             savefile.ReadVec3(lightColor)
             smokeFly = savefile.ReadParticle()
-            smokeFlyTime = savefile.ReadInt()
-            // D3XP
+            smokeFlyTime = savefile.ReadInt() // D3XP
             if (isD3XP) {
                 originalTimeGroup = savefile.ReadInt()
             }
@@ -361,8 +343,7 @@ object Projectile {
                     GetPhysics().GetAxis(),
                     if (isD3XP) timeGroup else 0
                 )
-            }
-            // D3XP: re-register the light def with the renderer after restore
+            } // D3XP: re-register the light def with the renderer after restore
             if (isD3XP) {
                 if (lightDefHandle >= 0) {
                     lightDefHandle = Game_local.gameRenderWorld!!.AddLightDef(renderLight)
@@ -387,15 +368,14 @@ object Projectile {
             physicsObj.GetClipModel()!!.SetOwner(owner)
             this.owner.oSet(owner)
 
-//	memset( &renderLight, 0, sizeof( renderLight ) );
+            //	memset( &renderLight, 0, sizeof( renderLight ) );
             renderLight = renderLight_s()
             shaderName = spawnArgs.GetString("mtr_light_shader")
             if (!shaderName.isEmpty()) {
                 renderLight.shader = DeclManager.declManager.FindMaterial(shaderName, false)
                 renderLight.pointLight._val = true
                 renderLight.lightRadius[0] = renderLight.lightRadius.set(
-                    1,
-                    renderLight.lightRadius.set(2, spawnArgs.GetFloat("light_radius"))
+                    1, renderLight.lightRadius.set(2, spawnArgs.GetFloat("light_radius"))
                 )
                 spawnArgs.GetVector("light_color", "1 1 1", light_color)
                 renderLight.shaderParms[0] = light_color[0]
@@ -448,11 +428,7 @@ object Projectile {
             var clipMask: Int
 
             // allow characters to throw projectiles during cinematics, but not the player
-            cinematic = if (owner.GetEntity() != null && owner.GetEntity() !is idPlayer) {
-                owner.GetEntity()!!.cinematic
-            } else {
-                false
-            }
+            cinematic = owner.GetEntity() != null && owner.GetEntity() !is idPlayer && owner.GetEntity()!!.cinematic
             thrust = spawnArgs.GetFloat("thrust")
             endthrust = spawnArgs.GetFloat("thrust_end")
             spawnArgs.GetVector("velocity", "0 0 0", velocity)
@@ -524,8 +500,7 @@ object Projectile {
             physicsObj.SetAxis(axis)
             thruster.SetPosition(physicsObj, 0, idVec3(GetPhysics().GetBounds()[0].x, 0.0f, 0.0f))
             if (!Game_local.gameLocal.isClient) {
-                if (fuse <= 0) {
-                    // run physics for 1 second
+                if (fuse <= 0) { // run physics for 1 second
                     RunPhysics()
                     PostEventMS(EV_Remove, spawnArgs.GetInt("remove_time", "1500"))
                 } else if (spawnArgs.GetBool("detonate_on_fuse")) {
@@ -594,8 +569,7 @@ object Projectile {
 
         override fun Think() {
             if ((thinkFlags and TH_THINK) != 0) {
-                if (thrust != 0.0f && Game_local.gameLocal.time < thrust_end) {
-                    // evaluate force
+                if (thrust != 0.0f && Game_local.gameLocal.time < thrust_end) { // evaluate force
                     thruster.SetForce(GetPhysics().GetAxis()[0] * thrust)
                     thruster.Evaluate(Game_local.gameLocal.time)
                 }
@@ -606,8 +580,7 @@ object Projectile {
             Present()
 
             // add the particles
-            if (smokeFly != null && smokeFlyTime != 0 && !IsHidden()) {
-                // D3XP: use original time group for smoke
+            if (smokeFly != null && smokeFlyTime != 0 && !IsHidden()) { // D3XP: use original time group for smoke
                 val ts = if (isD3XP) SetTimeState(originalTimeGroup) else null
                 val dir = idVec3(GetPhysics().GetLinearVelocity().unaryMinus())
                 dir.Normalize()
@@ -652,7 +625,7 @@ object Projectile {
             if (spawnArgs.GetBool("detonate_on_death")) {
                 val collision: trace_s
 
-//		memset( &collision, 0, sizeof( collision ) );
+                //		memset( &collision, 0, sizeof( collision ) );
                 collision = trace_s()
                 collision.endAxis.set(GetPhysics().GetAxis())
                 collision.endpos.set(GetPhysics().GetOrigin())
@@ -680,11 +653,7 @@ object Projectile {
             // predict the explosion
             if (Game_local.gameLocal.isClient) {
                 if (ClientPredictionCollide(
-                        this,
-                        spawnArgs,
-                        collision,
-                        velocity,
-                        !spawnArgs.GetBool("net_instanthit")
+                        this, spawnArgs, collision, velocity, !spawnArgs.GetBool("net_instanthit")
                     )
                 ) {
                     Explode(collision, null)
@@ -723,13 +692,13 @@ object Projectile {
             }
 
             // MP: projectiles open doors
-            if (Game_local.gameLocal.isMultiplayer && ent is idDoor && !(ent as idDoor).IsOpen() && !ent.spawnArgs.GetBool(
+            if (Game_local.gameLocal.isMultiplayer && ent is idDoor && !ent.IsOpen() && !ent.spawnArgs.GetBool(
                     "no_touch"
                 )
             ) {
                 ent.ProcessEvent(EV_Activate, this)
             }
-            if (ent is idActor || ent is idAFAttachment && (ent as idAFAttachment).GetBody() is idActor) {
+            if (ent is idActor || ent is idAFAttachment && ent.GetBody() is idActor) {
                 if (!projectileFlags.detonate_on_actor) {
                     return false
                 }
@@ -766,8 +735,7 @@ object Projectile {
                 }
 
                 // if the projectile owner is a player
-                if (owner.GetEntity() != null && owner.GetEntity() is idPlayer) {
-                    // if the projectile hit an actor
+                if (owner.GetEntity() != null && owner.GetEntity() is idPlayer) { // if the projectile hit an actor
                     if (ent is idActor) {
                         val player = owner.GetEntity() as idPlayer
                         player.AddProjectileHits(1)
@@ -788,8 +756,7 @@ object Projectile {
             }
 
             // if the projectile causes a damage effect
-            if (spawnArgs.GetBool("impact_damage_effect")) {
-                // if the hit entity has a special damage effect
+            if (spawnArgs.GetBool("impact_damage_effect")) { // if the hit entity has a special damage effect
                 if (ent.spawnArgs.GetBool("bleed")) {
                     ent.AddDamageEffect(collision, velocity, damageDefName)
                 } else {
@@ -845,27 +812,21 @@ object Projectile {
             val surfaceType =
                 (if (collision.c.material != null) collision.c.material!!.GetSurfaceType() else surfTypes_t.SURFTYPE_METAL).ordinal
             if (!(fxname != null && !fxname.isEmpty())) {
-                fxname = if (surfaceType == (surfTypes_t.SURFTYPE_NONE).ordinal
-                    || surfaceType == (surfTypes_t.SURFTYPE_METAL).ordinal
-                    || surfaceType == (surfTypes_t.SURFTYPE_STONE).ordinal
-                ) {
-                    spawnArgs.GetString("model_smokespark")
-                } else if (surfaceType == (surfTypes_t.SURFTYPE_RICOCHET).ordinal) {
-                    spawnArgs.GetString("model_ricochet")
-                } else {
-                    spawnArgs.GetString("model_smoke")
-                }
+                fxname =
+                    if (surfaceType == (surfTypes_t.SURFTYPE_NONE).ordinal || surfaceType == (surfTypes_t.SURFTYPE_METAL).ordinal || surfaceType == (surfTypes_t.SURFTYPE_STONE).ordinal) {
+                        spawnArgs.GetString("model_smokespark")
+                    } else if (surfaceType == (surfTypes_t.SURFTYPE_RICOCHET).ordinal) {
+                        spawnArgs.GetString("model_ricochet")
+                    } else {
+                        spawnArgs.GetString("model_smoke")
+                    }
             }
 
             // D3XP: if explosion is underwater, spawn a splash particle
             if (isD3XP) {
                 val testOrg = idVec3(GetPhysics().GetOrigin())
                 val testC = Game_local.gameLocal.clip.Contents(
-                    testOrg,
-                    null,
-                    idMat3.getMat3_identity(),
-                    Material.CONTENTS_WATER,
-                    this
+                    testOrg, null, idMat3.getMat3_identity(), Material.CONTENTS_WATER, this
                 )
                 if (testC and Material.CONTENTS_WATER != 0) {
                     val splashArgs = idDict()
@@ -876,8 +837,7 @@ object Projectile {
                         splashEnt.GetPhysics().SetOrigin(testOrg)
                         splashEnt.PostEventMS(EV_Activate, 0, this)
                         splashEnt.PostEventMS(EV_Remove, 1500)
-                    }
-                    // if this is a chaingun bullet, don't do the normal effect
+                    } // if this is a chaingun bullet, don't do the normal effect
                     if (idStr.Cmp(spawnArgs.GetString("def_damage"), "damage_bullet_chaingun") == 0) {
                         fxname = null
                     }
@@ -1007,8 +967,7 @@ object Projectile {
 
             // fizzle FX
             val psystem = spawnArgs.GetString("smoke_fuse")
-            if (psystem != null && !psystem.isEmpty()) {
-//FIXME:SMOKE		gameLocal.particles.SpawnParticles( GetPhysics().GetOrigin(), vec3_origin, psystem );
+            if (psystem != null && !psystem.isEmpty()) { //FIXME:SMOKE		gameLocal.particles.SpawnParticles( GetPhysics().GetOrigin(), vec3_origin, psystem );
             }
 
             // we need to work out how long the effects last and then remove them at that time
@@ -1097,8 +1056,7 @@ object Projectile {
                         if (newState == projectileState_t.FIZZLED) {
                             Fizzle()
                         } else {
-                            var collision: trace_s
-                            //					memset( &collision, 0, sizeof( collision ) );
+                            var collision: trace_s //					memset( &collision, 0, sizeof( collision ) );
                             collision = trace_s()
                             collision.endAxis.set(GetPhysics().GetAxis())
                             collision.endpos.set(GetPhysics().GetOrigin())
@@ -1126,19 +1084,13 @@ object Projectile {
                 origin.y = msg.ReadFloat()
                 origin.z = msg.ReadFloat()
                 velocity.x = msg.ReadDeltaFloat(
-                    0.0f,
-                    Physics_RigidBody.RB_VELOCITY_EXPONENT_BITS,
-                    Physics_RigidBody.RB_VELOCITY_MANTISSA_BITS
+                    0.0f, Physics_RigidBody.RB_VELOCITY_EXPONENT_BITS, Physics_RigidBody.RB_VELOCITY_MANTISSA_BITS
                 )
                 velocity.y = msg.ReadDeltaFloat(
-                    0.0f,
-                    Physics_RigidBody.RB_VELOCITY_EXPONENT_BITS,
-                    Physics_RigidBody.RB_VELOCITY_MANTISSA_BITS
+                    0.0f, Physics_RigidBody.RB_VELOCITY_EXPONENT_BITS, Physics_RigidBody.RB_VELOCITY_MANTISSA_BITS
                 )
                 velocity.z = msg.ReadDeltaFloat(
-                    0.0f,
-                    Physics_RigidBody.RB_VELOCITY_EXPONENT_BITS,
-                    Physics_RigidBody.RB_VELOCITY_MANTISSA_BITS
+                    0.0f, Physics_RigidBody.RB_VELOCITY_EXPONENT_BITS, Physics_RigidBody.RB_VELOCITY_MANTISSA_BITS
                 )
                 physicsObj.SetOrigin(origin)
                 physicsObj.SetLinearVelocity(velocity)
@@ -1162,7 +1114,7 @@ object Projectile {
             return when (event) {
                 EVENT_DAMAGE_EFFECT -> {
 
-//			memset( &collision, 0, sizeof( collision ) );
+                    //			memset( &collision, 0, sizeof( collision ) );
                     collision = trace_s()
                     collision.c.point[0] = msg.ReadFloat()
                     collision.c.point[1] = msg.ReadFloat()
@@ -1170,8 +1122,7 @@ object Projectile {
                     collision.c.normal.set(msg.ReadDir(24))
                     val index = Game_local.gameLocal.ClientRemapDecl(declType_t.DECL_MATERIAL, msg.ReadLong())
                     collision.c.material = if (index != -1) DeclManager.declManager.DeclByIndex(
-                        declType_t.DECL_MATERIAL,
-                        index
+                        declType_t.DECL_MATERIAL, index
                     ) as Material.idMaterial else null
                     velocity[0] = msg.ReadFloat(5, 10)
                     velocity[1] = msg.ReadFloat(5, 10)
@@ -1183,8 +1134,7 @@ object Projectile {
                 else -> {
                     super.ClientReceiveEvent(event, time, msg)
                 }
-            }
-            //            return false;
+            } //            return false;
         }
 
         private fun AddDefaultDamageEffect(collision: trace_s, velocity: idVec3) {
@@ -1206,9 +1156,7 @@ object Projectile {
                 msg.WriteDir(collision.c.normal, 24)
                 msg.WriteLong(
                     if (collision.c.material != null) Game_local.gameLocal.ServerRemapDecl(
-                        -1,
-                        declType_t.DECL_MATERIAL,
-                        collision.c.material!!.Index()
+                        -1, declType_t.DECL_MATERIAL, collision.c.material!!.Index()
                     ) else -1
                 )
                 msg.WriteFloat(velocity[0], 5, 10)
@@ -1221,7 +1169,7 @@ object Projectile {
         private fun Event_Explode() {
             val collision: trace_s
 
-//	memset( &collision, 0, sizeof( collision ) );
+            //	memset( &collision, 0, sizeof( collision ) );
             collision = trace_s()
             collision.endAxis.set(GetPhysics().GetAxis())
             collision.endpos.set(GetPhysics().GetOrigin())
@@ -1239,13 +1187,7 @@ object Projectile {
             val splash_damage = spawnArgs.GetString("def_splash_damage")
             if (!splash_damage.isEmpty()) { //[0] != '\0' ) {
                 Game_local.gameLocal.RadiusDamage(
-                    physicsObj.GetOrigin(),
-                    this,
-                    owner.GetEntity(),
-                    ignore.value,
-                    this,
-                    splash_damage,
-                    damagePower
+                    physicsObj.GetOrigin(), this, owner.GetEntity(), ignore.value, this, splash_damage, damagePower
                 )
             }
         }
@@ -1296,17 +1238,13 @@ object Projectile {
         }
 
         private fun Event_CreateProjectile(
-            owner: idEventArg<idEntity>,
-            start: idEventArg<idVec3>,
-            dir: idEventArg<idVec3>
+            owner: idEventArg<idEntity>, start: idEventArg<idVec3>, dir: idEventArg<idVec3>
         ) {
             Create(owner.value, start.value, dir.value)
         }
 
         private fun Event_LaunchProjectile(
-            start: idEventArg<idVec3>,
-            dir: idEventArg<idVec3>,
-            pushVelocity: idEventArg<idVec3>
+            start: idEventArg<idVec3>, dir: idEventArg<idVec3>, pushVelocity: idEventArg<idVec3>
         ) {
             Launch(start.value, dir.value, pushVelocity.value)
         }
@@ -1330,8 +1268,7 @@ object Projectile {
             CREATED,  //= 1,
             LAUNCHED,  //= 2,
             FIZZLED,  //= 3,
-            EXPLODED
-            //= 4
+            EXPLODED //= 4
         }
 
         class projectileFlags_s : idSerializable {
@@ -1415,8 +1352,7 @@ object Projectile {
             }
 
             init {
-                eventCallbacks.putAll(idProjectile.getEventCallBacks())
-                // D3XP
+                eventCallbacks.putAll(idProjectile.getEventCallBacks()) // D3XP
                 eventCallbacks[EV_SetEnemy] =
                     eventCallback_t1<idGuidedProjectile> { obj: idGuidedProjectile, ent: idEventArg<*>? ->
                         obj.Event_SetEnemy(ent as idEventArg<idEntity?>)
@@ -1562,16 +1498,11 @@ object Projectile {
                     val start2 = idVec3(player.GetEyePosition())
                     val end2 = idVec3(start2.plus(player.viewAxis[0].times(1000.0f)))
                     Game_local.gameLocal.clip.TracePoint(
-                        tr,
-                        start2,
-                        end2,
-                        Game_local.MASK_SHOT_RENDERMODEL or Material.CONTENTS_BODY,
-                        owner.GetEntity()
+                        tr, start2, end2, Game_local.MASK_SHOT_RENDERMODEL or Material.CONTENTS_BODY, owner.GetEntity()
                     )
                     if (tr.fraction < 1.0f) {
                         enemy.oSet(Game_local.gameLocal.GetTraceEntity(tr))
-                    }
-                    // ignore actors on the player's team
+                    } // ignore actors on the player's team
                     if (enemy.GetEntity() == null || enemy.GetEntity() !is idActor || (enemy.GetEntity() as idActor).team == player.team) {
                         enemy.oSet(player.EnemyWithMostHealth())
                     }
@@ -1709,8 +1640,7 @@ object Projectile {
             val seekPos = idVec3()
             val ownerEnt: idEntity?
             if (state == projectileState_t.LAUNCHED) {
-                if (killPhase) {
-                    // orbit the mob, cascading down
+                if (killPhase) { // orbit the mob, cascading down
                     if (Game_local.gameLocal.time < orbitTime + 1500) {
                         if (!Game_local.gameLocal.smokeParticles!!.EmitSmoke(
                                 smokeKill,
@@ -1740,7 +1670,7 @@ object Projectile {
                         PostEventSec(EV_Remove, 2.0f)
                         ownerEnt = owner.GetEntity()
                         if (ownerEnt != null && ownerEnt is idPlayer) {
-                            (ownerEnt as idPlayer).SetSoulCubeProjectile(null)
+                            ownerEnt.SetSoulCubeProjectile(null)
                         }
                         state = projectileState_t.FIZZLED
                     } else if (!killPhase) {
@@ -1964,13 +1894,12 @@ object Projectile {
                     if (isD3XP) {
                         val beamEnt = beamTargets[i].target.GetEntity()
                         if (beamEnt is idAnimatedEntity && idStr.Cmp(
-                                beamEnt.GetEntityDefName(),
-                                "monster_boss_d3xp_maledict"
+                                beamEnt.GetEntityDefName(), "monster_boss_d3xp_maledict"
                             ) == 0
                         ) {
                             val ts = SetTimeState(beamEnt.timeGroup)
                             val temp = idMat3()
-                            val bodyJoint = beamEnt.GetAnimator()!!.GetJointHandle("Chest1")
+                            val bodyJoint = beamEnt.GetAnimator().GetJointHandle("Chest1")
                             val realPoint = idVec3()
                             beamEnt.GetJointWorldTransform(bodyJoint, Game_local.gameLocal.time, realPoint, temp)
                             org = realPoint
@@ -2026,8 +1955,7 @@ object Projectile {
                         nextDamageTime = Game_local.gameLocal.time + BFG_DAMAGE_FREQUENCY
                     }
                     Game_local.gameRenderWorld!!.UpdateEntityDef(
-                        beamTargets[i].modelDefHandle,
-                        beamTargets[i].renderEntity
+                        beamTargets[i].modelDefHandle, beamTargets[i].renderEntity
                     )
                 }
                 if (secondModelDefHandle >= 0) {
@@ -2074,7 +2002,7 @@ object Projectile {
             val beamWidth = spawnArgs.GetFloat("beam_WidthFly")
             val skin = spawnArgs.GetString("skin_beam")
 
-//	memset( &secondModel, 0, sizeof( secondModel ) );
+            //	memset( &secondModel, 0, sizeof( secondModel ) );
             secondModel = renderEntity_s()
             secondModelDefHandle = -1
             val temp = spawnArgs.GetString("model_two")
@@ -2094,15 +2022,13 @@ object Projectile {
                 secondModel.axis.set(GetPhysics().GetAxis())
                 secondModelDefHandle = Game_local.gameRenderWorld!!.AddEntityDef(secondModel)
             }
-            idVec3(15.0f, 15.0f, 15.0f)
-            //physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_LINEAR|EXTRAPOLATION_NOSTOP), gameLocal.time, 0, physicsObj.GetAxis().ToAngles(), delta, ang_zero );
+            idVec3(
+                15.0f, 15.0f, 15.0f
+            ) //physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_LINEAR|EXTRAPOLATION_NOSTOP), gameLocal.time, 0, physicsObj.GetAxis().ToAngles(), delta, ang_zero );
 
             // get all entities touching the bounds
             numListedEntities = Game_local.gameLocal.clip.EntitiesTouchingBounds(
-                bounds,
-                Material.CONTENTS_BODY,
-                entityList,
-                Game_local.MAX_GENTITIES
+                bounds, Material.CONTENTS_BODY, entityList, Game_local.MAX_GENTITIES
             )
             for (e in 0 until numListedEntities) {
                 ent = entityList[e]
@@ -2145,7 +2071,7 @@ object Projectile {
                     val ts = SetTimeState(maledict.timeGroup)
                     val realPoint = idVec3()
                     val temp2 = idMat3()
-                    val bodyJoint = maledict.GetAnimator()!!.GetJointHandle("Chest1")
+                    val bodyJoint = maledict.GetAnimator().GetJointHandle("Chest1")
                     maledict.GetJointWorldTransform(bodyJoint, Game_local.gameLocal.time, realPoint, temp2)
                     val dist = (realPoint.minus(GetPhysics().GetOrigin())).Length()
                     if (dist < radius._val) {
@@ -2219,8 +2145,7 @@ object Projectile {
                 }
 
                 // if the projectile owner is a player
-                if (player != null) {
-                    // if the projectile hit an actor
+                if (player != null) { // if the projectile hit an actor
                     if (beamTargets[i].target.GetEntity() is idActor) {
                         player.SetLastHitTime(Game_local.gameLocal.time)
                         player.AddProjectileHits(1)
@@ -2313,10 +2238,8 @@ object Projectile {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[EV_Explode] =
-                    eventCallback_t0<idDebris> { obj: idDebris -> obj.Event_Explode() }
-                eventCallbacks[EV_Fizzle] =
-                    eventCallback_t0<idDebris> { obj: idDebris -> obj.Event_Fizzle() }
+                eventCallbacks[EV_Explode] = eventCallback_t0<idDebris> { obj: idDebris -> obj.Event_Explode() }
+                eventCallbacks[EV_Fizzle] = eventCallback_t0<idDebris> { obj: idDebris -> obj.Event_Fizzle() }
             }
         }
 
@@ -2362,8 +2285,7 @@ object Projectile {
             this.owner.oSet(owner)
             smokeFly = null
             smokeFlyTime = 0
-            sndBounce = null
-            // D3XP: debris is not grabbable
+            sndBounce = null // D3XP: debris is not grabbable
             if (isD3XP) {
                 noGrab = true
             }
@@ -2383,8 +2305,7 @@ object Projectile {
             val gravVec = idVec3()
             val randomVelocity: Boolean
             val axis: idMat3 = idMat3()
-            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                -MS2SEC(Game_local.gameLocal.time.toFloat())
+            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(Game_local.gameLocal.time.toFloat())
             spawnArgs.GetVector("velocity", "0 0 0", velocity)
             spawnArgs.GetAngles("angular_velocity", "0 0 0", angular_velocity)
             linear_friction = spawnArgs.GetFloat("linear_friction")
@@ -2421,8 +2342,7 @@ object Projectile {
             }
 
             // load the trace model
-            if (!collisionModelManager.TrmFromModel(clipModelName, trm)) {
-                // default to a box
+            if (!collisionModelManager.TrmFromModel(clipModelName, trm)) { // default to a box
                 physicsObj.SetClipBox(renderEntity!!.bounds, 1.0f)
             } else {
                 physicsObj.SetClipModel(idClipModel(trm), 1.0f)
@@ -2438,16 +2358,14 @@ object Projectile {
             physicsObj.SetContents(0)
             physicsObj.SetClipMask(Game_local.MASK_SOLID or Material.CONTENTS_MOVEABLECLIP)
             physicsObj.SetLinearVelocity(
-                axis[0].times(velocity[0])
-                    .plus(axis[1].times(velocity[1]).plus(axis[2].times(velocity[2])))
+                axis[0].times(velocity[0]).plus(axis[1].times(velocity[1]).plus(axis[2].times(velocity[2])))
             )
             physicsObj.SetAngularVelocity(angular_velocity.ToAngularVelocity().times(axis))
             physicsObj.SetOrigin(GetPhysics().GetOrigin())
             physicsObj.SetAxis(axis)
             SetPhysics(physicsObj)
             if (!Game_local.gameLocal.isClient) {
-                if (fuse <= 0) {
-                    // run physics for 1 second
+                if (fuse <= 0) { // run physics for 1 second
                     RunPhysics()
                     PostEventMS(EV_Remove, 0)
                 } else if (spawnArgs.GetBool("detonate_on_fuse")) {
@@ -2515,8 +2433,7 @@ object Projectile {
         }
 
         fun Explode() {
-            if (IsHidden()) {
-                // already exploded
+            if (IsHidden()) { // already exploded
                 return
             }
             StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
@@ -2547,8 +2464,7 @@ object Projectile {
         }
 
         fun Fizzle() {
-            if (IsHidden()) {
-                // already exploded
+            if (IsHidden()) { // already exploded
                 return
             }
             StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)

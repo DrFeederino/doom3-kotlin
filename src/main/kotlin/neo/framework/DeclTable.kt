@@ -98,8 +98,7 @@ class DeclTable {
                         val errorFlag = BooleanArray(1)
 
                         v = src.ParseFloat(errorFlag)
-                        if (errorFlag[0]) {
-                            // we got something non-numeric
+                        if (errorFlag[0]) { // we got something non-numeric
                             MakeDefault()
                             return false
                         }
@@ -181,8 +180,7 @@ class DeclTable {
                 iIndex = iIndex % domain
             }
 
-            if (!snap) {
-                // we duplicated the 0 index at the end at creation time, so we
+            if (!snap) { // we duplicated the 0 index at the end at creation time, so we
                 // don't need to worry about wrapping the filter
                 return values[iIndex] * (1.0f - iFrac) + values[iIndex + 1] * iFrac
             }

@@ -183,26 +183,22 @@ class idMat5 {
         mat[0].y += a.mat[0].y
         mat[0].z += a.mat[0].z
         mat[0].s += a.mat[0].s
-        mat[0].t += a.mat[0].t
-        //
+        mat[0].t += a.mat[0].t //
         mat[1].x += a.mat[1].x
         mat[1].y += a.mat[1].y
         mat[1].z += a.mat[1].z
         mat[1].s += a.mat[1].s
-        mat[1].t += a.mat[1].t
-        //
+        mat[1].t += a.mat[1].t //
         mat[2].x += a.mat[2].x
         mat[2].y += a.mat[2].y
         mat[2].z += a.mat[2].z
         mat[2].s += a.mat[2].s
-        mat[2].t += a.mat[2].t
-        //
+        mat[2].t += a.mat[2].t //
         mat[3].x += a.mat[3].x
         mat[3].y += a.mat[3].y
         mat[3].z += a.mat[3].z
         mat[3].s += a.mat[3].s
-        mat[3].t += a.mat[3].t
-        //
+        mat[3].t += a.mat[3].t //
         mat[4].x += a.mat[4].x
         mat[4].y += a.mat[4].y
         mat[4].z += a.mat[4].z
@@ -216,26 +212,22 @@ class idMat5 {
         mat[0].y -= a.mat[0].y
         mat[0].z -= a.mat[0].z
         mat[0].s -= a.mat[0].s
-        mat[0].t -= a.mat[0].t
-        //
+        mat[0].t -= a.mat[0].t //
         mat[1].x -= a.mat[1].x
         mat[1].y -= a.mat[1].y
         mat[1].z -= a.mat[1].z
         mat[1].s -= a.mat[1].s
-        mat[1].t -= a.mat[1].t
-        //
+        mat[1].t -= a.mat[1].t //
         mat[2].x -= a.mat[2].x
         mat[2].y -= a.mat[2].y
         mat[2].z -= a.mat[2].z
         mat[2].s -= a.mat[2].s
-        mat[2].t -= a.mat[2].t
-        //
+        mat[2].t -= a.mat[2].t //
         mat[3].x -= a.mat[3].x
         mat[3].y -= a.mat[3].y
         mat[3].z -= a.mat[3].z
         mat[3].s -= a.mat[3].s
-        mat[3].t -= a.mat[3].t
-        //
+        mat[3].t -= a.mat[3].t //
         mat[4].x -= a.mat[4].x
         mat[4].y -= a.mat[4].y
         mat[4].z -= a.mat[4].z

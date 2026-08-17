@@ -84,8 +84,7 @@ class idLCP_Square : idLCP() {
     val clamped: idMatX = idMatX() // LU factored sub matrix for clamped variables
     val delta_f: idVecX = idVecX()
     val delta_a: idVecX = idVecX() // delta force and delta acceleration
-    val diagonal: idVecX =
-        idVecX() // reciprocal of diagonal of U of the LU factored sub matrix for clamped variables
+    val diagonal: idVecX = idVecX() // reciprocal of diagonal of U of the LU factored sub matrix for clamped variables
     val f: idVecX = idVecX()
     val a: idVecX = idVecX() // force and acceleration
     val lo: idVecX = idVecX()
@@ -107,12 +106,7 @@ class idLCP_Square : idLCP() {
             : IntArray = IntArray(0)
 
     override fun Solve(
-        o_m: idMatX,
-        o_x: idVecX,
-        o_b: idVecX,
-        o_lo: idVecX,
-        o_hi: idVecX,
-        o_boxIndex: IntArray?
+        o_m: idMatX, o_x: idVecX, o_b: idVecX, o_lo: idVecX, o_hi: idVecX, o_boxIndex: IntArray?
     ): Boolean {
         var i: Int
         var j: Int
@@ -159,7 +153,7 @@ class idLCP_Square : idLCP() {
 
         // pointers to the rows of m
         rowPtrs =
-            Array(m.GetNumRows()) { FloatBuffer.allocate(0) }//rowPtrs = (float **) _alloca16( m.GetNumRows() * sizeof( float * ) );
+            Array(m.GetNumRows()) { FloatBuffer.allocate(0) } //rowPtrs = (float **) _alloca16( m.GetNumRows() * sizeof( float * ) );
         i = 0
         while (i < m.GetNumRows()) {
             rowPtrs[i] = m.GetRowPtr(i)
@@ -204,9 +198,7 @@ class idLCP_Square : idLCP() {
 
         // sub matrix for factorization
         clamped.SetData(
-            m.GetNumRows(),
-            m.GetNumColumns(),
-            idMatX.MATX_ALLOCA(m.GetNumRows() * m.GetNumColumns())
+            m.GetNumRows(), m.GetNumColumns(), idMatX.MATX_ALLOCA(m.GetNumRows() * m.GetNumColumns())
         )
         diagonal.SetData(m.GetNumRows(), idVecX.VECX_ALLOCA(m.GetNumRows()))
 
@@ -308,8 +300,7 @@ class idLCP_Square : idLCP() {
 
                 // maximum step we can take
                 GetMaxStep(i, dir, maxStep, limit, limitSide)
-                if (maxStep._val <= 0.0f) {
-                    // ignore the current variable completely
+                if (maxStep._val <= 0.0f) { // ignore the current variable completely
                     hi.p[i] = 0.0f
                     lo.p[i] = hi.p[i]
                     f.p[i] = 0.0f
@@ -722,8 +713,7 @@ class idLCP_Square : idLCP() {
 
         // only the not clamped variables, including the current variable, can have a change in acceleration
         j = numClamped
-        while (j <= d) {
-            // only the clamped variables and the current variable have a force delta unequal zero
+        while (j <= d) { // only the clamped variables and the current variable have a force delta unequal zero
             SIMDProcessor!!.Dot(dot, rowPtrs[j], delta_f.ToFloatPtr(), numClamped)
             delta_a.p[j] = dot._val + rowPtrs[j].get(d) * delta_f.p[d]
             j++
@@ -737,8 +727,9 @@ class idLCP_Square : idLCP() {
      modifies this->f and uses this->delta_f
      ============
      */
-    private fun ChangeForce(d: Int, step: Float) {
-        // only the clamped variables and current variable have a force delta unequal zero
+    private fun ChangeForce(
+        d: Int, step: Float
+    ) { // only the clamped variables and current variable have a force delta unequal zero
         SIMDProcessor!!.MulAdd(f.ToFloatPtr(), step, delta_f.ToFloatPtr(), numClamped)
         f.p[d] += step * delta_f.p[d]
     }
@@ -795,8 +786,7 @@ class idLCP_Square : idLCP() {
         // test the clamped bounded variables
         i = numUnbounded
         while (i < numClamped) {
-            if (delta_f.p[i] < -LCP_DELTA_FORCE_EPSILON) {
-                // if there is a low boundary
+            if (delta_f.p[i] < -LCP_DELTA_FORCE_EPSILON) { // if there is a low boundary
                 if (lo.p[i] != -idMath.INFINITY) {
                     s = (lo.p[i] - f.p[i]) / delta_f.p[i]
                     if (s < maxStep._val) {
@@ -805,8 +795,7 @@ class idLCP_Square : idLCP() {
                         limitSide._val = (-1)
                     }
                 }
-            } else if (delta_f.p[i] > LCP_DELTA_FORCE_EPSILON) {
-                // if there is a high boundary
+            } else if (delta_f.p[i] > LCP_DELTA_FORCE_EPSILON) { // if there is a high boundary
                 if (hi.p[i] != idMath.INFINITY) {
                     s = (hi.p[i] - f.p[i]) / delta_f.p[i]
                     if (s < maxStep._val) {
@@ -835,8 +824,7 @@ class idLCP_Square : idLCP() {
             } else {
                 i++
                 continue
-            }
-            // ignore variables for which the force is not allowed to take any substantial value
+            } // ignore variables for which the force is not allowed to take any substantial value
             if (lo.p[i] >= -LCP_BOUND_EPSILON && hi.p[i] <= LCP_BOUND_EPSILON) {
                 i++
                 continue
@@ -897,12 +885,7 @@ class idLCP_Symmetric : idLCP() {
             : IntArray = IntArray(0)
 
     override fun Solve(
-        o_m: idMatX,
-        o_x: idVecX,
-        o_b: idVecX,
-        o_lo: idVecX,
-        o_hi: idVecX,
-        o_boxIndex: IntArray?
+        o_m: idMatX, o_x: idVecX, o_b: idVecX, o_lo: idVecX, o_hi: idVecX, o_boxIndex: IntArray?
     ): Boolean {
         var i: Int
         var j: Int
@@ -994,9 +977,7 @@ class idLCP_Symmetric : idLCP() {
 
         // sub matrix for factorization
         clamped.SetData(
-            m.GetNumRows(),
-            m.GetNumColumns(),
-            idMatX.MATX_ALLOCA(m.GetNumRows() * m.GetNumColumns())
+            m.GetNumRows(), m.GetNumColumns(), idMatX.MATX_ALLOCA(m.GetNumRows() * m.GetNumColumns())
         )
         diagonal.SetData(m.GetNumRows(), idVecX.VECX_ALLOCA(m.GetNumRows()))
         solveCache1.SetData(m.GetNumRows(), idVecX.VECX_ALLOCA(m.GetNumRows()))
@@ -1082,8 +1063,7 @@ class idLCP_Symmetric : idLCP() {
 
             // drive the current variable into a valid region
             n = 0
-            while (n < maxIterations) {
-                // direction to move
+            while (n < maxIterations) { // direction to move
                 dir = if (a.p[i] <= 0.0f) {
                     1.0f
                 } else {
@@ -1098,8 +1078,7 @@ class idLCP_Symmetric : idLCP() {
 
                 // maximum step we can take
                 GetMaxStep(i, dir, maxStep, limit, limitSide)
-                if (maxStep._val <= 0.0f) {
-                    // ignore the current variable completely
+                if (maxStep._val <= 0.0f) { // ignore the current variable completely
                     hi.p[i] = 0.0f
                     lo.p[i] = hi.p[i]
                     f.p[i] = 0.0f
@@ -1214,30 +1193,19 @@ class idLCP_Symmetric : idLCP() {
         return SIMDProcessor!!.MatX_LDLTFactor(clamped, diagonal, numClamped)
     }
 
-    private fun SolveClamped(x: idVecX, b: FloatArray) {
-        // solve L
+    private fun SolveClamped(x: idVecX, b: FloatArray) { // solve L
         SIMDProcessor!!.MatX_LowerTriangularSolve(
-            clamped,
-            solveCache1.ToFloatPtr(),
-            b,
-            numClamped,
-            clampedChangeStart
+            clamped, solveCache1.ToFloatPtr(), b, numClamped, clampedChangeStart
         )
 
         // solve D
         SIMDProcessor!!.Mul(
-            solveCache2.ToFloatPtr(),
-            solveCache1.ToFloatPtr(),
-            diagonal.ToFloatPtr(),
-            numClamped
+            solveCache2.ToFloatPtr(), solveCache1.ToFloatPtr(), diagonal.ToFloatPtr(), numClamped
         )
 
         // solve Lt
         SIMDProcessor!!.MatX_LowerTriangularSolveTranspose(
-            clamped,
-            x.ToFloatPtr(),
-            solveCache2.ToFloatPtr(),
-            numClamped
+            clamped, x.ToFloatPtr(), solveCache2.ToFloatPtr(), numClamped
         )
         clampedChangeStart = numClamped
     }
@@ -1262,18 +1230,12 @@ class idLCP_Symmetric : idLCP() {
 
         // solve D
         SIMDProcessor!!.Mul(
-            solveCache2.ToFloatPtr(),
-            solveCache1.ToFloatPtr(),
-            diagonal.ToFloatPtr(),
-            numClamped
+            solveCache2.ToFloatPtr(), solveCache1.ToFloatPtr(), diagonal.ToFloatPtr(), numClamped
         )
 
         // solve Lt
         SIMDProcessor!!.MatX_LowerTriangularSolveTranspose(
-            clamped,
-            x.ToFloatPtr(),
-            solveCache2.ToFloatPtr(),
-            numClamped
+            clamped, x.ToFloatPtr(), solveCache2.ToFloatPtr(), numClamped
         )
         clampedChangeStart = numClamped
     }
@@ -1313,19 +1275,17 @@ class idLCP_Symmetric : idLCP() {
 
             // the lower triangular solve was cached in SolveClamped called by CalcForceDelta
             clamped.arraycopy(
-                solveCache2.ToFloatPtr(),
-                numClamped,
-                numClamped
+                solveCache2.ToFloatPtr(), numClamped, numClamped
             ) //memcpy(clamped[numClamped], solveCache2.ToFloatPtr(), numClamped * sizeof(float));
             // calculate row dot product
             SIMDProcessor!!.Dot(dot, solveCache2.ToFloatPtr(), solveCache1.ToFloatPtr(), numClamped)
         } else {
             val v = FloatArray(numClamped) //(float *) _alloca16(numClamped * sizeof(float));
             val clampedArray = clam(clamped, numClamped)
-            SIMDProcessor!!.MatX_LowerTriangularSolve(clamped, v, rowPtrs[numClamped], numClamped)
-            // add bottom row to L
-            SIMDProcessor!!.Mul(clampedArray, v, diagonal.ToFloatPtr(), numClamped)
-            // calculate row dot product
+            SIMDProcessor!!.MatX_LowerTriangularSolve(
+                clamped, v, rowPtrs[numClamped], numClamped
+            ) // add bottom row to L
+            SIMDProcessor!!.Mul(clampedArray, v, diagonal.ToFloatPtr(), numClamped) // calculate row dot product
             SIMDProcessor!!.Dot(dot, clampedArray, v, numClamped)
             unClam(clamped, clampedArray)
         }
@@ -1411,8 +1371,7 @@ class idLCP_Symmetric : idLCP() {
             SIMDProcessor!!.Mul(clampedArray, v, diagonal.ToFloatPtr(), r)
 
             // if the last row/column of the matrix is updated
-            if (r == numClamped - 1) {
-                // only calculate new diagonal
+            if (r == numClamped - 1) { // only calculate new diagonal
                 SIMDProcessor!!.Dot(dot, clampedArray, v, r)
                 unClam(clamped, clampedArray)
                 diag = rowPtrs[r].get(r).toDouble() - dot._val
@@ -1582,8 +1541,9 @@ class idLCP_Symmetric : idLCP() {
      modifies this->f and uses this->delta_f
      ============
      */
-    private fun ChangeForce(d: Int, step: Float) {
-        // only the clamped variables and current variable have a force delta unequal zero
+    private fun ChangeForce(
+        d: Int, step: Float
+    ) { // only the clamped variables and current variable have a force delta unequal zero
         SIMDProcessor!!.MulAdd(f.ToFloatPtr(), step, delta_f.ToFloatPtr(), numClamped)
         f.p[d] += step * delta_f.p[d]
     }
@@ -1640,8 +1600,7 @@ class idLCP_Symmetric : idLCP() {
         // test the clamped bounded variables
         i = numUnbounded
         while (i < numClamped) {
-            if (delta_f.p[i] < -LCP_DELTA_FORCE_EPSILON) {
-                // if there is a low boundary
+            if (delta_f.p[i] < -LCP_DELTA_FORCE_EPSILON) { // if there is a low boundary
                 if (lo.p[i] != -idMath.INFINITY) {
                     s = (lo.p[i] - f.p[i]) / delta_f.p[i]
                     if (s < maxStep._val) {
@@ -1650,8 +1609,7 @@ class idLCP_Symmetric : idLCP() {
                         limitSide._val = (-1)
                     }
                 }
-            } else if (delta_f.p[i] > LCP_DELTA_FORCE_EPSILON) {
-                // if there is a high boundary
+            } else if (delta_f.p[i] > LCP_DELTA_FORCE_EPSILON) { // if there is a high boundary
                 if (hi.p[i] != idMath.INFINITY) {
                     s = (hi.p[i] - f.p[i]) / delta_f.p[i]
                     if (s < maxStep._val) {
@@ -1680,8 +1638,7 @@ class idLCP_Symmetric : idLCP() {
             } else {
                 i++
                 continue
-            }
-            // ignore variables for which the force is not allowed to take any substantial value
+            } // ignore variables for which the force is not allowed to take any substantial value
             if (lo.p[i] >= -LCP_BOUND_EPSILON && hi.p[i] <= LCP_BOUND_EPSILON) {
                 i++
                 continue

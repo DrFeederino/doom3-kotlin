@@ -46,15 +46,15 @@ object Physics_Parametric {
         savefile.WriteInt(state.linearExtrapolation.GetExtrapolationType())
         savefile.WriteFloat(state.linearExtrapolation.GetStartTime())
         savefile.WriteFloat(state.linearExtrapolation.GetDuration())
-        savefile.WriteVec3(state.linearExtrapolation.GetStartValue()!!)
+        savefile.WriteVec3(state.linearExtrapolation.GetStartValue())
         savefile.WriteVec3(state.linearExtrapolation.GetBaseSpeed())
-        savefile.WriteVec3(state.linearExtrapolation.GetSpeed()!!)
+        savefile.WriteVec3(state.linearExtrapolation.GetSpeed())
         savefile.WriteInt(state.angularExtrapolation.GetExtrapolationType())
         savefile.WriteFloat(state.angularExtrapolation.GetStartTime())
         savefile.WriteFloat(state.angularExtrapolation.GetDuration())
-        savefile.WriteAngles(state.angularExtrapolation.GetStartValue()!!)
-        savefile.WriteAngles(state.angularExtrapolation.GetBaseSpeed()!!)
-        savefile.WriteAngles(state.angularExtrapolation.GetSpeed()!!)
+        savefile.WriteAngles(state.angularExtrapolation.GetStartValue())
+        savefile.WriteAngles(state.angularExtrapolation.GetBaseSpeed())
+        savefile.WriteAngles(state.angularExtrapolation.GetSpeed())
         savefile.WriteFloat(state.linearInterpolation.GetStartTime())
         savefile.WriteFloat(state.linearInterpolation.GetAcceleration())
         savefile.WriteFloat(state.linearInterpolation.GetDeceleration())
@@ -121,12 +121,7 @@ object Physics_Parametric {
         savefile.ReadVec3(linearBaseSpeed)
         savefile.ReadVec3(linearSpeed)
         state.linearExtrapolation.Init(
-            startTime._val,
-            duration._val,
-            linearStartValue,
-            linearBaseSpeed,
-            linearSpeed,
-            etype._val
+            startTime._val, duration._val, linearStartValue, linearBaseSpeed, linearSpeed, etype._val
         )
         savefile.ReadInt(etype)
         savefile.ReadFloat(startTime)
@@ -135,12 +130,7 @@ object Physics_Parametric {
         savefile.ReadAngles(angularBaseSpeed)
         savefile.ReadAngles(angularSpeed)
         state.angularExtrapolation.Init(
-            startTime._val,
-            duration._val,
-            angularStartValue,
-            angularBaseSpeed,
-            angularSpeed,
-            etype._val
+            startTime._val, duration._val, angularStartValue, angularBaseSpeed, angularSpeed, etype._val
         )
         savefile.ReadFloat(startTime)
         savefile.ReadFloat(accelTime)
@@ -149,12 +139,7 @@ object Physics_Parametric {
         savefile.ReadVec3(startPos)
         savefile.ReadVec3(endPos)
         state.linearInterpolation.Init(
-            startTime._val,
-            accelTime._val,
-            decelTime._val,
-            duration._val,
-            startPos,
-            endPos
+            startTime._val, accelTime._val, decelTime._val, duration._val, startPos, endPos
         )
         savefile.ReadFloat(startTime)
         savefile.ReadFloat(accelTime)
@@ -163,12 +148,7 @@ object Physics_Parametric {
         savefile.ReadAngles(startAng)
         savefile.ReadAngles(endAng)
         state.angularInterpolation.Init(
-            startTime._val,
-            accelTime._val,
-            decelTime._val,
-            duration._val,
-            startAng,
-            endAng
+            startTime._val, accelTime._val, decelTime._val, duration._val, startAng, endAng
         )
 
         // spline is handled by owner
@@ -179,12 +159,7 @@ object Physics_Parametric {
         savefile.ReadFloat(startValue)
         savefile.ReadFloat(endValue)
         state.splineInterpolate.Init(
-            startTime._val,
-            accelTime._val,
-            decelTime._val,
-            duration._val,
-            startValue._val,
-            endValue._val
+            startTime._val, accelTime._val, decelTime._val, duration._val, startValue._val, endValue._val
         )
     }
 
@@ -238,8 +213,8 @@ object Physics_Parametric {
             angles.set(other.angles)
             time = other.time
             atRest = other.atRest
-            useSplineAngles = other.useSplineAngles
-            // NOTE: Extrapolation/interpolation/spline objects are reference-copied.
+            useSplineAngles =
+                other.useSplineAngles // NOTE: Extrapolation/interpolation/spline objects are reference-copied.
             // In practice, these define the parametric motion and are not mutated
             // between SaveState and RestoreState calls (only during setup).
             linearExtrapolation = other.linearExtrapolation
@@ -274,14 +249,12 @@ object Physics_Parametric {
          ================
          idPhysics_Parametric::~idPhysics_Parametric
          ================
-         */
-        // ~idPhysics_Parametric();
+         */ // ~idPhysics_Parametric();
         override fun _deconstructor() {
             if (clipModel != null) {
                 idClipModel.delete(clipModel!!)
             }
-            if (current.spline != null) {
-//                delete current.spline;
+            if (current.spline != null) { //                delete current.spline;
                 current.spline = null
             }
             super._deconstructor()
@@ -415,21 +388,11 @@ object Physics_Parametric {
          ================
          */
         fun SetLinearInterpolation(
-            time: Int,
-            accelTime: Int,
-            decelTime: Int,
-            duration: Int,
-            startPos: idVec3,
-            endPos: idVec3
+            time: Int, accelTime: Int, decelTime: Int, duration: Int, startPos: idVec3, endPos: idVec3
         ) {
             current.time = Game_local.gameLocal.time
             current.linearInterpolation.Init(
-                time.toFloat(),
-                accelTime.toFloat(),
-                decelTime.toFloat(),
-                duration.toFloat(),
-                startPos,
-                endPos
+                time.toFloat(), accelTime.toFloat(), decelTime.toFloat(), duration.toFloat(), startPos, endPos
             )
             current.localOrigin.set(startPos)
             Activate()
@@ -441,21 +404,11 @@ object Physics_Parametric {
          ================
          */
         fun SetAngularInterpolation(
-            time: Int,
-            accelTime: Int,
-            decelTime: Int,
-            duration: Int,
-            startAng: idAngles,
-            endAng: idAngles
+            time: Int, accelTime: Int, decelTime: Int, duration: Int, startAng: idAngles, endAng: idAngles
         ) {
             current.time = Game_local.gameLocal.time
             current.angularInterpolation.Init(
-                time.toFloat(),
-                accelTime.toFloat(),
-                decelTime.toFloat(),
-                duration.toFloat(),
-                startAng,
-                endAng
+                time.toFloat(), accelTime.toFloat(), decelTime.toFloat(), duration.toFloat(), startAng, endAng
             )
             current.localAngles.set(startAng)
             Activate()
@@ -467,8 +420,7 @@ object Physics_Parametric {
          ================
          */
         fun SetSpline(spline: idCurve_Spline<idVec3>?, accelTime: Int, decelTime: Int, useSplineAngles: Boolean) {
-            if (current.spline != null) {
-//		delete current.spline;
+            if (current.spline != null) { //		delete current.spline;
                 current.spline = null
             }
             current.spline = spline
@@ -477,12 +429,7 @@ object Physics_Parametric {
                 val endTime = current.spline!!.GetTime(current.spline!!.GetNumValues() - 1)
                 val length = current.spline!!.GetLengthForTime(endTime)
                 current.splineInterpolate.Init(
-                    startTime,
-                    accelTime.toFloat(),
-                    decelTime.toFloat(),
-                    endTime - startTime,
-                    0.0f,
-                    length
+                    startTime, accelTime.toFloat(), decelTime.toFloat(), endTime - startTime, 0.0f, length
                 )
             }
             current.useSplineAngles = useSplineAngles
@@ -556,8 +503,7 @@ object Physics_Parametric {
          ================
          idPhysics_Parametric::SetClipModel
          ================
-         */
-        // common physics interface
+         */ // common physics interface
         override fun SetClipModel(model: idClipModel?, density: Float, id: Int /*= 0*/, freeOld: Boolean /*= true*/) {
             assert(self != null)
             if (clipModel != null && clipModel !== model) {
@@ -705,13 +651,7 @@ object Physics_Parametric {
                 run {
                     val pushResults = this.pushResults
                     Game_local.gameLocal.push.ClipPush(
-                        pushResults,
-                        self!!,
-                        pushFlags,
-                        oldOrigin,
-                        oldAxis,
-                        current.origin,
-                        current.axis
+                        pushResults, self!!, pushFlags, oldOrigin, oldAxis, current.origin, current.axis
                     )
                     this.pushResults = pushResults
                 }
@@ -742,8 +682,8 @@ object Physics_Parametric {
          */
         override fun UpdateTime(endTimeMSec: Int) {
             val timeLeap = endTimeMSec - current.time
-            current.time = endTimeMSec
-            // move the trajectory start times to sync the trajectory with the current endTime
+            current.time =
+                endTimeMSec // move the trajectory start times to sync the trajectory with the current endTime
             current.linearExtrapolation.SetStartTime(current.linearExtrapolation.GetStartTime() + timeLeap)
             current.angularExtrapolation.SetStartTime(current.angularExtrapolation.GetStartTime() + timeLeap)
             current.linearInterpolation.SetStartTime(current.linearInterpolation.GetStartTime() + timeLeap)
@@ -804,8 +744,7 @@ object Physics_Parametric {
          ================
          idPhysics_Parametric::SaveState
          ================
-         */
-        // FIX: was `saved = current` (reference aliasing). Now uses deep copy.
+         */ // FIX: was `saved = current` (reference aliasing). Now uses deep copy.
         override fun SaveState() {
             saved.set(current)
         }
@@ -1021,25 +960,14 @@ object Physics_Parametric {
                     isOrientated = orientated
                 }
             } else {
-                if (hasMaster) {
-                    // transform from master space to world space
+                if (hasMaster) { // transform from master space to world space
                     current.localOrigin.set(current.origin)
                     current.localAngles.set(current.angles)
                     SetLinearExtrapolation(
-                        Extrapolate.EXTRAPOLATION_NONE,
-                        0,
-                        0,
-                        current.origin,
-                        vec3_origin,
-                        vec3_origin
+                        Extrapolate.EXTRAPOLATION_NONE, 0, 0, current.origin, vec3_origin, vec3_origin
                     )
                     SetAngularExtrapolation(
-                        Extrapolate.EXTRAPOLATION_NONE,
-                        0,
-                        0,
-                        current.angles,
-                        ang_zero,
-                        ang_zero
+                        Extrapolate.EXTRAPOLATION_NONE, 0, 0, current.angles, ang_zero, ang_zero
                     )
                     hasMaster = false
                 }
@@ -1121,27 +1049,27 @@ object Physics_Parametric {
             msg.WriteBits(current.linearExtrapolation.GetExtrapolationType(), 8)
             msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetStartTime())
             msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetDuration())
-            msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetStartValue()!![0])
-            msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetStartValue()!![1])
-            msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetStartValue()!![2])
-            msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetSpeed()!![0])
-            msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetSpeed()!![1])
-            msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetSpeed()!![2])
-            msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetBaseSpeed()!![0])
-            msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetBaseSpeed()!![1])
-            msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetBaseSpeed()!![2])
+            msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetStartValue()[0])
+            msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetStartValue()[1])
+            msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetStartValue()[2])
+            msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetSpeed()[0])
+            msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetSpeed()[1])
+            msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetSpeed()[2])
+            msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetBaseSpeed()[0])
+            msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetBaseSpeed()[1])
+            msg.WriteDeltaFloat(0.0f, current.linearExtrapolation.GetBaseSpeed()[2])
             msg.WriteBits(current.angularExtrapolation.GetExtrapolationType(), 8)
             msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetStartTime())
             msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetDuration())
-            msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetStartValue()!![0])
-            msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetStartValue()!![1])
-            msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetStartValue()!![2])
-            msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetSpeed()!![0])
-            msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetSpeed()!![1])
-            msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetSpeed()!![2])
-            msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetBaseSpeed()!![0])
-            msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetBaseSpeed()!![1])
-            msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetBaseSpeed()!![2])
+            msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetStartValue()[0])
+            msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetStartValue()[1])
+            msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetStartValue()[2])
+            msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetSpeed()[0])
+            msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetSpeed()[1])
+            msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetSpeed()[2])
+            msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetBaseSpeed()[0])
+            msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetBaseSpeed()[1])
+            msg.WriteDeltaFloat(0.0f, current.angularExtrapolation.GetBaseSpeed()[2])
             msg.WriteDeltaFloat(0.0f, current.linearInterpolation.GetStartTime())
             msg.WriteDeltaFloat(0.0f, current.linearInterpolation.GetAcceleration())
             msg.WriteDeltaFloat(0.0f, current.linearInterpolation.GetDeceleration())
@@ -1213,12 +1141,7 @@ object Physics_Parametric {
             linearBaseSpeed[1] = msg.ReadDeltaFloat(0.0f)
             linearBaseSpeed[2] = msg.ReadDeltaFloat(0.0f)
             current.linearExtrapolation.Init(
-                startTime,
-                duration,
-                linearStartValue,
-                linearBaseSpeed,
-                linearSpeed,
-                linearType
+                startTime, duration, linearStartValue, linearBaseSpeed, linearSpeed, linearType
             )
             angularType = msg.ReadBits(8)
             startTime = msg.ReadDeltaFloat(0.0f)
@@ -1233,12 +1156,7 @@ object Physics_Parametric {
             angularBaseSpeed[1] = msg.ReadDeltaFloat(0.0f)
             angularBaseSpeed[2] = msg.ReadDeltaFloat(0.0f)
             current.angularExtrapolation.Init(
-                startTime,
-                duration,
-                angularStartValue,
-                angularBaseSpeed,
-                angularSpeed,
-                angularType
+                startTime, duration, angularStartValue, angularBaseSpeed, angularSpeed, angularType
             )
             startTime = msg.ReadDeltaFloat(0.0f)
             accelTime = msg.ReadDeltaFloat(0.0f)
@@ -1284,9 +1202,9 @@ object Physics_Parametric {
             if (!current.linearInterpolation.IsDone(current.time.toFloat())) {
                 return false
             }
-            return if (!current.angularInterpolation.IsDone(current.time.toFloat())) {
-                false
-            } else current.spline == null || current.spline!!.IsDone(current.time.toFloat())
+            return current.angularInterpolation.IsDone(current.time.toFloat()) && (current.spline == null || current.spline!!.IsDone(
+                current.time.toFloat()
+            ))
         }
 
         /*
@@ -1325,21 +1243,11 @@ object Physics_Parametric {
             current.localAngles.set(idAngles())
             current.linearExtrapolation = idExtrapolate(idVec3())
             current.linearExtrapolation.Init(
-                0.0f,
-                0.0f,
-                vec3_zero,
-                vec3_zero,
-                vec3_zero,
-                Extrapolate.EXTRAPOLATION_NONE
+                0.0f, 0.0f, vec3_zero, vec3_zero, vec3_zero, Extrapolate.EXTRAPOLATION_NONE
             )
             current.angularExtrapolation = idExtrapolate(idAngles())
             current.angularExtrapolation.Init(
-                0.0f,
-                0.0f,
-                ang_zero,
-                ang_zero,
-                ang_zero,
-                Extrapolate.EXTRAPOLATION_NONE
+                0.0f, 0.0f, ang_zero, ang_zero, ang_zero, Extrapolate.EXTRAPOLATION_NONE
             )
             current.linearInterpolation = idInterpolateAccelDecelLinear(idVec3())
             current.linearInterpolation.Init(0.0f, 0.0f, 0.0f, 0.0f, vec3_zero, vec3_zero)
@@ -1347,8 +1255,9 @@ object Physics_Parametric {
             current.angularInterpolation.Init(0.0f, 0.0f, 0.0f, 0.0f, ang_zero, ang_zero)
             current.spline = null
             current.splineInterpolate = idInterpolateAccelDecelLinear(0f)
-            current.splineInterpolate.Init(0.0f, 1.0f, 1.0f, 2.0f, 0.0f, 0.0f)
-            // FIX: was `saved = current` (reference aliasing). Create independent saved state.
+            current.splineInterpolate.Init(
+                0.0f, 1.0f, 1.0f, 2.0f, 0.0f, 0.0f
+            ) // FIX: was `saved = current` (reference aliasing). Create independent saved state.
             saved = parametricPState_s()
             saved.set(current)
             isPusher = false

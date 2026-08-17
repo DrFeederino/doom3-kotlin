@@ -96,8 +96,7 @@ class EventLoop {
             }
 
             if (com_journalFile == null || com_journalDataFile == null) {
-                com_journal.SetInteger(0)
-                // FIX: C++ sets both to NULL here; Kotlin had these commented out
+                com_journal.SetInteger(0) // FIX: C++ sets both to NULL here; Kotlin had these commented out
                 com_journalFile = null
                 com_journalDataFile = null
                 Common.common.Printf("Couldn't open journal files\n")
@@ -151,8 +150,7 @@ class EventLoop {
             var ev: sysEvent_s
 
             while (true) {
-                if (commandExecution) {
-                    // execute any bound commands before processing another event
+                if (commandExecution) { // execute any bound commands before processing another event
                     CmdSystem.cmdSystem.ExecuteCommandBuffer()
                 }
 
@@ -165,8 +163,7 @@ class EventLoop {
                 ProcessEvent(ev)
             }
 
-            @Suppress("UNREACHABLE_CODE")
-            return 0 // never reached
+            @Suppress("UNREACHABLE_CODE") return 0 // never reached
         }
 
         /*
@@ -177,8 +174,7 @@ class EventLoop {
         as opposed to Sys_Milliseconds(), which always reads a real timer.
         ================
         */
-        fun Milliseconds(): Int {
-            // FIXME! - matches C++ #if 1 branch
+        fun Milliseconds(): Int { // FIXME! - matches C++ #if 1 branch
             return win_shared.Sys_Milliseconds() - initialTimeOffset
         }
 
@@ -246,14 +242,12 @@ class EventLoop {
         =================
         */
         @Throws(idException::class)
-        private fun ProcessEvent(ev: sysEvent_s) {
-            // track key up / down states
+        private fun ProcessEvent(ev: sysEvent_s) { // track key up / down states
             if (ev.evType == sysEventType_t.SE_KEY) {
                 idKeyInput.PreliminaryKeyEvent(ev.evValue, ev.evValue2 != 0)
             }
 
-            if (ev.evType == sysEventType_t.SE_CONSOLE) {
-                // from a text console outside the game window
+            if (ev.evType == sysEventType_t.SE_CONSOLE) { // from a text console outside the game window
                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, bbtoa(ev.evPtr!!))
                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "\n")
             } else {

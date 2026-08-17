@@ -20,8 +20,7 @@ fun fbtofa(fb: FloatBuffer): FloatArray {
             data[i] = fb.get(fb.position() + i)
         }
         return data
-    }
-    // Must respect the FloatBuffer's arrayOffset from slice().
+    } // Must respect the FloatBuffer's arrayOffset from slice().
     // FloatBuffer.array() returns the FULL backing array ignoring offset,
     // so fb.array()[0] is NOT fb.get(0) for sliced buffers.
     val offset = fb.arrayOffset() + fb.position()
@@ -88,6 +87,7 @@ fun memcmp(ptr1: IntArray, p1Offset: Int, ptr2: IntArray, p2Offset: Int, size: I
 }
 
 fun memcmp(a: ByteArray?, b: ByteArray?, length: Int): Boolean {
-    return if (null == a || null == b || a.size < length || b.size < length) false
-    else Arrays.equals(Arrays.copyOf(a, length), Arrays.copyOf(b, length))
+    return !(null == a || null == b || a.size < length || b.size < length) && Arrays.equals(
+        Arrays.copyOf(a, length), Arrays.copyOf(b, length)
+    )
 }

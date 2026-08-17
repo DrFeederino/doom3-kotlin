@@ -21,34 +21,42 @@ class idMat4 {
     }
 
     constructor(
-        xx: Float, xy: Float, xz: Float, xw: Float,
-        yx: Float, yy: Float, yz: Float, yw: Float,
-        zx: Float, zy: Float, zz: Float, zw: Float,
-        wx: Float, wy: Float, wz: Float, ww: Float
+        xx: Float,
+        xy: Float,
+        xz: Float,
+        xw: Float,
+        yx: Float,
+        yy: Float,
+        yz: Float,
+        yw: Float,
+        zx: Float,
+        zy: Float,
+        zz: Float,
+        zw: Float,
+        wx: Float,
+        wy: Float,
+        wz: Float,
+        ww: Float
     ) {
         mat[0].x = xx
         mat[0].y = xy
         mat[0].z = xz
-        mat[0].w = xw
-        //
+        mat[0].w = xw //
         mat[1].x = yx
         mat[1].y = yy
         mat[1].z = yz
-        mat[1].w = yw
-        //
+        mat[1].w = yw //
         mat[2].x = zx
         mat[2].y = zy
         mat[2].z = zz
-        mat[2].w = zw
-        //
+        mat[2].w = zw //
         mat[3].x = wx
         mat[3].y = wy
         mat[3].z = wz
         mat[3].w = ww
     }
 
-    constructor(rotation: idMat3, translation: idVec3) {
-        // NOTE: idMat3 is transposed because it is column-major
+    constructor(rotation: idMat3, translation: idVec3) { // NOTE: idMat3 is transposed because it is column-major
         mat[0].x = rotation.mat[0].x
         mat[0].y = rotation.mat[1].x
         mat[0].z = rotation.mat[2].x
@@ -67,23 +75,19 @@ class idMat4 {
         mat[3].w = 1.0f
     }
 
-    constructor(src: Array<FloatArray>) {
-//	memcpy( mat, src, 4 * 4 * sizeof( float ) );
+    constructor(src: Array<FloatArray>) { //	memcpy( mat, src, 4 * 4 * sizeof( float ) );
         mat[0].x = src[0][0]
         mat[0].y = src[0][1]
         mat[0].z = src[0][2]
-        mat[0].w = src[0][3]
-        //
+        mat[0].w = src[0][3] //
         mat[1].x = src[1][0]
         mat[1].y = src[1][1]
         mat[1].z = src[1][2]
-        mat[1].w = src[1][3]
-        //
+        mat[1].w = src[1][3] //
         mat[2].x = src[2][0]
         mat[2].y = src[2][1]
         mat[2].z = src[2][2]
-        mat[2].w = src[2][3]
-        //
+        mat[2].w = src[2][3] //
         mat[3].x = src[3][0]
         mat[3].y = src[3][1]
         mat[3].z = src[3][2]
@@ -113,10 +117,22 @@ class idMat4 {
     //public	idMat4			operator-( const idMat4 &a ) const;
     operator fun times(a: Float): idMat4 {
         return idMat4(
-            mat[0].x * a, mat[0].y * a, mat[0].z * a, mat[0].w * a,
-            mat[1].x * a, mat[1].y * a, mat[1].z * a, mat[1].w * a,
-            mat[2].x * a, mat[2].y * a, mat[2].z * a, mat[2].w * a,
-            mat[3].x * a, mat[3].y * a, mat[3].z * a, mat[3].w * a
+            mat[0].x * a,
+            mat[0].y * a,
+            mat[0].z * a,
+            mat[0].w * a,
+            mat[1].x * a,
+            mat[1].y * a,
+            mat[1].z * a,
+            mat[1].w * a,
+            mat[2].x * a,
+            mat[2].y * a,
+            mat[2].z * a,
+            mat[2].w * a,
+            mat[3].x * a,
+            mat[3].y * a,
+            mat[3].z * a,
+            mat[3].w * a
         )
     }
 
@@ -161,10 +177,8 @@ class idMat4 {
         while (i < 4) {
             j = 0
             while (j < 4) {
-                val value = mat[0] * a.mat[0 * 4 + j] +
-                        mat[1] * a.mat[1 * 4 + j] +
-                        mat[2] * a.mat[2 * 4 + j] +
-                        mat[3] * a.mat[3 * 4 + j]
+                val value =
+                    mat[0] * a.mat[0 * 4 + j] + mat[1] * a.mat[1 * 4 + j] + mat[2] * a.mat[2 * 4 + j] + mat[3] * a.mat[3 * 4 + j]
                 dst.setCell(i, j, value)
                 j++
             }
@@ -175,19 +189,43 @@ class idMat4 {
 
     operator fun plus(a: idMat4): idMat4 {
         return idMat4(
-            mat[0].x + a.mat[0].x, mat[0].y + a.mat[0].y, mat[0].z + a.mat[0].z, mat[0].w + a.mat[0].w,
-            mat[1].x + a.mat[1].x, mat[1].y + a.mat[1].y, mat[1].z + a.mat[1].z, mat[1].w + a.mat[1].w,
-            mat[2].x + a.mat[2].x, mat[2].y + a.mat[2].y, mat[2].z + a.mat[2].z, mat[2].w + a.mat[2].w,
-            mat[3].x + a.mat[3].x, mat[3].y + a.mat[3].y, mat[3].z + a.mat[3].z, mat[3].w + a.mat[3].w
+            mat[0].x + a.mat[0].x,
+            mat[0].y + a.mat[0].y,
+            mat[0].z + a.mat[0].z,
+            mat[0].w + a.mat[0].w,
+            mat[1].x + a.mat[1].x,
+            mat[1].y + a.mat[1].y,
+            mat[1].z + a.mat[1].z,
+            mat[1].w + a.mat[1].w,
+            mat[2].x + a.mat[2].x,
+            mat[2].y + a.mat[2].y,
+            mat[2].z + a.mat[2].z,
+            mat[2].w + a.mat[2].w,
+            mat[3].x + a.mat[3].x,
+            mat[3].y + a.mat[3].y,
+            mat[3].z + a.mat[3].z,
+            mat[3].w + a.mat[3].w
         )
     }
 
     operator fun minus(a: idMat4): idMat4 {
         return idMat4(
-            mat[0].x - a.mat[0].x, mat[0].y - a.mat[0].y, mat[0].z - a.mat[0].z, mat[0].w - a.mat[0].w,
-            mat[1].x - a.mat[1].x, mat[1].y - a.mat[1].y, mat[1].z - a.mat[1].z, mat[1].w - a.mat[1].w,
-            mat[2].x - a.mat[2].x, mat[2].y - a.mat[2].y, mat[2].z - a.mat[2].z, mat[2].w - a.mat[2].w,
-            mat[3].x - a.mat[3].x, mat[3].y - a.mat[3].y, mat[3].z - a.mat[3].z, mat[3].w - a.mat[3].w
+            mat[0].x - a.mat[0].x,
+            mat[0].y - a.mat[0].y,
+            mat[0].z - a.mat[0].z,
+            mat[0].w - a.mat[0].w,
+            mat[1].x - a.mat[1].x,
+            mat[1].y - a.mat[1].y,
+            mat[1].z - a.mat[1].z,
+            mat[1].w - a.mat[1].w,
+            mat[2].x - a.mat[2].x,
+            mat[2].y - a.mat[2].y,
+            mat[2].z - a.mat[2].z,
+            mat[2].w - a.mat[2].w,
+            mat[3].x - a.mat[3].x,
+            mat[3].y - a.mat[3].y,
+            mat[3].z - a.mat[3].z,
+            mat[3].w - a.mat[3].w
         )
     }
 
@@ -195,18 +233,15 @@ class idMat4 {
         mat[0].x *= a
         mat[0].y *= a
         mat[0].z *= a
-        mat[0].w *= a
-        //
+        mat[0].w *= a //
         mat[1].x *= a
         mat[1].y *= a
         mat[1].z *= a
-        mat[1].w *= a
-        //
+        mat[1].w *= a //
         mat[2].x *= a
         mat[2].y *= a
         mat[2].z *= a
-        mat[2].w *= a
-        //
+        mat[2].w *= a //
         mat[3].x *= a
         mat[3].y *= a
         mat[3].z *= a
@@ -225,18 +260,15 @@ class idMat4 {
         mat[0].x += a.mat[0].x
         mat[0].y += a.mat[0].y
         mat[0].z += a.mat[0].z
-        mat[0].w += a.mat[0].w
-        //
+        mat[0].w += a.mat[0].w //
         mat[1].x += a.mat[1].x
         mat[1].y += a.mat[1].y
         mat[1].z += a.mat[1].z
-        mat[1].w += a.mat[1].w
-        //
+        mat[1].w += a.mat[1].w //
         mat[2].x += a.mat[2].x
         mat[2].y += a.mat[2].y
         mat[2].z += a.mat[2].z
-        mat[2].w += a.mat[2].w
-        //
+        mat[2].w += a.mat[2].w //
         mat[3].x += a.mat[3].x
         mat[3].y += a.mat[3].y
         mat[3].z += a.mat[3].z
@@ -250,18 +282,15 @@ class idMat4 {
         mat[0].x -= a.mat[0].x
         mat[0].y -= a.mat[0].y
         mat[0].z -= a.mat[0].z
-        mat[0].w -= a.mat[0].w
-        //
+        mat[0].w -= a.mat[0].w //
         mat[1].x -= a.mat[1].x
         mat[1].y -= a.mat[1].y
         mat[1].z -= a.mat[1].z
-        mat[1].w -= a.mat[1].w
-        //
+        mat[1].w -= a.mat[1].w //
         mat[2].x -= a.mat[2].x
         mat[2].y -= a.mat[2].y
         mat[2].z -= a.mat[2].z
-        mat[2].w -= a.mat[2].w
-        //
+        mat[2].w -= a.mat[2].w //
         mat[3].x -= a.mat[3].x
         mat[3].y -= a.mat[3].y
         mat[3].z -= a.mat[3].z
@@ -373,9 +402,7 @@ class idMat4 {
     }
 
     fun IsRotated(): Boolean {
-        return !(mat[0][1] == 0.0f && mat[0][2] == 0.0f &&
-                mat[1][0] == 0.0f && mat[1][2] == 0.0f &&
-                mat[2][0] == 0.0f && mat[2][1] == 0.0f)
+        return !(mat[0][1] == 0.0f && mat[0][2] == 0.0f && mat[1][0] == 0.0f && mat[1][2] == 0.0f && mat[2][0] == 0.0f && mat[2][1] == 0.0f)
     }
 
     fun ProjectVector(src: idVec4, dst: idVec4) {
@@ -385,13 +412,11 @@ class idMat4 {
         dst.w = src * mat[3]
     }
 
-    fun UnprojectVector(src: idVec4, dst: idVec4) {
-//	dst = mat[ 0 ] * src.x + mat[ 1 ] * src.y + mat[ 2 ] * src.z + mat[ 3 ] * src.w;
+    fun UnprojectVector(
+        src: idVec4, dst: idVec4
+    ) { //	dst = mat[ 0 ] * src.x + mat[ 1 ] * src.y + mat[ 2 ] * src.z + mat[ 3 ] * src.w;
         dst.set(
-            mat[0] * src.x +
-                    mat[1] * src.y +
-                    mat[2] * src.z +
-                    mat[3] * src.w
+            mat[0] * src.x + mat[1] * src.y + mat[2] * src.z + mat[3] * src.w
         )
     }
 
@@ -410,14 +435,10 @@ class idMat4 {
         val det2_01_23 = mat[0][2] * mat[1][3] - mat[0][3] * mat[1][2]
 
         // 3x3 sub-determinants
-        val det3_201_012 =
-            mat[2][0] * det2_01_12 - mat[2][1] * det2_01_02 + mat[2][2] * det2_01_01
-        val det3_201_013 =
-            mat[2][0] * det2_01_13 - mat[2][1] * det2_01_03 + mat[2][3] * det2_01_01
-        val det3_201_023 =
-            mat[2][0] * det2_01_23 - mat[2][2] * det2_01_03 + mat[2][3] * det2_01_02
-        val det3_201_123 =
-            mat[2][1] * det2_01_23 - mat[2][2] * det2_01_13 + mat[2][3] * det2_01_12
+        val det3_201_012 = mat[2][0] * det2_01_12 - mat[2][1] * det2_01_02 + mat[2][2] * det2_01_01
+        val det3_201_013 = mat[2][0] * det2_01_13 - mat[2][1] * det2_01_03 + mat[2][3] * det2_01_01
+        val det3_201_023 = mat[2][0] * det2_01_23 - mat[2][2] * det2_01_03 + mat[2][3] * det2_01_02
+        val det3_201_123 = mat[2][1] * det2_01_23 - mat[2][2] * det2_01_13 + mat[2][3] * det2_01_12
         return -det3_201_123 * mat[3][0] + det3_201_023 * mat[3][1] - det3_201_013 * mat[3][2] + det3_201_012 * mat[3][3]
     }
 
@@ -463,8 +484,7 @@ class idMat4 {
     }
 
     fun InverseSelf(): Boolean // returns false if determinant is zero
-    {
-        // 84+4+16 = 104 multiplications
+    { // 84+4+16 = 104 multiplications
         //			   1 division
         val det: Float
         val invDet: Float
@@ -482,8 +502,7 @@ class idMat4 {
         val det3_201_013 = mat[2].x * det2_01_13 - mat[2].y * det2_01_03 + mat[2].w * det2_01_01
         val det3_201_023 = mat[2].x * det2_01_23 - mat[2].z * det2_01_03 + mat[2].w * det2_01_02
         val det3_201_123 = mat[2].y * det2_01_23 - mat[2].z * det2_01_13 + mat[2].w * det2_01_12
-        det =
-            -det3_201_123 * mat[3].x + det3_201_023 * mat[3].y - det3_201_013 * mat[3].z + det3_201_012 * mat[3].w
+        det = -det3_201_123 * mat[3].x + det3_201_023 * mat[3].y - det3_201_013 * mat[3].z + det3_201_012 * mat[3].w
         if (abs(det) < MATRIX_INVERSE_EPSILON) {
             return false
         }
@@ -657,20 +676,18 @@ class idMat4 {
     }
 
     companion object {
-        private val mat4_identity: idMat4 =
-            idMat4(
-                idVec4(1.0f, 0.0f, 0.0f, 0.0f),
-                idVec4(0.0f, 1.0f, 0.0f, 0.0f),
-                idVec4(0.0f, 0.0f, 1.0f, 0.0f),
-                idVec4(0.0f, 0.0f, 0.0f, 1.0f)
-            )
-        private val mat4_zero: idMat4 =
-            idMat4(
-                idVec4(0.0f, 0.0f, 0.0f, 0.0f),
-                idVec4(0.0f, 0.0f, 0.0f, 0.0f),
-                idVec4(0.0f, 0.0f, 0.0f, 0.0f),
-                idVec4(0.0f, 0.0f, 0.0f, 0.0f)
-            )
+        private val mat4_identity: idMat4 = idMat4(
+            idVec4(1.0f, 0.0f, 0.0f, 0.0f),
+            idVec4(0.0f, 1.0f, 0.0f, 0.0f),
+            idVec4(0.0f, 0.0f, 1.0f, 0.0f),
+            idVec4(0.0f, 0.0f, 0.0f, 1.0f)
+        )
+        private val mat4_zero: idMat4 = idMat4(
+            idVec4(0.0f, 0.0f, 0.0f, 0.0f),
+            idVec4(0.0f, 0.0f, 0.0f, 0.0f),
+            idVec4(0.0f, 0.0f, 0.0f, 0.0f),
+            idVec4(0.0f, 0.0f, 0.0f, 0.0f)
+        )
 
         fun getMat4_zero(): idMat4 {
             return idMat4(mat4_zero)

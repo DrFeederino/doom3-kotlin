@@ -359,8 +359,8 @@ internal class idSIMD_Generic : idSIMDProcessor() {
     override fun Dot(dst: FloatArray, constant: idVec3, src: Array<idPlane>, count: Int) {
         var X = 0
         while (X < count) {
-            dst[X] = constant * src[(X)].Normal() + src[X][3]
-            //NB I'm not saying operator overloading would have prevented this bug, but....!@#$%$@#^&#$^%^#%^&#$*^&
+            dst[X] =
+                constant * src[(X)].Normal() + src[X][3] //NB I'm not saying operator overloading would have prevented this bug, but....!@#$%$@#^&#$^%^#%^&#$*^&
             X++
         }
     }
@@ -1147,8 +1147,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
         when (mat.GetNumRows()) {
             1 -> {
                 i = 0
-                while (i < numColumns) {
-                    //TODO:check pointer to array conversion
+                while (i < numColumns) { //TODO:check pointer to array conversion
                     dstPtr[i] = mPtr[mIndex] * vPtr[0]
                     mIndex++
                     i++
@@ -1422,8 +1421,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
             1 -> {
                 if (l == 6) {
                     i = 0
-                    while (i < k) {
-                        // Nx1 * 1x6
+                    while (i < k) { // Nx1 * 1x6
                         dstPtr[dIndex++] = m1Ptr[m1Index + i] * m2Ptr[m2Index + 0]
                         dstPtr[dIndex++] = m1Ptr[m1Index + i] * m2Ptr[m2Index + 1]
                         dstPtr[dIndex++] = m1Ptr[m1Index + i] * m2Ptr[m2Index + 2]
@@ -1451,8 +1449,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
             2 -> {
                 if (l == 6) {
                     i = 0
-                    while (i < k) {
-                        // Nx2 * 2x6
+                    while (i < k) { // Nx2 * 2x6
                         dstPtr[dIndex++] =
                             m1Ptr[m1Index + 0] * m2Ptr[m2Index + 0] + m1Ptr[m1Index + 1] * m2Ptr[m2Index + 6]
                         dstPtr[dIndex++] =
@@ -1488,8 +1485,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
             3 -> {
                 if (l == 6) {
                     i = 0
-                    while (i < k) {
-                        // Nx3 * 3x6
+                    while (i < k) { // Nx3 * 3x6
                         dstPtr[dIndex++] =
                             m1Ptr[m1Index + 0] * m2Ptr[m2Index + 0] + m1Ptr[m1Index + 1] * m2Ptr[m2Index + 6] + m1Ptr[m1Index + 2] * m2Ptr[m2Index + 12]
                         dstPtr[dIndex++] =
@@ -1525,8 +1521,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
             4 -> {
                 if (l == 6) {
                     i = 0
-                    while (i < k) {
-                        // Nx4 * 4x6
+                    while (i < k) { // Nx4 * 4x6
                         dstPtr[dIndex++] =
                             m1Ptr[m1Index + 0] * m2Ptr[m2Index + 0] + m1Ptr[m1Index + 1] * m2Ptr[m2Index + 6] + m1Ptr[m1Index + 2] * m2Ptr[m2Index + 12] + m1Ptr[m1Index + 3] * m2Ptr[m2Index + 18]
                         dstPtr[dIndex++] =
@@ -1562,8 +1557,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
             5 -> {
                 if (l == 6) {
                     i = 0
-                    while (i < k) {
-                        // Nx5 * 5x6
+                    while (i < k) { // Nx5 * 5x6
                         dstPtr[dIndex++] =
                             m1Ptr[m1Index + 0] * m2Ptr[m2Index + 0] + m1Ptr[m1Index + 1] * m2Ptr[m2Index + 6] + m1Ptr[m1Index + 2] * m2Ptr[m2Index + 12] + m1Ptr[m1Index + 3] * m2Ptr[m2Index + 18] + m1Ptr[m1Index + 4] * m2Ptr[m2Index + 24]
                         dstPtr[dIndex++] =
@@ -1674,8 +1668,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                             return
                         }
                         when (l) {
-                            1 -> {
-                                // 6x6 * 6x1
+                            1 -> { // 6x6 * 6x1
                                 i = 0
                                 while (i < 6) {
                                     dstPtr[dIndex] =
@@ -1687,8 +1680,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                                 return
                             }
 
-                            2 -> {
-                                // 6x6 * 6x2
+                            2 -> { // 6x6 * 6x2
                                 i = 0
                                 while (i < 6) {
                                     j = 0
@@ -1704,8 +1696,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                                 return
                             }
 
-                            3 -> {
-                                // 6x6 * 6x3
+                            3 -> { // 6x6 * 6x3
                                 i = 0
                                 while (i < 6) {
                                     j = 0
@@ -1721,8 +1712,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                                 return
                             }
 
-                            4 -> {
-                                // 6x6 * 6x4
+                            4 -> { // 6x6 * 6x4
                                 i = 0
                                 while (i < 6) {
                                     j = 0
@@ -1738,8 +1728,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                                 return
                             }
 
-                            5 -> {
-                                // 6x6 * 6x5
+                            5 -> { // 6x6 * 6x5
                                 i = 0
                                 while (i < 6) {
                                     j = 0
@@ -1755,8 +1744,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                                 return
                             }
 
-                            6 -> {
-                                // 6x6 * 6x6
+                            6 -> { // 6x6 * 6x6
                                 i = 0
                                 while (i < 6) {
                                     j = 0
@@ -2408,29 +2396,25 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                     x[0] = b[0]
                     x[1] = b[1] - lptr[1 * nc + 0] * x[0]
                     x[2] = b[2] - lptr[2 * nc + 0] * x[0] - lptr[2 * nc + 1] * x[1]
-                    x[3] =
-                        b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                    x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                     return
                 }
 
                 NSKIP4_1 -> {
                     x[1] = b[1] - lptr[1 * nc + 0] * x[0]
                     x[2] = b[2] - lptr[2 * nc + 0] * x[0] - lptr[2 * nc + 1] * x[1]
-                    x[3] =
-                        b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                    x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                     return
                 }
 
                 NSKIP4_2 -> {
                     x[2] = b[2] - lptr[2 * nc + 0] * x[0] - lptr[2 * nc + 1] * x[1]
-                    x[3] =
-                        b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                    x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                     return
                 }
 
                 NSKIP4_3 -> {
-                    x[3] =
-                        b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                    x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                     return
                 }
 
@@ -2438,8 +2422,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                     x[0] = b[0]
                     x[1] = b[1] - lptr[1 * nc + 0] * x[0]
                     x[2] = b[2] - lptr[2 * nc + 0] * x[0] - lptr[2 * nc + 1] * x[1]
-                    x[3] =
-                        b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                    x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                     x[4] =
                         b[4] - lptr[4 * nc + 0] * x[0] - lptr[4 * nc + 1] * x[1] - lptr[4 * nc + 2] * x[2] - lptr[4 * nc + 3] * x[3]
                     return
@@ -2448,8 +2431,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                 NSKIP5_1 -> {
                     x[1] = b[1] - lptr[1 * nc + 0] * x[0]
                     x[2] = b[2] - lptr[2 * nc + 0] * x[0] - lptr[2 * nc + 1] * x[1]
-                    x[3] =
-                        b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                    x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                     x[4] =
                         b[4] - lptr[4 * nc + 0] * x[0] - lptr[4 * nc + 1] * x[1] - lptr[4 * nc + 2] * x[2] - lptr[4 * nc + 3] * x[3]
                     return
@@ -2457,16 +2439,14 @@ internal class idSIMD_Generic : idSIMDProcessor() {
 
                 NSKIP5_2 -> {
                     x[2] = b[2] - lptr[2 * nc + 0] * x[0] - lptr[2 * nc + 1] * x[1]
-                    x[3] =
-                        b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                    x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                     x[4] =
                         b[4] - lptr[4 * nc + 0] * x[0] - lptr[4 * nc + 1] * x[1] - lptr[4 * nc + 2] * x[2] - lptr[4 * nc + 3] * x[3]
                     return
                 }
 
                 NSKIP5_3 -> {
-                    x[3] =
-                        b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                    x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                     x[4] =
                         b[4] - lptr[4 * nc + 0] * x[0] - lptr[4 * nc + 1] * x[1] - lptr[4 * nc + 2] * x[2] - lptr[4 * nc + 3] * x[3]
                     return
@@ -2482,8 +2462,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                     x[0] = b[0]
                     x[1] = b[1] - lptr[1 * nc + 0] * x[0]
                     x[2] = b[2] - lptr[2 * nc + 0] * x[0] - lptr[2 * nc + 1] * x[1]
-                    x[3] =
-                        b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                    x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                     x[4] =
                         b[4] - lptr[4 * nc + 0] * x[0] - lptr[4 * nc + 1] * x[1] - lptr[4 * nc + 2] * x[2] - lptr[4 * nc + 3] * x[3]
                     x[5] =
@@ -2494,8 +2473,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                 NSKIP6_1 -> {
                     x[1] = b[1] - lptr[1 * nc + 0] * x[0]
                     x[2] = b[2] - lptr[2 * nc + 0] * x[0] - lptr[2 * nc + 1] * x[1]
-                    x[3] =
-                        b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                    x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                     x[4] =
                         b[4] - lptr[4 * nc + 0] * x[0] - lptr[4 * nc + 1] * x[1] - lptr[4 * nc + 2] * x[2] - lptr[4 * nc + 3] * x[3]
                     x[5] =
@@ -2505,8 +2483,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
 
                 NSKIP6_2 -> {
                     x[2] = b[2] - lptr[2 * nc + 0] * x[0] - lptr[2 * nc + 1] * x[1]
-                    x[3] =
-                        b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                    x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                     x[4] =
                         b[4] - lptr[4 * nc + 0] * x[0] - lptr[4 * nc + 1] * x[1] - lptr[4 * nc + 2] * x[2] - lptr[4 * nc + 3] * x[3]
                     x[5] =
@@ -2515,8 +2492,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                 }
 
                 NSKIP6_3 -> {
-                    x[3] =
-                        b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                    x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                     x[4] =
                         b[4] - lptr[4 * nc + 0] * x[0] - lptr[4 * nc + 1] * x[1] - lptr[4 * nc + 2] * x[2] - lptr[4 * nc + 3] * x[3]
                     x[5] =
@@ -2542,8 +2518,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                     x[0] = b[0]
                     x[1] = b[1] - lptr[1 * nc + 0] * x[0]
                     x[2] = b[2] - lptr[2 * nc + 0] * x[0] - lptr[2 * nc + 1] * x[1]
-                    x[3] =
-                        b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                    x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                     x[4] =
                         b[4] - lptr[4 * nc + 0] * x[0] - lptr[4 * nc + 1] * x[1] - lptr[4 * nc + 2] * x[2] - lptr[4 * nc + 3] * x[3]
                     x[5] =
@@ -2556,8 +2531,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                 NSKIP7_1 -> {
                     x[1] = b[1] - lptr[1 * nc + 0] * x[0]
                     x[2] = b[2] - lptr[2 * nc + 0] * x[0] - lptr[2 * nc + 1] * x[1]
-                    x[3] =
-                        b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                    x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                     x[4] =
                         b[4] - lptr[4 * nc + 0] * x[0] - lptr[4 * nc + 1] * x[1] - lptr[4 * nc + 2] * x[2] - lptr[4 * nc + 3] * x[3]
                     x[5] =
@@ -2569,8 +2543,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
 
                 NSKIP7_2 -> {
                     x[2] = b[2] - lptr[2 * nc + 0] * x[0] - lptr[2 * nc + 1] * x[1]
-                    x[3] =
-                        b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                    x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                     x[4] =
                         b[4] - lptr[4 * nc + 0] * x[0] - lptr[4 * nc + 1] * x[1] - lptr[4 * nc + 2] * x[2] - lptr[4 * nc + 3] * x[3]
                     x[5] =
@@ -2581,8 +2554,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                 }
 
                 NSKIP7_3 -> {
-                    x[3] =
-                        b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                    x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                     x[4] =
                         b[4] - lptr[4 * nc + 0] * x[0] - lptr[4 * nc + 1] * x[1] - lptr[4 * nc + 2] * x[2] - lptr[4 * nc + 3] * x[3]
                     x[5] =
@@ -2623,29 +2595,25 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                 x[0] = b[0]
                 x[1] = b[1] - lptr[1 * nc + 0] * x[0]
                 x[2] = b[2] - lptr[2 * nc + 0] * x[0] - lptr[2 * nc + 1] * x[1]
-                x[3] =
-                    b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                 skip = 4
             }
 
             1 -> {
                 x[1] = b[1] - lptr[1 * nc + 0] * x[0]
                 x[2] = b[2] - lptr[2 * nc + 0] * x[0] - lptr[2 * nc + 1] * x[1]
-                x[3] =
-                    b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                 skip = 4
             }
 
             2 -> {
                 x[2] = b[2] - lptr[2 * nc + 0] * x[0] - lptr[2 * nc + 1] * x[1]
-                x[3] =
-                    b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                 skip = 4
             }
 
             3 -> {
-                x[3] =
-                    b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
+                x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]
                 skip = 4
             }
         }
@@ -2774,8 +2742,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                     x[3] = b[3]
                     x[2] = b[2] - lptr[3 * nc + 2] * x[3]
                     x[1] = b[1] - lptr[3 * nc + 1] * x[3] - lptr[2 * nc + 1] * x[2]
-                    x[0] =
-                        b[0] - lptr[3 * nc + 0] * x[3] - lptr[2 * nc + 0] * x[2] - lptr[1 * nc + 0] * x[1]
+                    x[0] = b[0] - lptr[3 * nc + 0] * x[3] - lptr[2 * nc + 0] * x[2] - lptr[1 * nc + 0] * x[1]
                     return
                 }
 
@@ -2783,8 +2750,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                     x[4] = b[4]
                     x[3] = b[3] - lptr[4 * nc + 3] * x[4]
                     x[2] = b[2] - lptr[4 * nc + 2] * x[4] - lptr[3 * nc + 2] * x[3]
-                    x[1] =
-                        b[1] - lptr[4 * nc + 1] * x[4] - lptr[3 * nc + 1] * x[3] - lptr[2 * nc + 1] * x[2]
+                    x[1] = b[1] - lptr[4 * nc + 1] * x[4] - lptr[3 * nc + 1] * x[3] - lptr[2 * nc + 1] * x[2]
                     x[0] =
                         b[0] - lptr[4 * nc + 0] * x[4] - lptr[3 * nc + 0] * x[3] - lptr[2 * nc + 0] * x[2] - lptr[1 * nc + 0] * x[1]
                     return
@@ -2794,8 +2760,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                     x[5] = b[5]
                     x[4] = b[4] - lptr[5 * nc + 4] * x[5]
                     x[3] = b[3] - lptr[5 * nc + 3] * x[5] - lptr[4 * nc + 3] * x[4]
-                    x[2] =
-                        b[2] - lptr[5 * nc + 2] * x[5] - lptr[4 * nc + 2] * x[4] - lptr[3 * nc + 2] * x[3]
+                    x[2] = b[2] - lptr[5 * nc + 2] * x[5] - lptr[4 * nc + 2] * x[4] - lptr[3 * nc + 2] * x[3]
                     x[1] =
                         b[1] - lptr[5 * nc + 1] * x[5] - lptr[4 * nc + 1] * x[4] - lptr[3 * nc + 1] * x[3] - lptr[2 * nc + 1] * x[2]
                     x[0] =
@@ -2807,8 +2772,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                     x[6] = b[6]
                     x[5] = b[5] - lptr[6 * nc + 5] * x[6]
                     x[4] = b[4] - lptr[6 * nc + 4] * x[6] - lptr[5 * nc + 4] * x[5]
-                    x[3] =
-                        b[3] - lptr[6 * nc + 3] * x[6] - lptr[5 * nc + 3] * x[5] - lptr[4 * nc + 3] * x[4]
+                    x[3] = b[3] - lptr[6 * nc + 3] * x[6] - lptr[5 * nc + 3] * x[5] - lptr[4 * nc + 3] * x[4]
                     x[2] =
                         b[2] - lptr[6 * nc + 2] * x[6] - lptr[5 * nc + 2] * x[5] - lptr[4 * nc + 2] * x[4] - lptr[3 * nc + 2] * x[3]
                     x[1] =
@@ -2837,8 +2801,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
             s0 = b[i - 4].toDouble()
             s1 = b[i - 3].toDouble()
             s2 = b[i - 2].toDouble()
-            s3 = b[i - 1].toDouble()
-            // process 4x4 blocks
+            s3 = b[i - 1].toDouble() // process 4x4 blocks
             j = 0
             while (j < n - i) {
                 s0 -= (lptr[lIndex + (j + 0) * nc + 0] * xptr[xIndex + j + 0])
@@ -2858,25 +2821,21 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                 s2 -= (lptr[lIndex + (j + 3) * nc + 2] * xptr[xIndex + j + 3])
                 s3 -= (lptr[lIndex + (j + 3) * nc + 3] * xptr[xIndex + j + 3])
                 j += 4
-            }
-            // process left over of the 4 rows
+            } // process left over of the 4 rows
             s0 -= lptr[lIndex + 0 - 1 * nc] * s3
             s1 -= lptr[lIndex + 1 - 1 * nc] * s3
             s2 -= lptr[lIndex + 2 - 1 * nc] * s3
             s0 -= lptr[lIndex + 0 - 2 * nc] * s2
             s1 -= lptr[lIndex + 1 - 2 * nc] * s2
-            s0 -= lptr[lIndex + 0 - 3 * nc] * s1
-            // store result
+            s0 -= lptr[lIndex + 0 - 3 * nc] * s1 // store result
             xptr[xIndex - 4] = s0.toFloat()
             xptr[xIndex - 3] = s1.toFloat()
             xptr[xIndex - 2] = s2.toFloat()
-            xptr[xIndex - 1] = s3.toFloat()
-            // update pointers for next four rows
+            xptr[xIndex - 1] = s3.toFloat() // update pointers for next four rows
             lIndex -= 4 + 4 * nc
             xIndex -= 4
             i -= 4
-        }
-        // process left over rows
+        } // process left over rows
         i--
         while (i >= 0) {
             s0 = b[i].toDouble()
@@ -2926,14 +2885,12 @@ internal class idSIMD_Generic : idSIMDProcessor() {
         invDiag.p[0] = d.toFloat()
         if (n <= 1) {
             return true
-        }
-        // mptr = mat[0]
+        } // mptr = mat[0]
         j = 1
         while (j < n) {
             mptr[j * nc + 0] = (mptr[j * nc + 0] * d).toFloat()
             j++
-        }
-        // mptr = mat[1]
+        } // mptr = mat[1]
         mBase = 1 * nc
         v[0] = diag[0] * mptr[mBase + 0]
         s0 = (v[0] * mptr[mBase + 0]).toDouble()
@@ -2947,14 +2904,12 @@ internal class idSIMD_Generic : idSIMDProcessor() {
         invDiag.p[1] = d.toFloat()
         if (n <= 2) {
             return true
-        }
-        // mptr = mat[0]
+        } // mptr = mat[0]
         j = 2
         while (j < n) {
             mptr[j * nc + 1] = ((mptr[j * nc + 1] - v[0] * mptr[j * nc + 0]) * d).toFloat()
             j++
-        }
-        // mptr = mat[2]
+        } // mptr = mat[2]
         mBase = 2 * nc
         v[0] = diag[0] * mptr[mBase + 0]
         s0 = (v[0] * mptr[mBase + 0]).toDouble()
@@ -2970,14 +2925,12 @@ internal class idSIMD_Generic : idSIMDProcessor() {
         invDiag.p[2] = d.toFloat()
         if (n <= 3) {
             return true
-        }
-        // mptr = mat[0]
+        } // mptr = mat[0]
         j = 3
         while (j < n) {
             mptr[j * nc + 2] = ((mptr[j * nc + 2] - v[0] * mptr[j * nc + 0] - v[1] * mptr[j * nc + 1]) * d).toFloat()
             j++
-        }
-        // mptr = mat[3]
+        } // mptr = mat[3]
         mBase = 3 * nc
         v[0] = diag[0] * mptr[mBase + 0]
         s0 = (v[0] * mptr[mBase + 0]).toDouble()
@@ -2995,8 +2948,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
         invDiag.p[3] = d.toFloat()
         if (n <= 4) {
             return true
-        }
-        // mptr = mat[0]
+        } // mptr = mat[0]
         j = 4
         while (j < n) {
             mptr[j * nc + 3] =
@@ -3004,8 +2956,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
             j++
         }
         var i = 4
-        while (i < n) {
-            // mptr = mat[i]
+        while (i < n) { // mptr = mat[i]
             mBase = i * nc
             v[0] = diag[0] * mptr[mBase + 0]
             s0 = (v[0] * mptr[mBase + 0]).toDouble()
@@ -3065,8 +3016,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
             invDiag.p[i] = d.toFloat()
             if (i + 1 >= n) {
                 return true
-            }
-            // mptr = mat[i+1]; in C++ mptr advances by nc each j iteration
+            } // mptr = mat[i+1]; in C++ mptr advances by nc each j iteration
             mBase = (i + 1) * nc
             j = i + 1
             while (j < n) {
@@ -3149,11 +3099,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
     }
 
     override fun BlendJoints(
-        joints: Array<idJointQuat>,
-        blendJoints: Array<idJointQuat>,
-        lerp: Float,
-        index: IntArray,
-        numJoints: Int
+        joints: Array<idJointQuat>, blendJoints: Array<idJointQuat>, lerp: Float, index: IntArray, numJoints: Int
     ) {
         var i = 0
         while (i < numJoints) {
@@ -3165,9 +3111,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
     }
 
     override fun ConvertJointQuatsToJointMats(
-        jointMats: Array<idJointMat>,
-        jointQuats: Array<idJointQuat>,
-        numJoints: Int
+        jointMats: Array<idJointMat>, jointQuats: Array<idJointQuat>, numJoints: Int
     ) {
         var i = 0
         while (i < numJoints) {
@@ -3178,9 +3122,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
     }
 
     override fun ConvertJointMatsToJointQuats(
-        jointQuats: List.idList<idJointQuat>,
-        jointMats: Array<idJointMat>,
-        numJoints: Int
+        jointQuats: List.idList<idJointQuat>, jointMats: Array<idJointMat>, numJoints: Int
     ) {
         var i = 0
         while (i < numJoints) {
@@ -3190,10 +3132,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
     }
 
     override fun TransformJoints(
-        jointMats: Array<idJointMat>,
-        parents: IntArray,
-        firstJoint: Int,
-        lastJoint: Int
+        jointMats: Array<idJointMat>, parents: IntArray, firstJoint: Int, lastJoint: Int
     ) {
         var i: Int = firstJoint
         while (i <= lastJoint) {
@@ -3204,10 +3143,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
     }
 
     override fun UntransformJoints(
-        jointMats: Array<idJointMat>,
-        parents: IntArray,
-        firstJoint: Int,
-        lastJoint: Int
+        jointMats: Array<idJointMat>, parents: IntArray, firstJoint: Int, lastJoint: Int
     ) {
         var i: Int = lastJoint
         while (i >= firstJoint) {
@@ -3287,10 +3223,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
     }
 
     override fun DecalPointCull(
-        cullBits: ByteArray,
-        planes: Array<idPlane>,
-        verts: Array<idDrawVert>,
-        numVerts: Int
+        cullBits: ByteArray, planes: Array<idPlane>, verts: Array<idDrawVert>, numVerts: Int
     ) {
         var i = 0
         while (i < numVerts) {
@@ -3320,11 +3253,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
     }
 
     override fun OverlayPointCull(
-        cullBits: ByteArray,
-        texCoords: Array<idVec2>,
-        planes: Array<idPlane>,
-        verts: Array<idDrawVert>,
-        numVerts: Int
+        cullBits: ByteArray, texCoords: Array<idVec2>, planes: Array<idPlane>, verts: Array<idDrawVert>, numVerts: Int
     ) {
         var i = 0
         while (i < numVerts) {
@@ -3355,11 +3284,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
          ============
          */
     override fun DeriveTriPlanes(
-        planes: Array<idPlane>,
-        verts: Array<idDrawVert>,
-        numVerts: Int,
-        indexes: IntArray,
-        numIndexes: Int
+        planes: Array<idPlane>, verts: Array<idDrawVert>, numVerts: Int, indexes: IntArray, numIndexes: Int
     ) {
         var i: Int
         var planePtr: Int
@@ -3381,9 +3306,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
             d1[2] = c.xyz[2] - a.xyz[2]
             n.set(
                 idVec3(
-                    d1[1] * d0[2] - d1[2] * d0[1],
-                    d1[2] * d0[0] - d1[0] * d0[2],
-                    d1[0] * d0[1] - d1[1] * d0[0]
+                    d1[1] * d0[2] - d1[2] * d0[1], d1[2] * d0[0] - d1[0] * d0[2], d1[0] * d0[1] - d1[1] * d0[0]
                 )
             )
             f = idMath.RSqrt(n.x * n.x + n.y * n.y + n.z * n.z)
@@ -3408,16 +3331,11 @@ internal class idSIMD_Generic : idSIMDProcessor() {
          ============
          */
     override fun DeriveTangents(
-        planes: Array<idPlane>,
-        verts: Array<idDrawVert>,
-        numVerts: Int,
-        indexes: IntArray,
-        numIndexes: Int
+        planes: Array<idPlane>, verts: Array<idDrawVert>, numVerts: Int, indexes: IntArray, numIndexes: Int
     ) {
         var i: Int
         var planesPtr: Int
-        val used = BooleanArray(numVerts)
-        //	memset( used, 0, numVerts * sizeof( used[0] ) );
+        val used = BooleanArray(numVerts) //	memset( used, 0, numVerts * sizeof( used[0] ) );
         i = 0
         planesPtr = 0
         while (i < numIndexes) {
@@ -3451,9 +3369,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
             // normal
             n.set(
                 idVec3(
-                    d1[1] * d0[2] - d1[2] * d0[1],
-                    d1[2] * d0[0] - d1[0] * d0[2],
-                    d1[0] * d0[1] - d1[1] * d0[0]
+                    d1[1] * d0[2] - d1[2] * d0[1], d1[2] * d0[0] - d1[0] * d0[2], d1[0] * d0[1] - d1[1] * d0[0]
                 )
             )
             f = idMath.RSqrt(n.x * n.x + n.y * n.y + n.z * n.z)
@@ -3530,9 +3446,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
          ============
          */
     override fun DeriveUnsmoothedTangents(
-        verts: Array<idDrawVert>,
-        dominantTris: Array<dominantTri_s>,
-        numVerts: Int
+        verts: Array<idDrawVert>, dominantTris: Array<dominantTri_s>, numVerts: Int
     ) {
         assert(dominantTris.size <= numVerts)
         for (i in 0 until numVerts) {
@@ -3632,8 +3546,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
         indexes: IntArray,
         numIndexes: Int
     ) {
-        val used = BooleanArray(numVerts)
-        //	memset( used, 0, numVerts * sizeof( used[0] ) );
+        val used = BooleanArray(numVerts) //	memset( used, 0, numVerts * sizeof( used[0] ) );
         for (i in numIndexes - 1 downTo 0) {
             used[indexes[i]] = true
         }
@@ -3668,8 +3581,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
         indexes: IntArray,
         numIndexes: Int
     ) {
-        val used = BooleanArray(numVerts)
-        //	memset( used, 0, numVerts * sizeof( used[0] ) );
+        val used = BooleanArray(numVerts) //	memset( used, 0, numVerts * sizeof( used[0] ) );
         for (i in numIndexes - 1 downTo 0) {
             used[indexes[i]] = true
         }
@@ -3693,11 +3605,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
     }
 
     override fun CreateShadowCache(
-        vertexCache: Array<idVec4>,
-        vertRemap: IntArray,
-        lightOrigin: idVec3,
-        verts: Array<idDrawVert>,
-        numVerts: Int
+        vertexCache: Array<idVec4>, vertRemap: IntArray, lightOrigin: idVec3, verts: Array<idDrawVert>, numVerts: Int
     ): Int {
         var outVerts = 0
         for (i in 0 until numVerts) {
@@ -3724,9 +3632,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
     }
 
     override fun CreateVertexProgramShadowCache(
-        vertexCache: Array<idVec4>,
-        verts: Array<idDrawVert>,
-        numVerts: Int
+        vertexCache: Array<idVec4>, verts: Array<idDrawVert>, numVerts: Int
     ): Int {
         for (i in 0 until numVerts) {
             val v = verts[i].xyz.ToFloatPtr()
@@ -3750,11 +3656,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
          ============
          */
     override fun UpSamplePCMTo44kHz(
-        dest: FloatArray,
-        pcm: ShortArray,
-        numSamples: Int,
-        kHz: Int,
-        numChannels: Int
+        dest: FloatArray, pcm: ShortArray, numSamples: Int, kHz: Int, numChannels: Int
     ) {
         if (kHz == 11025) {
             if (numChannels == 1) {
@@ -3811,12 +3713,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
          ============
          */
     override fun UpSampleOGGTo44kHz(
-        dest: FloatArray,
-        offset: Int,
-        ogg: Array<FloatArray>,
-        numSamples: Int,
-        kHz: Int,
-        numChannels: Int
+        dest: FloatArray, offset: Int, ogg: Array<FloatArray>, numSamples: Int, kHz: Int, numChannels: Int
     ) {
         if (kHz == 11025) {
             if (numChannels == 1) {
@@ -3872,49 +3769,35 @@ internal class idSIMD_Generic : idSIMDProcessor() {
     }
 
     override fun UpSampleOGGTo44kHz(
-        dest: FloatBuffer,
-        offset: Int,
-        ogg: Array<FloatArray>,
-        numSamples: Int,
-        kHz: Int,
-        numChannels: Int
+        dest: FloatBuffer, offset: Int, ogg: Array<FloatArray>, numSamples: Int, kHz: Int, numChannels: Int
     ) {
         var offset = offset
         offset += dest.position()
         if (kHz == 11025) {
             if (numChannels == 1) {
                 for (i in 0 until numSamples) {
-                    dest.put(offset + (i * 4 + 0), ogg[0][i] * 32768.0f)
-                        .put(offset + (i * 4 + 1), ogg[0][i] * 32768.0f)
-                        .put(offset + (i * 4 + 2), ogg[0][i] * 32768.0f)
-                        .put(offset + (i * 4 + 3), ogg[0][i] * 32768.0f)
+                    dest.put(offset + (i * 4 + 0), ogg[0][i] * 32768.0f).put(offset + (i * 4 + 1), ogg[0][i] * 32768.0f)
+                        .put(offset + (i * 4 + 2), ogg[0][i] * 32768.0f).put(offset + (i * 4 + 3), ogg[0][i] * 32768.0f)
                 }
             } else {
                 val untilRange = numSamples shr 1
                 for (i in 0 until untilRange) {
-                    dest.put(offset + (i * 8 + 0), ogg[0][i] * 32768.0f)
-                        .put(offset + (i * 8 + 2), ogg[0][i] * 32768.0f)
-                        .put(offset + (i * 8 + 4), ogg[0][i] * 32768.0f)
-                        .put(offset + (i * 8 + 6), ogg[0][i] * 32768.0f)
-                    dest.put(offset + (i * 8 + 1), ogg[1][i] * 32768.0f)
-                        .put(offset + (i * 8 + 3), ogg[1][i] * 32768.0f)
-                        .put(offset + (i * 8 + 5), ogg[1][i] * 32768.0f)
-                        .put(offset + (i * 8 + 7), ogg[1][i] * 32768.0f)
+                    dest.put(offset + (i * 8 + 0), ogg[0][i] * 32768.0f).put(offset + (i * 8 + 2), ogg[0][i] * 32768.0f)
+                        .put(offset + (i * 8 + 4), ogg[0][i] * 32768.0f).put(offset + (i * 8 + 6), ogg[0][i] * 32768.0f)
+                    dest.put(offset + (i * 8 + 1), ogg[1][i] * 32768.0f).put(offset + (i * 8 + 3), ogg[1][i] * 32768.0f)
+                        .put(offset + (i * 8 + 5), ogg[1][i] * 32768.0f).put(offset + (i * 8 + 7), ogg[1][i] * 32768.0f)
                 }
             }
         } else if (kHz == 22050) {
             if (numChannels == 1) {
                 for (i in 0 until numSamples) {
-                    dest.put(offset + (i * 2 + 0), ogg[0][i] * 32768.0f)
-                        .put(offset + (i * 2 + 1), ogg[0][i] * 32768.0f)
+                    dest.put(offset + (i * 2 + 0), ogg[0][i] * 32768.0f).put(offset + (i * 2 + 1), ogg[0][i] * 32768.0f)
                 }
             } else {
                 val untilRange = numSamples shr 1
                 for (i in 0 until untilRange) {
-                    dest.put(offset + (i * 4 + 0), ogg[0][i] * 32768.0f)
-                        .put(offset + (i * 4 + 2), ogg[0][i] * 32768.0f)
-                    dest.put(offset + (i * 4 + 1), ogg[1][i] * 32768.0f)
-                        .put(offset + (i * 4 + 3), ogg[1][i] * 32768.0f)
+                    dest.put(offset + (i * 4 + 0), ogg[0][i] * 32768.0f).put(offset + (i * 4 + 2), ogg[0][i] * 32768.0f)
+                    dest.put(offset + (i * 4 + 1), ogg[1][i] * 32768.0f).put(offset + (i * 4 + 3), ogg[1][i] * 32768.0f)
                 }
             }
         } else if (kHz == 44100) {
@@ -3925,8 +3808,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
             } else {
                 val untilRange = numSamples shr 1
                 for (i in 0 until untilRange) {
-                    dest.put(offset + (i * 2 + 0), ogg[0][i] * 32768.0f)
-                        .put(offset + (i * 2 + 1), ogg[1][i] * 32768.0f)
+                    dest.put(offset + (i * 2 + 0), ogg[0][i] * 32768.0f).put(offset + (i * 2 + 1), ogg[1][i] * 32768.0f)
                 }
             }
         } else {
@@ -3935,11 +3817,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
     }
 
     override fun MixSoundTwoSpeakerMono(
-        mixBuffer: FloatArray,
-        samples: FloatArray,
-        numSamples: Int,
-        lastV: FloatArray,
-        currentV: FloatArray
+        mixBuffer: FloatArray, samples: FloatArray, numSamples: Int, lastV: FloatArray, currentV: FloatArray
     ) {
         var sL = lastV[0]
         var sR = lastV[1]
@@ -3955,11 +3833,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
     }
 
     override fun MixSoundTwoSpeakerStereo(
-        mixBuffer: FloatArray,
-        samples: FloatArray,
-        numSamples: Int,
-        lastV: FloatArray,
-        currentV: FloatArray
+        mixBuffer: FloatArray, samples: FloatArray, numSamples: Int, lastV: FloatArray, currentV: FloatArray
     ) {
         var sL = lastV[0]
         var sR = lastV[1]
@@ -3975,11 +3849,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
     }
 
     override fun MixSoundSixSpeakerMono(
-        mixBuffer: FloatArray,
-        samples: FloatArray,
-        numSamples: Int,
-        lastV: FloatArray,
-        currentV: FloatArray
+        mixBuffer: FloatArray, samples: FloatArray, numSamples: Int, lastV: FloatArray, currentV: FloatArray
     ) {
         var sL0 = lastV[0]
         var sL1 = lastV[1]
@@ -4011,11 +3881,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
     }
 
     override fun MixSoundSixSpeakerStereo(
-        mixBuffer: FloatArray,
-        samples: FloatArray,
-        numSamples: Int,
-        lastV: FloatArray,
-        currentV: FloatArray
+        mixBuffer: FloatArray, samples: FloatArray, numSamples: Int, lastV: FloatArray, currentV: FloatArray
     ) {
         var sL0 = lastV[0]
         var sL1 = lastV[1]

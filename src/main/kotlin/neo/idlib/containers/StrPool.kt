@@ -88,8 +88,7 @@ class StrPool {
                 i = poolHash.First(hash)
                 while (i != -1) {
                     if (pool[i].Icmp(string) == 0) {
-                        pool[i].numUsers++
-                        //                        System.out.printf("AllocString, i = %d\n", i);
+                        pool[i].numUsers++ //                        System.out.printf("AllocString, i = %d\n", i);
                         return pool[i]
                     }
                     i = poolHash.Next(i)
@@ -129,8 +128,7 @@ class StrPool {
                     }
                 }
                 assert(i != -1)
-                assert(pool[i] === poolStr)
-                //		delete pool[i];
+                assert(pool[i] === poolStr) //		delete pool[i];
                 pool.RemoveIndex(i)
                 poolHash.RemoveIndex(hash, i)
             }
@@ -138,12 +136,10 @@ class StrPool {
 
         fun CopyString(poolStr: idPoolStr): idPoolStr {
             assert(poolStr.numUsers >= 1)
-            return if (poolStr.pool === this) {
-                // the string is from this pool so just increase the user count
+            return if (poolStr.pool === this) { // the string is from this pool so just increase the user count
                 poolStr.numUsers++
                 poolStr
-            } else {
-                // the string is from another pool so it needs to be re-allocated from this pool.
+            } else { // the string is from another pool so it needs to be re-allocated from this pool.
                 AllocString(poolStr.toString())
             }
         }

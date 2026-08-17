@@ -48,8 +48,7 @@ import neo.idlib.math.idVec3
 Collision detection for rotational motion
 
 ===============================================================================
-*/
-// epsilon for round-off errors in epsilon calculations
+*/ // epsilon for round-off errors in epsilon calculations
 const val CM_PL_RANGE_EPSILON = 1e-4f
 
 // if the collision point is this close to the rotation axis it is not considered a collision

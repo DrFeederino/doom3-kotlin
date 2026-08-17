@@ -22,8 +22,7 @@ import neo.ui.ListGUI.idListGUI
 import neo.ui.UserInterface
 import neo.ui.UserInterface.idUserInterface
 
-class ServerScan {
-    /*
+class ServerScan {/*
      ===============================================================================
 
      Scan for servers, on the LAN or from a list
@@ -143,8 +142,7 @@ class ServerScan {
                 val info = net_info.FindKey(serv.toString())
                 if (null == info) {
                     Common.common.DPrintf(
-                        "idServerScan::InfoResponse NET_SCAN: reply from unknown %s\n",
-                        serv.toString()
+                        "idServerScan::InfoResponse NET_SCAN: reply from unknown %s\n", serv.toString()
                     )
                     return 0
                 }
@@ -158,12 +156,10 @@ class ServerScan {
                 server.id = 0
 
                 // check for duplicate servers
-                for (i in 0 until Num()) {
-                    // FIX: was != (inverted) - C++ memcmp == 0 means EQUAL, so check for equal addresses
+                for (i in 0 until Num()) { // FIX: was != (inverted) - C++ memcmp == 0 means EQUAL, so check for equal addresses
                     if (get(i).adr == server.adr) {
                         Common.common.DPrintf(
-                            "idServerScan::InfoResponse LAN_SCAN: duplicate server %s\n",
-                            serv.toString()
+                            "idServerScan::InfoResponse LAN_SCAN: duplicate server %s\n", serv.toString()
                         )
                         return 1
                     }
@@ -178,8 +174,7 @@ class ServerScan {
             } else {
                 server.serverInfo.Set("si_mapName", si_map)
             }
-            val index = Append(server)
-            // for now, don't maintain sorting when adding new info response servers
+            val index = Append(server) // for now, don't maintain sorting when adding new info response servers
             m_sortedServers.Append(Num() - 1)
             if (listGUI!!.IsConfigured() && !IsFiltered(server)) {
                 GUIAdd(Num() - 1, server)
@@ -229,11 +224,9 @@ class ServerScan {
         //
         // scan the current list of servers - used for refreshes and while receiving a fresh list
         fun NetScan() {
-            if (!idAsyncNetwork.client.IsPortInitialized()) {
-                // if the port isn't open, initialize it, but wait for a short
+            if (!idAsyncNetwork.client.IsPortInitialized()) { // if the port isn't open, initialize it, but wait for a short
                 // time to let the OS do whatever magic things it needs to do...
-                idAsyncNetwork.client.InitPort()
-                // start the scan one second from now...
+                idAsyncNetwork.client.InitPort() // start the scan one second from now...
                 scan_state = scan_state_t.WAIT_ON_INIT
                 endWaitTime = win_shared.Sys_Milliseconds() + 1000
                 return
@@ -309,8 +302,7 @@ class ServerScan {
 
             // update state
             if ((!incoming_net || incoming_useTimeout && win_shared.Sys_Milliseconds() > incoming_lastTime) && net_info.GetNumKeyVals() == 0) {
-                EndServers()
-                // the list is complete, we are no longer waiting for any getInfo replies
+                EndServers() // the list is complete, we are no longer waiting for any getInfo replies
                 Common.common.Printf("Scanned %d servers.\n", cur_info)
                 scan_state = scan_state_t.IDLE
             }
@@ -331,8 +323,7 @@ class ServerScan {
             ic = Num()
             if (0 == ic) {
                 return false
-            }
-            // FIX: was reassigning local var reference instead of copying fields.
+            } // FIX: was reassigning local var reference instead of copying fields.
             // C++ operator= copies all struct fields; Kotlin reference reassignment just changes the pointer.
             var bestServer = get(0)
             i = 1
@@ -341,8 +332,7 @@ class ServerScan {
                     bestServer = get(i)
                 }
                 i++
-            }
-            // Copy best server fields to the output parameter
+            } // Copy best server fields to the output parameter
             serv.adr = bestServer.adr
             serv.serverInfo = bestServer.serverInfo
             serv.ping = bestServer.ping
@@ -412,9 +402,7 @@ class ServerScan {
                 }
                 m_pGUI!!.SetStateString("server_map", get(i).serverInfo.GetString("si_mapName"))
                 FileSystem_h.fileSystem.FindMapScreenshot(
-                    get(i).serverInfo.GetString("si_map"),
-                    screenshot,
-                    MAX_STRING_CHARS
+                    get(i).serverInfo.GetString("si_map"), screenshot, MAX_STRING_CHARS
                 )
                 m_pGUI!!.SetStateString("browser_levelshot", screenshot.toString())
                 m_pGUI!!.SetStateString("server_gameType", get(i).serverInfo.GetString("si_gameType"))
@@ -464,8 +452,7 @@ class ServerScan {
                 m_sort = sort
                 m_sortAscending = true // is the default for any new sort
                 m_sortedServers.Sort(Cmp())
-            }
-            // trigger a redraw
+            } // trigger a redraw
             ApplyFilter()
         }
 
@@ -497,8 +484,9 @@ class ServerScan {
             var name = server.serverInfo.GetString("si_name", Licensee.GAME_NAME + " Server")!!
             var d3xp = false
             var mod = false
-            if (0 == idStr.Icmp(server.serverInfo.GetString("fs_game"), "d3xp")
-                || 0 == idStr.Icmp(server.serverInfo.GetString("fs_game_base"), "d3xp")
+            if (0 == idStr.Icmp(
+                    server.serverInfo.GetString("fs_game"), "d3xp"
+                ) || 0 == idStr.Icmp(server.serverInfo.GetString("fs_game_base"), "d3xp")
             ) {
                 d3xp = true
             }
@@ -510,8 +498,7 @@ class ServerScan {
                 name += "mtr_PB"
             }
             name += "\t"
-            name += if (d3xp) {
-                // FIXME: even for a 'D3XP mod'
+            name += if (d3xp) { // FIXME: even for a 'D3XP mod'
                 // could have a specific icon for this case
                 "mtr_doom3XPIcon"
             } else if (mod) {
@@ -532,34 +519,27 @@ class ServerScan {
         @Throws(idException::class)
         private fun IsFiltered(server: networkServer_t): Boolean {
             var i: Int
-            var keyval: idKeyValue?
-            // password filter
+            var keyval: idKeyValue? // password filter
             keyval = server.serverInfo.FindKey("si_usePass")
-            if (keyval != null && gui_filter_password.GetInteger() == 1) {
-                // show passworded only
+            if (keyval != null && gui_filter_password.GetInteger() == 1) { // show passworded only
                 if (keyval.GetValue()[0] == '0') {
                     return true
                 }
-            } else if (keyval != null && gui_filter_password.GetInteger() == 2) {
-                // show no password only
+            } else if (keyval != null && gui_filter_password.GetInteger() == 2) { // show no password only
                 if (keyval.GetValue()[0] != '0') {
                     return true
                 }
-            }
-            // players filter
+            } // players filter
             keyval = server.serverInfo.FindKey("si_maxPlayers")
             if (keyval != null) {
-                if (gui_filter_players.GetInteger() == 1 && server.clients == keyval.GetValue().toString()
-                        .toInt()
-                ) {
+                if (gui_filter_players.GetInteger() == 1 && server.clients == keyval.GetValue().toString().toInt()) {
                     return true
                 } else if (gui_filter_players.GetInteger() == 2 && (0 == server.clients || server.clients == keyval.GetValue()
                         .toString().toInt())
                 ) {
                     return true
                 }
-            }
-            // gametype filter
+            } // gametype filter
             keyval = server.serverInfo.FindKey("si_gameType")
             if (keyval != null && gui_filter_gameType.GetInteger() != 0) {
                 i = 0
@@ -572,8 +552,7 @@ class ServerScan {
                 if (l_gameTypes[i] != null && i != gui_filter_gameType.GetInteger() - 1) {
                     return true
                 }
-            }
-            // idle server filter
+            } // idle server filter
             keyval = server.serverInfo.FindKey("si_idleServer")
             if (keyval != null && 0 == gui_filter_idle.GetInteger()) {
                 if (0 == keyval.GetValue().Icmp("1")) {
@@ -583,8 +562,7 @@ class ServerScan {
 
             // autofilter D3XP games if the user does not has the XP installed
             if (!FileSystem_h.fileSystem.HasD3XP() && 0 == idStr.Icmp(
-                    server.serverInfo.GetString("fs_game"),
-                    "d3xp"
+                    server.serverInfo.GetString("fs_game"), "d3xp"
                 )
             ) {
                 return true
@@ -687,12 +665,7 @@ class ServerScan {
 
             //
             val l_gameTypes: Array<String?> = arrayOf(
-                "Deathmatch",
-                "Tourney",
-                "Team DM",
-                "Last Man",
-                "CTF",
-                null
+                "Deathmatch", "Tourney", "Team DM", "Last Man", "CTF", null
             )
             var l_serverScan: idServerScan = idServerScan()
         }

@@ -78,8 +78,7 @@ class SimpleWindow {
         private val cstAnchor: idWinInt = idWinInt()
         private val cstAnchorTo: idWinInt = idWinInt()       // for anchor transitions
         val cstAnchorFactor: idWinFloat = idWinFloat()    // for anchor transitions
-        private var cstNoClipBackground: Boolean = true
-        //#modified-fva; END
+        private var cstNoClipBackground: Boolean = true //#modified-fva; END
 
         //
         protected var text = idWinStr()
@@ -129,16 +128,14 @@ class SimpleWindow {
 
             // 
             //  added parent
-            mParent = win.GetParent()
-            // 
+            mParent = win.GetParent() //
             hideCursor.set(win.hideCursor)
 
             //#modified-fva; BEGIN
             cstAnchor.set(win.cstAnchor)
             cstAnchorTo.set(win.cstAnchorTo)
             cstAnchorFactor.set(win.cstAnchorFactor)
-            cstNoClipBackground = win.cstNoClipBackground
-            //#modified-fva; END
+            cstNoClipBackground = win.cstNoClipBackground //#modified-fva; END
 
             val parent = win.GetParent()
             if (parent != null) {
@@ -185,8 +182,7 @@ class SimpleWindow {
                 }
                 if (cstAnchorFactor.NeedsUpdate()) {
                     parent.AddUpdateVar(cstAnchorFactor)
-                }
-                //#modified-fva; END
+                } //#modified-fva; END
             }
         }
 
@@ -213,8 +209,7 @@ class SimpleWindow {
                 }
             } else {
                 dc!!.CstSetSize(cstAnchor.data, cstAnchorTo.data, cstAnchorFactor.data)
-            }
-            //#modified-fva; END
+            } //#modified-fva; END
 
             drawRect.Offset(x, y)
             clientRect.Offset(x, y)
@@ -230,8 +225,7 @@ class SimpleWindow {
             //#modified-fva; BEGIN
             if ((flags and Window.WIN_NOCLIP) == 0 && cstNoClipBackground) {
                 dc!!.EnableClipping(true)
-            }
-            //#modified-fva; END
+            } //#modified-fva; END
 
             DrawBorderAndCaption(drawRect)
             if (textShadow != 0) {
@@ -317,8 +311,7 @@ class SimpleWindow {
                 retVar = cstAnchorTo
             } else if (Icmp(_name, "cstAnchorFactor") == 0) {
                 retVar = cstAnchorFactor
-            }
-            //#modified-fva; END
+            } //#modified-fva; END
 
             return retVar
         }
@@ -357,8 +350,7 @@ class SimpleWindow {
             //#modified-fva; BEGIN
             if (wv === cstAnchorFactor) {
                 ret = Window.TransiotonalDataOffset.CSTANCHORFACTOR_OFFSET.offset
-            }
-            //#modified-fva; END
+            } //#modified-fva; END
 
             if (ret != -1) {
                 owner?.simp = this
@@ -400,8 +392,7 @@ class SimpleWindow {
             cstAnchor.WriteToSaveGame(savefile)
             cstAnchorTo.WriteToSaveGame(savefile)
             cstAnchorFactor.WriteToSaveGame(savefile)
-            savefile.WriteBool(cstNoClipBackground)
-            //#modified-fva; END
+            savefile.WriteBool(cstNoClipBackground) //#modified-fva; END
 
             val stringLen: Int
             if (background != null) {
@@ -515,8 +506,7 @@ class SimpleWindow {
                 if (matColor.w() > 0) {
                     val scaleX: Float
                     val scaleY: Float
-                    if (flags and Window.WIN_NATURALMAT != 0) {
-                        // DG: now also multiplied with matScalex/y, don't see a reason not to support that
+                    if (flags and Window.WIN_NATURALMAT != 0) { // DG: now also multiplied with matScalex/y, don't see a reason not to support that
                         //     (it allows scaling a tiled background image)
                         scaleX = (drawRect.w / background!!.GetImageWidth()) * matScalex
                         scaleY = (drawRect.h / background!!.GetImageHeight()) * matScaley
@@ -525,14 +515,7 @@ class SimpleWindow {
                         scaleY = matScaley
                     }
                     dc!!.DrawMaterial(
-                        drawRect.x,
-                        drawRect.y,
-                        drawRect.w,
-                        drawRect.h,
-                        background,
-                        matColor.data,
-                        scaleX,
-                        scaleY
+                        drawRect.x, drawRect.y, drawRect.w, drawRect.h, background, matColor.data, scaleX, scaleY
                     )
                 }
             }

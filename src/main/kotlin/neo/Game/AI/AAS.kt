@@ -41,8 +41,7 @@ object AAS {
     const val PATHTYPE_WALK = 0
     const val PATHTYPE_WALKOFFLEDGE = 1
     const val PATHTYPE_BARRIERJUMP = 2
-    const val PATHTYPE_JUMP = 3
-    // };
+    const val PATHTYPE_JUMP = 3 // };
 
     class aasPath_s {
         var type: Int = 0                               // path type
@@ -109,11 +108,7 @@ object AAS {
 
         // Get wall edges.
         abstract fun GetWallEdges(
-            areaNum: Int,
-            bounds: idBounds,
-            travelFlags: Int,
-            edges: IntArray,
-            maxEdges: Int
+            areaNum: Int, bounds: idBounds, travelFlags: Int, edges: IntArray, maxEdges: Int
         ): Int
 
         // Sort the wall edges to create continuous sequences of walls.
@@ -152,12 +147,7 @@ object AAS {
 
         // Creates a walk path towards the goal.
         abstract fun WalkPathToGoal(
-            path: aasPath_s,
-            areaNum: Int,
-            origin: idVec3,
-            goalAreaNum: Int,
-            goalOrigin: idVec3,
-            travelFlags: Int
+            path: aasPath_s, areaNum: Int, origin: idVec3, goalAreaNum: Int, goalOrigin: idVec3, travelFlags: Int
         ): Boolean
 
         // Returns true if one can walk along a straight line from the origin to the goal origin.
@@ -173,12 +163,7 @@ object AAS {
 
         // Creates a fly path towards the goal.
         abstract fun FlyPathToGoal(
-            path: aasPath_s,
-            areaNum: Int,
-            origin: idVec3,
-            goalAreaNum: Int,
-            goalOrigin: idVec3,
-            travelFlags: Int
+            path: aasPath_s, areaNum: Int, origin: idVec3, goalAreaNum: Int, goalOrigin: idVec3, travelFlags: Int
         ): Boolean
 
         // Returns true if one can fly along a straight line from the origin to the goal origin.

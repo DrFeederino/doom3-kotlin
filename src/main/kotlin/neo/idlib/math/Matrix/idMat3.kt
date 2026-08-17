@@ -21,36 +21,24 @@ class idMat3 {
     constructor(x: idVec3, y: idVec3, z: idVec3) {
         mat[0].x = x.x
         mat[0].y = x.y
-        mat[0].z = x.z
-        //
+        mat[0].z = x.z //
         mat[1].x = y.x
         mat[1].y = y.y
-        mat[1].z = y.z
-        //
+        mat[1].z = y.z //
         mat[2].x = z.x
         mat[2].y = z.y
         mat[2].z = z.z
     }
 
     constructor(
-        xx: Float,
-        xy: Float,
-        xz: Float,
-        yx: Float,
-        yy: Float,
-        yz: Float,
-        zx: Float,
-        zy: Float,
-        zz: Float
+        xx: Float, xy: Float, xz: Float, yx: Float, yy: Float, yz: Float, zx: Float, zy: Float, zz: Float
     ) {
         mat[0].x = xx
         mat[0].y = xy
-        mat[0].z = xz
-        //
+        mat[0].z = xz //
         mat[1].x = yx
         mat[1].y = yy
-        mat[1].z = yz
-        //
+        mat[1].z = yz //
         mat[2].x = zx
         mat[2].y = zy
         mat[2].z = zz
@@ -59,19 +47,16 @@ class idMat3 {
     constructor(m: idMat3) {
         mat[0].x = m.mat[0].x
         mat[0].y = m.mat[0].y
-        mat[0].z = m.mat[0].z
-        //
+        mat[0].z = m.mat[0].z //
         mat[1].x = m.mat[1].x
         mat[1].y = m.mat[1].y
-        mat[1].z = m.mat[1].z
-        //
+        mat[1].z = m.mat[1].z //
         mat[2].x = m.mat[2].x
         mat[2].y = m.mat[2].y
         mat[2].z = m.mat[2].z
     }
 
-    constructor(src: Array<FloatArray>) {
-//	memcpy( mat, src, 3 * 3 * sizeof( Float ) );
+    constructor(src: Array<FloatArray>) { //	memcpy( mat, src, 3 * 3 * sizeof( Float ) );
         mat[0].set(idVec3(src[0][0], src[0][1], src[0][2]))
         mat[1].set(idVec3(src[1][0], src[1][1], src[1][2]))
         mat[2].set(idVec3(src[2][0], src[2][1], src[2][2]))
@@ -96,18 +81,22 @@ class idMat3 {
     //public	idMat3			operator-() const;
     operator fun unaryMinus(): idMat3 {
         return idMat3(
-            -mat[0].x, -mat[0].y, -mat[0].z,
-            -mat[1].x, -mat[1].y, -mat[1].z,
-            -mat[2].x, -mat[2].y, -mat[2].z
+            -mat[0].x, -mat[0].y, -mat[0].z, -mat[1].x, -mat[1].y, -mat[1].z, -mat[2].x, -mat[2].y, -mat[2].z
         )
     }
 
     //public	idMat3 &		operator*=( const Float a );
     operator fun times(a: Float): idMat3 {
         return idMat3(
-            mat[0].x * a, mat[0].y * a, mat[0].z * a,
-            mat[1].x * a, mat[1].y * a, mat[1].z * a,
-            mat[2].x * a, mat[2].y * a, mat[2].z * a
+            mat[0].x * a,
+            mat[0].y * a,
+            mat[0].z * a,
+            mat[1].x * a,
+            mat[1].y * a,
+            mat[1].z * a,
+            mat[2].x * a,
+            mat[2].y * a,
+            mat[2].z * a
         )
     }
 
@@ -130,9 +119,15 @@ class idMat3 {
     //public	idMat3 &		operator-=( const idMat3 &a );
     operator fun plus(a: idMat3): idMat3 {
         return idMat3(
-            mat[0].x + a.mat[0].x, mat[0].y + a.mat[0].y, mat[0].z + a.mat[0].z,
-            mat[1].x + a.mat[1].x, mat[1].y + a.mat[1].y, mat[1].z + a.mat[1].z,
-            mat[2].x + a.mat[2].x, mat[2].y + a.mat[2].y, mat[2].z + a.mat[2].z
+            mat[0].x + a.mat[0].x,
+            mat[0].y + a.mat[0].y,
+            mat[0].z + a.mat[0].z,
+            mat[1].x + a.mat[1].x,
+            mat[1].y + a.mat[1].y,
+            mat[1].z + a.mat[1].z,
+            mat[2].x + a.mat[2].x,
+            mat[2].y + a.mat[2].y,
+            mat[2].z + a.mat[2].z
         )
     }
 
@@ -140,9 +135,15 @@ class idMat3 {
     //public	friend idMat3	operator*( const Float a, const idMat3 &mat );
     operator fun minus(a: idMat3): idMat3 {
         return idMat3(
-            mat[0].x - a.mat[0].x, mat[0].y - a.mat[0].y, mat[0].z - a.mat[0].z,
-            mat[1].x - a.mat[1].x, mat[1].y - a.mat[1].y, mat[1].z - a.mat[1].z,
-            mat[2].x - a.mat[2].x, mat[2].y - a.mat[2].y, mat[2].z - a.mat[2].z
+            mat[0].x - a.mat[0].x,
+            mat[0].y - a.mat[0].y,
+            mat[0].z - a.mat[0].z,
+            mat[1].x - a.mat[1].x,
+            mat[1].y - a.mat[1].y,
+            mat[1].z - a.mat[1].z,
+            mat[2].x - a.mat[2].x,
+            mat[2].y - a.mat[2].y,
+            mat[2].z - a.mat[2].z
         )
     }
 
@@ -150,12 +151,10 @@ class idMat3 {
     fun timesAssign(a: Float): idMat3 {
         mat[0].x *= a
         mat[0].y *= a
-        mat[0].z *= a
-        //
+        mat[0].z *= a //
         mat[1].x *= a
         mat[1].y *= a
-        mat[1].z *= a
-        //
+        mat[1].z *= a //
         mat[2].x *= a
         mat[2].y *= a
         mat[2].z *= a
@@ -170,8 +169,7 @@ class idMat3 {
         while (i < 3) {
             j = 0
             while (j < 3) {
-                dst[j] =
-                    mat[i].x * a.mat[0][j] + mat[i].y * a.mat[1][j] + mat[i].z * a.mat[2][j]
+                dst[j] = mat[i].x * a.mat[0][j] + mat[i].y * a.mat[1][j] + mat[i].z * a.mat[2][j]
                 j++
             }
             this.set(i, 0, dst[0])
@@ -186,12 +184,10 @@ class idMat3 {
     fun plusAssign(a: Float): idMat3 {
         mat[0].x += a
         mat[0].y += a
-        mat[0].z += a
-        //
+        mat[0].z += a //
         mat[1].x += a
         mat[1].y += a
-        mat[1].z += a
-        //
+        mat[1].z += a //
         mat[2].x += a
         mat[2].y += a
         mat[2].z += a
@@ -201,12 +197,10 @@ class idMat3 {
     fun minusAssign(a: Float): idMat3 {
         mat[0].x -= a
         mat[0].y -= a
-        mat[0].z -= a
-        //
+        mat[0].z -= a //
         mat[1].x -= a
         mat[1].y -= a
-        mat[1].z -= a
-        //
+        mat[1].z -= a //
         mat[2].x -= a
         mat[2].y -= a
         mat[2].z -= a
@@ -216,15 +210,13 @@ class idMat3 {
     //public	bool			operator==( const idMat3 &a ) const;					// exact compare, no epsilon
     //public	bool			operator!=( const idMat3 &a ) const;					// exact compare, no epsilon
     fun Compare(a: idMat3): Boolean { // exact compare, no epsilon
-        return (mat[0].Compare(a.mat[0])
-                && mat[1].Compare(a.mat[1])
-                && mat[2].Compare(a.mat[2]))
+        return (mat[0].Compare(a.mat[0]) && mat[1].Compare(a.mat[1]) && mat[2].Compare(a.mat[2]))
     }
 
     fun Compare(a: idMat3, epsilon: Float): Boolean { // compare with epsilon
-        return (mat[0].Compare(a.mat[0], epsilon)
-                && mat[1].Compare(a.mat[1], epsilon)
-                && mat[2].Compare(a.mat[2], epsilon))
+        return (mat[0].Compare(a.mat[0], epsilon) && mat[1].Compare(a.mat[1], epsilon) && mat[2].Compare(
+            a.mat[2], epsilon
+        ))
     }
 
     override fun hashCode(): Int {
@@ -288,12 +280,9 @@ class idMat3 {
 
 
     fun IsDiagonal(epsilon: Float = MATRIX_EPSILON): Boolean {
-        return (abs(mat[0].y) <= epsilon
-                && abs(mat[0].z) <= epsilon
-                && abs(mat[1].x) <= epsilon
-                && abs(mat[1].z) <= epsilon
-                && abs(mat[2].x) <= epsilon
-                && abs(mat[2].y) <= epsilon)
+        return (abs(mat[0].y) <= epsilon && abs(mat[0].z) <= epsilon && abs(mat[1].x) <= epsilon && abs(mat[1].z) <= epsilon && abs(
+            mat[2].x
+        ) <= epsilon && abs(mat[2].y) <= epsilon)
     }
 
     fun IsRotated(): Boolean {
@@ -308,9 +297,7 @@ class idMat3 {
 
     fun UnprojectVector(src: idVec3, dst: idVec3) {
         dst.set(
-            mat[0] * src.x +
-                    mat[1] * src.y +
-                    mat[2] * src.z
+            mat[0] * src.x + mat[1] * src.y + mat[2] * src.z
         )
     }
 
@@ -360,9 +347,7 @@ class idMat3 {
 
     fun Transpose(): idMat3 { // returns transpose
         return idMat3(
-            mat[0].x, mat[1].x, mat[2].x,
-            mat[0].y, mat[1].y, mat[2].y,
-            mat[0].z, mat[1].z, mat[2].z
+            mat[0].x, mat[1].x, mat[2].x, mat[0].y, mat[1].y, mat[2].y, mat[0].z, mat[1].z, mat[2].z
         )
     }
 
@@ -462,12 +447,12 @@ class idMat3 {
         val m = idMat3()
         val newCenter = idVec3()
         newCenter.set(centerOfMass + translation)
-        m.mat[0].x = mass * (centerOfMass.y * centerOfMass.y + centerOfMass.z * centerOfMass.z
-                - (newCenter.y * newCenter.y + newCenter.z * newCenter.z))
-        m.mat[1].y = mass * (centerOfMass.x * centerOfMass.x + centerOfMass.z * centerOfMass.z
-                - (newCenter.x * newCenter.x + newCenter.z * newCenter.z))
-        m.mat[2].z = mass * (centerOfMass.x * centerOfMass.x + centerOfMass.y * centerOfMass.y
-                - (newCenter.x * newCenter.x + newCenter.y * newCenter.y))
+        m.mat[0].x =
+            mass * (centerOfMass.y * centerOfMass.y + centerOfMass.z * centerOfMass.z - (newCenter.y * newCenter.y + newCenter.z * newCenter.z))
+        m.mat[1].y =
+            mass * (centerOfMass.x * centerOfMass.x + centerOfMass.z * centerOfMass.z - (newCenter.x * newCenter.x + newCenter.z * newCenter.z))
+        m.mat[2].z =
+            mass * (centerOfMass.x * centerOfMass.x + centerOfMass.y * centerOfMass.y - (newCenter.x * newCenter.x + newCenter.y * newCenter.y))
         m.mat[1].x = mass * (newCenter.x * newCenter.y - centerOfMass.x * centerOfMass.y)
         m.mat[0].y = m.mat[1].x
         m.mat[2].y = mass * (newCenter.y * newCenter.z - centerOfMass.y * centerOfMass.z)
@@ -481,12 +466,12 @@ class idMat3 {
         val m = idMat3()
         val newCenter = idVec3()
         newCenter.set(centerOfMass + translation)
-        m.mat[0].x = mass * (centerOfMass.y * centerOfMass.y + centerOfMass.z * centerOfMass.z
-                - (newCenter.y * newCenter.y + newCenter.z * newCenter.z))
-        m.mat[1].y = mass * (centerOfMass.x * centerOfMass.x + centerOfMass.z * centerOfMass.z
-                - (newCenter.x * newCenter.x + newCenter.z * newCenter.z))
-        m.mat[2].z = mass * (centerOfMass.x * centerOfMass.x + centerOfMass.y * centerOfMass.y
-                - (newCenter.x * newCenter.x + newCenter.y * newCenter.y))
+        m.mat[0].x =
+            mass * (centerOfMass.y * centerOfMass.y + centerOfMass.z * centerOfMass.z - (newCenter.y * newCenter.y + newCenter.z * newCenter.z))
+        m.mat[1].y =
+            mass * (centerOfMass.x * centerOfMass.x + centerOfMass.z * centerOfMass.z - (newCenter.x * newCenter.x + newCenter.z * newCenter.z))
+        m.mat[2].z =
+            mass * (centerOfMass.x * centerOfMass.x + centerOfMass.y * centerOfMass.y - (newCenter.x * newCenter.x + newCenter.y * newCenter.y))
         m.mat[1].x = mass * (newCenter.x * newCenter.y - centerOfMass.x * centerOfMass.y)
         m.mat[0].y = m.mat[1].x
         m.mat[2].y = mass * (newCenter.y * newCenter.z - centerOfMass.y * centerOfMass.z)
@@ -496,15 +481,13 @@ class idMat3 {
         return this.plusAssign(m)
     }
 
-    fun InertiaRotate(rotation: idMat3): idMat3 {
-        // NOTE: the rotation matrix is stored column-major
-//            return rotation.Transpose() * (*this) * rotation;
+    fun InertiaRotate(rotation: idMat3): idMat3 { // NOTE: the rotation matrix is stored column-major
+        //            return rotation.Transpose() * (*this) * rotation;
         return rotation.Transpose() * this * rotation
     }
 
-    fun InertiaRotateSelf(rotation: idMat3): idMat3 {
-        // NOTE: the rotation matrix is stored column-major
-//	*this = rotation.Transpose() * (*this) * rotation;
+    fun InertiaRotateSelf(rotation: idMat3): idMat3 { // NOTE: the rotation matrix is stored column-major
+        //	*this = rotation.Transpose() * (*this) * rotation;
         this.set(rotation.Transpose() * this * rotation)
         return this
     }
@@ -548,7 +531,7 @@ class idMat3 {
         val k: Int
         val next = intArrayOf(1, 2, 0)
 
-//	trace = mat[0 ][0 ] + mat[1 ][1 ] + mat[2 ][2 ];
+        //	trace = mat[0 ][0 ] + mat[1 ][1 ] + mat[2 ][2 ];
         val trace: Float = Trace()
         if (trace > 0.0f) {
             t = trace + 1.0f
@@ -621,8 +604,7 @@ class idMat3 {
         if (abs(r.angle) < 1e-10f) {
             r.vec.set(0.0f, 0.0f, 1.0f)
             r.angle = 0.0f
-        } else {
-            //vec *= (1.0f / sin( angle ));
+        } else { //vec *= (1.0f / sin( angle ));
             r.vec.Normalize()
             r.vec.FixDegenerateNormal()
             r.angle *= 2.0f * idMath.M_RAD2DEG
@@ -633,13 +615,24 @@ class idMat3 {
         return r
     }
 
-    fun ToMat4(): idMat4 {
-        // NOTE: idMat3 is transposed because it is column-major
+    fun ToMat4(): idMat4 { // NOTE: idMat3 is transposed because it is column-major
         return idMat4(
-            mat[0].x, mat[1].x, mat[2].x, 0.0f,
-            mat[0].y, mat[1].y, mat[2].y, 0.0f,
-            mat[0].z, mat[1].z, mat[2].z, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f
+            mat[0].x,
+            mat[1].x,
+            mat[2].x,
+            0.0f,
+            mat[0].y,
+            mat[1].y,
+            mat[2].y,
+            0.0f,
+            mat[0].z,
+            mat[1].z,
+            mat[2].z,
+            0.0f,
+            0.0f,
+            0.0f,
+            0.0f,
+            1.0f
         )
     }
 
@@ -654,9 +647,7 @@ class idMat3 {
      */
     fun ToFloatPtr(): FloatArray {
         return floatArrayOf(
-            mat[0].x, mat[0].y, mat[0].z,
-            mat[1].x, mat[1].y, mat[1].z,
-            mat[2].x, mat[2].y, mat[2].z
+            mat[0].x, mat[0].y, mat[0].z, mat[1].x, mat[1].y, mat[1].z, mat[2].x, mat[2].y, mat[2].z
         )
     }
 
@@ -730,12 +721,10 @@ class idMat3 {
     fun plusAssign(a: idMat3): idMat3 {
         mat[0].x += a.mat[0].x
         mat[0].y += a.mat[0].y
-        mat[0].z += a.mat[0].z
-        //
+        mat[0].z += a.mat[0].z //
         mat[1].x += a.mat[1].x
         mat[1].y += a.mat[1].y
-        mat[1].z += a.mat[1].z
-        //
+        mat[1].z += a.mat[1].z //
         mat[2].x += a.mat[2].x
         mat[2].y += a.mat[2].y
         mat[2].z += a.mat[2].z

@@ -127,14 +127,10 @@ object DrawVert {
             return get_reinterpret_cast()
         }
 
-        private fun get_reinterpret_cast(): Int {
-//            return color[0].toInt() and 0x000000FF or (color[1].toInt() and 0x0000FF00
-//                    ) or (color[2].toInt() and 0x00FF0000
-//                    ) or (color[3].toInt() and -0x1000000)
-            return (color[0].toInt() and 0xFF) or
-                    ((color[1].toInt() and 0xFF) shl 8) or
-                    ((color[2].toInt() and 0xFF) shl 16) or
-                    ((color[3].toInt() and 0xFF) shl 24)
+        private fun get_reinterpret_cast(): Int { //            return color[0].toInt() and 0x000000FF or (color[1].toInt() and 0x0000FF00
+            //                    ) or (color[2].toInt() and 0x00FF0000
+            //                    ) or (color[3].toInt() and -0x1000000)
+            return (color[0].toInt() and 0xFF) or ((color[1].toInt() and 0xFF) shl 8) or ((color[2].toInt() and 0xFF) shl 16) or ((color[3].toInt() and 0xFF) shl 24)
         }
 
         private fun set_reinterpret_cast(color: Long): ShortArray {
@@ -190,11 +186,8 @@ object DrawVert {
         }
 
         companion object {
-            val SIZE: Int = (idVec3.SIZE
-                    + idVec2.SIZE
-                    + idVec3.SIZE
-                    + 2 * idVec3.SIZE
-                    + 4 * java.lang.Byte.SIZE) //color
+            val SIZE: Int =
+                (idVec3.SIZE + idVec2.SIZE + idVec3.SIZE + 2 * idVec3.SIZE + 4 * java.lang.Byte.SIZE) //color
 
             val BYTES = SIZE / java.lang.Byte.SIZE
             private var DBG_counter = 0

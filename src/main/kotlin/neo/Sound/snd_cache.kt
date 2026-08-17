@@ -82,8 +82,7 @@ object snd_cache {
                 : Long = 0
 
         // ~idSoundSample();
-        fun LengthIn44kHzSamples(): Int {
-            // objectSize is samples
+        fun LengthIn44kHzSamples(): Int { // objectSize is samples
             return if (objectInfo.nSamplesPerSec == 11025) {
                 objectSize shl 2
             } else if (objectInfo.nSamplesPerSec == 22050) {
@@ -152,8 +151,7 @@ object snd_cache {
 
          Loads based on name, possibly doing a MakeDefault if necessary
          ===================
-         */
-        // loads the current sound based on name
+         */ // loads the current sound based on name
         fun Load() {
             defaultSound = false
             purged = false
@@ -181,9 +179,7 @@ object snd_cache {
             }
             if (info[0].wBitsPerSample != 16) {
                 Common.common.Warning(
-                    "idSoundSample: %s is %dbits, expected 16bits using default",
-                    name,
-                    info[0].wBitsPerSample
+                    "idSoundSample: %s is %dbits, expected 16bits using default", name, info[0].wBitsPerSample
                 )
                 fh.Close()
                 MakeDefault()
@@ -260,8 +256,7 @@ object snd_cache {
                                     destData.putShort(i * 2, Short.MAX_VALUE)
                                 } else {
                                     destData.putShort(
-                                        i * 2,
-                                        idMath.FtoiFast(destData.getFloat(i * 4 * 4)).toShort()
+                                        i * 2, idMath.FtoiFast(destData.getFloat(i * 4 * 4)).toShort()
                                     )
                                 }
                             }
@@ -273,8 +268,7 @@ object snd_cache {
                                     destData.putShort(i * 2, Short.MAX_VALUE)
                                 } else {
                                     destData.putShort(
-                                        i * 2,
-                                        idMath.FtoiFast(destData.getFloat(i * 2 * 4)).toShort()
+                                        i * 2, idMath.FtoiFast(destData.getFloat(i * 2 * 4)).toShort()
                                     )
                                 }
                             }
@@ -289,8 +283,7 @@ object snd_cache {
                                 }
                             }
                         }
-                        AL10.alGetError()
-                        // LWJGL uses remaining() — must limit the buffer to valid short data
+                        AL10.alGetError() // LWJGL uses remaining() — must limit the buffer to valid short data
                         destData.limit(objectSize * 2)
                         destData.position(0)
                         AL10.alBufferData(
@@ -391,11 +384,7 @@ object snd_cache {
          ===================
          */
         fun FetchFromCache(
-            offset: Int,
-            output: ByteBuffer?,
-            position: IntArray?,
-            size: IntArray?,
-            allowIO: Boolean
+            offset: Int, output: ByteBuffer?, position: IntArray?, size: IntArray?, allowIO: Boolean
         ): Boolean {
             var offset = offset
             offset = offset and -0x2
@@ -487,8 +476,7 @@ object snd_cache {
             def.levelLoadReferenced = true
             def.onDemand = loadOnDemandOnly
             def.purged = true
-            if (!loadOnDemandOnly) {
-                // this may make it a default sound if it can't be loaded
+            if (!loadOnDemandOnly) { // this may make it a default sound if it can't be loaded
                 def.Load()
             }
             return def
@@ -543,7 +531,7 @@ object snd_cache {
         fun BeginLevelLoad() {
             insideLevelLoad = true
             for (i in 0 until listCache.Num()) {
-                val sample = listCache[i] ?: continue
+                val sample = listCache[i]
                 if (Common.com_purgeAll.GetBool()) {
                     sample.PurgeSoundSample()
                 }
@@ -569,12 +557,11 @@ object snd_cache {
             useCount = 0
             purgeCount = 0
             for (i in 0 until listCache.Num()) {
-                val sample = listCache[i] ?: continue
+                val sample = listCache[i]
                 if (sample.purged) {
                     continue
                 }
-                if (!sample.levelLoadReferenced) {
-//			common.Printf( "Purging %s\n", sample.name.c_str() );
+                if (!sample.levelLoadReferenced) { //			common.Printf( "Purging %s\n", sample.name.c_str() );
                     purgeCount += sample.objectMemSize
                     sample.PurgeSoundSample()
                 } else {
@@ -641,9 +628,7 @@ object snd_cache {
                 }
                 total += sample.objectMemSize
                 f.Printf(
-                    "%s %s\n",
-                    idStr.FormatNumber(sample.objectMemSize).toString(),
-                    sample.name.toString()
+                    "%s %s\n", idStr.FormatNumber(sample.objectMemSize).toString(), sample.name.toString()
                 )
                 i++
             }

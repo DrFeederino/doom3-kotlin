@@ -310,8 +310,7 @@ object Misc {
                 else -> {
                     super.ClientReceiveEvent(event, time, msg)
                 }
-            }
-            //            return false;
+            } //            return false;
         }
 
         private fun Event_TeleportPlayer(activator: idEntity?) {
@@ -329,18 +328,15 @@ object Misc {
             val ent =
                 if (!viewName.isNullOrEmpty()) gameLocal.FindEntity(viewName) else null //TODO:the standard C++ boolean checks if the bytes are switched on, which in the case of String means NOT NULL AND NOT EMPTY.
             val ts = if (isD3XP) SetTimeState(player.timeGroup) else null
-            if (f != 0.0f && ent != null) {
-                // place in private camera view for some time
+            if (f != 0.0f && ent != null) { // place in private camera view for some time
                 // the entity needs to teleport to where the camera view is to have the PVS right
                 player.Teleport(ent.GetPhysics().GetOrigin(), ang_zero, this)
                 player.StartSound("snd_teleport_enter", gameSoundChannel_t.SND_CHANNEL_ANY, 0, false)
-                player.SetPrivateCameraView(ent as idCamera?)
-                // the player entity knows where to spawn from the previous Teleport call
+                player.SetPrivateCameraView(ent as idCamera?) // the player entity knows where to spawn from the previous Teleport call
                 if (!gameLocal.isClient) {
                     player.PostEventSec(EV_Player_ExitTeleporter, f)
                 }
-            } else {
-                // direct to exit, Teleport will take care of the killbox
+            } else { // direct to exit, Teleport will take care of the killbox
                 player.Teleport(GetPhysics().GetOrigin(), GetPhysics().GetAxis().ToAngles(), null)
 
                 // multiplayer hijacked this entity, so only push the player in multiplayer
@@ -395,7 +391,7 @@ object Misc {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
                 eventCallbacks[EV_Activate] =
                     eventCallback_t1<idActivator> { a: idActivator, activator: idEventArg<*>? ->
-                        Event_Activate(a as idActivator, activator as idEventArg<idEntity>)
+                        Event_Activate(a, activator as idEventArg<idEntity>)
                     }
             }
         }
@@ -811,8 +807,7 @@ object Misc {
             spawnArgs.GetFloat("constant", "100.0f", Kstretch)
             spawnArgs.GetFloat("damping", "10.0f", damping)
             spawnArgs.GetFloat("restlength", "0.0f", restLength)
-            spawnArgs.GetFloat("maxLength", "200.0f", maxLength)
-            // DG: added compress and pullEntity1
+            spawnArgs.GetFloat("maxLength", "200.0f", maxLength) // DG: added compress and pullEntity1
             spawnArgs.GetFloat("compress", "0.0f", Kcompress)
             spawnArgs.GetBool("pullEnt1", "1", pullEnt1)
 
@@ -825,12 +820,10 @@ object Misc {
             PostEventMS(EV_PostSpawn, 0)
         }
 
-        override fun Think() {
-            // run physics
+        override fun Think() { // run physics
             RunPhysics()
             if ((thinkFlags and TH_THINK) != 0) {
-                if (enabled && ent1.GetEntity() != null && ent2.GetEntity() != null) {
-                    // evaluate force
+                if (enabled && ent1.GetEntity() != null && ent2.GetEntity() != null) { // evaluate force
                     spring.Evaluate(gameLocal.time)
 
                     if (SysCvar.g_debugMover.GetBool()) {
@@ -867,8 +860,7 @@ object Misc {
             spawnArgs.GetString("ent2", "", name2)
             if (name1.Length() != 0) {
                 ent1.oSet(gameLocal.FindEntity(name1.toString()))
-                if (ent1.GetEntity() == null) {
-                    // DG: changed from Error to Warning (dhewm3)
+                if (ent1.GetEntity() == null) { // DG: changed from Error to Warning (dhewm3)
                     gameLocal.Warning(
                         "idSpring '%s' at (%s): cannot find first entity '%s'",
                         name,
@@ -1018,8 +1010,7 @@ object Misc {
         }
 
         override fun Think() {
-            if ((thinkFlags and TH_THINK) != 0) {
-                // evaluate force
+            if ((thinkFlags and TH_THINK) != 0) { // evaluate force
                 forceField.Evaluate(gameLocal.time)
             }
             Present()
@@ -1114,8 +1105,7 @@ object Misc {
                             numshots as idEventArg<Int>,
                             framedelay as idEventArg<Int>
                         )
-                    }
-                // D3XP
+                    } // D3XP
                 eventCallbacks[EV_SetAnimation] =
                     eventCallback_t1<idAnimated> { obj: idAnimated, animName: idEventArg<*>? ->
                         obj.Event_SetAnimation(animName as idEventArg<String>)
@@ -1229,8 +1219,7 @@ object Misc {
                     )
                 }
                 animator.CycleAnim(Anim.ANIMCHANNEL_ALL, anim2, gameLocal.time, 0)
-            } else if (anim != 0) {
-                // init joints to the first frame of the animation
+            } else if (anim != 0) { // init joints to the first frame of the animation
                 animator.SetFrame(Anim.ANIMCHANNEL_ALL, anim, 1, gameLocal.time, 0)
                 if (0 == num_anims) {
                     blendFrames = 0
@@ -1251,8 +1240,7 @@ object Misc {
             return af.Load(this, fileName[0]!!)
         }
 
-        fun StartRagdoll(): Boolean {
-            // if no AF loaded
+        fun StartRagdoll(): Boolean { // if no AF loaded
             if (!af.IsLoaded()) {
                 return false
             }
@@ -1332,8 +1320,7 @@ object Misc {
                 activator.oSet(_activator.value)
                 return
             }
-            if (activated) {
-                // already activated
+            if (activated) { // already activated
                 return
             }
             activated = true
@@ -1636,8 +1623,7 @@ object Misc {
             spawnTime = gameLocal.time
             active = false
             val model = idStr(spawnArgs.GetString("model"))
-            if (model.Find(".prt") >= 0) {
-                // we want the parametric particles out of sync with each other
+            if (model.Find(".prt") >= 0) { // we want the parametric particles out of sync with each other
                 renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
                     gameLocal.random.RandomInt(32767).toFloat()
             }
@@ -1749,8 +1735,8 @@ object Misc {
                 }
             }
             renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(spawnTime.toFloat())
-            renderEntity!!.shaderParms[5] = if (active) 1.0f else 0.0f
-            // this change should be a good thing, it will automatically turn on
+            renderEntity!!.shaderParms[5] =
+                if (active) 1.0f else 0.0f // this change should be a good thing, it will automatically turn on
             // lights etc.. when triggered so that does not have to be specifically done
             // with trigger parms.. it MIGHT break things so need to keep an eye on it
             renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE] =
@@ -2051,8 +2037,7 @@ object Misc {
         //
         //
         override fun Spawn() {
-            super.Spawn()
-            // these are cached as the are used each frame
+            super.Spawn() // these are cached as the are used each frame
             text.set(spawnArgs.GetString("text"))
             playerOriented = spawnArgs.GetBool("playerOriented")
             val force = spawnArgs.GetBool("force")
@@ -2210,8 +2195,7 @@ object Misc {
                 return
             }
             gameLocal.SetPortalState(
-                portal,
-                (portalConnection_t.PS_BLOCK_AIR).ordinal or (portalConnection_t.PS_BLOCK_LOCATION).ordinal
+                portal, (portalConnection_t.PS_BLOCK_AIR).ordinal or (portalConnection_t.PS_BLOCK_LOCATION).ordinal
             )
         }
 
@@ -2330,8 +2314,7 @@ object Misc {
 
         override fun Think() {
             val masterEnt: idBeam?
-            if (!IsHidden() && null == target.GetEntity()) {
-                // hide if our target is removed
+            if (!IsHidden() && null == target.GetEntity()) { // hide if our target is removed
                 Hide()
             }
             RunPhysics()
@@ -2473,13 +2456,11 @@ object Misc {
         private val model: idRenderModelLiquid? = null
 
         override fun Restore(savefile: idRestoreGame) {
-            super.Restore(savefile)
-            //FIXME: NO!
+            super.Restore(savefile) //FIXME: NO!
             Spawn()
         }
 
-        private fun Event_Touch(other: idEventArg<idEntity>, trace: idEventArg<trace_s?>?) {
-            // FIXME: for QuakeCon
+        private fun Event_Touch(other: idEventArg<idEntity>, trace: idEventArg<trace_s?>?) { // FIXME: for QuakeCon
             /*
                          idVec3 pos;
 
@@ -2724,8 +2705,7 @@ object Misc {
             }
             val player = gameLocal.GetLocalPlayer() ?: return
             nextTriggerTime = 0
-            if (!triggered && activator !== this) {
-                // if we are not triggered ( i.e. random ), disable or enable
+            if (!triggered && activator !== this) { // if we are not triggered ( i.e. random ), disable or enable
                 disabled = disabled xor true //1;
                 if (disabled) {
                     return
@@ -3037,8 +3017,7 @@ object Misc {
                 shader = declManager.FindSound(sound)
                 player.StartSoundShader(shader, gameSoundChannel_t.SND_CHANNEL_RADIO, SSF_GLOBAL, false, length)
                 time = MS2SEC((length._val + 150).toFloat())
-            }
-            // we still put the hud up because this is used with no sound on
+            } // we still put the hud up because this is used with no sound on
             // certain frame commands when the chatter is triggered
             PostEventSec(EV_ResetRadioHud, time, player)
         }
@@ -3158,8 +3137,7 @@ object Misc {
                 targetTime.Append(savefile.ReadInt())
                 i++
             }
-            if (savefile.GetBuildNumber() == SaveGame.INITIAL_RELEASE_BUILD_NUMBER) {
-                // these weren't saved out in the first release
+            if (savefile.GetBuildNumber() == SaveGame.INITIAL_RELEASE_BUILD_NUMBER) { // these weren't saved out in the first release
                 i = 0
                 while (i < num) {
                     lastTargetPos.Append(idVec3())
@@ -3208,13 +3186,11 @@ object Misc {
                     i++
                     continue
                 }
-                if (ent.fl.hidden) {
-                    // don't throw hidden objects
+                if (ent.fl.hidden) { // don't throw hidden objects
                     i++
                     continue
                 }
-                if (0 == targetTime[i]) {
-                    // already threw this object
+                if (0 == targetTime[i]) { // already threw this object
                     i++
                     continue
                 }
@@ -3252,11 +3228,10 @@ object Misc {
                         targetTime[i] = gameLocal.time + gameLocal.random.RandomInt(max_wait - min_wait) + min_wait
                     }
                     if (ent is idMoveable) {
-                        val ment = ent as idMoveable
+                        val ment = ent
                         ment.EnableDamage(true, 2.5f)
                     }
-                } else {
-                    // this is not the right way to set the angular velocity, but the effect is nice, so I'm keeping it. :)
+                } else { // this is not the right way to set the angular velocity, but the effect is nice, so I'm keeping it. :)
                     ang.set(
                         gameLocal.random.CRandomFloat() * shake_ang.x,
                         gameLocal.random.CRandomFloat() * shake_ang.y,
@@ -3536,8 +3511,10 @@ object Misc {
                 scriptFunction = gameLocal.program.FindFunction(funcName)
                 if (scriptFunction == null) {
                     gameLocal.Warning(
-                        "idFuncMountedObject '%s' at (%s) calls unknown function '%s'\n", name.toString(),
-                        GetPhysics().GetOrigin().ToString(0), funcName.toString()
+                        "idFuncMountedObject '%s' at (%s) calls unknown function '%s'\n",
+                        name.toString(),
+                        GetPhysics().GetOrigin().ToString(0),
+                        funcName.toString()
                     )
                 }
             }
@@ -3643,8 +3620,7 @@ object Misc {
                 turret!!.UpdateVisuals()
 
                 // Check for firing
-                if (mountedPlayer!!.usercmd.buttons.toInt() and BUTTON_ATTACK != 0 && (gameLocal.time > weaponLastFireTime + weaponFireDelay)) {
-                    // FIRE!
+                if (mountedPlayer!!.usercmd.buttons.toInt() and BUTTON_ATTACK != 0 && (gameLocal.time > weaponLastFireTime + weaponFireDelay)) { // FIRE!
                     val arrOfProj = arrayOfNulls<idEntity>(1)
                     gameLocal.SpawnEntityDef(projectile!!, arrOfProj)
                     var ent: idEntity? = arrOfProj[0]
@@ -3671,11 +3647,7 @@ object Misc {
 
                     proj.Launch(muzzleOrigin, dir, vec3_origin)
                     StartSoundShader(
-                        soundFireWeapon,
-                        gameSoundChannel_t.SND_CHANNEL_WEAPON.ordinal,
-                        SSF_GLOBAL,
-                        false,
-                        null
+                        soundFireWeapon, gameSoundChannel_t.SND_CHANNEL_WEAPON.ordinal, SSF_GLOBAL, false, null
                     )
 
                     weaponLastFireTime = gameLocal.time.toFloat()

@@ -26,7 +26,6 @@ Translated to Kotlin by Dr. Feederino with support of Claude Code.
 package neo.Renderer
 
 import neo.Game.Game_local
-import neo.Renderer.*
 import neo.Renderer.Interaction.idInteraction
 import neo.Renderer.Material.idMaterial
 import neo.Renderer.Material.shaderStage_t
@@ -70,8 +69,7 @@ object tr_light {
      R_AddDrawSurf
      =================
      */
-    private val refRegs: FloatArray =
-        FloatArray(MAX_EXPRESSION_REGISTERS)
+    private val refRegs: FloatArray = FloatArray(MAX_EXPRESSION_REGISTERS)
 
     //==================================================================================================================================================================================================
     /*
@@ -102,8 +100,7 @@ object tr_light {
      VERTEX CACHE GENERATORS
 
      ======================================================================================================================================================================================
-     */
-    /*
+     *//*
      ==================
      R_CreateAmbientCache
 
@@ -113,8 +110,7 @@ object tr_light {
     fun R_CreateAmbientCache(tri: srfTriangles_s, needsLighting: Boolean): Boolean {
         if (tri.ambientCache != null) {
             return true
-        }
-        // we are going to use it for drawing, so make sure we have the tangents and normals
+        } // we are going to use it for drawing, so make sure we have the tangents and normals
         if (needsLighting && !tri.tangentsCalculated) {
             R_DeriveTangents(tri)
         }
@@ -190,7 +186,7 @@ object tr_light {
         val temp: Array<shadowCache_s> = Array(tri.numVerts * 2) { shadowCache_s() }
 
         for (i in 0 until tri.numVerts) {
-            val v: FloatArray = tri.verts!![i]!!.xyz.ToFloatPtr()
+            val v: FloatArray = tri.verts!![i].xyz.ToFloatPtr()
             temp[i * 2 + 0].xyz[0] = v[0]
             temp[i * 2 + 1].xyz[0] = v[0]
             temp[i * 2 + 0].xyz[1] = v[1]
@@ -313,8 +309,13 @@ object tr_light {
 
         val texCoords: Array<idVec4> = idVec4.generateArray(tri.numVerts)
         SIMDProcessor!!.CreateSpecularTextureCoords(
-            texCoords, localLightOrigin, localViewOrigin,
-            tri.verts as Array<idDrawVert>, tri.numVerts, tri.indexes!!, tri.numIndexes
+            texCoords,
+            localLightOrigin,
+            localViewOrigin,
+            tri.verts as Array<idDrawVert>,
+            tri.numVerts,
+            tri.indexes!!,
+            tri.numIndexes
         )
         surf.dynamicTexCoords = VertexCache.vertexCache.AllocFrameTemp(texCoords, tri.numVerts * idVec4.BYTES)
     }
@@ -342,9 +343,7 @@ object tr_light {
         // we may not have a viewDef if we are just creating shadows at entity creation time
         if (tr.viewDef != null) {
             tr_main.myGlMultMatrix(
-                vModel.modelMatrix,
-                tr.viewDef!!.worldSpace.modelViewMatrix,
-                vModel.modelViewMatrix
+                vModel.modelMatrix, tr.viewDef!!.worldSpace.modelViewMatrix, vModel.modelViewMatrix
             )
             vModel.next = tr.viewDef!!.viewEntitys
             tr.viewDef!!.viewEntitys = vModel
@@ -412,20 +411,17 @@ object tr_light {
         if (!vLight.viewInsideLight) {
             vLight.viewSeesShadowPlaneBits = 0
             for (i in 0 until light.numShadowFrustums) {
-                val d: Float =
-                    light.shadowFrustums[i]!!.planes[5].Distance(tr.viewDef!!.renderView.vieworg)
+                val d: Float = light.shadowFrustums[i]!!.planes[5].Distance(tr.viewDef!!.renderView.vieworg)
                 if (d < INSIDE_LIGHT_FRUSTUM_SLOP) {
                     vLight.viewSeesShadowPlaneBits = vLight.viewSeesShadowPlaneBits or (1 shl i)
                 }
             }
-        } else {
-            // this should not be referenced in this case
+        } else { // this should not be referenced in this case
             vLight.viewSeesShadowPlaneBits = 63
         }
 
         // see if the light center is in view, which will allow us to cull invisible shadows
-        vLight.viewSeesGlobalLightOrigin =
-            R_PointInFrustum(light.globalLightOrigin, tr.viewDef!!.frustum, 4)
+        vLight.viewSeesGlobalLightOrigin = R_PointInFrustum(light.globalLightOrigin, tr.viewDef!!.frustum, 4)
 
         // copy data used by backend
         vLight.globalLightOrigin.set(light.globalLightOrigin)
@@ -452,8 +448,13 @@ object tr_light {
      =================
      */
     fun R_LinkLightSurf(
-        link: Array<drawSurf_s?>, tri: srfTriangles_s?, spaceView: viewEntity_s?,
-        light: idRenderLightLocal, shader: idMaterial?, scissor: idScreenRect?, viewInsideShadow: Boolean
+        link: Array<drawSurf_s?>,
+        tri: srfTriangles_s?,
+        spaceView: viewEntity_s?,
+        light: idRenderLightLocal,
+        shader: idMaterial?,
+        scissor: idScreenRect?,
+        viewInsideShadow: Boolean
     ) {
         val drawSurf: drawSurf_s
         var space: viewEntity_s? = spaceView
@@ -469,30 +470,25 @@ object tr_light {
         if (viewInsideShadow) {
             drawSurf.dsFlags = drawSurf.dsFlags or DSF_VIEW_INSIDE_SHADOW
         }
-        if (null == shader) {
-            // shadows won't have a shader
+        if (null == shader) { // shadows won't have a shader
             drawSurf.shaderRegisters = null
-        } else {
-            // process the shader expressions for conditionals / color / texcoords
+        } else { // process the shader expressions for conditionals / color / texcoords
             val constRegs: FloatArray? = shader.ConstantRegisters()
-            if (constRegs != null) {
-                // this shader has only constants for parameters
+            if (constRegs != null) { // this shader has only constants for parameters
                 drawSurf.shaderRegisters = constRegs
             } else {
                 val regs = FloatArray(shader.GetNumRegisters())
                 drawSurf.shaderRegisters = regs
                 shader.EvaluateRegisters(
-                    regs,
-                    space.entityDef!!.parms.shaderParms,
-                    tr.viewDef!!,
-                    space.entityDef!!.parms.referenceSound
+                    regs, space.entityDef!!.parms.shaderParms, tr.viewDef!!, space.entityDef!!.parms.referenceSound
                 )
             }
 
             // calculate the specular coordinates if we aren't using vertex programs
-            if (!tr.backEndRendererHasVertexPrograms && !r_skipSpecular!!.GetBool()) {
-                R_SpecularTexGen(drawSurf, light.globalLightOrigin, tr.viewDef!!.renderView.vieworg)
-                // if we failed to allocate space for the specular calculations, drop the surface
+            if (!tr.backEndRendererHasVertexPrograms && !r_skipSpecular.GetBool()) {
+                R_SpecularTexGen(
+                    drawSurf, light.globalLightOrigin, tr.viewDef!!.renderView.vieworg
+                ) // if we failed to allocate space for the specular calculations, drop the surface
                 if (drawSurf.dynamicTexCoords == null) {
                     return
                 }
@@ -552,20 +548,14 @@ object tr_light {
                 val clip = idPlane()
                 val ndc = idVec3()
                 tr_main.R_TransformModelToClip(
-                    w[j].ToVec3(),
-                    tr.viewDef!!.worldSpace.modelViewMatrix,
-                    tr.viewDef!!.projectionMatrix,
-                    eye,
-                    clip
+                    w[j].ToVec3(), tr.viewDef!!.worldSpace.modelViewMatrix, tr.viewDef!!.projectionMatrix, eye, clip
                 )
                 if (clip[3] <= 0.01f) {
                     clip[3] = 0.01f
                 }
                 tr_main.R_TransformClipToDevice(clip, tr.viewDef, ndc)
-                var windowX: Float =
-                    0.5f * (1.0f + ndc[0]) * (tr.viewDef!!.viewport.x2 - tr.viewDef!!.viewport.x1)
-                var windowY: Float =
-                    0.5f * (1.0f + ndc[1]) * (tr.viewDef!!.viewport.y2 - tr.viewDef!!.viewport.y1)
+                var windowX: Float = 0.5f * (1.0f + ndc[0]) * (tr.viewDef!!.viewport.x2 - tr.viewDef!!.viewport.x1)
+                var windowY: Float = 0.5f * (1.0f + ndc[1]) * (tr.viewDef!!.viewport.y2 - tr.viewDef!!.viewport.y1)
                 if (windowX > tr.viewDef!!.scissor.x2) {
                     windowX = tr.viewDef!!.scissor.x2.toFloat()
                 } else if (windowX < tr.viewDef!!.scissor.x1) {
@@ -599,28 +589,25 @@ object tr_light {
             val lightDef: idRenderLightLocal = vLight.lightDef!!
             tr.viewDef!!.viewFrustum.ProjectionBounds(
                 idBox(
-                    lightDef.parms.origin,
-                    lightDef.parms.lightRadius,
-                    lightDef.parms.axis
+                    lightDef.parms.origin, lightDef.parms.lightRadius, lightDef.parms.axis
                 ), bounds
             )
             return tr_main.R_ScreenRectFromViewFrustumBounds(bounds)
         }
-        if (r_useClippedLightScissors!!.GetInteger() == 2) {
+        if (r_useClippedLightScissors.GetInteger() == 2) {
             return R_ClippedLightScissorRectangle(vLight)
         }
         r.Clear()
         tri = vLight.lightDef!!.frustumTris!!
         for (i in 0 until tri.numVerts) {
             tr_main.R_TransformModelToClip(
-                tri.verts!![i]!!.xyz, tr.viewDef!!.worldSpace.modelViewMatrix,
-                tr.viewDef!!.projectionMatrix, eye, clip
+                tri.verts!![i].xyz, tr.viewDef!!.worldSpace.modelViewMatrix, tr.viewDef!!.projectionMatrix, eye, clip
             )
 
             // if it is near clipped, clip the winding polygons to the view frustum
             if (clip[3] <= 1) {
                 c_clippedLight++
-                if (r_useClippedLightScissors!!.GetInteger() != 0) {
+                if (r_useClippedLightScissors.GetInteger() != 0) {
                     return R_ClippedLightScissorRectangle(vLight)
                 } else {
                     r.y1 = 0
@@ -631,10 +618,8 @@ object tr_light {
                 }
             }
             tr_main.R_TransformClipToDevice(clip, tr.viewDef, ndc)
-            var windowX: Float =
-                0.5f * (1.0f + ndc[0]) * (tr.viewDef!!.viewport.x2 - tr.viewDef!!.viewport.x1)
-            var windowY: Float =
-                0.5f * (1.0f + ndc[1]) * (tr.viewDef!!.viewport.y2 - tr.viewDef!!.viewport.y1)
+            var windowX: Float = 0.5f * (1.0f + ndc[0]) * (tr.viewDef!!.viewport.x2 - tr.viewDef!!.viewport.x1)
+            var windowY: Float = 0.5f * (1.0f + ndc[1]) * (tr.viewDef!!.viewport.y2 - tr.viewDef!!.viewport.y1)
             if (windowX > tr.viewDef!!.scissor.x2) {
                 windowX = tr.viewDef!!.scissor.x2.toFloat()
             } else if (windowX < tr.viewDef!!.scissor.x1) {
@@ -693,10 +678,8 @@ object tr_light {
             }
 
             // see if we are suppressing the light in this view
-            if (!r_skipSuppress!!.GetBool()) {
-                if ((light.parms.suppressLightInViewID._val != 0
-                            && light.parms.suppressLightInViewID._val == tr.viewDef!!.renderView.viewID)
-                ) {
+            if (!r_skipSuppress.GetBool()) {
+                if ((light.parms.suppressLightInViewID._val != 0 && light.parms.suppressLightInViewID._val == tr.viewDef!!.renderView.viewID)) {
                     if (vLight === tr.viewDef!!.viewLights) {
                         ptr = vLight.next
                         tr.viewDef!!.viewLights = ptr
@@ -707,9 +690,7 @@ object tr_light {
                     light.viewCount = -1
                     continue
                 }
-                if ((light.parms.allowLightInViewID._val != 0
-                            && light.parms.allowLightInViewID._val != tr.viewDef!!.renderView.viewID)
-                ) {
+                if ((light.parms.allowLightInViewID._val != 0 && light.parms.allowLightInViewID._val != tr.viewDef!!.renderView.viewID)) {
                     if (vLight === tr.viewDef!!.viewLights) {
                         ptr = vLight.next
                         tr.viewDef!!.viewLights = ptr
@@ -723,14 +704,10 @@ object tr_light {
             }
 
             // evaluate the light shader registers
-            val lightRegs =
-                FloatArray(lightShader!!.GetNumRegisters())
+            val lightRegs = FloatArray(lightShader!!.GetNumRegisters())
             vLight.shaderRegisters = lightRegs
             lightShader.EvaluateRegisters(
-                lightRegs,
-                light.parms.shaderParms,
-                tr.viewDef!!,
-                light.parms.referenceSound
+                lightRegs, light.parms.shaderParms, tr.viewDef!!, light.parms.referenceSound
             )
 
             // if this is a purely additive light and no stage in the light shader evaluates
@@ -749,7 +726,7 @@ object tr_light {
                     val registers: IntArray = lightStage.color.registers
 
                     // snap tiny values to zero to avoid lights showing up with the wrong color
-                    if (lightRegs[registers!![0]] < 0.001) {
+                    if (lightRegs[registers[0]] < 0.001) {
                         lightRegs[registers[0]] = 0.0f
                     }
                     if (lightRegs[registers[1]] < 0.001) {
@@ -759,16 +736,12 @@ object tr_light {
                         lightRegs[registers[2]] = 0.0f
                     }
 
-                    if ((lightRegs[registers[0]] > 0.0f
-                                ) || (lightRegs[registers[1]] > 0.0f
-                                ) || (lightRegs[registers[2]] > 0.0f)
-                    ) {
+                    if ((lightRegs[registers[0]] > 0.0f) || (lightRegs[registers[1]] > 0.0f) || (lightRegs[registers[2]] > 0.0f)) {
                         break
                     }
                     lightStageNum++
                 }
-                if (lightStageNum == lightShader.GetNumStages()) {
-                    // we went through all the stages and didn't find one that adds anything
+                if (lightStageNum == lightShader.GetNumStages()) { // we went through all the stages and didn't find one that adds anything
                     // remove the light from the viewLights list, and change its frame marker
                     // so interaction generation doesn't think the light is visible and
                     // create a shadow for it
@@ -783,13 +756,12 @@ object tr_light {
                     continue
                 }
             }
-            if (r_useLightScissors!!.GetBool()) {
-                // calculate the screen area covered by the light frustum
+            if (r_useLightScissors.GetBool()) { // calculate the screen area covered by the light frustum
                 // which will be used to crop the stencil cull
-                val scissorRect: idScreenRect = R_CalcLightScissorRectangle(vLight)
-                // intersect with the portal crossing scissor rectangle
+                val scissorRect: idScreenRect =
+                    R_CalcLightScissorRectangle(vLight) // intersect with the portal crossing scissor rectangle
                 vLight.scissorRect!!.Intersect(scissorRect)
-                if (r_showLightScissors!!.GetBool()) {
+                if (r_showLightScissors.GetBool()) {
                     tr_main.R_ShowColoredScreenRect(vLight.scissorRect!!, light.index)
                 }
             }
@@ -800,9 +772,9 @@ object tr_light {
 
             // if we are doing a soft-shadow novelty test, regenerate the light with
             // a random offset every time
-            if (r_lightSourceRadius!!.GetFloat() != 0.0f) {
+            if (r_lightSourceRadius.GetFloat() != 0.0f) {
                 for (i in 0..2) {
-                    light.globalLightOrigin[i] += r_lightSourceRadius!!.GetFloat() * (-1f + 2f * ((Math.random() * 0x1000).toInt() and 0xfff) / 0xfff.toFloat())
+                    light.globalLightOrigin[i] += r_lightSourceRadius.GetFloat() * (-1f + 2f * ((Math.random() * 0x1000).toInt() and 0xfff) / 0xfff.toFloat())
                 }
             }
 
@@ -816,17 +788,15 @@ object tr_light {
             // are in the vertex cache
             if (lightShader.IsFogLight()) {
                 if (light.frustumTris!!.ambientCache == null) {
-                    if (!R_CreateAmbientCache(light.frustumTris!!, false)) {
-                        // skip if we are out of vertex memory
+                    if (!R_CreateAmbientCache(light.frustumTris!!, false)) { // skip if we are out of vertex memory
                         continue
                     }
-                }
-                // touch the surface so it won't get purged
+                } // touch the surface so it won't get purged
                 VertexCache.vertexCache.Touch(light.frustumTris!!.ambientCache)
             }
 
             // add the prelight shadows for the static world geometry
-            if (light.parms.prelightModel != null && r_useOptimizedShadows!!.GetBool()) {
+            if (light.parms.prelightModel != null && r_useOptimizedShadows.GetBool()) {
                 if (0 == light.parms.prelightModel!!.NumSurfaces()) {
                     Common.common.Error("no surfs in prelight model '%s'", light.parms.prelightModel!!.Name())
                 }
@@ -839,12 +809,9 @@ object tr_light {
                 }
 
                 // these shadows will all have valid bounds, and can be culled normally
-                if (r_useShadowCulling!!.GetBool()) {
+                if (r_useShadowCulling.GetBool()) {
                     if (tr_main.R_CullLocalBox(
-                            tri.bounds,
-                            tr.viewDef!!.worldSpace.modelMatrix,
-                            5,
-                            tr.viewDef!!.frustum as Array<idPlane?>
+                            tri.bounds, tr.viewDef!!.worldSpace.modelMatrix, 5, tr.viewDef!!.frustum as Array<idPlane?>
                         )
                     ) {
                         continue
@@ -861,7 +828,7 @@ object tr_light {
 
                 // touch the shadow surface so it won't get purged
                 VertexCache.vertexCache.Touch(tri.shadowCache)
-                if (tri.indexCache == null && r_useIndexBuffers!!.GetBool()) {
+                if (tri.indexCache == null && r_useIndexBuffers.GetBool()) {
                     tri.indexCache = VertexCache.vertexCache.Alloc(tri.indexes, tri.numIndexes * Integer.BYTES, true) {
                         tri.indexCache = null
                     }
@@ -870,13 +837,7 @@ object tr_light {
                     VertexCache.vertexCache.Touch(tri.indexCache)
                 }
                 R_LinkLightSurf(
-                    vLight.globalShadows,
-                    tri,
-                    null,
-                    light,
-                    null,
-                    vLight.scissorRect,
-                    true /* FIXME? */
+                    vLight.globalShadows, tri, null, light, null, vLight.scissorRect, true /* FIXME? */
                 )
             }
         }
@@ -890,7 +851,7 @@ object tr_light {
     fun R_IssueEntityDefCallback(def: idRenderEntityLocal): Boolean {
         val update: Boolean
         val oldBounds = idBounds()
-        val checkBounds = r_checkBounds!!.GetBool()
+        val checkBounds = r_checkBounds.GetBool()
         if (checkBounds) {
             oldBounds.set(def.referenceBounds)
         }
@@ -906,13 +867,7 @@ object tr_light {
             return false
         }
         if (checkBounds) {
-            if ((oldBounds[0, 0] > def.referenceBounds[0, 0] + CHECK_BOUNDS_EPSILON
-                        ) || (oldBounds[0, 1] > def.referenceBounds[0, 1] + CHECK_BOUNDS_EPSILON
-                        ) || (oldBounds[0, 2] > def.referenceBounds[0, 2] + CHECK_BOUNDS_EPSILON
-                        ) || (oldBounds[1, 0] < def.referenceBounds[1, 0] - CHECK_BOUNDS_EPSILON
-                        ) || (oldBounds[1, 1] < def.referenceBounds[1, 1] - CHECK_BOUNDS_EPSILON
-                        ) || (oldBounds[1, 2] < def.referenceBounds[1, 2] - CHECK_BOUNDS_EPSILON)
-            ) {
+            if ((oldBounds[0, 0] > def.referenceBounds[0, 0] + CHECK_BOUNDS_EPSILON) || (oldBounds[0, 1] > def.referenceBounds[0, 1] + CHECK_BOUNDS_EPSILON) || (oldBounds[0, 2] > def.referenceBounds[0, 2] + CHECK_BOUNDS_EPSILON) || (oldBounds[1, 0] < def.referenceBounds[1, 0] - CHECK_BOUNDS_EPSILON) || (oldBounds[1, 1] < def.referenceBounds[1, 1] - CHECK_BOUNDS_EPSILON) || (oldBounds[1, 2] < def.referenceBounds[1, 2] - CHECK_BOUNDS_EPSILON)) {
                 Common.common.Printf("entity %d callback extended reference bounds\n", def.index)
             }
         }
@@ -957,25 +912,18 @@ object tr_light {
         if (null == def.dynamicModel) {
 
             // instantiate the snapshot of the dynamic model, possibly reusing memory from the cached snapshot
-            def.cachedDynamicModel =
-                model.InstantiateDynamicModel(def.parms, tr.viewDef, def.cachedDynamicModel)
+            def.cachedDynamicModel = model.InstantiateDynamicModel(def.parms, tr.viewDef, def.cachedDynamicModel)
             if (def.cachedDynamicModel != null) {
 
                 // add any overlays to the snapshot of the dynamic model
-                if (def.overlay != null && !r_skipOverlays!!.GetBool()) {
+                if (def.overlay != null && !r_skipOverlays.GetBool()) {
                     def.overlay!!.AddOverlaySurfacesToModel(def.cachedDynamicModel)
                 } else {
                     idRenderModelOverlay.RemoveOverlaySurfacesFromModel(def.cachedDynamicModel!!)
                 }
-                if (r_checkBounds!!.GetBool()) {
+                if (r_checkBounds.GetBool()) {
                     val b: idBounds = def.cachedDynamicModel!!.Bounds()
-                    if ((b[0, 0] < def.referenceBounds[0, 0] - CHECK_BOUNDS_EPSILON
-                                ) || (b[0, 1] < def.referenceBounds[0, 1] - CHECK_BOUNDS_EPSILON
-                                ) || (b[0, 2] < def.referenceBounds[0, 2] - CHECK_BOUNDS_EPSILON
-                                ) || (b[1, 0] > def.referenceBounds[1, 0] + CHECK_BOUNDS_EPSILON
-                                ) || (b[1, 1] > def.referenceBounds[1, 1] + CHECK_BOUNDS_EPSILON
-                                ) || (b[1, 2] > def.referenceBounds[1, 2] + CHECK_BOUNDS_EPSILON)
-                    ) {
+                    if ((b[0, 0] < def.referenceBounds[0, 0] - CHECK_BOUNDS_EPSILON) || (b[0, 1] < def.referenceBounds[0, 1] - CHECK_BOUNDS_EPSILON) || (b[0, 2] < def.referenceBounds[0, 2] - CHECK_BOUNDS_EPSILON) || (b[1, 0] > def.referenceBounds[1, 0] + CHECK_BOUNDS_EPSILON) || (b[1, 1] > def.referenceBounds[1, 1] + CHECK_BOUNDS_EPSILON) || (b[1, 2] > def.referenceBounds[1, 2] + CHECK_BOUNDS_EPSILON)) {
                         Common.common.Printf("entity %d dynamic model exceeded reference bounds\n", def.index)
                     }
                 }
@@ -990,11 +938,7 @@ object tr_light {
             val clip = idPlane()
             val ndc = idVec3()
             tr_main.R_TransformModelToClip(
-                def.parms.origin,
-                tr.viewDef!!.worldSpace.modelViewMatrix,
-                tr.viewDef!!.projectionMatrix,
-                eye,
-                clip
+                def.parms.origin, tr.viewDef!!.worldSpace.modelViewMatrix, tr.viewDef!!.projectionMatrix, eye, clip
             )
             tr_main.R_TransformClipToDevice(clip, tr.viewDef, ndc)
             def.parms.modelDepthHack = model.DepthHack() * (1.0f - ndc.z)
@@ -1004,8 +948,11 @@ object tr_light {
     }
 
     fun R_AddDrawSurf(
-        tri: srfTriangles_s?, space: viewEntity_s, renderEntity: renderEntity_s,
-        shader: idMaterial, scissor: idScreenRect?,
+        tri: srfTriangles_s?,
+        space: viewEntity_s,
+        renderEntity: renderEntity_s,
+        shader: idMaterial,
+        scissor: idScreenRect?,
         soft_particle_radius: Float = -1.0f
     ) {
         val drawSurf: drawSurf_s
@@ -1040,16 +987,14 @@ object tr_light {
                 count = tr.viewDef!!.maxDrawSurfs
                 tr.viewDef!!.maxDrawSurfs *= 2
             }
-            tr.viewDef!!.drawSurfs =
-                drawSurf_s.generateArray(tr.viewDef!!.maxDrawSurfs)
+            tr.viewDef!!.drawSurfs = drawSurf_s.generateArray(tr.viewDef!!.maxDrawSurfs)
             System.arraycopy(old, 0, tr.viewDef!!.drawSurfs, 0, count)
         }
         tr.viewDef!!.drawSurfs[tr.viewDef!!.numDrawSurfs++] = drawSurf
 
         // process the shader expressions for conditionals / color / texcoords
         val constRegs: FloatArray? = shader.ConstantRegisters()
-        if (constRegs != null) {
-            // shader only uses constant values
+        if (constRegs != null) { // shader only uses constant values
             drawSurf.shaderRegisters = constRegs
         } else {
             val regs = FloatArray(shader.GetNumRegisters())
@@ -1059,15 +1004,11 @@ object tr_light {
             // and use that for the parm0-parm3 of the current shader, which allows a stage of
             // a light model and light flares to pick up different flashing tables from
             // different light shaders
-            if (renderEntity.referenceShader != null) {
-                // evaluate the reference shader to find our shader parms
+            if (renderEntity.referenceShader != null) { // evaluate the reference shader to find our shader parms
                 val pStage: shaderStage_t
                 val generatedShaderParms = FloatArray(Material.MAX_ENTITY_SHADER_PARMS)
                 renderEntity.referenceShader!!.EvaluateRegisters(
-                    refRegs,
-                    renderEntity.shaderParms,
-                    tr.viewDef!!,
-                    renderEntity.referenceSound
+                    refRegs, renderEntity.shaderParms, tr.viewDef!!, renderEntity.referenceSound
                 )
                 pStage = renderEntity.referenceShader!!.GetStage(0)!!
 
@@ -1076,8 +1017,7 @@ object tr_light {
                 generatedShaderParms[1] = refRegs[pStage.color.registers[1]]
                 generatedShaderParms[2] = refRegs[pStage.color.registers[2]]
                 shaderParms = generatedShaderParms
-            } else {
-                // evaluate with the entityDef's shader parms
+            } else { // evaluate with the entityDef's shader parms
                 shaderParms = renderEntity.shaderParms
             }
             var oldFloatTime = 0.0f
@@ -1085,10 +1025,8 @@ object tr_light {
             if (space.entityDef != null && space.entityDef!!.parms.timeGroup != 0) {
                 oldFloatTime = tr.viewDef!!.floatTime
                 oldTime = tr.viewDef!!.renderView.time
-                tr.viewDef!!.floatTime =
-                    Game_local.game.GetTimeGroupTime(space.entityDef!!.parms.timeGroup) * 0.001f
-                tr.viewDef!!.renderView.time =
-                    Game_local.game.GetTimeGroupTime(space.entityDef!!.parms.timeGroup)
+                tr.viewDef!!.floatTime = Game_local.game.GetTimeGroupTime(space.entityDef!!.parms.timeGroup) * 0.001f
+                tr.viewDef!!.renderView.time = Game_local.game.GetTimeGroupTime(space.entityDef!!.parms.timeGroup)
             }
             shader.EvaluateRegisters(regs, shaderParms, tr.viewDef!!, renderEntity.referenceSound)
             if (space.entityDef != null && space.entityDef!!.parms.timeGroup != 0) {
@@ -1118,8 +1056,7 @@ object tr_light {
                 gui = shader.GlobalGui()
             }
         }
-        if (gui != null) {
-            // force guis on the fast time
+        if (gui != null) { // force guis on the fast time
             val oldFloatTime: Float
             val oldTime: Int
             oldFloatTime = tr.viewDef!!.floatTime
@@ -1169,7 +1106,7 @@ object tr_light {
             val surf: modelSurface_s? = model.Surface(i)
 
             // for debugging, only show a single surface at a time
-            if (r_singleSurface!!.GetInteger() >= 0 && i != r_singleSurface!!.GetInteger()) {
+            if (r_singleSurface.GetInteger() >= 0 && i != r_singleSurface.GetInteger()) {
                 i++
                 continue
             }
@@ -1194,28 +1131,22 @@ object tr_light {
             }
 
             // debugging tool to make sure we are have the correct pre-calculated bounds
-            if (r_checkBounds!!.GetBool()) {
+            if (r_checkBounds.GetBool()) {
                 var j: Int
                 var k: Int
                 j = 0
                 while (j < tri.numVerts) {
                     k = 0
                     while (k < 3) {
-                        if ((tri.verts!![j]!!.xyz[k] > tri.bounds[1, k] + CHECK_BOUNDS_EPSILON
-                                    || tri.verts!![j]!!.xyz[k] < tri.bounds[0, k] - CHECK_BOUNDS_EPSILON)
-                        ) {
+                        if ((tri.verts!![j].xyz[k] > tri.bounds[1, k] + CHECK_BOUNDS_EPSILON || tri.verts!![j].xyz[k] < tri.bounds[0, k] - CHECK_BOUNDS_EPSILON)) {
                             Common.common.Printf(
-                                "bad tri.bounds on %s:%s\n", def.parms.hModel!!.Name(), shader[0]!!
-                                    .GetName()
+                                "bad tri.bounds on %s:%s\n", def.parms.hModel!!.Name(), shader[0]!!.GetName()
                             )
                             break
                         }
-                        if ((tri.verts!![j]!!.xyz[k] > def.referenceBounds[1, k] + CHECK_BOUNDS_EPSILON
-                                    || tri.verts!![j]!!.xyz[k] < def.referenceBounds[0, k] - CHECK_BOUNDS_EPSILON)
-                        ) {
+                        if ((tri.verts!![j].xyz[k] > def.referenceBounds[1, k] + CHECK_BOUNDS_EPSILON || tri.verts!![j].xyz[k] < def.referenceBounds[0, k] - CHECK_BOUNDS_EPSILON)) {
                             Common.common.Printf(
-                                "bad referenceBounds on %s:%s\n", def.parms.hModel!!.Name(), shader[0]!!
-                                    .GetName()
+                                "bad referenceBounds on %s:%s\n", def.parms.hModel!!.Name(), shader[0]!!.GetName()
                             )
                             break
                         }
@@ -1228,22 +1159,20 @@ object tr_light {
                 }
             }
             if (!tr_main.R_CullLocalBox(
-                    tri.bounds,
-                    vEntity.modelMatrix,
-                    5,
-                    tr.viewDef!!.frustum as Array<idPlane?>
+                    tri.bounds, vEntity.modelMatrix, 5, tr.viewDef!!.frustum as Array<idPlane?>
                 )
             ) {
                 def.visibleCount = tr.viewCount
 
                 // make sure we have an ambient cache
-                if (!R_CreateAmbientCache(tri, shader[0]!!.ReceivesLighting())) {
-                    // don't add anything if the vertex cache was too full to give us an ambient cache
+                if (!R_CreateAmbientCache(
+                        tri, shader[0]!!.ReceivesLighting()
+                    )
+                ) { // don't add anything if the vertex cache was too full to give us an ambient cache
                     return
-                }
-                // touch it so it won't get purged
+                } // touch it so it won't get purged
                 VertexCache.vertexCache.Touch(tri.ambientCache)
-                if (r_useIndexBuffers!!.GetBool() && tri.indexCache == null) {
+                if (r_useIndexBuffers.GetBool() && tri.indexCache == null) {
                     tri.indexCache = VertexCache.vertexCache.Alloc(tri.indexes, tri.numIndexes * Integer.BYTES, true) {
                         tri?.indexCache = null
                     }
@@ -1254,24 +1183,16 @@ object tr_light {
 
                 // Soft Particles -- SteveL #3878
                 var particle_radius = -1.0f
-                if (r_useSoftParticles.GetBool() && r_enableDepthCapture.GetInteger() != 0
-                    && !shader[0]!!.ReceivesLighting()
-                    && tr.viewDef!!.renderView.viewID >= 0
-                ) {
+                if (r_useSoftParticles.GetBool() && r_enableDepthCapture.GetInteger() != 0 && !shader[0]!!.ReceivesLighting() && tr.viewDef!!.renderView.viewID >= 0) {
                     val prt = def.parms.hModel as? Model_prt.idRenderModelPrt
                     if (prt != null) {
-                        particle_radius = prt.SofteningRadius(surf!!.id)
+                        particle_radius = prt.SofteningRadius(surf.id)
                     }
                 }
 
                 // add the surface for drawing
                 R_AddDrawSurf(
-                    tri,
-                    vEntity,
-                    vEntity.entityDef!!.parms,
-                    shader[0]!!,
-                    vEntity.scissorRect,
-                    particle_radius
+                    tri, vEntity, vEntity.entityDef!!.parms, shader[0]!!, vEntity.scissorRect, particle_radius
                 )
 
                 // ambientViewCount is used to allow light interactions to be rejected
@@ -1298,8 +1219,7 @@ object tr_light {
         val bounds = idBounds()
         val def: idRenderEntityLocal = vEntity.entityDef!!
         tr.viewDef!!.viewFrustum.ProjectionBounds(
-            idBox(def.referenceBounds, def.parms.origin, def.parms.axis),
-            bounds
+            idBox(def.referenceBounds, def.parms.origin, def.parms.axis), bounds
         )
         return tr_main.R_ScreenRectFromViewFrustumBounds(bounds)
     }
@@ -1424,12 +1344,11 @@ object tr_light {
         // any light that intersects the view (for shadows)
         vEntity = tr.viewDef!!.viewEntitys
         while (vEntity != null) {
-            if (r_useEntityScissors!!.GetBool()) {
-                // calculate the screen area covered by the entity
-                val scissorRect: idScreenRect = R_CalcEntityScissorRectangle(vEntity)
-                // intersect with the portal crossing scissor rectangle
+            if (r_useEntityScissors.GetBool()) { // calculate the screen area covered by the entity
+                val scissorRect: idScreenRect =
+                    R_CalcEntityScissorRectangle(vEntity) // intersect with the portal crossing scissor rectangle
                 vEntity.scissorRect.Intersect(scissorRect)
-                if (r_showEntityScissors!!.GetBool()) {
+                if (r_showEntityScissors.GetBool()) {
                     tr_main.R_ShowColoredScreenRect(vEntity.scissorRect, vEntity.entityDef!!.index)
                 }
             }
@@ -1439,10 +1358,8 @@ object tr_light {
             if (vEntity.entityDef!!.parms.timeGroup != 0) {
                 oldFloatTime = tr.viewDef!!.floatTime
                 oldTime = tr.viewDef!!.renderView.time
-                tr.viewDef!!.floatTime =
-                    Game_local.game.GetTimeGroupTime(vEntity.entityDef!!.parms.timeGroup) * 0.001f
-                tr.viewDef!!.renderView.time =
-                    Game_local.game.GetTimeGroupTime(vEntity.entityDef!!.parms.timeGroup)
+                tr.viewDef!!.floatTime = Game_local.game.GetTimeGroupTime(vEntity.entityDef!!.parms.timeGroup) * 0.001f
+                tr.viewDef!!.renderView.time = Game_local.game.GetTimeGroupTime(vEntity.entityDef!!.parms.timeGroup)
             }
             if (tr.viewDef!!.isXraySubview && vEntity.entityDef!!.parms.xrayIndex == 1) {
                 if (vEntity.entityDef!!.parms.timeGroup != 0) {
@@ -1464,9 +1381,7 @@ object tr_light {
 
             // Don't let particle entities re-instantiate their dynamic model during
             // non-visible views -- SteveL #3970
-            if (tr.viewDef!!.renderView.viewID < 0
-                && vEntity.entityDef!!.parms.hModel is Model_prt.idRenderModelPrt
-            ) {
+            if (tr.viewDef!!.renderView.viewID < 0 && vEntity.entityDef!!.parms.hModel is Model_prt.idRenderModelPrt) {
                 if (vEntity.entityDef!!.parms.timeGroup != 0) {
                     tr.viewDef!!.floatTime = oldFloatTime
                     tr.viewDef!!.renderView.time = oldTime
@@ -1510,8 +1425,7 @@ object tr_light {
                         inter = next
                     }
                 }
-            } else {
-                // all empty interactions are at the end of the list so once the
+            } else { // all empty interactions are at the end of the list so once the
                 // first is encountered all the remaining interactions are empty
                 inter = vEntity.entityDef!!.firstInteraction
                 while (inter != null && !inter.IsEmpty()) {
@@ -1552,16 +1466,13 @@ object tr_light {
             // if the light didn't have any lit surfaces visible, there is no need to
             // draw any of the shadows.  We still keep the vLight for debugging
             // draws
-            if (vLight.localInteractions[0] == null && vLight.globalInteractions[0] == null &&
-                vLight.translucentInteractions[0] == null
-            ) {
+            if (vLight.localInteractions[0] == null && vLight.globalInteractions[0] == null && vLight.translucentInteractions[0] == null) {
                 vLight.localShadows[0] = null
                 vLight.globalShadows[0] = null
             }
             vLight = vLight.next
         }
-        if (r_useShadowSurfaceScissor!!.GetBool()) {
-            // shrink the light scissor rect to only intersect the surfaces that will actually be drawn.
+        if (r_useShadowSurfaceScissor.GetBool()) { // shrink the light scissor rect to only intersect the surfaces that will actually be drawn.
             // This doesn't seem to actually help, perhaps because the surface scissor
             // rects aren't actually the surface, but only the portal clippings.
             vLight = tr.viewDef!!.viewLights

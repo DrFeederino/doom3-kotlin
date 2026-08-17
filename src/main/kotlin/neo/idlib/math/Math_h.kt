@@ -222,14 +222,13 @@ object idMath {
 
     fun InvSqrt(x: Float): Float {
 
-//	long  a = ((union _flint*)(&x))->i;
+        //	long  a = ((union _flint*)(&x))->i;
         val seed = _flint(x)
         val a = seed.getInt()
         assert(initialized)
         val y = (x * 0.5f).toDouble()
         seed.setInt(
-            3 * EXP_BIAS - 1 - (a shr EXP_POS and 0xFF) shr 1 shl EXP_POS
-                    or iSqrt[a shr EXP_POS - LOOKUP_BITS and LOOKUP_MASK]
+            3 * EXP_BIAS - 1 - (a shr EXP_POS and 0xFF) shr 1 shl EXP_POS or iSqrt[a shr EXP_POS - LOOKUP_BITS and LOOKUP_MASK]
         )
         var r = seed.f.toDouble()
         r = r * (1.5f - r * r * y)
@@ -316,11 +315,9 @@ object idMath {
         var a = a
         val s: Float
         val d: Float
-        if (a < 0.0f || a >= TWO_PI) {
-//		a -= floorf( a / TWO_PI ) * TWO_PI;
+        if (a < 0.0f || a >= TWO_PI) { //		a -= floorf( a / TWO_PI ) * TWO_PI;
             a -= (floor((a / TWO_PI)) * TWO_PI)
-        }
-        //#if 1
+        } //#if 1
         if (a < PI) {
             if (a > HALF_PI) {
                 a = PI - a
@@ -358,8 +355,7 @@ object idMath {
         val d: Float
         if (a < 0.0f || a >= TWO_PI) {
             a -= (floor((a / TWO_PI)) * TWO_PI)
-        }
-        //#if 1
+        } //#if 1
         if (a < PI) {
             if (a > HALF_PI) {
                 a = PI - a
@@ -375,16 +371,15 @@ object idMath {
                 a = PI - a
                 d = -1.0f
             }
-        }
-        //#else
-//	a = PI - a;
-//	if ( fabs( a ) >= HALF_PI ) {
-//		a = ( ( a < 0.0f ) ? -PI : PI ) - a;
-//		d = 1.0f;
-//	} else {
-//		d = -1.0f;
-//	}
-//#endif
+        } //#else
+        //	a = PI - a;
+        //	if ( fabs( a ) >= HALF_PI ) {
+        //		a = ( ( a < 0.0f ) ? -PI : PI ) - a;
+        //		d = 1.0f;
+        //	} else {
+        //		d = -1.0f;
+        //	}
+        //#endif
         t = a * a
         s._val =
             (a * (((((-2.39e-08f * t + 2.7526e-06f) * t - 1.98409e-04f) * t + 8.3333315e-03f) * t - 1.666666664e-01f) * t + 1.0f))
@@ -393,19 +388,18 @@ object idMath {
     }
 
     fun SinCos64(a: Float, s: CFloat, c: CFloat) { // sine and cosine with 64 bits precision
-//#ifdef _WIN32
-//	_asm {
-//		fld		a
-//		fsincos
-//		mov		ecx, c
-//		mov		edx, s
-//		fstp	qword ptr [ecx]
-//		fstp	qword ptr [edx]
-//	}
-//#else
+        //#ifdef _WIN32
+        //	_asm {
+        //		fld		a
+        //		fsincos
+        //		mov		ecx, c
+        //		mov		edx, s
+        //		fstp	qword ptr [ecx]
+        //		fstp	qword ptr [edx]
+        //	}
+        //#else
         s._val = (sin(a))
-        c._val = (cos(a))
-        //#endif
+        c._val = (cos(a)) //#endif
     }
 
 
@@ -418,11 +412,9 @@ object idMath {
         var a = a
         var s: Float
         val reciprocal: Boolean
-        if (a < 0.0f || a >= PI) {
-//		a -= floorf( a / PI ) * PI;
+        if (a < 0.0f || a >= PI) { //		a -= floorf( a / PI ) * PI;
             a -= (floor((a / PI)) * PI)
-        }
-        //#if 1
+        } //#if 1
         if (a < HALF_PI) {
             if (a > ONEFOURTH_PI) {
                 a = HALF_PI - a
@@ -438,16 +430,15 @@ object idMath {
                 a = HALF_PI - a
                 reciprocal = true
             }
-        }
-        //#else
-//	a = HALF_PI - a;
-//	if ( fabs( a ) >= ONEFOURTH_PI ) {
-//		a = ( ( a < 0.0f ) ? -HALF_PI : HALF_PI ) - a;
-//		reciprocal = false;
-//	} else {
-//		reciprocal = true;
-//	}
-//#endif
+        } //#else
+        //	a = HALF_PI - a;
+        //	if ( fabs( a ) >= ONEFOURTH_PI ) {
+        //		a = ( ( a < 0.0f ) ? -HALF_PI : HALF_PI ) - a;
+        //		reciprocal = false;
+        //	} else {
+        //		reciprocal = true;
+        //	}
+        //#endif
         s = a * a
         s =
             a * ((((((9.5168091e-03f * s + 2.900525e-03f) * s + 2.45650893e-02f) * s + 5.33740603e-02f) * s + 1.333923995e-01f) * s + 3.333314036e-01f) * s + 1.0f)
@@ -539,8 +530,8 @@ object idMath {
         return if (abs(a) > 1.0f) {
             a = 1.0f / a
             s = a * a
-            s = -((((((((0.0028662257f * s - 0.0161657367f) * s + 0.0429096138f) * s - 0.0752896400f)
-                    * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s + 1.0f) * a
+            s =
+                -((((((((0.0028662257f * s - 0.0161657367f) * s + 0.0429096138f) * s - 0.0752896400f) * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s + 1.0f) * a
             if (1 == FLOATSIGNBITSET(a)) {
                 s - HALF_PI
             } else {
@@ -548,8 +539,7 @@ object idMath {
             }
         } else {
             s = a * a
-            ((((((((0.0028662257f * s - 0.0161657367f) * s + 0.0429096138f) * s - 0.0752896400f)
-                    * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s + 1.0f) * a
+            ((((((((0.0028662257f * s - 0.0161657367f) * s + 0.0429096138f) * s - 0.0752896400f) * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s + 1.0f) * a
         }
     }
 
@@ -563,8 +553,7 @@ object idMath {
     }
 
     fun ATan16(
-        y: Float,
-        x: Float
+        y: Float, x: Float
     ): Float { // arc tangent with 16 bits precision, maximum absolute error is 1.3593e-08
         assert(abs(y) > FLT_SMALLEST_NON_DENORMAL || abs(x) > FLT_SMALLEST_NON_DENORMAL)
         val a: Float
@@ -572,8 +561,8 @@ object idMath {
         return if (abs(y) > abs(x)) {
             a = x / y
             s = a * a
-            s = -((((((((0.0028662257f * s - 0.0161657367f) * s + 0.0429096138f) * s - 0.0752896400f)
-                    * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s + 1.0f) * a
+            s =
+                -((((((((0.0028662257f * s - 0.0161657367f) * s + 0.0429096138f) * s - 0.0752896400f) * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s + 1.0f) * a
             if (1 == FLOATSIGNBITSET(a)) {
                 s - HALF_PI
             } else {
@@ -582,8 +571,7 @@ object idMath {
         } else {
             a = y / x
             s = a * a
-            ((((((((0.0028662257f * s - 0.0161657367f) * s + 0.0429096138f) * s - 0.0752896400f)
-                    * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s + 1.0f) * a
+            ((((((((0.0028662257f * s - 0.0161657367f) * s + 0.0429096138f) * s - 0.0752896400f) * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s + 1.0f) * a
         }
     }
 
@@ -621,8 +609,7 @@ object idMath {
         x = f * 1.44269504088896340f // multiply with ( 1 / log( 2 ) )
         i = x.toBits()
         s = i shr IEEE_FLT_SIGN_BIT
-        e =
-            (i shr IEEE_FLT_MANTISSA_BITS and (1 shl IEEE_FLT_EXPONENT_BITS) - 1) - IEEE_FLT_EXPONENT_BIAS
+        e = (i shr IEEE_FLT_MANTISSA_BITS and (1 shl IEEE_FLT_EXPONENT_BITS) - 1) - IEEE_FLT_EXPONENT_BIAS
         m = i and (1 shl IEEE_FLT_MANTISSA_BITS) - 1 or (1 shl IEEE_FLT_MANTISSA_BITS)
         i = m shr IEEE_FLT_MANTISSA_BITS - e and (e shr 31).inv() xor s
         exponent = i + IEEE_FLT_EXPONENT_BIAS shl IEEE_FLT_MANTISSA_BITS
@@ -654,8 +641,7 @@ object idMath {
         val y2: Float
 
         i = f.toBits()
-        exponent =
-            (i shr IEEE_FLT_MANTISSA_BITS and (1 shl IEEE_FLT_EXPONENT_BITS) - 1) - IEEE_FLT_EXPONENT_BIAS
+        exponent = (i shr IEEE_FLT_MANTISSA_BITS and (1 shl IEEE_FLT_EXPONENT_BITS) - 1) - IEEE_FLT_EXPONENT_BIAS
         i -= exponent + 1 shl IEEE_FLT_MANTISSA_BITS // get value in the range [.5, 1>
         y = Float.fromBits(i)
         y *= 1.4142135623730950488f // multiply with sqrt( 2 )
@@ -869,8 +855,7 @@ object idMath {
         exponentBits--
         i = f.toBits() // TODO: Might be lossy conversion
         sign = i shr IEEE_FLT_SIGN_BIT and 1
-        exponent =
-            (i shr IEEE_FLT_MANTISSA_BITS and (1 shl IEEE_FLT_EXPONENT_BITS) - 1) - IEEE_FLT_EXPONENT_BIAS
+        exponent = (i shr IEEE_FLT_MANTISSA_BITS and (1 shl IEEE_FLT_EXPONENT_BITS) - 1) - IEEE_FLT_EXPONENT_BIAS
         mantissa = i and (1 shl IEEE_FLT_MANTISSA_BITS) - 1
         value = sign shl 1 + exponentBits + mantissaBits
         value =
@@ -893,8 +878,7 @@ object idMath {
         exponent =
             (i shr mantissaBits and (1 shl exponentBits) - 1) * exponentSign[i shr exponentBits + mantissaBits and 1]
         mantissa = i and (1 shl mantissaBits) - 1 shl IEEE_FLT_MANTISSA_BITS - mantissaBits
-        value =
-            sign shl IEEE_FLT_SIGN_BIT or (exponent + IEEE_FLT_EXPONENT_BIAS shl IEEE_FLT_MANTISSA_BITS) or mantissa
+        value = sign shl IEEE_FLT_SIGN_BIT or (exponent + IEEE_FLT_EXPONENT_BIAS shl IEEE_FLT_MANTISSA_BITS) or mantissa
         return Float.fromBits(value)
     }
 
@@ -962,9 +946,7 @@ object idMath {
     }
 
     fun LerpToWithScale(
-        cur: Float,
-        dest: Float,
-        scale: Float
+        cur: Float, dest: Float, scale: Float
     ): Float { // Lerps from cur to dest, scaling the delta to change by scale
         val delta = dest - cur
         if (delta > -1.0e-6f && delta < 1.0e-6f) {

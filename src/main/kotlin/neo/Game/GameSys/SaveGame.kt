@@ -518,8 +518,7 @@ object SaveGame {
             i = 0
             while (i < RenderWorld.MAX_RENDERENTITY_GUI) {
                 WriteUserInterface(
-                    renderEntity.gui[i],
-                    renderEntity.gui[i]?.IsUniqued() ?: false
+                    renderEntity.gui[i], renderEntity.gui[i]?.IsUniqued() ?: false
                 )
                 i++
             }
@@ -716,8 +715,7 @@ object SaveGame {
             }
             WriteVec3(trace.offset)
             WriteBounds(trace.bounds)
-            WriteBool(trace.isConvex)
-            // padding win32 native structs
+            WriteBool(trace.isConvex) // padding win32 native structs
             // C++: char tmp[3]; memset(tmp, 0, sizeof(tmp)); file->Write(tmp, 3);
             file.WriteChar(0.toShort())
             file.WriteChar(0.toShort())
@@ -770,8 +768,7 @@ object SaveGame {
         idSaveGame::idSaveGame
         ================
         */
-        init {
-            // Put NULL at the start of the list so we can skip over it.
+        init { // Put NULL at the start of the list so we can skip over it.
             objects = idList()
             objects.Append(null as idClass?)
         }
@@ -800,8 +797,7 @@ object SaveGame {
         // otherwise, compare it to idGameLocal::INTERNAL_SAVEGAME_VERSION
         fun GetInternalSavegameVersion(): Int {
             return internalSavegameVersion
-        }
-        // DG end
+        } // DG end
 
         /*
         ================
@@ -863,8 +859,7 @@ object SaveGame {
         idRestoreGame::DeleteObjects
         ====================
         */
-        fun DeleteObjects() {
-            // Remove the NULL object before deleting
+        fun DeleteObjects() { // Remove the NULL object before deleting
             objects.RemoveIndex(0)
             objects.DeleteContents(true)
         }
@@ -1494,8 +1489,7 @@ object SaveGame {
             }
             ReadVec3(trace.offset)
             ReadBounds(trace.bounds)
-            trace.isConvex = ReadBool()
-            // padding win32 native structs
+            trace.isConvex = ReadBool() // padding win32 native structs
             // C++: char tmp[3]; file->Read(tmp, 3);
             file.ReadChar()
             file.ReadChar()
@@ -1510,8 +1504,7 @@ object SaveGame {
         fun ReadClipModel(): idClipModel? {
             val restoreClipModel: Boolean
             restoreClipModel = ReadBool()
-            if (restoreClipModel) {
-                // NOTE: Differs from C++ — C++ creates new idClipModel() here; Kotlin reuses the passed-in instance
+            if (restoreClipModel) { // NOTE: Differs from C++ — C++ creates new idClipModel() here; Kotlin reuses the passed-in instance
                 val clipModel = idClipModel()
                 clipModel.Restore(this)
                 return clipModel
@@ -1545,8 +1538,7 @@ object SaveGame {
         =====================
         idRestoreGame::GetBuildNumber
         =====================
-        */
-        //						Used to retrieve the saved game buildNumber from within class Restore methods
+        */ //						Used to retrieve the saved game buildNumber from within class Restore methods
         fun GetBuildNumber(): Int {
             return buildNumber
         }

@@ -89,8 +89,7 @@ object GuiScript {
             }
             if (handler == null) {
                 src.Error("Unknown script call %s", token)
-            }
-            // now read parms til ;
+            } // now read parms til ;
             // all parms are read as idWinStr's but will be fixed up later 
             // to be proper types
             while (true) {
@@ -117,8 +116,7 @@ object GuiScript {
             //  verify min/max params
             if (handler != null && (parms.Num() < commandList[i].mMinParms || parms.Num() > commandList[i].mMaxParms)) {
                 src.Error("incorrect number of parameters for script %s", commandList[i].name)
-            }
-            // 
+            } //
             return true
         }
 
@@ -134,8 +132,7 @@ object GuiScript {
                 var precacheSounds = false
                 var str = (parms[0].winvar as idWinStr)
                 var dest = win.GetWinVarByName(str.data.toString(), true)
-                if (dest != null) {
-//			delete parms[0].var;
+                if (dest != null) { //			delete parms[0].var;
                     parms[0].winvar = dest
                     parms[0].own = false
                     if (dest is idWinBackground) {
@@ -147,15 +144,14 @@ object GuiScript {
                 val parmCount = parms.Num()
                 for (i in 1 until parmCount) {
                     str = parms[i].winvar as idWinStr
-                    if (Icmpn(str.data!!, "gui::", 5) == 0) {
+                    if (Icmpn(str.data, "gui::", 5) == 0) {
 
                         //  always use a string here, no point using a float if it is one
                         //  FIXME: This creates duplicate variables, while not technically a problem since they
                         //  are all bound to the same guiDict, it does consume extra memory and is generally a bad thing
                         val defvar = idWinStr()
                         defvar.Init(str.data.toString(), win)
-                        win.AddDefinedVar(defvar)
-                        //				delete parms[i].var;
+                        win.AddDefinedVar(defvar) //				delete parms[i].var;
                         parms[i].winvar = defvar
                         parms[i].own = false
 
@@ -166,13 +162,10 @@ object GuiScript {
                         //	parms[i].own = false;
                         //}
                         // 
-                    } else if (str.data!!.toString().isNotEmpty() && str.data!![0] == '$') {
-                        // 
+                    } else if (str.data.toString().isNotEmpty() && str.data[0] == '$') { //
                         //  dont include the $ when asking for variable
-                        dest = win.GetGui().GetDesktop()!!.GetWinVarByName(str.c_str()!!.substring(1), true)
-                        // 					
-                        if (dest != null) {
-//					delete parms[i].var;
+                        dest = win.GetGui().GetDesktop()!!.GetWinVarByName(str.c_str()!!.substring(1), true) //
+                        if (dest != null) { //					delete parms[i].var;
                             parms[i].winvar = dest
                             parms[i].own = false
                         }
@@ -181,8 +174,7 @@ object GuiScript {
                     } else if (precacheBackground) {
                         val mat = DeclManager.declManager.FindMaterial(str.c_str()!!)
                         mat!!.SetSort(Material.SS_GUI.toFloat())
-                    } else if (precacheSounds) {
-                        // Search for "play <...>"
+                    } else if (precacheSounds) { // Search for "play <...>"
                         val token = idToken()
                         val parser =
                             idParser(LEXFL_NOSTRINGCONCAT or LEXFL_ALLOWMULTICHARLITERALS or LEXFL_ALLOWBACKSLASHSTRINGCONCAT)
@@ -208,10 +200,8 @@ object GuiScript {
 
                 // 
                 val destOwner = arrayOf<drawWin_t?>(null)
-                var dest = win.GetWinVarByName(str.data.toString(), true, destOwner)
-                // 
-                if (dest != null) {
-//			delete parms[0].var;
+                var dest = win.GetWinVarByName(str.data.toString(), true, destOwner) //
+                if (dest != null) { //			delete parms[0].var;
                     parms[0].winvar = dest
                     parms[0].own = false
                 } else {
@@ -233,7 +223,7 @@ object GuiScript {
                     parms[c].winvar = v4
                     parms[c].own = true
                     val owner = arrayOf<drawWin_t?>(null)
-                    dest = if (str.data!![0] == '$') {
+                    dest = if (str.data[0] == '$') {
                         win.GetWinVarByName(str.c_str()!!.substring(1), true, owner)
                     } else {
                         null
@@ -264,11 +254,10 @@ object GuiScript {
                             v4.Set(dest.c_str())
                         }
                     } else {
-                        v4.Set(str.data!!)
+                        v4.Set(str.data)
                     }
                     c++
-                }
-                // 
+                } //
             } else {
                 val c = parms.Num()
                 for (i in 0 until c) {
@@ -411,7 +400,7 @@ object GuiScript {
             var `val`: String?
             var dest = src[0].winvar as? idWinStr
             if (dest != null) {
-                if (Icmp(dest.data!!, "cmd") == 0) {
+                if (Icmp(dest.data, "cmd") == 0) {
                     dest = src[1].winvar as idWinStr
                     val parmCount = src.Num()
                     if (parmCount > 2) {
@@ -431,7 +420,7 @@ object GuiScript {
                 }
 
                 // DG: allow debugprinting to the console with `set "print" "this windowDefs rect:" "$rect"`
-                if (Icmp(dest.data!!, "print") == 0) {
+                if (Icmp(dest.data, "print") == 0) {
                     val msg = idStr()
                     val parmCount = src.Num()
                     for (i in 1 until parmCount) {
@@ -616,35 +605,26 @@ object GuiScript {
      =========================
      */
     internal class Script_Transition private constructor() : Handler() {
-        override fun run(window: idWindow, src: idList<idGSWinVar>) {
-            // transitions always affect rect or vec4 vars
+        override fun run(window: idWindow, src: idList<idGSWinVar>) { // transitions always affect rect or vec4 vars
             if (src.Num() >= 4) {
                 var rect: Winvar.idWinRectangle? = null
-                val vec4 = src[0].winvar as? Winvar.idWinVec4
-                // 
+                val vec4 = src[0].winvar as? Winvar.idWinVec4 //
                 //  added float variable
-                var `val`: Winvar.idWinFloat? = null
-                // 
+                var `val`: Winvar.idWinFloat? = null //
                 if (null == vec4) {
-                    rect = src[0].winvar as? Winvar.idWinRectangle
-                    // 
+                    rect = src[0].winvar as? Winvar.idWinRectangle //
                     //  added float variable					
                     if (null == rect) {
                         `val` = src[0].winvar as? Winvar.idWinFloat
-                    }
-                    // 
+                    } //
                 }
                 val from = src[1].winvar as? Winvar.idWinVec4
                 val to = src[2].winvar as? Winvar.idWinVec4
-                val timeStr = src[3].winvar as? idWinStr
-                // 
+                val timeStr = src[3].winvar as? idWinStr //
                 //  added float variable					
-                if (!((vec4 != null || rect != null || `val` != null) && from != null && to != null && timeStr != null)) {
-                    // 
+                if (!((vec4 != null || rect != null || `val` != null) && from != null && to != null && timeStr != null)) { //
                     Common.common.Warning(
-                        "Bad transition in gui %s in window %s\n",
-                        window.GetGui().GetSourceFile(),
-                        window.GetName()
+                        "Bad transition in gui %s in window %s\n", window.GetGui().GetSourceFile(), window.GetName()
                     )
                     return
                 }
@@ -660,13 +640,11 @@ object GuiScript {
                 }
                 if (vec4 != null) {
                     vec4.SetEval(false)
-                    window.AddTransition(vec4, from.data, to.data, time, ac, dc)
-                    // 
+                    window.AddTransition(vec4, from.data, to.data, time, ac, dc) //
                     //  added float variable					
                 } else if (`val` != null) {
                     `val`.SetEval(false)
-                    window.AddTransition(`val`, from.data, to.data, time, ac, dc)
-                    // 
+                    window.AddTransition(`val`, from.data, to.data, time, ac, dc) //
                 } else {
                     rect!!.SetEval(false)
                     window.AddTransition(rect, from.data, to.data, time, ac, dc)

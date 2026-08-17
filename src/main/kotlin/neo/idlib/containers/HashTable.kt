@@ -81,20 +81,17 @@ class HashTable {
         //public	size_t			Size( void ) const;
         //
         fun Set(key: String?, value: Type?) {
-            val hash: Int = GetHash(key)
-            // Walk the chain to find insertion point (sorted by key).
+            val hash: Int = GetHash(key) // Walk the chain to find insertion point (sorted by key).
             // Track the previous node so we can splice in the new node.
             var prev: hashnode_s<*>? = null
             var node: hashnode_s<*>? = heads[hash]
             while (node != null) {
                 val s = node.key.Cmp(key!!)
-                if (s == 0) {
-                    // key already exists — update value
+                if (s == 0) { // key already exists — update value
                     node.value = value as Nothing?
                     return
                 }
-                if (s > 0) {
-                    // insert before this node (sorted order)
+                if (s > 0) { // insert before this node (sorted order)
                     break
                 }
                 prev = node
@@ -145,8 +142,7 @@ class HashTable {
             if (head != null) {
                 prev = null
                 node = head
-                while (node != null) {
-                    //TODO:fuck me if any of this shit works.
+                while (node != null) { //TODO:fuck me if any of this shit works.
                     if (node.key.Cmp(key!!) == 0) {
                         if (prev != null) {
                             prev.next = node.next
@@ -154,7 +150,7 @@ class HashTable {
                             heads[hash] = node.next //TODO:double check these pointers.
                         }
 
-//				delete node;
+                        //				delete node;
                         numentries--
                         return true
                     }
@@ -174,8 +170,7 @@ class HashTable {
                 next = heads[i]
                 while (next != null) {
                     node = next
-                    next = next.next
-                    //			delete node;
+                    next = next.next //			delete node;
                 }
                 heads[i] = null
                 i++
@@ -192,9 +187,8 @@ class HashTable {
                 next = heads[i]
                 while (next != null) {
                     node = next
-                    next = next.next
-                    //			delete node->value;
-//			delete node;
+                    next = next.next //			delete node->value;
+                    //			delete node;
                 }
                 heads[i] = null
                 i++

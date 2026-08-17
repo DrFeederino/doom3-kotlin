@@ -197,8 +197,7 @@ class idQuat {
         return this
     }
 
-    fun CalcW(): Float {
-        // take the absolute value because floating point rounding may cause the dot of x,y,z to be larger than 1
+    fun CalcW(): Float { // take the absolute value because floating point rounding may cause the dot of x,y,z to be larger than 1
         return sqrt(abs(1.0f - (x * x + y * y + z * z)))
     }
 
@@ -464,8 +463,7 @@ class idCQuat {
         return ToQuat().ToMat4()
     }
 
-    fun ToQuat(): idQuat {
-        // take the absolute value because floating point rounding may cause the dot of x,y,z to be larger than 1
+    fun ToQuat(): idQuat { // take the absolute value because floating point rounding may cause the dot of x,y,z to be larger than 1
         return idQuat(x, y, z, sqrt(abs(1.0f - (x * x + y * y + z * z))))
     }
 

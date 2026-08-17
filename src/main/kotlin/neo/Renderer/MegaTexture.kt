@@ -51,7 +51,9 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.ARBVertexProgram
 import org.lwjgl.opengl.GL11
 import java.io.Serializable
-import java.nio.*
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.FloatBuffer
 import java.util.*
 
 object MegaTexture {
@@ -103,8 +105,7 @@ object MegaTexture {
         var y: Int = 0
 
         companion object {
-            val SIZE: Int = (Integer.SIZE
-                    + Integer.SIZE)
+            val SIZE: Int = (Integer.SIZE + Integer.SIZE)
         }
     }
 
@@ -137,8 +138,7 @@ object MegaTexture {
                 globalTileCorner[0] = 0
                 globalTileCorner[1] = 0
                 localTileOffset[0] = 0
-                localTileOffset[1] = 0
-                // orient the mask so that it doesn't mask anything at all
+                localTileOffset[1] = 0 // orient the mask so that it doesn't mask anything at all
                 parms.put(0, 0.25f)
                 parms.put(1, 0.25f)
                 parms.put(3, 0.25f)
@@ -161,10 +161,8 @@ object MegaTexture {
             for (x in 0 until TILE_PER_LEVEL) {
                 for (y in 0 until TILE_PER_LEVEL) {
                     val globalTile = IntArray(2)
-                    globalTile[0] =
-                        globalTileCorner[0] + ((x - localTileOffset[0]) and (TILE_PER_LEVEL - 1))
-                    globalTile[1] =
-                        globalTileCorner[1] + ((y - localTileOffset[1]) and (TILE_PER_LEVEL - 1))
+                    globalTile[0] = globalTileCorner[0] + ((x - localTileOffset[0]) and (TILE_PER_LEVEL - 1))
+                    globalTile[1] = globalTileCorner[1] + ((y - localTileOffset[1]) and (TILE_PER_LEVEL - 1))
                     UpdateTile(x, y, globalTile[0], globalTile[1])
                 }
             }
@@ -188,23 +186,17 @@ object MegaTexture {
             tile.x = globalX
             tile.y = globalY
             val data: ByteBuffer = ByteBuffer.allocate(TILE_SIZE * TILE_SIZE * 4)
-            if ((globalX >= tilesWide) || (globalX < 0) || (globalY >= tilesHigh) || (globalY < 0)) {
-                // off the map
-            } else {
-                // extract the data from the full image (FIXME: background load from disk)
+            if ((globalX >= tilesWide) || (globalX < 0) || (globalY >= tilesHigh) || (globalY < 0)) { // off the map
+            } else { // extract the data from the full image (FIXME: background load from disk)
                 val tileNum: Int = tileOffset + (tile.y * tilesWide) + tile.x
                 val tileSize: Int = TILE_SIZE * TILE_SIZE * 4
                 mega!!.fileHandle!!.Seek((tileNum * tileSize).toLong(), fsOrigin_t.FS_SEEK_SET)
                 Arrays.fill(data.array(), 128.toByte())
                 mega!!.fileHandle!!.Read(data, tileSize)
             }
-            if (idMegaTexture.r_showMegaTextureLabels.GetBool()) {
-                // put a color marker in it
+            if (idMegaTexture.r_showMegaTextureLabels.GetBool()) { // put a color marker in it
                 val color /*[4]*/: ByteArray = byteArrayOf(
-                    (255 * localX / TILE_PER_LEVEL).toByte(),
-                    (255 * localY / TILE_PER_LEVEL).toByte(),
-                    0,
-                    0
+                    (255 * localX / TILE_PER_LEVEL).toByte(), (255 * localY / TILE_PER_LEVEL).toByte(), 0, 0
                 )
                 for (x in 0..7) {
                     for (y in 0..7) {
@@ -281,10 +273,7 @@ object MegaTexture {
 
         companion object {
             val SIZE: Int = (CPP_class.POINTER_SIZE //idMegaTexture * mega
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + CPP_class.POINTER_SIZE //idImage * image
+                    + Integer.SIZE + Integer.SIZE + Integer.SIZE + CPP_class.POINTER_SIZE //idImage * image
                     + (idTextureTile.SIZE * TILE_PER_LEVEL * TILE_PER_LEVEL))
         }
     }
@@ -522,10 +511,8 @@ object MegaTexture {
             // convert the viewOrigin to a texture center, which will
             // be a different conversion for each megaTexture
             for (i in 0..1) {
-                texCenter[i] = (viewOrigin[0] * localViewToTextureCenter[i][0]
-                        ) + (viewOrigin[1] * localViewToTextureCenter[i][1]
-                        ) + (viewOrigin[2] * localViewToTextureCenter[i][2]
-                        ) + localViewToTextureCenter[i][3]
+                texCenter[i] =
+                    (viewOrigin[0] * localViewToTextureCenter[i][0]) + (viewOrigin[1] * localViewToTextureCenter[i][1]) + (viewOrigin[2] * localViewToTextureCenter[i][2]) + localViewToTextureCenter[i][3]
             }
             for (i in 0 until numLevels) {
                 levels[i].UpdateForCenter(texCenter)
@@ -581,8 +568,7 @@ object MegaTexture {
                 targa_header.attributes = Char(ReadByte(file).toUShort())
                 if ((targa_header.image_type.code != 2) && (targa_header.image_type.code != 10) && (targa_header.image_type.code != 3)) {
                     Common.common.Error(
-                        "LoadTGA( %s ): Only type 2 (RGB), 3 (gray), and 10 (RGB) TGA images supported\n",
-                        name
+                        "LoadTGA( %s ): Only type 2 (RGB), 3 (gray), and 10 (RGB) TGA images supported\n", name
                     )
                 }
                 if (targa_header.colormap_type.code != 0) {
@@ -612,7 +598,10 @@ object MegaTexture {
                 outName.Append(".mega")
                 Common.common.Printf(
                     "Writing %d x %d size %d tiles to %s.\n",
-                    mtHeader.tilesWide, mtHeader.tilesHigh, mtHeader.tileSize, outName
+                    mtHeader.tilesWide,
+                    mtHeader.tilesHigh,
+                    mtHeader.tileSize,
+                    outName
                 )
 
                 // open the output megatexture file
@@ -622,14 +611,12 @@ object MegaTexture {
 
                 // we will process this one row of tiles at a time, since the entire thing
                 // won't fit in memory
-                val targa_rgba =
-                    ByteArray(TILE_SIZE * targa_header.width * 4)
+                val targa_rgba = ByteArray(TILE_SIZE * targa_header.width * 4)
                 var blockRowsRemaining: Int = mtHeader.tilesHigh
                 while (blockRowsRemaining-- != 0) {
                     Common.common.Printf("%d blockRowsRemaining\n", blockRowsRemaining)
                     Session.session.UpdateScreen()
-                    if (targa_header.image_type.code == 2 || targa_header.image_type.code == 3) {
-                        // Uncompressed RGB or gray scale image
+                    if (targa_header.image_type.code == 2 || targa_header.image_type.code == 3) { // Uncompressed RGB or gray scale image
                         row = 0
                         while (row < TILE_SIZE) {
                             pixbuf = row * columns * 4
@@ -672,9 +659,7 @@ object MegaTexture {
                                     }
 
                                     else -> Common.common.Error(
-                                        "LoadTGA( %s ): illegal pixel_size '%d'\n",
-                                        name,
-                                        targa_header.pixel_size
+                                        "LoadTGA( %s ): illegal pixel_size '%d'\n", name, targa_header.pixel_size
                                     )
                                 }
                                 column++
@@ -717,9 +702,7 @@ object MegaTexture {
                                         }
 
                                         else -> Common.common.Error(
-                                            "LoadTGA( %s ): illegal pixel_size '%d'\n",
-                                            name,
-                                            targa_header.pixel_size
+                                            "LoadTGA( %s ): illegal pixel_size '%d'\n", name, targa_header.pixel_size
                                         )
                                     }
                                     j = 0
@@ -798,9 +781,7 @@ object MegaTexture {
                             out.Write(
                                 ByteBuffer.wrap(
                                     Arrays.copyOfRange(
-                                        targa_rgba,
-                                        (y * targa_header.width + rowBlock * TILE_SIZE) * 4,
-                                        targa_rgba.size
+                                        targa_rgba, (y * targa_header.width + rowBlock * TILE_SIZE) * 4, targa_rgba.size
                                     )
                                 ), TILE_SIZE * 4
                             )
@@ -819,11 +800,7 @@ object MegaTexture {
         companion object {
             val SIZE: Int = (CPP_class.POINTER_SIZE //idFile fileHandle
                     + CPP_class.POINTER_SIZE //srfTriangles_s currentTriMapping
-                    + idVec3.SIZE
-                    + (java.lang.Float.SIZE * 2 * 4)
-                    + Integer.SIZE
-                    + (idTextureLevel.SIZE * MAX_LEVELS)
-                    + megaTextureHeader_t.BYTES)
+                    + idVec3.SIZE + (java.lang.Float.SIZE * 2 * 4) + Integer.SIZE + (idTextureLevel.SIZE * MAX_LEVELS) + megaTextureHeader_t.BYTES)
             private val parms /*[4]*/: FloatBuffer = BufferUtils.createFloatBuffer(4) // no contribution
 
             //
@@ -867,21 +844,18 @@ object MegaTexture {
                     for (y in 0 until newHeight) {
                         Common.common.Printf("row %d\n", y)
                         Session.session.UpdateScreen()
-                        for (x in 0 until newWidth) {
-                            // mip map four original blocks down into a single new block
+                        for (x in 0 until newWidth) { // mip map four original blocks down into a single new block
                             for (yy in 0..1) {
                                 for (xx in 0..1) {
                                     val tx: Int = x * 2 + xx
                                     val ty: Int = y * 2 + yy
-                                    if (tx > width || ty > height) {
-                                        // off edge, zero fill
+                                    if (tx > width || ty > height) { // off edge, zero fill
                                         newBlock.fill(0)
                                     } else {
                                         tileNum = tileOffset + (ty * width) + tx
                                         inFile.Seek((tileNum * tileSize).toLong(), fsOrigin_t.FS_SEEK_SET)
                                         inFile.Read(ByteBuffer.wrap(oldBlock), tileSize)
-                                    }
-                                    // mip map the new pixels
+                                    } // mip map the new pixels
                                     for (yyy in 0 until (TILE_SIZE / 2)) {
                                         for (xxx in 0 until (TILE_SIZE / 2)) {
                                             val `in`: Int = (yyy * 2 * TILE_SIZE + xxx * 2) * 4
@@ -941,8 +915,7 @@ object MegaTexture {
                 var width: Int = header.tilesWide
                 var height: Int = header.tilesHigh
                 var tileOffset = 1
-                val tileBytes: Int = tileSize * tileSize * 4
-                // find the level that fits
+                val tileBytes: Int = tileSize * tileSize * 4 // find the level that fits
                 while (width * tileSize > 2048 || height * tileSize > 2048) {
                     tileOffset += width * height
                     width = width shr 1
@@ -954,8 +927,7 @@ object MegaTexture {
                         height = 1
                     }
                 }
-                val pic: ByteBuffer =
-                    ByteBuffer.allocate(width * height * tileBytes)
+                val pic: ByteBuffer = ByteBuffer.allocate(width * height * tileBytes)
                 val oldBlock: ByteBuffer = ByteBuffer.allocate(tileBytes)
                 for (y in 0 until height) {
                     for (x in 0 until width) {

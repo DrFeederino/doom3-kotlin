@@ -52,7 +52,6 @@ import neo.sys.win_net
 import neo.ui.DeviceContext
 import neo.ui.GameBearShootWindow
 import neo.ui.Window.idWindow
-import java.util.*
 
 //	CVar Registration
 //
@@ -237,8 +236,7 @@ object CVarSystem {
                 : Array<String?>? = null
 
         // Never use the default constructor.
-        constructor() {
-            //assert (!this.getClass().equals(idCVar.class));
+        constructor() { //assert (!this.getClass().equals(idCVar.class));
         }
 
         // Always use one of the following constructors.
@@ -306,7 +304,7 @@ object CVarSystem {
             if (if (name != null) name != idCVar.name else idCVar.name != null) return false
             if (if (next != null) next != idCVar.next else idCVar.next != null) return false
             if (if (value != null) value != idCVar.value else idCVar.value != null) return false
-            return if (if (valueCompletion != null) valueCompletion != idCVar.valueCompletion else idCVar.valueCompletion != null) false else valueStrings.contentEquals(
+            return !if (valueCompletion != null) valueCompletion != idCVar.valueCompletion else idCVar.valueCompletion != null && valueStrings.contentEquals(
                 idCVar.valueStrings
             )
         }
@@ -371,8 +369,7 @@ object CVarSystem {
             return internalVar!!.value
         }
 
-        fun GetBool(): Boolean {
-            // FIX: C++ uses internalVar->integerValue != 0, not string comparison on this.value
+        fun GetBool(): Boolean { // FIX: C++ uses internalVar->integerValue != 0, not string comparison on this.value
             return internalVar!!.integerValue != 0
         }
 
@@ -613,33 +610,32 @@ object CVarSystem {
 
         //	// virtual					~idInternalCVar( void );
         //
-        fun CopyValueStrings(strings: Array<String?>?): Array<String?>? {
-//	int i, totalLength;
-//	const char **ptr;
-//	char *str;
-//
-//	if ( !strings ) {
-//		return NULL;
-//	}
-//
-//	totalLength = 0;
-//	for ( i = 0; strings[i] != NULL; i++ ) {
-//		totalLength += idStr::Length( strings[i] ) + 1;
-//	}
-//
-//	ptr = (const char **) Mem_Alloc( ( i + 1 ) * sizeof( char * ) + totalLength );
-//	str = (char *) (((byte *)ptr) + ( i + 1 ) * sizeof( char * ) );
-//
-//	for ( i = 0; strings[i] != NULL; i++ ) {
-//		ptr[i] = str;
-//		strcpy( str, strings[i] );
-//		str += idStr::Length( strings[i] ) + 1;
-//	}
-//	ptr[i] = NULL;
-//
-//	return ptr;
+        fun CopyValueStrings(strings: Array<String?>?): Array<String?>? { //	int i, totalLength;
+            //	const char **ptr;
+            //	char *str;
+            //
+            //	if ( !strings ) {
+            //		return NULL;
+            //	}
+            //
+            //	totalLength = 0;
+            //	for ( i = 0; strings[i] != NULL; i++ ) {
+            //		totalLength += idStr::Length( strings[i] ) + 1;
+            //	}
+            //
+            //	ptr = (const char **) Mem_Alloc( ( i + 1 ) * sizeof( char * ) + totalLength );
+            //	str = (char *) (((byte *)ptr) + ( i + 1 ) * sizeof( char * ) );
+            //
+            //	for ( i = 0; strings[i] != NULL; i++ ) {
+            //		ptr[i] = str;
+            //		strcpy( str, strings[i] );
+            //		str += idStr::Length( strings[i] ) + 1;
+            //	}
+            //	ptr[i] = NULL;
+            //
+            //	return ptr;
 
-//            return Arrays.copyOf(strings, strings.length);
+            //            return Arrays.copyOf(strings, strings.length);
             return if (strings == null) null else strings.clone()
         }
 
@@ -671,8 +667,7 @@ object CVarSystem {
                 descriptionString.set(cvar.GetDescription()!!)
                 description = cvar.GetDescription()
                 valueMin = cvar.GetMinValue()
-                valueMax = cvar.GetMaxValue()
-                //                Mem_Free(valueStrings);
+                valueMax = cvar.GetMaxValue() //                Mem_Free(valueStrings);
                 valueStrings = CopyValueStrings(cvar.GetValueStrings())
                 valueCompletion = cvar.GetValueCompletion()
                 UpdateValue()
@@ -683,8 +678,7 @@ object CVarSystem {
 
             // only allow one non-empty reset string without a warning
             if (resetString.Length() == 0) {
-                resetString.set(cvar.GetString()!!)
-                // FIX: C++ checks cvar->GetString()[0] which is a non-empty string check, not a null check.
+                resetString.set(cvar.GetString()!!) // FIX: C++ checks cvar->GetString()[0] which is a non-empty string check, not a null check.
             } else if (cvar.GetString()?.isNotEmpty() == true && resetString.Cmp(cvar.GetString()!!) != 0) {
                 idLib.common.Warning(
                     "cvar \"%s\" given initial values: \"%s\" and \"%s\"\n", nameString, resetString, cvar.GetString()!!
@@ -697,8 +691,10 @@ object CVarSystem {
             if (flags and CVAR_BOOL != 0) {
                 integerValue = if (atoi(value!!) != 0) 1 else 0
                 floatValue = integerValue.toFloat()
-                if (idStr.Icmp(value!!, "0") != 0 && idStr.Icmp(value!!, "1") != 0) {
-                    // FIX: C++ idStr(bool) produces "1"/"0". Kotlin Boolean.toString() produces "true"/"false"
+                if (idStr.Icmp(value!!, "0") != 0 && idStr.Icmp(
+                        value!!, "1"
+                    ) != 0
+                ) { // FIX: C++ idStr(bool) produces "1"/"0". Kotlin Boolean.toString() produces "true"/"false"
                     // which would break on config save/reload since atoi("true") returns 0.
                     valueString.set(if (integerValue != 0) "1" else "0")
                     value = valueString.toString()
@@ -713,8 +709,7 @@ object CVarSystem {
                         integerValue = valueMax.toInt()
                         clamped = true
                     }
-                }
-                // FIX: FindChar returns -1 when not found (like indexOf). C++ checks != -1. Was != 0 which made -1 (not found) truthy and 0 (dot at start) falsy — both wrong.
+                } // FIX: FindChar returns -1 when not found (like indexOf). C++ checks != -1. Was != 0 which made -1 (not found) truthy and 0 (dot at start) falsy — both wrong.
                 if (clamped || !idStr.IsNumeric(value!!) || FindChar(value!!, '.') != -1) {
                     valueString.set(integerValue.toString())
                     value = valueString.toString()
@@ -760,8 +755,7 @@ object CVarSystem {
             }
         }
 
-        fun UpdateCheat() {
-            // all variables are considered cheats except for a few types
+        fun UpdateCheat() { // all variables are considered cheats except for a few types
             flags =
                 if (flags and (CVAR_NOCHEAT or CVAR_INIT or CVAR_ROM or CVAR_ARCHIVE or CVAR_USERINFO or CVAR_SERVERINFO or CVAR_NETWORKSYNC) != 0) {
                     flags and CVAR_CHEAT.inv()
@@ -772,24 +766,21 @@ object CVarSystem {
 
         fun Set(newValue: String?, force: Boolean, fromServer: Boolean) {
             var newValue = newValue
-            if (Session.session != null && Session.session.IsMultiplayer() && !fromServer) {
-// #ifndef ID_TYPEINFO
+            if (Session.session != null && Session.session.IsMultiplayer() && !fromServer) { // #ifndef ID_TYPEINFO
                 // if ( ( flags & CVAR_NETWORKSYNC ) && idAsyncNetwork::client.IsActive() ) {
                 // common.Printf( "%s is a synced over the network and cannot be changed on a multiplayer client.\n", nameString.c_str() );
-// #if ID_ALLOW_CHEATS
+                // #if ID_ALLOW_CHEATS
                 // common.Printf( "ID_ALLOW_CHEATS override!\n" );
-// #else
+                // #else
                 // return;
-// #endif
-//		}
-// #endif
+                // #endif
+                //		}
+                // #endif
                 if (flags and CVAR_CHEAT != 0 && !cvarSystem.GetCVarBool("net_allowCheats")) {
-                    idLib.common.Printf("%s cannot be changed in multiplayer.\n", nameString)
-                    // #if ID_ALLOW_CHEATS
+                    idLib.common.Printf("%s cannot be changed in multiplayer.\n", nameString) // #if ID_ALLOW_CHEATS
                     // common.Printf( "ID_ALLOW_CHEATS override!\n" );
-// #else
-                    return
-                    // #endif
+                    // #else
+                    return // #endif
                 }
             }
             if (null == newValue) {
@@ -930,8 +921,9 @@ object CVarSystem {
             SetCVarBool(name, value, 0)
         }
 
-        override fun SetCVarBool(name: String, value: Boolean, flags: Int) {
-            // FIX: C++ uses idStr(bool) which produces "1"/"0". Kotlin "" + bool produces "true"/"false"
+        override fun SetCVarBool(
+            name: String, value: Boolean, flags: Int
+        ) { // FIX: C++ uses idStr(bool) which produces "1"/"0". Kotlin "" + bool produces "true"/"false"
             // which atoi() can't parse, causing boolean cvars to always read as false.
             SetInternal(name, if (value) "1" else "0", flags)
         }
@@ -982,8 +974,7 @@ object CVarSystem {
             if (internal == null) {
                 return false
             }
-            if (args.Argc() == 1) {
-                // print the variable
+            if (args.Argc() == 1) { // print the variable
                 idLib.common.Printf(
                     """"%s" is:"%s" ${Str.S_COLOR_WHITE} default:"%s"
 """, internal.nameString, internal.valueString, internal.resetString
@@ -996,8 +987,7 @@ object CVarSystem {
     """.trimIndent(), internal.GetDescription()!!
                     )
                 }
-            } else {
-                // set the value
+            } else { // set the value
                 internal.Set(args.Args(), false, false)
             }
             return true
@@ -1160,13 +1150,11 @@ object CVarSystem {
                     idLib.common.Warning("Toggle_f: cvar \"%s\" not found", args.Argv(1))
                     return
                 }
-                if (argc > 3) {
-                    // cycle through multiple values
+                if (argc > 3) { // cycle through multiple values
                     text = cvar.GetString()!!
                     i = 2
                     while (i < argc) {
-                        if (0 == idStr.Icmp(text, args.Argv(i))) {
-                            // point to next value
+                        if (0 == idStr.Icmp(text, args.Argv(i))) { // point to next value
                             i++
                             break
                         }
@@ -1177,8 +1165,7 @@ object CVarSystem {
                     }
                     idLib.common.Printf("set %s = %s\n", args.Argv(1), args.Argv(i))
                     cvar.Set(Str.va("%s", args.Argv(i)), false, false)
-                } else {
-                    // toggle between 0 and 1
+                } else { // toggle between 0 and 1
                     current = cvar.GetFloat()
                     set = if (argc == 3) {
                         atof(args.Argv(2))
@@ -1284,15 +1271,14 @@ object CVarSystem {
             override fun run(args: CmdArgs.idCmdArgs?) {
                 val cvar: idInternalCVar?
                 Set_f.getInstance().run(args)
-                cvar = localCVarSystem.FindInternal(args!!.Argv(1))
-                //                if (null == cvar) {
-//                    return;
-//                }
+                cvar = localCVarSystem.FindInternal(args!!.Argv(1)) //                if (null == cvar) {
+                //                    return;
+                //                }
 
                 // FIXME: enable this for ship, so mods can store extra data
                 // but during development we don't want obsolete cvars to continue
                 // to be saved
-//	cvar->flags |= CVAR_ARCHIVE;
+                //	cvar->flags |= CVAR_ARCHIVE;
             }
 
             companion object {
@@ -1357,11 +1343,11 @@ object CVarSystem {
 
                     // throw out any variables the user created
                     if (0 == cvar.flags and CVAR_STATIC) {
-                        hash = localCVarSystem.cvarHash.GenerateKey(cvar.nameString.toString(), false)
-                        //			delete cvar;
+                        hash = localCVarSystem.cvarHash.GenerateKey(cvar.nameString.toString(), false) //			delete cvar;
                         localCVarSystem.cvars.RemoveIndex(i)
-                        localCVarSystem.cvarHash.RemoveIndex(hash, i)
-                        // NOTE: In C++ this was i--; continue; inside a for-loop where the loop update does i++.
+                        localCVarSystem.cvarHash.RemoveIndex(
+                            hash, i
+                        ) // NOTE: In C++ this was i--; continue; inside a for-loop where the loop update does i++.
                         // In Kotlin's while-loop, just continue re-examines the same index (now holding the next element).
                         continue
                     }
@@ -1617,8 +1603,7 @@ object CVarSystem {
      ============
      idCVarSystemLocal::ListByFlags
      ============
-     */
-    // NOTE: the const wonkyness is required to make msvc happy
+     */ // NOTE: the const wonkyness is required to make msvc happy
     class idListSortCompare : cmp_t<idInternalCVar> {
         override fun compare(a: idInternalCVar, b: idInternalCVar): Int {
             return idStr.Icmp(a.GetName(), b.GetName())

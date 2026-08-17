@@ -149,10 +149,7 @@ object AASFile_local {
         }
 
         override fun PointReachableAreaNum(
-            origin: idVec3,
-            searchBounds: idBounds,
-            areaFlags: Int,
-            excludeTravelFlags: Int
+            origin: idVec3, searchBounds: idBounds, areaFlags: Int, excludeTravelFlags: Int
         ): Int {
             var areaNum: Int
             var i: Int
@@ -172,8 +169,7 @@ object AASFile_local {
                 if (areas[areaNum].flags and areaFlags != 0 && areas[areaNum].travelFlags and excludeTravelFlags == 0) {
                     return areaNum
                 }
-            } else {
-                // trace up
+            } else { // trace up
                 end.set(start)
                 end.plusAssign(2, 32.0f)
                 Trace(trace, start, end)
@@ -265,15 +261,12 @@ object AASFile_local {
             tracestack[tstack_p].nodeNum = 1 //start with the root of the tree
             tstack_p++
             while (true) {
-                tstack_p--
-                // if the trace stack is empty
+                tstack_p-- // if the trace stack is empty
                 if (tstack_p < 0) {
-                    if (trace.lastAreaNum == 0) {
-                        // completely in solid
+                    if (trace.lastAreaNum == 0) { // completely in solid
                         trace.fraction = 0.0f
                         trace.endpos.set(start)
-                    } else {
-                        // nothing was hit
+                    } else { // nothing was hit
                         trace.fraction = 1.0f
                         trace.endpos.set(end)
                     }
@@ -285,8 +278,7 @@ object AASFile_local {
                 nodeNum = tracestack[tstack_p].nodeNum
 
                 // if it is an area
-                if (nodeNum < 0) {
-                    // if can't enter the area
+                if (nodeNum < 0) { // if can't enter the area
                     if (areas[-nodeNum].flags and trace.flags != 0 || areas[-nodeNum].travelFlags and trace.travelFlags != 0) {
                         if (trace.lastAreaNum == 0) {
                             trace.fraction = 0.0f
@@ -298,8 +290,8 @@ object AASFile_local {
                         }
                         trace.endpos.set(tracestack[tstack_p].start)
                         trace.blockingAreaNum = -nodeNum
-                        trace.planeNum = tracestack[tstack_p].planeNum
-                        // always take the plane with normal facing towards the trace start
+                        trace.planeNum =
+                            tracestack[tstack_p].planeNum // always take the plane with normal facing towards the trace start
                         plane = planeList[trace.planeNum]
                         if (v1.times(plane.Normal()) > 0.0f) {
                             trace.planeNum = trace.planeNum xor 1
@@ -331,8 +323,8 @@ object AASFile_local {
                     }
                     trace.endpos.set(tracestack[tstack_p].start)
                     trace.blockingAreaNum = 0 // hit solid leaf
-                    trace.planeNum = tracestack[tstack_p].planeNum
-                    // always take the plane with normal facing towards the trace start
+                    trace.planeNum =
+                        tracestack[tstack_p].planeNum // always take the plane with normal facing towards the trace start
                     plane = planeList[trace.planeNum]
                     if (v1.times(plane.Normal()) > 0.0f) {
                         trace.planeNum = trace.planeNum xor 1
@@ -345,20 +337,16 @@ object AASFile_local {
                 }
 
                 // the node to test against
-                node = nodes[nodeNum]
-                // start point of current line to test against node
-                cur_start.set(tracestack[tstack_p].start)
-                // end point of the current line to test against node
-                cur_end.set(tracestack[tstack_p].end)
-                // the current node plane
+                node = nodes[nodeNum] // start point of current line to test against node
+                cur_start.set(tracestack[tstack_p].start) // end point of the current line to test against node
+                cur_end.set(tracestack[tstack_p].end) // the current node plane
                 plane = planeList[node.planeNum]
                 front = plane.Distance(cur_start)
                 back = plane.Distance(cur_end)
 
                 // if the whole to be traced line is totally at the front of this node
                 // only go down the tree with the front child
-                if (front >= -ON_EPSILON && back >= -ON_EPSILON) {
-                    // keep the current start and end point on the stack and go down the tree with the front child
+                if (front >= -ON_EPSILON && back >= -ON_EPSILON) { // keep the current start and end point on the stack and go down the tree with the front child
                     tracestack[tstack_p].nodeNum = node.children[0]
                     tstack_p++
                     if (tstack_p >= AASFile.MAX_AAS_TREE_DEPTH) { //TODO:check that pointer to address comparison is the same as this.
@@ -366,8 +354,7 @@ object AASFile_local {
                         return false
                     }
                 } // if the whole to be traced line is totally at the back of this node
-                else if (front < ON_EPSILON && back < ON_EPSILON) {
-                    // keep the current start and end point on the stack and go down the tree with the back child
+                else if (front < ON_EPSILON && back < ON_EPSILON) { // keep the current start and end point on the stack and go down the tree with the back child
                     tracestack[tstack_p].nodeNum = node.children[1]
                     tstack_p++
                     if (tstack_p >= AASFile.MAX_AAS_TREE_DEPTH) {
@@ -376,8 +363,7 @@ object AASFile_local {
                     }
                 } // go down the tree both at the front and back of the node
                 else {
-                    tmpPlaneNum = tracestack[tstack_p].planeNum
-                    // calculate the hit point with the node plane
+                    tmpPlaneNum = tracestack[tstack_p].planeNum // calculate the hit point with the node plane
                     // put the cross point TRACEPLANE_EPSILON on the near side
                     frac = if (front < 0) {
                         (front + TRACEPLANE_EPSILON) / (front - back)
@@ -402,8 +388,7 @@ object AASFile_local {
                     if (tstack_p >= AASFile.MAX_AAS_TREE_DEPTH) {
                         Common.common.Error("idAASFileLocal::Trace: stack overflow\n")
                         return false
-                    }
-                    // now put the part near the start of the line on the stack so we will
+                    } // now put the part near the start of the line on the stack so we will
                     // continue with that part first.
                     tracestack[tstack_p].start.set(cur_start)
                     tracestack[tstack_p].end.set(cur_mid)
@@ -415,8 +400,7 @@ object AASFile_local {
                         return false
                     }
                 }
-            }
-            //            return false;
+            } //            return false;
         }
 
         override fun PrintInfo() {
@@ -445,10 +429,7 @@ object AASFile_local {
             }
             if (!src.ReadToken(token) || token.toString() != AASFile.AAS_FILEVERSION) {
                 Common.common.Warning(
-                    "AAS file '%s' has version %s instead of %s",
-                    name,
-                    token,
-                    AASFile.AAS_FILEVERSION
+                    "AAS file '%s' has version %s instead of %s", name, token, AASFile.AAS_FILEVERSION
                 )
                 return false
             }
@@ -574,11 +555,7 @@ object AASFile_local {
             i = 0
             while (i < vertices.Num()) {
                 aasFile.WriteFloatString(
-                    "\t%d ( %f %f %f )\n",
-                    i,
-                    vertices[i].x,
-                    vertices[i].y,
-                    vertices[i].z
+                    "\t%d ( %f %f %f )\n", i, vertices[i].x, vertices[i].y, vertices[i].z
                 )
                 i++
             }
@@ -607,8 +584,14 @@ object AASFile_local {
             i = 0
             while (i < faces.Num()) {
                 aasFile.WriteFloatString(
-                    "\t%d ( %d %d %d %d %d %d )\n", i, faces[i].planeNum, faces[i].flags,
-                    faces[i].areas[0], faces[i].areas[1], faces[i].firstEdge, faces[i].numEdges
+                    "\t%d ( %d %d %d %d %d %d )\n",
+                    i,
+                    faces[i].planeNum,
+                    faces[i].flags,
+                    faces[i].areas[0],
+                    faces[i].areas[1],
+                    faces[i].firstEdge,
+                    faces[i].numEdges
                 )
                 i++
             }
@@ -646,12 +629,11 @@ object AASFile_local {
                 )
                 reach = areas[i].reach
                 while (reach != null) {
-                    AASFile.Reachability_Write(aasFile, reach)
-                    //                    switch (reach.travelType) {
-//                        case TFL_SPECIAL:
-//                            Reachability_Special_Write(aasFile, (idReachability_Special) reach);
-//                            break;
-//                    }
+                    AASFile.Reachability_Write(aasFile, reach) //                    switch (reach.travelType) {
+                    //                        case TFL_SPECIAL:
+                    //                            Reachability_Special_Write(aasFile, (idReachability_Special) reach);
+                    //                            break;
+                    //                    }
                     if (reach.travelType == AASFile.TFL_SPECIAL) {
                         AASFile.Reachability_Special_Write(aasFile, reach as idReachability_Special)
                     }
@@ -668,11 +650,7 @@ object AASFile_local {
             i = 0
             while (i < nodes.Num()) {
                 aasFile.WriteFloatString(
-                    "\t%d ( %d %d %d )\n",
-                    i,
-                    nodes[i].planeNum,
-                    nodes[i].children[0],
-                    nodes[i].children[1]
+                    "\t%d ( %d %d %d )\n", i, nodes[i].planeNum, nodes[i].children[0], nodes[i].children[1]
                 )
                 i++
             }
@@ -683,8 +661,13 @@ object AASFile_local {
             i = 0
             while (i < portals.Num()) {
                 aasFile.WriteFloatString(
-                    "\t%d ( %d %d %d %d %d )\n", i, portals[i].areaNum, portals[i].clusters[0],
-                    portals[i].clusters[1], portals[i].clusterAreaNum[0], portals[i].clusterAreaNum[1]
+                    "\t%d ( %d %d %d %d %d )\n",
+                    i,
+                    portals[i].areaNum,
+                    portals[i].clusters[0],
+                    portals[i].clusters[1],
+                    portals[i].clusterAreaNum[0],
+                    portals[i].clusterAreaNum[1]
                 )
                 i++
             }
@@ -704,8 +687,12 @@ object AASFile_local {
             i = 0
             while (i < clusters.Num()) {
                 aasFile.WriteFloatString(
-                    "\t%d ( %d %d %d %d )\n", i, clusters[i].numAreas, clusters[i].numReachableAreas,
-                    clusters[i].firstPortal, clusters[i].numPortals
+                    "\t%d ( %d %d %d %d )\n",
+                    i,
+                    clusters[i].numAreas,
+                    clusters[i].numReachableAreas,
+                    clusters[i].firstPortal,
+                    clusters[i].numPortals
                 )
                 i++
             }
@@ -729,8 +716,7 @@ object AASFile_local {
             size += nodes.Size()
             size += portals.Size()
             size += portalIndex.Size()
-            size += clusters.Size()
-            //	size += sizeof( idReachability_Walk ) * NumReachabilities();
+            size += clusters.Size() //	size += sizeof( idReachability_Walk ) * NumReachabilities();
             size += NumReachabilities()
             return size
         }
@@ -931,12 +917,12 @@ object AASFile_local {
             clusters.Clear()
 
             // first portal is a dummy
-//	memset( &portal, 0, sizeof( portal ) );
+            //	memset( &portal, 0, sizeof( portal ) );
             portal = aasPortal_s()
             portals.Append(portal)
 
             // first cluster is a dummy
-//	memset( &cluster, 0, sizeof( portal ) );
+            //	memset( &cluster, 0, sizeof( portal ) );
             cluster = aasCluster_s()
             clusters.Append(cluster)
         }
@@ -1046,16 +1032,15 @@ object AASFile_local {
                 val reach = idReachability()
                 var newReach: idReachability?
                 var special: idReachability_Special
-                AASFile.Reachability_Read(src, reach)
-                //		switch( reach.travelType ) {
-//			case TFL_SPECIAL:
-//				newReach = special = new idReachability_Special();
-//				Reachability_Special_Read( src, special );
-//				break;
-//			default:
-//				newReach = new idReachability();
-//				break;
-//		}
+                AASFile.Reachability_Read(src, reach) //		switch( reach.travelType ) {
+                //			case TFL_SPECIAL:
+                //				newReach = special = new idReachability_Special();
+                //				Reachability_Special_Read( src, special );
+                //				break;
+                //			default:
+                //				newReach = new idReachability();
+                //				break;
+                //		}
                 if (reach.travelType == AASFile.TFL_SPECIAL) {
                     special = idReachability_Special()
                     newReach = special
@@ -1160,10 +1145,7 @@ object AASFile_local {
         }
 
         private fun BoundsReachableAreaNum_r(
-            nodeNum: Int,
-            bounds: idBounds,
-            areaFlags: Int,
-            excludeTravelFlags: Int
+            nodeNum: Int, bounds: idBounds, areaFlags: Int, excludeTravelFlags: Int
         ): Int {
             var nodeNum = nodeNum
             var res: Int
@@ -1211,7 +1193,7 @@ object AASFile_local {
             val depth = CInt(0)
             val maxDepth = CInt(0)
 
-//	depth = maxDepth = 0;
+            //	depth = maxDepth = 0;
             MaxTreeDepth_r(1, depth, maxDepth)
             return maxDepth._val
         }

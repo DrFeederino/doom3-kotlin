@@ -66,8 +66,8 @@ redundant calculations.
 */
 fun CM_SetTrmEdgeSidedness(edge: cm_edge_s, bpl: idPluecker, epl: idPluecker, bitNum: Int) {
     if ((edge.sideSet and (1L shl bitNum)) == 0L) {
-        val fl: Float = bpl.PermutedInnerProduct(epl)
-        // NOTE: Operator precedence relies on left-to-right evaluation of infix functions.
+        val fl: Float =
+            bpl.PermutedInnerProduct(epl) // NOTE: Operator precedence relies on left-to-right evaluation of infix functions.
         // `and` evaluates before `or` here because it appears first, matching C++ where & > |
         edge.side = edge.side and (1L shl bitNum).inv() or (FLOATSIGNBITSET(fl).toLong() shl bitNum)
         edge.sideSet = edge.sideSet or (1L shl bitNum)
@@ -85,8 +85,7 @@ because the sign bit is undetermined when the distance equals 0.0f.
 */
 fun CM_SetTrmPolygonSidedness(v: cm_vertex_s, plane: idPlane, bitNum: Int) {
     if ((v.sideSet and (1L shl bitNum)) == 0L) {
-        val fl: Float = plane.Distance(v.p)
-        /* cannot use float sign bit because it is undetermined when fl == 0.0f */
+        val fl: Float = plane.Distance(v.p)/* cannot use float sign bit because it is undetermined when fl == 0.0f */
         if (fl < 0.0f) {
             v.side = v.side or (1L shl bitNum)
         } else {

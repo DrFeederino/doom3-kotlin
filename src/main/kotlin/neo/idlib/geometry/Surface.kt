@@ -10,10 +10,7 @@ import kotlin.math.abs
 
 object Surface {
     private fun UpdateVertexIndex(
-        vertexIndexNum: IntArray,
-        vertexRemap: IntArray,
-        vertexCopyIndex: IntArray,
-        vertNum: Int
+        vertexIndexNum: IntArray, vertexRemap: IntArray, vertexCopyIndex: IntArray, vertNum: Int
     ): Int {
         val s = INTSIGNBITSET(vertexRemap[vertNum])
         vertexIndexNum[0] = vertexRemap[vertNum]
@@ -61,13 +58,11 @@ object Surface {
 
         constructor(verts: Array<idDrawVert>?, numVerts: Int, indexes: IntArray?, numIndexes: Int) {
             assert(verts != null && indexes != null && numVerts > 0 && numIndexes > 0)
-            this.verts.SetNum(numVerts)
-            //	memcpy( this.verts.Ptr(), verts, numVerts * sizeof( verts[0] ) );
+            this.verts.SetNum(numVerts) //	memcpy( this.verts.Ptr(), verts, numVerts * sizeof( verts[0] ) );
             for (i in 0 until numVerts) {
                 this.verts[i].set(verts!![i])
             }
-            this.indexes.SetNum(numIndexes)
-            //	memcpy( this.indexes.Ptr(), indexes, numIndexes * sizeof( indexes[0] ) );
+            this.indexes.SetNum(numIndexes) //	memcpy( this.indexes.Ptr(), indexes, numIndexes * sizeof( indexes[0] ) );
             System.arraycopy(indexes, 0, this.indexes, 0, numIndexes)
             GenerateEdgeIndexes()
         }
@@ -194,13 +189,11 @@ object Surface {
                     front[0]!![0] = idSurface(this)
                     SIDE_FRONT
                 }
-            }
-            // if nothing at the front of the clipping plane
+            } // if nothing at the front of the clipping plane
             if (0 == counts[SIDE_FRONT]) {
                 back[0]!![0] = idSurface(this)
                 return SIDE_BACK
-            }
-            // if nothing at the back of the clipping plane
+            } // if nothing at the back of the clipping plane
             if (0 == counts[SIDE_BACK]) {
                 front[0]!![0] = idSurface(this)
                 return SIDE_FRONT
@@ -245,11 +238,9 @@ object Surface {
             surface[1].indexes.Resize(((counts[SIDE_BACK] + counts[SIDE_ON]) * 2) + (numEdgeSplitVertexes * 4))
 
             // allocate indexes to construct the triangle indexes for the front and back surface
-            vertexRemap[0] = IntArray(verts.Num())
-            //	memset( vertexRemap[0], -1, verts.Num() * sizeof( int ) );
+            vertexRemap[0] = IntArray(verts.Num()) //	memset( vertexRemap[0], -1, verts.Num() * sizeof( int ) );
             Arrays.fill(vertexRemap[0], -1, 0, verts.Num())
-            vertexRemap[1] = IntArray(verts.Num())
-            //	memset( vertexRemap[1], -1, verts.Num() * sizeof( int ) );
+            vertexRemap[1] = IntArray(verts.Num()) //	memset( vertexRemap[1], -1, verts.Num() * sizeof( int ) );
             Arrays.fill(vertexRemap[1], -1, 0, verts.Num())
             vertexCopyIndex[0] = IntArray(numEdgeSplitVertexes + verts.Num())
             vertexCopyIndex[1] = IntArray(numEdgeSplitVertexes + verts.Num())
@@ -261,8 +252,7 @@ object Surface {
             indexPtr[1] = surface[1].indexes.getList(Array<Int>::class.java)!!
             indexNum[0] = surface[0].indexes.Num()
             indexNum[1] = surface[1].indexes.Num()
-            maxOnPlaneEdges += 4 * numEdgeSplitVertexes
-            // allocate one more in case no triangles are actually split which may happen for a disconnected surface
+            maxOnPlaneEdges += 4 * numEdgeSplitVertexes // allocate one more in case no triangles are actually split which may happen for a disconnected surface
             onPlaneEdges[0] = IntArray(maxOnPlaneEdges + 1)
             onPlaneEdges[1] = IntArray(maxOnPlaneEdges + 1)
             numOnPlaneEdges[1] = 0
@@ -288,10 +278,8 @@ object Surface {
                 when (INTSIGNBITSET(edgeSplitVertex[e0]) or (INTSIGNBITSET(edgeSplitVertex[e1]) shl 1) or (INTSIGNBITSET(
                     edgeSplitVertex[e2]
                 ) shl 2) xor 7) {
-                    0 -> {
-                        // no edges split
-                        if (sides[v0] and sides[v1] and sides[v2] and SIDE_ON != 0) {
-                            // coplanar
+                    0 -> { // no edges split
+                        if (sides[v0] and sides[v1] and sides[v2] and SIDE_ON != 0) { // coplanar
                             f = (verts[v1].xyz - verts[v0].xyz).Cross(verts[v0].xyz - verts[v2].xyz) * plane.Normal()
                             s = FLOATSIGNBITSET(f)
                         } else {
@@ -305,73 +293,58 @@ object Surface {
                         onPlaneEdges[s][numOnPlaneEdges[s]] = n + 2
                         numOnPlaneEdges[s] += (sides[v2] and sides[v0]) shr 1
                         index = indexPtr[s]
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v0)
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v2)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v0)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v2)
                         indexNum[s] = n
                     }
 
-                    1 -> {
-                        // first edge split
+                    1 -> { // first edge split
                         s = sides[v0] and SIDE_BACK
                         n = indexNum[s]
                         onPlaneEdges[s][numOnPlaneEdges[s]++] = n
                         index = indexPtr[s]
                         index[n++] = edgeSplitVertex[e0]
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v2)
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v0)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v2)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v0)
                         indexNum[s] = n
                         s = s xor 1
                         n = indexNum[s]
                         onPlaneEdges[s][numOnPlaneEdges[s]++] = n
                         index = indexPtr[s]
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v2)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v2)
                         index[n++] = edgeSplitVertex[e0]
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
                         indexNum[s] = n
                     }
 
-                    2 -> {
-                        // second edge split
+                    2 -> { // second edge split
                         s = sides[v1] and SIDE_BACK
                         n = indexNum[s]
                         onPlaneEdges[s][numOnPlaneEdges[s]++] = n
                         index = indexPtr[s]
                         index[n++] = edgeSplitVertex[e1]
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v0)
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v0)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
                         indexNum[s] = n
                         s = s xor 1
                         n = indexNum[s]
                         onPlaneEdges[s][numOnPlaneEdges[s]++] = n
                         index = indexPtr[s]
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v0)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v0)
                         index[n++] = edgeSplitVertex[e1]
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v2)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v2)
                         indexNum[s] = n
                     }
 
-                    3 -> {
-                        // first and second edge split
+                    3 -> { // first and second edge split
                         s = sides[v1] and SIDE_BACK
                         n = indexNum[s]
                         onPlaneEdges[s][numOnPlaneEdges[s]++] = n
                         index = indexPtr[s]
                         index[n++] = edgeSplitVertex[e1]
                         index[n++] = edgeSplitVertex[e0]
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
                         indexNum[s] = n
                         s = s xor 1
                         n = indexNum[s]
@@ -379,50 +352,40 @@ object Surface {
                         index = indexPtr[s]
                         index[n++] = edgeSplitVertex[e0]
                         index[n++] = edgeSplitVertex[e1]
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v0)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v0)
                         index[n++] = edgeSplitVertex[e1]
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v2)
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v0)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v2)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v0)
                         indexNum[s] = n
                     }
 
-                    4 -> {
-                        // third edge split
+                    4 -> { // third edge split
                         s = sides[v2] and SIDE_BACK
                         n = indexNum[s]
                         onPlaneEdges[s][numOnPlaneEdges[s]++] = n
                         index = indexPtr[s]
                         index[n++] = edgeSplitVertex[e2]
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v2)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v2)
                         indexNum[s] = n
                         s = s xor 1
                         n = indexNum[s]
                         onPlaneEdges[s][numOnPlaneEdges[s]++] = n
                         index = indexPtr[s]
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
                         index[n++] = edgeSplitVertex[e2]
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v0)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v0)
                         indexNum[s] = n
                     }
 
-                    5 -> {
-                        // first and third edge split
+                    5 -> { // first and third edge split
                         s = sides[v0] and SIDE_BACK
                         n = indexNum[s]
                         onPlaneEdges[s][numOnPlaneEdges[s]++] = n
                         index = indexPtr[s]
                         index[n++] = edgeSplitVertex[e0]
                         index[n++] = edgeSplitVertex[e2]
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v0)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v0)
                         indexNum[s] = n
                         s = s xor 1
                         n = indexNum[s]
@@ -430,26 +393,21 @@ object Surface {
                         index = indexPtr[s]
                         index[n++] = edgeSplitVertex[e2]
                         index[n++] = edgeSplitVertex[e0]
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v2)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v2)
                         index[n++] = edgeSplitVertex[e2]
                         indexNum[s] = n
                     }
 
-                    6 -> {
-                        // second and third edge split
+                    6 -> { // second and third edge split
                         s = sides[v2] and SIDE_BACK
                         n = indexNum[s]
                         onPlaneEdges[s][numOnPlaneEdges[s]++] = n
                         index = indexPtr[s]
                         index[n++] = edgeSplitVertex[e2]
                         index[n++] = edgeSplitVertex[e1]
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v2)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v2)
                         indexNum[s] = n
                         s = s xor 1
                         n = indexNum[s]
@@ -457,12 +415,9 @@ object Surface {
                         index = indexPtr[s]
                         index[n++] = edgeSplitVertex[e1]
                         index[n++] = edgeSplitVertex[e2]
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v0)
-                        index[n++] =
-                            UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v0)
+                        index[n++] = UpdateVertexIndex(vertexIndexNum[s], vertexRemap[s], vertexCopyIndex[s], v1)
                         index[n++] = edgeSplitVertex[e2]
                         indexNum[s] = n
                     }
@@ -473,15 +428,13 @@ object Surface {
             surface[1].indexes.SetNum(indexNum[1], false)
 
             // copy vertexes
-            surface[0].verts.SetNum(vertexIndexNum[0][1], false)
-            //            index = vertexCopyIndex[0];
+            surface[0].verts.SetNum(vertexIndexNum[0][1], false) //            index = vertexCopyIndex[0];
             i = numEdgeSplitVertexes
             while (i < surface[0].verts.Num()) {
                 surface[0].verts[i].set(verts[vertexCopyIndex[0][i]])
                 i++
             }
-            surface[1].verts.SetNum(vertexIndexNum[1][1], false)
-            //            index = vertexCopyIndex[1];
+            surface[1].verts.SetNum(vertexIndexNum[1][1], false) //            index = vertexCopyIndex[1];
             i = numEdgeSplitVertexes
             while (i < surface[1].verts.Num()) {
                 surface[1].verts[i].set(verts[vertexCopyIndex[1][i]])
@@ -491,13 +444,11 @@ object Surface {
             // generate edge indexes
             surface[0].GenerateEdgeIndexes()
             surface[1].GenerateEdgeIndexes()
-            if (null != frontOnPlaneEdges) {
-//		memcpy( frontOnPlaneEdges, onPlaneEdges[0], numOnPlaneEdges[0] * sizeof( int ) );
+            if (null != frontOnPlaneEdges) { //		memcpy( frontOnPlaneEdges, onPlaneEdges[0], numOnPlaneEdges[0] * sizeof( int ) );
                 System.arraycopy(onPlaneEdges[0], 0, frontOnPlaneEdges, 0, numOnPlaneEdges[0])
                 frontOnPlaneEdges[numOnPlaneEdges[0]] = -1
             }
-            if (null != backOnPlaneEdges) {
-//		memcpy( backOnPlaneEdges, onPlaneEdges[1], numOnPlaneEdges[1] * sizeof( int ) );
+            if (null != backOnPlaneEdges) { //		memcpy( backOnPlaneEdges, onPlaneEdges[1], numOnPlaneEdges[1] * sizeof( int ) );
                 System.arraycopy(onPlaneEdges[1], 0, backOnPlaneEdges, 0, numOnPlaneEdges[1])
                 backOnPlaneEdges[numOnPlaneEdges[1]] = -1
             }
@@ -555,13 +506,11 @@ object Surface {
                 } else {
                     true
                 }
-            }
-            // if nothing at the front of the clipping plane
+            } // if nothing at the front of the clipping plane
             if (0 == counts[SIDE_FRONT]) {
                 Clear()
                 return false
-            }
-            // if nothing at the back of the clipping plane
+            } // if nothing at the back of the clipping plane
             if (0 == counts[SIDE_BACK]) {
                 return true
             }
@@ -623,12 +572,10 @@ object Surface {
                 when (INTSIGNBITSET(edgeSplitVertex[e0]) or (INTSIGNBITSET(edgeSplitVertex[e1]) shl 1) or (INTSIGNBITSET(
                     edgeSplitVertex[e2]
                 ) shl 2) xor 7) {
-                    0 -> {
-                        // no edges split
+                    0 -> { // no edges split
                         if (((sides[v0] or sides[v1] or sides[v2]) and SIDE_BACK) == 0) {
                             var addTriangle = true
-                            if (((sides[v0] and sides[v1] and sides[v2]) and SIDE_ON) != 0) {
-                                // coplanar
+                            if (((sides[v0] and sides[v1] and sides[v2]) and SIDE_ON) != 0) { // coplanar
                                 if (!keepOn) {
                                     addTriangle = false
                                 } else {
@@ -650,113 +597,83 @@ object Surface {
                         }
                     }
 
-                    1 -> {
-                        // first edge split
+                    1 -> { // first edge split
                         if (sides[v0] and SIDE_BACK == 0) {
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0)
                             indexPtr[indexNum++] = edgeSplitVertex[e0]
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v2)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v2)
                         } else {
                             indexPtr[indexNum++] = edgeSplitVertex[e0]
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v2)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v2)
                         }
                     }
 
-                    2 -> {
-                        // second edge split
+                    2 -> { // second edge split
                         if (sides[v1] and SIDE_BACK == 0) {
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
                             indexPtr[indexNum++] = edgeSplitVertex[e1]
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0)
                         } else {
                             indexPtr[indexNum++] = edgeSplitVertex[e1]
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v2)
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v2)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0)
                         }
                     }
 
-                    3 -> {
-                        // first and second edge split
+                    3 -> { // first and second edge split
                         if (sides[v1] and SIDE_BACK == 0) {
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
                             indexPtr[indexNum++] = edgeSplitVertex[e1]
                             indexPtr[indexNum++] = edgeSplitVertex[e0]
                         } else {
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0)
                             indexPtr[indexNum++] = edgeSplitVertex[e0]
                             indexPtr[indexNum++] = edgeSplitVertex[e1]
                             indexPtr[indexNum++] = edgeSplitVertex[e1]
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v2)
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v2)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0)
                         }
                     }
 
-                    4 -> {
-                        // third edge split
+                    4 -> { // third edge split
                         if (sides[v2] and SIDE_BACK == 0) {
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v2)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v2)
                             indexPtr[indexNum++] = edgeSplitVertex[e2]
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
                         } else {
                             indexPtr[indexNum++] = edgeSplitVertex[e2]
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0)
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
                         }
                     }
 
-                    5 -> {
-                        // first and third edge split
+                    5 -> { // first and third edge split
                         if (sides[v0] and SIDE_BACK == 0) {
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0)
                             indexPtr[indexNum++] = edgeSplitVertex[e0]
                             indexPtr[indexNum++] = edgeSplitVertex[e2]
                         } else {
                             indexPtr[indexNum++] = edgeSplitVertex[e0]
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
                             indexPtr[indexNum++] = edgeSplitVertex[e2]
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v2)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v2)
                             indexPtr[indexNum++] = edgeSplitVertex[e2]
                         }
                     }
 
-                    6 -> {
-                        // second and third edge split
+                    6 -> { // second and third edge split
                         if (sides[v2] and SIDE_BACK == 0) {
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v2)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v2)
                             indexPtr[indexNum++] = edgeSplitVertex[e2]
                             indexPtr[indexNum++] = edgeSplitVertex[e1]
                         } else {
                             indexPtr[indexNum++] = edgeSplitVertex[e2]
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
                             indexPtr[indexNum++] = edgeSplitVertex[e1]
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0)
-                            indexPtr[indexNum++] =
-                                UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0)
+                            indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
                             indexPtr[indexNum++] = edgeSplitVertex[e2]
                         }
                     }
@@ -860,9 +777,7 @@ object Surface {
             i = 0
             while (i < indexes.Num()) {
                 if (!plane.FromPoints(
-                        verts[indexes[i + 0]].xyz,
-                        verts[indexes[i + 1]].xyz,
-                        verts[indexes[i + 2]].xyz
+                        verts[indexes[i + 0]].xyz, verts[indexes[i + 1]].xyz, verts[indexes[i + 2]].xyz
                     )
                 ) {
                     return false
@@ -997,9 +912,7 @@ object Surface {
                 s2 = sidedness[abs(i2)] xor INTSIGNBITSET(i2)
                 if (s0 and s1 and s2 != 0) {
                     if (!plane.FromPoints(
-                            verts[indexes[i + 0]].xyz,
-                            verts[indexes[i + 1]].xyz,
-                            verts[indexes[i + 2]].xyz
+                            verts[indexes[i + 0]].xyz, verts[indexes[i + 1]].xyz, verts[indexes[i + 2]].xyz
                         )
                     ) {
                         return false
@@ -1010,9 +923,7 @@ object Surface {
                     }
                 } else if (!backFaceCull && s0 or s1 or s2 == 0) {
                     if (!plane.FromPoints(
-                            verts[indexes[i + 0]].xyz,
-                            verts[indexes[i + 1]].xyz,
-                            verts[indexes[i + 2]].xyz
+                            verts[indexes[i + 0]].xyz, verts[indexes[i + 1]].xyz, verts[indexes[i + 2]].xyz
                         )
                     ) {
                         return false
@@ -1066,8 +977,7 @@ object Surface {
                 // vertex numbers
                 i0 = index[i + 0]
                 i1 = index[i + 1]
-                i2 = index[i + 2]
-                // setup edges each with smallest vertex number first
+                i2 = index[i + 2] // setup edges each with smallest vertex number first
                 s = INTSIGNBITSET(i1 - i0)
                 e[0].verts[0] = index[i + s]
                 e[0].verts[1] = index[i + (s xor 1)]
@@ -1076,8 +986,7 @@ object Surface {
                 e[1].verts[1] = index[i + (s xor 3)]
                 s = INTSIGNBITSET(i2 - i0) shl 1
                 e[2].verts[0] = index[i + s]
-                e[2].verts[1] = index[i + (s xor 2)]
-                // get edges
+                e[2].verts[1] = index[i + (s xor 2)] // get edges
                 j = 0
                 while (j < 3) {
                     v0 = e[j].verts[0]
@@ -1088,8 +997,7 @@ object Surface {
                             break
                         }
                         edgeNum = edgeChain[edgeNum]
-                    }
-                    // if the edge does not yet exist
+                    } // if the edge does not yet exist
                     if (edgeNum < 0) {
                         val newEdge = surfaceEdge_t()
                         newEdge.verts[0] = e[j].verts[0]
@@ -1099,8 +1007,7 @@ object Surface {
                         edgeNum = edges.Append(newEdge)
                         edgeChain[edgeNum] = vertexEdges[v0]
                         vertexEdges[v0] = edgeNum
-                    }
-                    // update edge index and edge tri references
+                    } // update edge index and edge tri references
                     if (index[i + j] == v0) {
                         assert(
                             edges[edgeNum].tris[0] == -1 // edge may not be shared by more than two triangles

@@ -55,8 +55,7 @@ class Force_Drag {
         ================
         idForce_Drag::Init
         ================
-        */
-        // initialize the drag force
+        */ // initialize the drag force
         fun Init(damping: Float) {
             if (damping >= 0.0f && damping < 1.0f) {
                 this.damping = damping
@@ -67,8 +66,7 @@ class Force_Drag {
         ================
         idForce_Drag::SetPhysics
         ================
-        */
-        // set physics object being dragged
+        */ // set physics object being dragged
         fun SetPhysics(phys: idPhysics?, id: Int, p: idVec3) {
             physics = phys
             this.id = id
@@ -79,8 +77,7 @@ class Force_Drag {
         ================
         idForce_Drag::SetDragPosition
         ================
-        */
-        // set position to drag towards
+        */ // set position to drag towards
         fun SetDragPosition(pos: idVec3) {
             dragPosition.set(pos)
         }
@@ -89,8 +86,7 @@ class Force_Drag {
         ================
         idForce_Drag::GetDragPosition
         ================
-        */
-        // get the position dragged towards
+        */ // get the position dragged towards
         fun GetDragPosition(): idVec3 {
             return dragPosition
         }
@@ -99,8 +95,7 @@ class Force_Drag {
         ================
         idForce_Drag::GetDraggedPosition
         ================
-        */
-        // get the position on the dragged physics object
+        */ // get the position on the dragged physics object
         fun GetDraggedPosition(): idVec3 {
             return (physics!!.GetOrigin(id) + p * physics!!.GetAxis(id))
         }
@@ -109,8 +104,7 @@ class Force_Drag {
         ================
         idForce_Drag::Evaluate
         ================
-        */
-        // common force interface
+        */ // common force interface
         override fun Evaluate(time: Int) {
             val l1: Float
             val l2: Float

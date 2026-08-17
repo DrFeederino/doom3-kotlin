@@ -58,8 +58,7 @@ class Force_Constant {
         ================
         */
         override fun Restore(savefile: idRestoreGame) {
-            super.Restore(savefile)
-            // Owner needs to call SetPhysics!!
+            super.Restore(savefile) // Owner needs to call SetPhysics!!
             savefile.ReadVec3(force)
             id = savefile.ReadInt()
             savefile.ReadVec3(point)

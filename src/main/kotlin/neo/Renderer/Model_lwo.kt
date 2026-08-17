@@ -664,8 +664,7 @@ object Model_lwo {
      parameter for this curve type.
      ====================================================================== */
     fun bez2_time(
-        x0: Float, x1: Float, x2: Float, x3: Float, time: Float,
-        t0: FloatArray, t1: FloatArray
+        x0: Float, x1: Float, x2: Float, x3: Float, time: Float, t0: FloatArray, t1: FloatArray
     ): Float {
         val v: Float
         val t: Float
@@ -725,12 +724,8 @@ object Model_lwo {
         var out: Float
         when (key0.shape.toInt()) {
             ID_TCB -> {
-                a = ((1.0f - key0.tension)
-                        * (1.0f + key0.continuity)
-                        * (1.0f + key0.bias))
-                b = ((1.0f - key0.tension)
-                        * (1.0f - key0.continuity)
-                        * (1.0f - key0.bias))
+                a = ((1.0f - key0.tension) * (1.0f + key0.continuity) * (1.0f + key0.bias))
+                b = ((1.0f - key0.tension) * (1.0f - key0.continuity) * (1.0f - key0.bias))
                 d = key1.value - key0.value
                 if (key0.prev != null) {
                     t = (key1.time - key0.time) / (key1.time - key0.prev!!.time)
@@ -797,12 +792,8 @@ object Model_lwo {
             }
 
             ID_TCB -> {
-                a = ((1.0f - key1.tension)
-                        * (1.0f - key1.continuity)
-                        * (1.0f + key1.bias))
-                b = ((1.0f - key1.tension)
-                        * (1.0f + key1.continuity)
-                        * (1.0f - key1.bias))
+                a = ((1.0f - key1.tension) * (1.0f - key1.continuity) * (1.0f + key1.bias))
+                b = ((1.0f - key1.tension) * (1.0f + key1.continuity) * (1.0f - key1.bias))
                 d = key1.value - key0.value
                 if (key1.next != null) {
                     t = (key1.time - key0.time) / (key1.next!!.time - key0.time)
@@ -891,8 +882,7 @@ object Model_lwo {
                 }
 
                 BEH_LINEAR -> {
-                    out = (outgoing(skey, skey.next!!)
-                            / (skey.next!!.time - skey.time))
+                    out = (outgoing(skey, skey.next!!) / (skey.next!!.time - skey.time))
                     return out * (time - skey.time) + skey.value
                 }
             }
@@ -914,8 +904,7 @@ object Model_lwo {
                 }
 
                 BEH_LINEAR -> {
-                    `in` = (incoming(ekey.prev!!, ekey)
-                            / (ekey.time - ekey.prev!!.time))
+                    `in` = (incoming(ekey.prev!!, ekey) / (ekey.time - ekey.prev!!.time))
                     return `in` * (time - ekey.time) + ekey.value
                 }
             }
@@ -962,7 +951,7 @@ object Model_lwo {
         node = list as lwNode?
         while (node != null) {
             next = node.getNext()
-            freeNode.run(node as lwNode)
+            freeNode.run(node)
             node = next
         }
     }
@@ -1467,8 +1456,7 @@ object Model_lwo {
                 }
                 null
             }
-        }
-        /* allocate an object and a default layer */
+        }/* allocate an object and a default layer */
         `object` = lwObject()
         layer = lwLayer()
         `object`.layer = layer
@@ -1558,11 +1546,7 @@ object Model_lwo {
 
                 ID_VMAP, ID_VMAD -> {
                     node = lwGetVMap(
-                        fp,
-                        cksize,
-                        layer!!.point.offset,
-                        layer.polygon.offset,
-                        if (id == ID_VMAD) 1 else 0
+                        fp, cksize, layer!!.point.offset, layer.polygon.offset, if (id == ID_VMAD) 1 else 0
                     )
                     if (null == node) {
                         if (failID != null) {
@@ -1686,8 +1670,7 @@ object Model_lwo {
                 }
 
                 ID_DESC, ID_TEXT, ID_ICON -> fp.Seek(
-                    cksize.toLong(),
-                    fsOrigin_t.FS_SEEK_CUR
+                    cksize.toLong(), fsOrigin_t.FS_SEEK_CUR
                 )
 
                 else -> fp.Seek(cksize.toLong(), fsOrigin_t.FS_SEEK_CUR)
@@ -1972,8 +1955,7 @@ object Model_lwo {
                 ID_VDIF -> surf.diffuse.`val` = getF4(fp)
                 ID_SPEC -> surf.specularity.`val` = getI2(fp) / 256.0f
                 ID_VSPC -> surf.specularity.`val` = getF4(fp)
-                ID_GLOS -> surf.glossiness.`val` =
-                    ln(getU2(fp).toFloat()) / 20.7944f
+                ID_GLOS -> surf.glossiness.`val` = ln(getU2(fp).toFloat()) / 20.7944f
 
                 ID_SMAN -> surf.smooth = getF4(fp)
                 ID_REFL -> surf.reflection.`val`.`val` = getI2(fp) / 256.0f
@@ -2308,8 +2290,7 @@ object Model_lwo {
                 failpos[0] = 12
             }
             return null
-        }
-        /* allocate an object and a default layer */
+        }/* allocate an object and a default layer */
         `object` = lwObject()
         layer = lwLayer()
         `object`.layer = layer
@@ -2329,8 +2310,7 @@ object Model_lwo {
                 }
 
                 ID_POLS -> if (!lwGetPolygons5(
-                        fp, cksize, layer.polygon,
-                        layer.point.offset
+                        fp, cksize, layer.polygon, layer.point.offset
                     )
                 ) {
                     return gotoFail2(failID, id, fp, failpos)
@@ -3854,8 +3834,7 @@ object Model_lwo {
         /* allocate vmap references for each mapped point */i = 0
         while (i < point.count) {
             if (point.pt!![i]!!.nvmaps != 0) {
-                point.pt!![i]!!.vm =
-                    Array(point.pt!![i]!!.nvmaps) { lwVMapPt() }
+                point.pt!![i]!!.vm = Array(point.pt!![i]!!.nvmaps) { lwVMapPt() }
                 if (point.pt!![i]!!.vm == null) {
                     return false
                 }
@@ -4768,8 +4747,7 @@ object Model_lwo {
      Free the memory used by an lwPlugin.
      ====================================================================== */
     class lwFreePlugin private constructor() : LW() {
-        override fun run(o: Any?) {
-            // C++ freed shader plugin memory; on JVM the GC handles this.
+        override fun run(o: Any?) { // C++ freed shader plugin memory; on JVM the GC handles this.
         }
 
         companion object {

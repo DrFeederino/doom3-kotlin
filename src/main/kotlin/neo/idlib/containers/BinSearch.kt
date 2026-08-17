@@ -8,8 +8,7 @@ package neo.idlib.containers
  The array elements have to be ordered in increasing order.
 
  ===============================================================================
- */
-/*
+ *//*
  ====================
  idBinSearch_GreaterEqual
 

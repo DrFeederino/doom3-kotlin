@@ -74,8 +74,7 @@ class Force_Grab {
         ================
         */
         override fun Restore(savefile: idRestoreGame) {
-            super.Restore(savefile)
-            // Note: Owner needs to call SetPhysics
+            super.Restore(savefile) // Note: Owner needs to call SetPhysics
             damping = savefile.ReadFloat()
             savefile.ReadVec3(goalPosition)
             distanceToGoal = savefile.ReadFloat()
@@ -86,8 +85,7 @@ class Force_Grab {
         ================
         idForce_Grab::Init
         ================
-        */
-        // initialize the grab force
+        */ // initialize the grab force
         fun Init(damping: Float) {
             if (damping >= 0.0f && damping < 1.0f) {
                 this.damping = damping
@@ -98,8 +96,7 @@ class Force_Grab {
         ================
         idForce_Grab::SetPhysics
         ================
-        */
-        // set physics object being dragged
+        */ // set physics object being dragged
         fun SetPhysics(phys: idPhysics, id: Int, goal: idVec3) {
             this.physics = phys
             this.id = id
@@ -110,8 +107,7 @@ class Force_Grab {
         ================
         idForce_Grab::SetGoalPosition
         ================
-        */
-        // update the goal position
+        */ // update the goal position
         fun SetGoalPosition(goal: idVec3) {
             this.goalPosition.set(goal)
         }
@@ -141,8 +137,7 @@ class Force_Grab {
 
             objectCenter.set(phys.GetAbsBounds(id).GetCenter())
 
-            if (g_grabberRandomMotion.GetBool() && !gameLocal.isMultiplayer) {
-                // Jitter the objectCenter around so it doesn't remain stationary
+            if (g_grabberRandomMotion.GetBool() && !gameLocal.isMultiplayer) { // Jitter the objectCenter around so it doesn't remain stationary
                 val sinOffset = idMath.Sin(gameLocal.time.toFloat() / 66f)
                 val randScale1 = gameLocal.random.RandomFloat()
                 val randScale2 = gameLocal.random.CRandomFloat()

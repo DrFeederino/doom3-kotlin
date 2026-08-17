@@ -40,16 +40,12 @@ import java.util.logging.Logger
 
 /** Convert a 4-byte big-endian IP address to an unsigned 32-bit value packed into a Long. */
 private fun ntohl(ip: ByteArray): Long {
-    return ((ip[0].toLong() and 0xFF) shl 24) or
-            ((ip[1].toLong() and 0xFF) shl 16) or
-            ((ip[2].toLong() and 0xFF) shl 8) or
-            (ip[3].toLong() and 0xFF)
+    return ((ip[0].toLong() and 0xFF) shl 24) or ((ip[1].toLong() and 0xFF) shl 16) or ((ip[2].toLong() and 0xFF) shl 8) or (ip[3].toLong() and 0xFF)
 }
 
 class win_net {
     class net_interface(
-        var ip: Long,
-        var mask: Long
+        var ip: Long, var mask: Long
     )
 
     class udpMsg_s {
@@ -90,19 +86,12 @@ class win_net {
         val net_ip: idCVar = idCVar("net_ip", "localhost", CVarSystem.CVAR_SYSTEM, "local IP address")
         val net_port: idCVar =
             idCVar("net_port", "0", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INTEGER, "local IP port number")
-        val net_socksEnabled: idCVar =
-            idCVar(
-                "net_socksEnabled",
-                "0",
-                CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_BOOL,
-                ""
-            )
+        val net_socksEnabled: idCVar = idCVar(
+            "net_socksEnabled", "0", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_BOOL, ""
+        )
 
         val net_socksPort: idCVar = idCVar(
-            "net_socksPort",
-            "1080",
-            CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_INTEGER,
-            ""
+            "net_socksPort", "1080", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_INTEGER, ""
         )
 
         val netint: Array<net_interface?> = arrayOfNulls<net_interface?>(MAX_INTERFACES)
@@ -147,13 +136,11 @@ class win_net {
             val ipBytes: ByteArray
             if (addr is Inet6Address) {
                 val raw = addr.address
-                if (raw.size == 16 && raw[10] == 0xFF.toByte() && raw[11] == 0xFF.toByte()) {
-                    // IPv4-mapped IPv6 (::ffff:x.x.x.x) — extract the IPv4 part
+                if (raw.size == 16 && raw[10] == 0xFF.toByte() && raw[11] == 0xFF.toByte()) { // IPv4-mapped IPv6 (::ffff:x.x.x.x) — extract the IPv4 part
                     ipBytes = byteArrayOf(raw[12], raw[13], raw[14], raw[15])
                 } else if (addr.isLoopbackAddress) {
                     ipBytes = byteArrayOf(127, 0, 0, 1)
-                } else {
-                    // Unspecified (::0) or other IPv6 — map to 0.0.0.0
+                } else { // Unspecified (::0) or other IPv6 — map to 0.0.0.0
                     ipBytes = byteArrayOf(0, 0, 0, 0)
                 }
             } else {
@@ -177,8 +164,7 @@ class win_net {
          =============
          Net_ExtractPort
          =============
-         */
-        // Returns hostname (without port) in buf, port number in port. False if no ':' found.
+         */ // Returns hostname (without port) in buf, port number in port. False if no ':' found.
         fun Net_ExtractPort(src: String, buf: StringBuilder, port: CInt): Boolean {
             val p = src.indexOf(':')
             if (p == -1) {
@@ -199,8 +185,7 @@ class win_net {
             val buf = StringBuilder()
             val port = CInt(0)
 
-            if (s[0] in '0'..'9') {
-                // numeric IP — try parsing directly first (e.g. "192.168.1.1")
+            if (s[0] in '0'..'9') { // numeric IP — try parsing directly first (e.g. "192.168.1.1")
                 try {
                     val addr = Inet4Address.getByName(s)
                     sadr[0] = InetSocketAddress(addr, 0)
@@ -219,8 +204,7 @@ class win_net {
                 } catch (_: Exception) {
                     return false
                 }
-            } else if (doDNSResolve) {
-                // hostname — strip port first so DNS doesn't get confused
+            } else if (doDNSResolve) { // hostname — strip port first so DNS doesn't get confused
                 Net_ExtractPort(s, buf, port)
                 val h = InetSocketAddress(buf.toString(), port._val)
                 if (h.isUnresolved) {
@@ -237,8 +221,9 @@ class win_net {
          Net_WaitForUDPPacket
          ==================
          */
-        fun Net_WaitForUDPPacket(netSocket: Int, timeout: Int): Boolean {
-            // In the Java/Kotlin port, UDP receiving uses DatagramSocket with a
+        fun Net_WaitForUDPPacket(
+            netSocket: Int, timeout: Int
+        ): Boolean { // In the Java/Kotlin port, UDP receiving uses DatagramSocket with a
             // short SO_TIMEOUT for non-blocking behavior. This blocking wait is
             // not used in normal operation. Return true to indicate data may be available.
             try {
@@ -254,36 +239,28 @@ class win_net {
          ==================
          */
         fun Net_GetUDPPacket(
-            netSocket: DatagramSocket,
-            net_from: netadr_t,
-            data: ByteArray,
-            size: CInt,
-            maxSize: Int
+            netSocket: DatagramSocket, net_from: netadr_t, data: ByteArray, size: CInt, maxSize: Int
         ): Boolean {
-            try {
-                // C++ uses non-blocking sockets (FIONBIO). Java equivalent: short timeout.
+            try { // C++ uses non-blocking sockets (FIONBIO). Java equivalent: short timeout.
                 netSocket.soTimeout = 1
                 val datagramPacket = DatagramPacket(data, maxSize)
                 netSocket.receive(datagramPacket)
 
                 // populate sender address (C++: Net_SockadrToNetadr(&from, &net_from))
                 val fromAddr = InetSocketAddress(
-                    datagramPacket.address,
-                    datagramPacket.port
+                    datagramPacket.address, datagramPacket.port
                 )
                 Net_SockadrToNetadr(arrayOf(fromAddr), net_from)
 
                 if (datagramPacket.length == maxSize) {
                     common.Printf(
-                        "Net_GetUDPPacket: oversize packet from %s\n",
-                        Sys_NetAdrToString(net_from)
+                        "Net_GetUDPPacket: oversize packet from %s\n", Sys_NetAdrToString(net_from)
                     )
                     return false
                 }
                 size._val = datagramPacket.length
                 return true
-            } catch (e: SocketTimeoutException) {
-                // no data available — equivalent to C++ WSAEWOULDBLOCK
+            } catch (e: SocketTimeoutException) { // no data available — equivalent to C++ WSAEWOULDBLOCK
                 return false
             } catch (e: Exception) {
                 return false
@@ -306,8 +283,7 @@ class win_net {
             val packet = DatagramPacket(data.array(), length, dest.address, dest.port)
             try {
                 netSocket.send(packet)
-            } catch (e: SocketException) {
-                // wouldblock is silent in C++
+            } catch (e: SocketException) { // wouldblock is silent in C++
                 common.Printf("Net_SendUDPPacket: %s\n", e.message ?: "unknown error")
             }
         }
@@ -403,8 +379,9 @@ class win_net {
 
                         //skip null netmasks
                         if (ip_m == 0L) {
-                            common.Printf("%s NULL netmask - skipped", pIPAddr.hostAddress)
-                            //                        pIPAddr = pIPAddr.Next;
+                            common.Printf(
+                                "%s NULL netmask - skipped", pIPAddr.hostAddress
+                            ) //                        pIPAddr = pIPAddr.Next;
                             continue
                         }
                         common.Printf("%s/%s", pIPAddr.hostAddress, ip_m)
@@ -412,18 +389,16 @@ class win_net {
                         num_interfaces++
                         if (num_interfaces >= MAX_INTERFACES) {
                             common.Printf(
-                                "\nSys_InitNetworking: MAX_INTERFACES(%d) hit.\n",
-                                MAX_INTERFACES
-                            )
-                            //                            free( pAdapterInfo );
+                                "\nSys_InitNetworking: MAX_INTERFACES(%d) hit.\n", MAX_INTERFACES
+                            ) //                            free( pAdapterInfo );
                             return
                         }
                     }
                     common.Printf("\n")
                 }
             } catch (ex: SocketException) {
-                Logger.getLogger(win_net::class.java.name).log(Level.SEVERE, null, ex)
-                // happens if you have no network connection
+                Logger.getLogger(win_net::class.java.name)
+                    .log(Level.SEVERE, null, ex) // happens if you have no network connection
                 common.Printf("Sys_InitNetworking: GetAdaptersInfo failed (%ld).\n", -1 /*dwRetVal*/)
             }
         }
@@ -456,8 +431,7 @@ class win_net {
                 }
             } else if (a.type == netadrtype_t.NA_IP) {
                 String.format(
-                    "%d.%d.%d.%d:%d",
-                    a.ip[0].code, a.ip[1].code, a.ip[2].code, a.ip[3].code, a.port
+                    "%d.%d.%d.%d:%d", a.ip[0].code, a.ip[1].code, a.ip[2].code, a.ip[3].code, a.port
                 )
             } else {
                 ""
@@ -502,8 +476,7 @@ class win_net {
                 common.DPrintf("Opening IP socket: localhost:%d\n", port)
             }
             var newSocket: DatagramSocket? = null
-            try {
-                // C++: if empty or "localhost", bind to INADDR_ANY; otherwise resolve interface
+            try { // C++: if empty or "localhost", bind to INADDR_ANY; otherwise resolve interface
                 val bindAddr: InetAddress =
                     if (net_interface.isEmpty() || net_interface.equals("localhost", ignoreCase = true)) {
                         Inet4Address.getByName("0.0.0.0") // INADDR_ANY, force IPv4
@@ -517,8 +490,7 @@ class win_net {
                 newSocket.setOption(StandardSocketOptions.SO_BROADCAST, true)
                 newSocket.bind(address) // bind to IPv4 address
 
-                if (bound_to != null) {
-                    // query the actual bound address (important when port was PORT_ANY)
+                if (bound_to != null) { // query the actual bound address (important when port was PORT_ANY)
                     Net_SockadrToNetadr(arrayOf(newSocket.localSocketAddress as InetSocketAddress), bound_to)
                 }
                 return newSocket

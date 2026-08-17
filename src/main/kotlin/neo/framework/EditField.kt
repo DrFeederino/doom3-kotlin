@@ -130,9 +130,7 @@ object EditField {
                     /// try completing arguments
                     idStr.Append(autoComplete.completionString, autoComplete.completionString.size, " ")
                     idStr.Append(
-                        autoComplete.completionString,
-                        autoComplete.completionString.size,
-                        ctos(completionArgString)
+                        autoComplete.completionString, autoComplete.completionString.size, ctos(completionArgString)
                     )
                     autoComplete.matchCount = 0
                     globalAutoComplete = autoComplete
@@ -140,8 +138,7 @@ object EditField {
                     CVarSystem.cvarSystem.ArgCompletion(ctos(autoComplete.completionString), findMatches)
                     autoComplete = globalAutoComplete
                     idStr.snPrintf(buffer, buffer.size, "%s", ctos(autoComplete.currentMatch))
-                    if (autoComplete.matchCount == 0) {
-                        // no argument matches
+                    if (autoComplete.matchCount == 0) { // no argument matches
                         idStr.Append(buffer, buffer.size, " ")
                         idStr.Append(buffer, buffer.size, ctos(completionArgString))
                         SetCursor(strLen(buffer))
@@ -203,8 +200,7 @@ object EditField {
             }
             len = strLen(buffer)
             if (ch == 'h' - 'a' + 1 || ch == KeyInput.K_BACKSPACE) {    // ctrl-h is backspace
-                if (cursor > 0) {
-//			memmove( buffer + cursor - 1, buffer + cursor, len + 1 - cursor );
+                if (cursor > 0) { //			memmove( buffer + cursor - 1, buffer + cursor, len + 1 - cursor );
                     System.arraycopy(buffer, cursor, buffer, cursor - 1, len + 1 - cursor)
                     cursor--
                     if (cursor < scroll) {
@@ -239,8 +235,7 @@ object EditField {
             } else {    // insert mode
                 if (len == MAX_EDIT_LINE - 1) {
                     return  // all full
-                }
-                //		memmove( buffer + cursor + 1, buffer + cursor, len + 1 - cursor );
+                } //		memmove( buffer + cursor + 1, buffer + cursor, len + 1 - cursor );
                 System.arraycopy(buffer, cursor, buffer, cursor + 1, len + 1 - cursor)
                 buffer[cursor] = ch.toChar()
                 cursor++
@@ -266,15 +261,13 @@ object EditField {
             if (key == KeyInput.K_DEL) {
                 if (autoComplete.length != 0) {
                     ClearAutoComplete()
-                } else if (cursor < len) {
-//			memmove( buffer + cursor, buffer + cursor + 1, len - cursor );
+                } else if (cursor < len) { //			memmove( buffer + cursor, buffer + cursor + 1, len - cursor );
                     System.arraycopy(buffer, cursor + 1, buffer, cursor, len - cursor)
                 }
                 return
             }
             if (key == KeyInput.K_RIGHTARROW) {
-                if (idKeyInput.IsDown(KeyInput.K_CTRL)) {
-                    // skip to next word
+                if (idKeyInput.IsDown(KeyInput.K_CTRL)) { // skip to next word
                     while (cursor < len && buffer[cursor] != ' ') {
                         cursor++
                     }
@@ -296,8 +289,7 @@ object EditField {
                 return
             }
             if (key == KeyInput.K_LEFTARROW) {
-                if (idKeyInput.IsDown(KeyInput.K_CTRL)) {
-                    // skip to previous word
+                if (idKeyInput.IsDown(KeyInput.K_CTRL)) { // skip to previous word
                     while (cursor > 0 && buffer[cursor - 1] == ' ') {
                         cursor--
                     }
@@ -344,9 +336,7 @@ object EditField {
             }
 
             // clear autocompletion buffer on normal key input
-            if (key != KeyInput.K_CAPSLOCK && key != KeyInput.K_ALT && key != KeyInput.K_CTRL && key != KeyInput.K_SHIFT
-                && key != KeyInput.K_RIGHT_CTRL && key != KeyInput.K_RIGHT_SHIFT
-            ) {
+            if (key != KeyInput.K_CAPSLOCK && key != KeyInput.K_ALT && key != KeyInput.K_CTRL && key != KeyInput.K_SHIFT && key != KeyInput.K_RIGHT_CTRL && key != KeyInput.K_RIGHT_SHIFT) {
                 ClearAutoComplete()
             }
         }
@@ -414,7 +404,7 @@ object EditField {
                 Common.common.Error("drawLen >= MAX_EDIT_LINE")
             }
 
-//	memcpy( str, buffer + prestep, drawLen );
+            //	memcpy( str, buffer + prestep, drawLen );
             System.arraycopy(buffer, prestep, str, 0, drawLen)
             str[drawLen] = Char(0)
 
@@ -467,20 +457,15 @@ object EditField {
      */
     internal val FindMatches: (String) -> Unit = { s ->
         if (idStr.Icmpn(
-                s,
-                ctos(globalAutoComplete.completionString),
-                strLen(globalAutoComplete.completionString)
+                s, ctos(globalAutoComplete.completionString), strLen(globalAutoComplete.completionString)
             ) == 0
         ) {
             globalAutoComplete.matchCount++
             if (globalAutoComplete.matchCount == 1) {
                 idStr.Copynz(
-                    globalAutoComplete.currentMatch,
-                    s,
-                    globalAutoComplete.currentMatch.size
+                    globalAutoComplete.currentMatch, s, globalAutoComplete.currentMatch.size
                 )
-            } else {
-                // cut currentMatch to the amount common with s
+            } else { // cut currentMatch to the amount common with s
                 var i = 0
                 while (i < s.length) {
                     if (globalAutoComplete.currentMatch[i].lowercaseChar() != s[i].lowercaseChar()) {
@@ -504,9 +489,7 @@ object EditField {
         if (idStr.Icmpn(s, completionStr, completionStr.length) == 0) {
             if (globalAutoComplete.findMatchIndex == globalAutoComplete.matchIndex) {
                 idStr.Copynz(
-                    globalAutoComplete.currentMatch,
-                    s,
-                    globalAutoComplete.currentMatch.size
+                    globalAutoComplete.currentMatch, s, globalAutoComplete.currentMatch.size
                 )
             }
             globalAutoComplete.findMatchIndex++

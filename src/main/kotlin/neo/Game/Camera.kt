@@ -110,10 +110,9 @@ class idCameraView : idCamera() {
 
         init {
             eventCallbacks.putAll(idEntity.getEventCallBacks())
-            eventCallbacks[EV_Activate] =
-                eventCallback_t1 { obj: idCameraView, activator: idEventArg<*>? ->
-                    obj.Event_Activate(activator as idEventArg<idEntity>)
-                }
+            eventCallbacks[EV_Activate] = eventCallback_t1 { obj: idCameraView, activator: idEventArg<*>? ->
+                obj.Event_Activate(activator as idEventArg<idEntity>)
+            }
             eventCallbacks[EV_Camera_SetAttachments] =
                 eventCallback_t0 { obj: idCameraView -> obj.Event_SetAttachments() }
         }
@@ -187,11 +186,9 @@ class idCameraView : idCamera() {
         view.vieworg.set(ent!!.GetPhysics().GetOrigin())
         if (attachedView != null) {
             dir.set(attachedView!!.GetPhysics().GetOrigin().minus(view.vieworg))
-            dir.Normalize()
-            // FIX: Removed unnecessary idMat3() constructor wrapping - dir.ToMat3() already returns idMat3
+            dir.Normalize() // FIX: Removed unnecessary idMat3() constructor wrapping - dir.ToMat3() already returns idMat3
             view.viewaxis.set(dir.ToMat3())
-        } else {
-            // FIX: Removed unnecessary idMat3() constructor wrapping - GetAxis() already returns idMat3
+        } else { // FIX: Removed unnecessary idMat3() constructor wrapping - GetAxis() already returns idMat3
             view.viewaxis.set(ent.GetPhysics().GetAxis())
         }
         val fov_x = CFloat(view.fov_x)
@@ -256,8 +253,7 @@ class idCameraView : idCamera() {
      */
     protected fun SetAttachment(e: Array<idEntity?>, p: String) {
         val cam = spawnArgs.GetString(p)
-        if (cam.isNotEmpty()) {
-            // FIX: Removed !! — C++ assigns FindEntity result directly, which can be NULL.
+        if (cam.isNotEmpty()) { // FIX: Removed !! — C++ assigns FindEntity result directly, which can be NULL.
             // Using !! would throw NPE if the entity name doesn't resolve.
             e[0] = Game_local.gameLocal.FindEntity(cam)
         }
@@ -305,10 +301,8 @@ class idCameraAnim : idCamera() {
             eventCallbacks.putAll(idEntity.getEventCallBacks())
             eventCallbacks[EV_Thread_SetCallback] =
                 eventCallback_t0<idCameraAnim> { obj: idCameraAnim -> obj.Event_SetCallback() }
-            eventCallbacks[EV_Camera_Stop] =
-                eventCallback_t0<idCameraAnim> { obj: idCameraAnim -> obj.Event_Stop() }
-            eventCallbacks[EV_Camera_Start] =
-                eventCallback_t0<idCameraAnim> { obj: idCameraAnim -> obj.Event_Start() }
+            eventCallbacks[EV_Camera_Stop] = eventCallback_t0<idCameraAnim> { obj: idCameraAnim -> obj.Event_Stop() }
+            eventCallbacks[EV_Camera_Start] = eventCallback_t0<idCameraAnim> { obj: idCameraAnim -> obj.Event_Start() }
             eventCallbacks[EV_Activate] =
                 eventCallback_t1<idCameraAnim> { obj: idCameraAnim, _activator: idEventArg<*>? ->
                     obj.Event_Activate(_activator as idEventArg<idEntity>)
@@ -395,8 +389,7 @@ class idCameraAnim : idCamera() {
         if (null == view) {
             return
         }
-        if (camera.Num() == 0) {
-            // we most likely are in the middle of a restore
+        if (camera.Num() == 0) { // we most likely are in the middle of a restore
             // FIXME: it would be better to fix it so this doesn't get called during a restore
             return
         }
@@ -425,8 +418,7 @@ class idCameraAnim : idCamera() {
                 i++
             }
             if (SysCvar.g_debugCinematic.GetBool()) {
-                val prevFrameTime: Int =
-                    (Game_local.gameLocal.time - starttime - Game_local.gameLocal.msec) * frameRate
+                val prevFrameTime: Int = (Game_local.gameLocal.time - starttime - Game_local.gameLocal.msec) * frameRate
                 var prevFrame = prevFrameTime / 1000
                 var prevCut: Int
                 prevCut = 0
@@ -454,19 +446,16 @@ class idCameraAnim : idCamera() {
                 if (cycle > 0) {
                     cycle--
                 }
-                if (cycle != 0) {
-                    // advance start time so that we loop
+                if (cycle != 0) { // advance start time so that we loop
                     starttime += (camera.Num() - cameraCuts.Num()) * 1000 / frameRate
                     GetViewParms(view)
                     return
                 }
                 Stop()
-                if (Game_local.gameLocal.GetCamera() != null) {
-                    // we activated another camera when we stopped, so get it's viewparms instead
+                if (Game_local.gameLocal.GetCamera() != null) { // we activated another camera when we stopped, so get it's viewparms instead
                     Game_local.gameLocal.GetCamera()!!.GetViewParms(view)
                     return
-                } else {
-                    // just use our last frame
+                } else { // just use our last frame
                     camFrame = camera[camera.Num() - 1]
                     view.viewaxis.set(camFrame.q.ToQuat().ToMat3())
                     view.vieworg.set(camFrame.t.plus(offset))
@@ -559,13 +548,11 @@ class idCameraAnim : idCamera() {
     override fun Think() {
         val frame: Int
         val frameTime: Int
-        if ((thinkFlags and TH_THINK) != 0) {
-            // check if we're done in the Think function when the cinematic is being skipped (idCameraAnim::GetViewParms isn't called when skipping cinematics).
+        if ((thinkFlags and TH_THINK) != 0) { // check if we're done in the Think function when the cinematic is being skipped (idCameraAnim::GetViewParms isn't called when skipping cinematics).
             if (!Game_local.gameLocal.skipCinematic) {
                 return
             }
-            if (camera.Num() < 2) {
-                // 1 frame anims never end
+            if (camera.Num() < 2) { // 1 frame anims never end
                 return
             }
             if (frameRate == UsercmdGen.USERCMD_HZ) {
@@ -579,8 +566,7 @@ class idCameraAnim : idCamera() {
                 if (cycle > 0) {
                     cycle--
                 }
-                if (cycle != 0) {
-                    // advance start time so that we loop
+                if (cycle != 0) { // advance start time so that we loop
                     starttime += (camera.Num() - cameraCuts.Num()) * 1000 / frameRate
                 } else {
                     Stop()

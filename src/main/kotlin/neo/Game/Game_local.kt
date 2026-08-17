@@ -331,8 +331,7 @@ class Game_local {
             return spawnId
         }
 
-        fun SetSpawnId(id: Int): Boolean {
-            // the reason for this first check is unclear:
+        fun SetSpawnId(id: Int): Boolean { // the reason for this first check is unclear:
             // the function returning false may mean the spawnId is already set right, or the entity is missing
             if (id == spawnId) {
                 return false
@@ -510,8 +509,22 @@ class Game_local {
         var spawnIds: IntArray = IntArray(MAX_GENTITIES) // for use in idEntityPtr
         var spawnedEntities: idLinkList<idEntity> = idLinkList() // all spawned entities
         var sufaceTypeNames: Array<String> = arrayOf(
-            "none", "metal", "stone", "flesh", "wood", "cardboard", "liquid", "glass", "plastic",
-            "ricochet", "surftype10", "surftype11", "surftype12", "surftype13", "surftype14", "surftype15"
+            "none",
+            "metal",
+            "stone",
+            "flesh",
+            "wood",
+            "cardboard",
+            "liquid",
+            "glass",
+            "plastic",
+            "ricochet",
+            "surftype10",
+            "surftype11",
+            "surftype12",
+            "surftype13",
+            "surftype14",
+            "surftype15"
         ) // text names for surface types
         var testFx // for development testing of fx
                 : idEntityFx? = null
@@ -594,8 +607,7 @@ class Game_local {
          */
         override fun Init() {
             val dict: idDict?
-            var aas: idAAS
-            // FIX: Was inverted — C++ uses #ifndef GAME_DLL for TestGameAPI, #else for idLib init
+            var aas: idAAS // FIX: Was inverted — C++ uses #ifndef GAME_DLL for TestGameAPI, #else for idLib init
             if (!GAME_DLL) {
                 TestGameAPI()
             } else {
@@ -608,8 +620,7 @@ class Game_local {
 
                 // initialize processor specific SIMD
                 idSIMD.InitProcessor("game", com_forceGenericSIMD.GetBool())
-            }
-            // Detect D3XP before any system that depends on it
+            } // Detect D3XP before any system that depends on it
             isD3XP = FileSystem_h.fileSystem.RunningD3XP()
 
             // Correct dependant classes on build time variables based on isD3XP flag
@@ -725,10 +736,10 @@ class Game_local {
             //idModelExport.Shutdown();
             idEvent.Shutdown()
 
-//	delete[] locationEntities;
+            //	delete[] locationEntities;
             locationEntities = null
 
-//	delete smokeParticles;
+            //	delete smokeParticles;
             smokeParticles = null
             idClass.Shutdown()
 
@@ -782,8 +793,7 @@ class Game_local {
                     // don't let numeric nicknames, it can be exploited to go around kick and ban commands from the server
                     if (idStr.IsNumeric(this.userInfo[clientNum].GetString("ui_name"))) {
                         this.userInfo[clientNum].Set(
-                            "ui_name",
-                            Str.va("%s_", this.userInfo[clientNum].GetString("ui_name"))
+                            "ui_name", Str.va("%s_", this.userInfo[clientNum].GetString("ui_name"))
                         )
                         modifiedInfo = true
                     }
@@ -801,8 +811,7 @@ class Game_local {
                                 )
                             ) {
                                 this.userInfo[clientNum].Set(
-                                    "ui_name",
-                                    Str.va("%s_", this.userInfo[clientNum].GetString("ui_name"))
+                                    "ui_name", Str.va("%s_", this.userInfo[clientNum].GetString("ui_name"))
                                 )
                                 modifiedInfo = true
                                 i = -1 // rescan
@@ -816,8 +825,7 @@ class Game_local {
                 if (entities.getOrNull(clientNum) != null && entities[clientNum] is idPlayer) {
                     modifiedInfo = modifiedInfo or (entities[clientNum] as idPlayer).UserInfoChanged(canModify)
                 }
-                if (!isClient) {
-                    // now mark this client in game
+                if (!isClient) { // now mark this client in game
                     mpGame.EnterGame(clientNum)
                 }
             }
@@ -840,8 +848,7 @@ class Game_local {
             val msgBuf = ByteBuffer.allocate(MAX_GAME_MESSAGE_SIZE)
             serverInfo.set(_serverInfo)
             UpdateServerInfoFlags()
-            if (!isClient) {
-                // Let our clients know the server info changed
+            if (!isClient) { // Let our clients know the server info changed
                 outMsg.Init(msgBuf, MAX_GAME_MESSAGE_SIZE)
                 outMsg.WriteByte(GAME_RELIABLE_MESSAGE_SERVERINFO.toByte())
                 outMsg.WriteDeltaDict(gameLocal.serverInfo, null)
@@ -942,8 +949,7 @@ class Game_local {
 
                 // right now I have no further use for this information, but in the future
                 // it can be used for quirks for (then-) old savegames
-            }
-            // DG end
+            } // DG end
 
             // Create the list of all objects in the game
             savegame.CreateObjects()
@@ -1155,8 +1161,7 @@ class Game_local {
             var link: idEntity?
 
             val savegame = idSaveGame(saveGameFile)
-            if (SysCvar.g_flushSave.GetBool() == true) {
-                // force flushing with each write... for tracking down
+            if (SysCvar.g_flushSave.GetBool() == true) { // force flushing with each write... for tracking down
                 // save game bugs.
                 saveGameFile.ForceFlush()
             }
@@ -1334,8 +1339,7 @@ class Game_local {
         override fun MapShutdown() {
             Printf("--------- Game Map Shutdown ----------\n")
             gamestate = gameState_t.GAMESTATE_SHUTDOWN
-            if (gameRenderWorld != null) {
-                // clear any debug lines, text, and polygons
+            if (gameRenderWorld != null) { // clear any debug lines, text, and polygons
                 gameRenderWorld!!.DebugClearLines(0)
                 gameRenderWorld!!.DebugClearPolygons(0)
             }
@@ -1384,12 +1388,12 @@ class Game_local {
             kv = dict.MatchPrefix("model")
             while (kv != null) {
                 if (kv.GetValue().Length() != 0) {
-                    declManager.MediaPrint("Precaching model %s\n", kv.GetValue())
-                    // precache model/animations
-                    if (declManager.FindType(declType_t.DECL_MODELDEF, kv.GetValue(), false) == null) {
-                        // precache the render model
-                        ModelManager.renderModelManager.FindModel(kv.GetValue())
-                        // precache .cm files only
+                    declManager.MediaPrint("Precaching model %s\n", kv.GetValue()) // precache model/animations
+                    if (declManager.FindType(
+                            declType_t.DECL_MODELDEF, kv.GetValue(), false
+                        ) == null
+                    ) { // precache the render model
+                        ModelManager.renderModelManager.FindModel(kv.GetValue()) // precache .cm files only
                         collisionModelManager.LoadModel(kv.GetValue(), true)
                     }
                 }
@@ -1414,8 +1418,7 @@ class Game_local {
                         ) || 0 == idStr.Icmpn(
                             kv.GetKey(), "gui_parm", 8
                         ) || 0 == idStr.Icmp(kv.GetKey(), "gui_inventory")
-                    ) {
-                        // unfortunate flag names, they aren't actually a gui
+                    ) { // unfortunate flag names, they aren't actually a gui
                     } else {
                         declManager.MediaPrint("Precaching gui %s\n", kv.GetValue())
                         val gui = UserInterface.uiManager.Alloc()
@@ -1558,8 +1561,7 @@ class Game_local {
 
             // D3XP: compute slow-mo state and restore slow timeline before the frame loop
             if (isD3XP) {
-                ComputeSlowMsec()
-                // slow.Get equivalent: restore slow-timeline state into global fields
+                ComputeSlowMsec() // slow.Get equivalent: restore slow-timeline state into global fields
                 time = slow.time; previousTime = slow.previousTime
                 msec = slow.msec; framenum = slow.framenum
                 realClientTime = slow.realClientTime; msecPrecise = slow.msecPrecise
@@ -1567,8 +1569,7 @@ class Game_local {
                 msecPrecise = slowmoMsec
             }
 
-            if (!isMultiplayer && SysCvar.g_stopTime.GetBool()) {
-                // clear any debug lines from a previous frame
+            if (!isMultiplayer && SysCvar.g_stopTime.GetBool()) { // clear any debug lines from a previous frame
                 gameRenderWorld!!.DebugClearLines(time + 1)
 
                 // set the user commands for this frame
@@ -1577,8 +1578,7 @@ class Game_local {
                 }
                 player?.Think()
             } else {
-                do {
-                    // update the game time
+                do { // update the game time
                     framenum++
                     previousTime = time
                     val msecFast = CalcMSec(framenum.toLong()) // 16 or 17 ms at 60Hz
@@ -1589,8 +1589,7 @@ class Game_local {
                     time += msec
                     realClientTime = time
                     if (isD3XP) slow.Set(time, previousTime, msec, framenum, realClientTime, msecPrecise)
-                    if (GAME_DLL) {
-                        // allow changing SIMD usage on the fly
+                    if (GAME_DLL) { // allow changing SIMD usage on the fly
                         if (com_forceGenericSIMD.IsModified()) {
                             idSIMD.InitProcessor("game", com_forceGenericSIMD.GetBool())
                         }
@@ -1599,8 +1598,7 @@ class Game_local {
                     // make sure the random number counter is used each frame so random events
                     // are influenced by the player's actions
                     random.RandomInt()
-                    if (player != null) {
-                        // update the renderview so that any gui videos play from the right frame
+                    if (player != null) { // update the renderview so that any gui videos play from the right frame
                         view = player.GetRenderView()
                         if (view != null) {
                             gameRenderWorld!!.SetRenderView(view)
@@ -1614,7 +1612,7 @@ class Game_local {
                     gameRenderWorld!!.DebugClearPolygons(time)
 
                     // set the user commands for this frame
-//                    memcpy(usercmds, clientCmds, numClients * sizeof(usercmds[ 0]));
+                    //                    memcpy(usercmds, clientCmds, numClients * sizeof(usercmds[ 0]));
                     for (i in 0 until numClients) {
                         usercmds[i].set(clientCmds[i])
                     }
@@ -1701,8 +1699,7 @@ class Game_local {
                                 c++
                             }
                             ent = next_ent
-                        }
-                        //assert( numEntitiesToDeactivate == c );
+                        } //assert( numEntitiesToDeactivate == c );
                         numEntitiesToDeactivate = 0
                     }
                     timer_think.Stop()
@@ -1733,8 +1730,7 @@ class Game_local {
                     }
 
                     // display how long it took to calculate the current game frame
-                    if (SysCvar.g_frametime.GetBool()) {
-                        // FIX: Was %.1f (float) — C++ uses %u (unsigned int); Milliseconds() returns Long
+                    if (SysCvar.g_frametime.GetBool()) { // FIX: Was %.1f (float) — C++ uses %u (unsigned int); Milliseconds() returns Long
                         Printf(
                             "game %d: all:%d th:%d ev:%d %d ents \n",
                             time,
@@ -1751,8 +1747,8 @@ class Game_local {
                     if (!isMultiplayer && player != null) {
                         ret.health = player.health
                         ret.heartRate = player.heartRate
-                        ret.stamina = idMath.FtoiFast(player.stamina)
-                        // combat is a 0-100 value based on lastHitTime and lastDmgTime
+                        ret.stamina =
+                            idMath.FtoiFast(player.stamina) // combat is a 0-100 value based on lastHitTime and lastDmgTime
                         // each make up 50% of the time spread over 10 seconds
                         ret.combat = 0
                         if (player.lastDmgTime > 0 && time < player.lastDmgTime + 10000) {
@@ -1764,8 +1760,7 @@ class Game_local {
                     }
 
                     // see if a target_sessionCommand has forced a changelevel
-                    if (sessionCommand.Length() != 0) {
-//                        strncpy(ret.sessionCommand, sessionCommand, sizeof(ret.sessionCommand));
+                    if (sessionCommand.Length() != 0) { //                        strncpy(ret.sessionCommand, sessionCommand, sizeof(ret.sessionCommand));
                         ret.sessionCommand = sessionCommand.c_str()
                         break
                     }
@@ -1810,8 +1805,7 @@ class Game_local {
 
         override fun HandleESC(): escReply_t {
             if (isMultiplayer) {
-                escGui = StartMenu()
-                // we may set the gui back to NULL to hide it
+                escGui = StartMenu() // we may set the gui back to NULL to hide it
                 return escReply_t.ESC_GUI
             }
             val player = GetLocalPlayer()
@@ -1856,14 +1850,12 @@ class Game_local {
             if (!CVarSystem.cvarSystem.GetCVarBool("si_usepass")) {
                 return allowReply_t.ALLOW_YES
             }
-            val pass = CVarSystem.cvarSystem.GetCVarString("g_password")
-            //	if ( pass[ 0 ] == '\0' ) {
+            val pass = CVarSystem.cvarSystem.GetCVarString("g_password") //	if ( pass[ 0 ] == '\0' ) {
             if (pass.isEmpty()) {
                 Common.common.Warning("si_usepass is set but g_password is empty")
                 CmdSystem.cmdSystem.BufferCommandText(
                     cmdExecution_t.CMD_EXEC_NOW, "say si_usepass is set but g_password is empty"
-                )
-                // avoids silent misconfigured state
+                ) // avoids silent misconfigured state
                 idStr.snPrintf(reason, MAX_STRING_CHARS, "#str_07142")
                 return allowReply_t.ALLOW_NOTYET
             }
@@ -1875,11 +1867,9 @@ class Game_local {
             return allowReply_t.ALLOW_BADPASS
         }
 
-        override fun ServerClientConnect(clientNum: Int, guid: String?) {
-            // make sure no parasite entity is left
+        override fun ServerClientConnect(clientNum: Int, guid: String?) { // make sure no parasite entity is left
             if (entities[clientNum] != null) {
-                Common.common.DPrintf("ServerClientConnect: remove old player entity\n")
-                //		delete entities[ clientNum ];
+                Common.common.DPrintf("ServerClientConnect: remove old player entity\n") //		delete entities[ clientNum ];
                 entities[clientNum] = null
             }
             userInfo[clientNum].Clear()
@@ -1931,19 +1921,18 @@ class Game_local {
             // free entity states stored for this client
             i = 0
             while (i < MAX_GENTITIES) {
-                if (clientEntityStates[clientNum][i] != null) {
-//                    entityStateAllocator.Free(clientEntityStates[ clientNum][ i]);
+                if (clientEntityStates[clientNum][i] != null) { //                    entityStateAllocator.Free(clientEntityStates[ clientNum][ i]);
                     clientEntityStates[clientNum][i] = null
                 }
                 i++
             }
 
             // clear the client PVS
-//	memset( clientPVS[ clientNum ], 0, sizeof( clientPVS[ clientNum ] ) );
+            //	memset( clientPVS[ clientNum ], 0, sizeof( clientPVS[ clientNum ] ) );
             clientPVS[clientNum].fill(0)
 
             // delete the player entity
-//	delete entities[ clientNum ];
+            //	delete entities[ clientNum ];
             entities[clientNum] = null
             mpGame.DisconnectClient(clientNum)
         }
@@ -2053,8 +2042,7 @@ class Game_local {
             snapshot.sequence = sequence
             snapshot.firstEntityState = null
             snapshot.next = clientSnapshots[clientNum]
-            clientSnapshots[clientNum] = snapshot
-            //            memset(snapshot.pvs, 0, sizeof(snapshot.pvs));
+            clientSnapshots[clientNum] = snapshot //            memset(snapshot.pvs, 0, sizeof(snapshot.pvs));
             snapshot.pvs.fill(0)
 
             // get PVS for this player
@@ -2120,8 +2108,9 @@ class Game_local {
                 // write the class specific data to the snapshot
                 ent.WriteToSnapshot(deltaMsg)
                 if (!deltaMsg.HasChanged()) {
-                    msg.RestoreWriteState(msgSize._val, msgWriteBit._val)
-                    //                    entityStateAllocator.Free(newBase);
+                    msg.RestoreWriteState(
+                        msgSize._val, msgWriteBit._val
+                    ) //                    entityStateAllocator.Free(newBase);
                 } else {
                     newBase.next = snapshot.firstEntityState
                     snapshot.firstEntityState = newBase
@@ -2284,8 +2273,7 @@ class Game_local {
             }
 
             if (Game_network.net_clientLagOMeter.GetBool() && RenderSystem.renderSystem != null) {
-                UpdateLagometer(aheadOfServer, dupeUsercmds)
-                // flatten 3D lagometer array to ByteBuffer for upload
+                UpdateLagometer(aheadOfServer, dupeUsercmds) // flatten 3D lagometer array to ByteBuffer for upload
                 val lagBuf = org.lwjgl.BufferUtils.createByteBuffer(LAGO_IMG_WIDTH * LAGO_IMG_HEIGHT * 4)
                 for (row in 0 until LAGO_IMG_HEIGHT) {
                     for (col in 0 until LAGO_IMG_WIDTH) {
@@ -2362,8 +2350,7 @@ class Game_local {
                 // if there is no entity or an entity of the wrong type
                 if (ent == null || ent.GetType().typeNum != typeNum || ent.entityDefNumber != entityDefNumber || spawnId != spawnIds[i]) {
 
-                    if (i < MAX_CLIENTS && ent != null) {
-                        // SPAWN_PLAYER should be taking care of spawning the entity with the right spawnId
+                    if (i < MAX_CLIENTS && ent != null) { // SPAWN_PLAYER should be taking care of spawning the entity with the right spawnId
                         Common.common.Warning("ClientReadSnapshot: recycling client entity %d\n", i)
                     }
 
@@ -2502,8 +2489,7 @@ class Game_local {
 
             // add entities in the PVS that haven't changed since the last applied snapshot
             ent = spawnedEntities.Next()
-            while (ent != null) {
-                // if the entity is already in the snapshot
+            while (ent != null) { // if the entity is already in the snapshot
                 if (ent.snapshotSequence == sequence) {
                     ent = ent.spawnNode.Next()
                     continue
@@ -2513,11 +2499,9 @@ class Game_local {
                 if (snapshot.pvs[ent.entityNumber shr 5] and (1 shl (ent.entityNumber and 31)) == 0) {
                     if (ent.PhysicsTeamInPVS(pvsHandle)) {
                         if (ent.entityNumber >= MAX_CLIENTS && ent.entityNumber < mapSpawnCount && !ent.spawnArgs.GetBool(
-                                "net_dynamic",
-                                "0"
+                                "net_dynamic", "0"
                             )
-                        ) {
-                            // server says it's not in PVS, client says it's in PVS
+                        ) { // server says it's not in PVS, client says it's in PVS
                             Common.common.DWarning(
                                 "client thinks map entity 0x%x (%s) is stale, sequence 0x%x",
                                 ent.entityNumber,
@@ -2525,8 +2509,7 @@ class Game_local {
                                 sequence
                             )
                         } else {
-                            ent.FreeModelDef()
-                            // D3XP CTF: free leftover light defs on flags going stale
+                            ent.FreeModelDef() // D3XP CTF: free leftover light defs on flags going stale
                             if (isD3XP) {
                                 ent.FreeLightDef()
                             }
@@ -2544,8 +2527,7 @@ class Game_local {
                 ent.snapshotBits = 0
 
                 base = clientEntityStates[clientNum][ent.entityNumber]
-                if (base == null) {
-                    // entity has probably fl.networkSync set to false
+                if (base == null) { // entity has probably fl.networkSync set to false
                     ent = ent.spawnNode.Next()
                     continue
                 }
@@ -2561,11 +2543,9 @@ class Game_local {
                 typeInfo = idClass.GetType(typeNum)
 
                 // if the entity is not the right type
-                if (typeInfo == null || ent.GetType().typeNum != typeNum || ent.entityDefNumber != entityDefNumber) {
-                    // should never happen - it does though. with != entityDefNumber only?
+                if (typeInfo == null || ent.GetType().typeNum != typeNum || ent.entityDefNumber != entityDefNumber) { // should never happen - it does though. with != entityDefNumber only?
                     Common.common.DWarning(
-                        "entity '%s' is not the right type 0x%d 0x%x 0x%x 0x%x",
-                        ent.GetName(), ent.GetType().typeNum,
+                        "entity '%s' is not the right type 0x%d 0x%x 0x%x 0x%x", ent.GetName(), ent.GetType().typeNum,
                         typeNum,
                         ent.entityDefNumber,
                         entityDefNumber
@@ -2598,8 +2578,7 @@ class Game_local {
             if (player.spectating && player.spectator != player.entityNumber && gameLocal.entities[player.spectator] != null && gameLocal.entities[player.spectator] is idPlayer) {
                 (gameLocal.entities[player.spectator] as idPlayer).ReadPlayerStateFromSnapshot(deltaMsg)
                 weap = (gameLocal.entities[player.spectator] as idPlayer).weapon.GetEntity()
-                if (weap != null && weap.GetRenderEntity()!!.bounds[0] == weap.GetRenderEntity()!!.bounds[1]) {
-                    // update the weapon's viewmodel bounds so that the model doesn't flicker in the spectator's view
+                if (weap != null && weap.GetRenderEntity()!!.bounds[0] == weap.GetRenderEntity()!!.bounds[1]) { // update the weapon's viewmodel bounds so that the model doesn't flicker in the spectator's view
                     weap.GetAnimator().GetBounds(gameLocal.time, weap.GetRenderEntity()!!.bounds)
                     weap.UpdateVisuals()
                 }
@@ -2658,8 +2637,7 @@ class Game_local {
                     if (null == entities[client]) {
                         SpawnPlayer(client)
                         entities[client]!!.FreeModelDef()
-                    }
-                    // fix up the spawnId to match what the server says
+                    } // fix up the spawnId to match what the server says
                     // otherwise there is going to be a bogus delete/new of the client entity in the first ClientReadFromSnapshot
                     spawnIds[client] = spawnId
                 }
@@ -2673,8 +2651,7 @@ class Game_local {
                     entPtr.GetEntity()?._deconstructor()
                 }
 
-                GAME_RELIABLE_MESSAGE_CHAT, GAME_RELIABLE_MESSAGE_TCHAT -> {
-                    // (client should never get a TCHAT though)
+                GAME_RELIABLE_MESSAGE_CHAT, GAME_RELIABLE_MESSAGE_TCHAT -> { // (client should never get a TCHAT though)
                     val name = CharArray(128)
                     val text = CharArray(128)
                     msg.ReadString(name, 128)
@@ -2730,8 +2707,7 @@ class Game_local {
                     gameLocal.SetServerInfo(info)
                 }
 
-                GAME_RELIABLE_MESSAGE_RESTART -> {
-                    // D3XP: read server info delta that the server writes
+                GAME_RELIABLE_MESSAGE_RESTART -> { // D3XP: read server info delta that the server writes
                     val newServerInfo = msg.ReadBits(1)
                     if (newServerInfo != 0) {
                         val info = idDict()
@@ -2854,8 +2830,7 @@ class Game_local {
                 RunDebugInfo()
                 SysCmds.D_DrawDebugLines()
             }
-            if (sessionCommand.Length() != 0) {
-//                strncpy(ret.sessionCommand, sessionCommand, sizeof(ret.sessionCommand));
+            if (sessionCommand.Length() != 0) { //                strncpy(ret.sessionCommand, sessionCommand, sizeof(ret.sessionCommand));
                 ret.sessionCommand = sessionCommand.c_str()
             }
             return ret
@@ -2885,11 +2860,10 @@ class Game_local {
         override fun DownloadRequest(
             IP: String, guid: String, paks: String, urls: CharArray /*[MAX_STRING_CHARS ]*/
         ): Boolean {
-            if (0 == CVarSystem.cvarSystem.GetCVarInteger("net_serverDownload")) {
-                return false
-            }
-            return if (CVarSystem.cvarSystem.GetCVarInteger("net_serverDownload") == 1) {
-                // 1: single URL redirect
+            return 0 != CVarSystem.cvarSystem.GetCVarInteger("net_serverDownload") && if (CVarSystem.cvarSystem.GetCVarInteger(
+                    "net_serverDownload"
+                ) == 1
+            ) { // 1: single URL redirect
                 if (CVarSystem.cvarSystem.GetCVarString("si_serverURL").isEmpty()) {
                     Common.common.Warning("si_serverURL not set")
                     return false
@@ -2898,8 +2872,7 @@ class Game_local {
                     urls, MAX_STRING_CHARS, "1;%s", CVarSystem.cvarSystem.GetCVarString("si_serverURL")
                 )
                 true
-            } else {
-                // 2: table of pak URLs
+            } else { // 2: table of pak URLs
                 // first token is the game pak if request, empty if not requested by the client
                 // there may be empty tokens for paks the server couldn't pinpoint - the order matters
                 var reply = "2;"
@@ -2915,8 +2888,7 @@ class Game_local {
                         reply += ";"
                     }
                     if (pakList[i].IsEmpty()) { //[ i ][ 0 ] == '\0' ) {
-                        if (i == 0) {
-                            // pak 0 will always miss when client doesn't ask for game bin
+                        if (i == 0) { // pak 0 will always miss when client doesn't ask for game bin
                             Common.common.DPrintf("no game pak request\n")
                         } else {
                             Common.common.DPrintf("no pak %d\n", i.toString())
@@ -2943,8 +2915,7 @@ class Game_local {
                 }
                 idStr.Copynz(urls, reply, MAX_STRING_CHARS)
                 true
-            }
-            //	return false;
+            } //	return false;
         }
 
         /*
@@ -2965,8 +2936,7 @@ class Game_local {
                 gameSoundWorld!!.SetSlowmo(false)
             }
             InitAsyncNetwork()
-            if (!sameMap || mapFile != null && mapFile!!.NeedsReload()) {
-                // load the .map file
+            if (!sameMap || mapFile != null && mapFile!!.NeedsReload()) { // load the .map file
                 if (mapFile != null) {
                     mapFile = null
                 }
@@ -3117,8 +3087,7 @@ class Game_local {
             val newInfo = idDict()
             var i: Int
             var keyval: idKeyValue?
-            var keyval2: idKeyValue?
-            // D3XP: auto-correct gametype if current map doesn't support it
+            var keyval2: idKeyValue? // D3XP: auto-correct gametype if current map doesn't support it
             if (isD3XP && isMultiplayer && isServer) {
                 val buf = CharArray(MAX_STRING_CHARS)
                 GetBestGameType(SysCvar.si_map.GetString()!!, SysCvar.si_gameType.GetString()!!, buf)
@@ -3137,8 +3106,7 @@ class Game_local {
                     keyval2 = serverInfo.FindKey(keyval.GetKey())
                     if (null == keyval2) {
                         break
-                    }
-                    // a select set of si_ changes will cause a full restart of the server
+                    } // a select set of si_ changes will cause a full restart of the server
                     if (keyval.GetValue().Cmp(keyval2.GetValue()) != 0 && (keyval.GetKey()
                             .Cmp("si_pure") == 0 || keyval.GetKey().Cmp("si_map") == 0)
                     ) {
@@ -3161,24 +3129,19 @@ class Game_local {
             }
         }
 
-        fun Printf(fmt: String, vararg args: Any?) {
-//	va_list		argptr;
-//	char		text[MAX_STRING_CHARS];
-//
-//	va_start( argptr, fmt );
-//	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
-//	va_end( argptr );
+        fun Printf(fmt: String, vararg args: Any?) { //	va_list		argptr;
+            //	char		text[MAX_STRING_CHARS];
+            //
+            //	va_start( argptr, fmt );
+            //	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
+            //	va_end( argptr );
             Common.common.Printf("%s", String.format(fmt, *args))
         }
 
-        fun Warning(fmt: String, vararg args: Any?) {
-//	va_list		argptr;
+        fun Warning(fmt: String, vararg args: Any?) { //	va_list		argptr;
             val text = StringBuilder(MAX_STRING_CHARS)
-            val thread: idThread?
-            //
-//	va_start( argptr, fmt );
-//	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
-//	va_end( argptr );
+            val thread: idThread? // //	va_start( argptr, fmt ); //	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
+            //	va_end( argptr );
             text.append(String.format(fmt, *args))
             thread = idThread.CurrentThread()
             if (thread != null) {
@@ -3188,17 +3151,15 @@ class Game_local {
             }
         }
 
-        fun DWarning(fmt: String, vararg args: Any?) {
-//	va_list		argptr;
+        fun DWarning(fmt: String, vararg args: Any?) { //	va_list		argptr;
             val text = StringBuilder(MAX_STRING_CHARS)
             val thread: idThread?
             if (!Common.com_developer.GetBool()) {
                 return
             }
-            text.append(String.format(fmt, *args))
-            //	va_start( argptr, fmt );
-//	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
-//	va_end( argptr );
+            text.append(String.format(fmt, *args)) //	va_start( argptr, fmt );
+            //	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
+            //	va_end( argptr );
             thread = idThread.CurrentThread()
             if (thread != null) {
                 thread.Warning("%s", text)
@@ -3207,17 +3168,16 @@ class Game_local {
             }
         }
 
-        fun DPrintf(fmt: String, vararg args: Any?) {
-//	va_list		argptr;
-//	char		text[MAX_STRING_CHARS];
+        fun DPrintf(fmt: String, vararg args: Any?) { //	va_list		argptr;
+            //	char		text[MAX_STRING_CHARS];
             if (!Common.com_developer.GetBool()) {
                 return
             }
 
-//	va_start( argptr, fmt );
-//	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
-//	va_end( argptr );
-//
+            //	va_start( argptr, fmt );
+            //	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
+            //	va_end( argptr );
+            //
             Common.common.Printf("%s", String.format(fmt, *args))
         }
 
@@ -3254,8 +3214,7 @@ class Game_local {
                 return false
             }
             thread = idThread(func)
-            thread.Start()
-            //	delete thread;
+            thread.Start() //	delete thread;
             newInfo.set(CVarSystem.cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_SERVERINFO))
             i = 0
             while (i < newInfo.GetNumKeyVals()) {
@@ -3284,12 +3243,11 @@ class Game_local {
                 return null
             }
 
-//	if ( mapFile ) {
-//		delete mapFile;
-//	}
+            //	if ( mapFile ) {
+            //		delete mapFile;
+            //	}
             mapFile = idMapFile()
-            if (!mapFile!!.Parse(mapFileName)) {
-//		delete mapFile;
+            if (!mapFile!!.Parse(mapFileName)) { //		delete mapFile;
                 mapFile = null
             }
             return mapFile
@@ -3595,8 +3553,7 @@ class Game_local {
         }
 
         fun AlertAI(ent: idEntity?) {
-            if (ent != null && ent is idActor) {
-                // alert them for the next frame
+            if (ent != null && ent is idActor) { // alert them for the next frame
                 lastAIAlertTime = (time + msecPrecise).toInt()
                 lastAIAlertEntity.oSet(ent)
             }
@@ -3604,8 +3561,8 @@ class Game_local {
 
         fun GetAlertEntity(): idActor? {
             if (isD3XP) {
-                val timeGroup = if (lastAIAlertTime != 0 && lastAIAlertEntity.GetEntity() != null)
-                    lastAIAlertEntity.GetEntity()!!.timeGroup else 0
+                val timeGroup =
+                    if (lastAIAlertTime != 0 && lastAIAlertEntity.GetEntity() != null) lastAIAlertEntity.GetEntity()!!.timeGroup else 0
                 SetTimeState(timeGroup).use {
                     return if (lastAIAlertTime >= time) lastAIAlertEntity.GetEntity() else null
                 }
@@ -3621,9 +3578,7 @@ class Game_local {
          ================
          */
         fun InPlayerPVS(ent: idEntity): Boolean {
-            return if (playerPVS.i == -1) {
-                false
-            } else pvs.InCurrentPVS(playerPVS, ent.GetPVSAreas(), ent.GetNumPVSAreas())
+            return playerPVS.i != -1 && pvs.InCurrentPVS(playerPVS, ent.GetPVSAreas(), ent.GetNumPVSAreas())
         }
 
         /*
@@ -3634,9 +3589,9 @@ class Game_local {
          ================
          */
         fun InPlayerConnectedArea(ent: idEntity): Boolean {
-            return if (playerConnectedAreas.i == -1) {
-                false
-            } else pvs.InCurrentPVS(playerConnectedAreas, ent.GetPVSAreas(), ent.GetNumPVSAreas())
+            return playerConnectedAreas.i != -1 && pvs.InCurrentPVS(
+                playerConnectedAreas, ent.GetPVSAreas(), ent.GetNumPVSAreas()
+            )
         }
 
         fun SetCamera(cam: idCamera?) {
@@ -3675,28 +3630,22 @@ class Game_local {
                     }
                     i++
                 }
-                if (!cam!!.spawnArgs.GetBool("ignore_enemies")) {
-                    // kill any active monsters that are enemies of the player
+                if (!cam!!.spawnArgs.GetBool("ignore_enemies")) { // kill any active monsters that are enemies of the player
                     ent = spawnedEntities.Next()
                     while (ent != null) {
-                        if (ent.cinematic || ent.fl.isDormant) {
-                            // only kill entities that aren't needed for cinematics and aren't dormant
+                        if (ent.cinematic || ent.fl.isDormant) { // only kill entities that aren't needed for cinematics and aren't dormant
                             ent = ent.spawnNode.Next()
                             continue
                         }
                         if (ent is idAI) {
                             ai = ent
-                            if (ai.GetEnemy() == null || !ai.IsActive()) {
-                                // no enemy, or inactive, so probably safe to ignore
+                            if (ai.GetEnemy() == null || !ai.IsActive()) { // no enemy, or inactive, so probably safe to ignore
                                 ent = ent.spawnNode.Next()
                                 continue
                             }
-                        } else if (ent is idProjectile) {
-                            // remove all projectiles
-                        } else if (ent.spawnArgs.GetBool("cinematic_remove")) {
-                            // remove anything marked to be removed during cinematics
-                        } else {
-                            // ignore everything else
+                        } else if (ent is idProjectile) { // remove all projectiles
+                        } else if (ent.spawnArgs.GetBool("cinematic_remove")) { // remove anything marked to be removed during cinematics
+                        } else { // ignore everything else
                             ent = ent.spawnNode.Next()
                             continue
                         }
@@ -3766,10 +3715,10 @@ class Game_local {
             var ratio_x: Float
             var ratio_y: Float
 
-//            if (!sys.FPU_StackIsEmpty()) {
-//                Printf(sys.FPU_GetState());
-//                Error("idGameLocal::CalcFov: FPU stack not empty");
-//            }
+            //            if (!sys.FPU_StackIsEmpty()) {
+            //                Printf(sys.FPU_GetState());
+            //                Error("idGameLocal::CalcFov: FPU stack not empty");
+            //            }
 
             // first, calculate the vertical fov based on a 640x480 view
             x = (640.0f / tan((base_fov / 360.0f * idMath.PI)))
@@ -3780,31 +3729,26 @@ class Game_local {
                 Error("idGameLocal::CalcFov: bad result, fov_y == %f, base_fov == %f", fov_y._val, base_fov)
             }
             when (SysCvar.r_aspectRatio.GetInteger()) {
-                0 -> {
-                    // 4:3
+                0 -> { // 4:3
                     fov_x._val = (base_fov)
                     return
                 }
 
-                1 -> {
-                    // 16:9
+                1 -> { // 16:9
                     ratio_x = 16.0f
                     ratio_y = 9.0f
                 }
 
-                2 -> {
-                    // 16:10
+                2 -> { // 16:10
                     ratio_x = 16.0f
                     ratio_y = 10.0f
                 }
 
-                else -> {
-                    // FIX: Was returning base_fov — C++ default/-1 case uses auto mode from screen resolution
+                else -> { // FIX: Was returning base_fov — C++ default/-1 case uses auto mode from screen resolution
                     // auto mode => use aspect ratio from resolution, assuming screen's pixels are squares
                     ratio_x = RenderSystem.renderSystem.GetScreenWidth().toFloat()
                     ratio_y = RenderSystem.renderSystem.GetScreenHeight().toFloat()
-                    if (ratio_x <= 0.0f || ratio_y <= 0.0f) {
-                        // for some reason (maybe this is a dedicated server?) GetScreenWidth()/Height()
+                    if (ratio_x <= 0.0f || ratio_y <= 0.0f) { // for some reason (maybe this is a dedicated server?) GetScreenWidth()/Height()
                         // returned 0. Assume default 4:3 to avoid assert()/Error() below.
                         fov_x._val = base_fov
                         return
@@ -4040,8 +3984,7 @@ class Game_local {
                 } else if (!catch_teleport) {
                     hit.Damage(ent, ent, vec3_origin, "damage_telefrag", 1.0f, Model.INVALID_JOINT)
                 }
-                if (!gameLocal.isMultiplayer) {
-                    // let the mapper know about it
+                if (!gameLocal.isMultiplayer) { // let the mapper know about it
                     Warning("'%s' telefragged '%s'", ent.name, hit.name)
                 }
                 i++
@@ -4145,8 +4088,7 @@ class Game_local {
                     e++
                     continue
                 }
-                if (ent.CanDamage(origin, damagePoint)) {
-                    // push the center of mass higher than the origin so players
+                if (ent.CanDamage(origin, damagePoint)) { // push the center of mass higher than the origin so players
                     // get knocked into the air more
                     dir.set(ent.GetPhysics().GetOrigin().minus(origin))
                     dir.plusAssign(2, 24.0f)
@@ -4301,16 +4243,11 @@ class Game_local {
                     i++
                     continue
                 }
-                area = w.GetArea()
-                // impulse in polygon normal direction
-                impulse.set(poly.normal.times(clipModel.GetAxis()))
-                // always push up for nicer effect
-                impulse.z -= 1.0f
-                // scale impulse based on visible surface area and polygon angle
-                impulse.timesAssign(push * (dot * area * (1.0f / (4.0f * idMath.PI))))
-                // scale away distance for nicer effect
-                impulse.timesAssign(dist * 2.0f)
-                // impulse is applied to the center of the polygon
+                area = w.GetArea() // impulse in polygon normal direction
+                impulse.set(poly.normal.times(clipModel.GetAxis())) // always push up for nicer effect
+                impulse.z -= 1.0f // scale impulse based on visible surface area and polygon angle
+                impulse.timesAssign(push * (dot * area * (1.0f / (4.0f * idMath.PI)))) // scale away distance for nicer effect
+                impulse.timesAssign(dist * 2.0f) // impulse is applied to the center of the polygon
                 center.set(clipModel.GetOrigin().plus(center.times(clipModel.GetAxis())))
                 clipModel.GetEntity()!!.ApplyImpulse(world, clipModel.GetId(), center, impulse)
                 i++
@@ -4494,8 +4431,7 @@ class Game_local {
             val client = idStr(args!!.Argv(1))
             if (0 == client.Length()) {
                 return null
-            }
-            // we don't allow numeric ui_name so this can't go wrong
+            } // we don't allow numeric ui_name so this can't go wrong
             player = if (client.IsNumeric()) {
                 GetClientByNum(client.toString().toInt())
             } else {
@@ -4521,8 +4457,7 @@ class Game_local {
             if (localClientNum < 0) {
                 return null
             }
-            return if (null == entities[localClientNum] || entities[localClientNum] !is idPlayer) {
-                // not fully in game yet
+            return if (null == entities[localClientNum] || entities[localClientNum] !is idPlayer) { // not fully in game yet
                 null
             } else entities[localClientNum] as idPlayer
         }
@@ -4532,8 +4467,8 @@ class Game_local {
 
             // allocate the area table
             val numAreas = gameRenderWorld!!.NumAreas()
-            locationEntities = arrayOfNulls(numAreas)
-            //	memset( locationEntities, 0, numAreas * sizeof( *locationEntities ) );
+            locationEntities =
+                arrayOfNulls(numAreas) //	memset( locationEntities, 0, numAreas * sizeof( *locationEntities ) );
 
             // for each location entity, make pointers from every area it touches
             ent = spawnedEntities.Next()
@@ -4588,8 +4523,7 @@ class Game_local {
          ===================
          */
         fun LocationForPoint(point: idVec3): idLocationEntity? {
-            if (null == locationEntities) {
-                // before SpreadLocations() has been called
+            if (null == locationEntities) { // before SpreadLocations() has been called
                 return null
             }
             val areaNum = gameRenderWorld!!.PointInArea(point)
@@ -4651,19 +4585,16 @@ class Game_local {
                 useInitialSpots = player.useInitialSpawns && currentInitialSpot < initialSpots.Num()
             }
 
-            if (player.spectating) {
-                // plain random spot, don't bother
+            if (player.spectating) { // plain random spot, don't bother
                 return spawnSpots[random.RandomInt(spawnSpots.Num())].ent
-            } else if (useInitialSpots) {
-                // D3XP CTF: use team initial spots
+            } else if (useInitialSpots) { // D3XP CTF: use team initial spots
                 if (isD3XP && mpGame.IsGametypeFlagBased()) {
                     assert(player.team == 0 || player.team == 1)
                     player.useInitialSpawns = false // only use the initial spawn once
                     return teamInitialSpots[player.team][teamCurrentInitialSpot[player.team]++]
                 }
                 return initialSpots[currentInitialSpot++]
-            } else {
-                // check if we are alone in map
+            } else { // check if we are alone in map
                 alone = true
                 j = 0
                 while (j < MAX_CLIENTS) {
@@ -4673,13 +4604,11 @@ class Game_local {
                     }
                     j++
                 }
-                if (alone) {
-                    // D3XP CTF: return random team spawn spot
+                if (alone) { // D3XP CTF: return random team spawn spot
                     if (isD3XP && mpGame.IsGametypeFlagBased()) {
                         assert(player.team == 0 || player.team == 1)
                         return teamSpawnSpots[player.team][random.RandomInt(teamSpawnSpots[player.team].Num())].ent
-                    }
-                    // don't do distance-based
+                    } // don't do distance-based
                     return spawnSpots[random.RandomInt(spawnSpots.Num())].ent
                 }
 
@@ -4748,7 +4677,7 @@ class Game_local {
                 }
 
                 // sort the list
-//                qsort( /*( void * )*/spawnSpots.Ptr(), spawnSpots.Num(), sizeof(spawnSpot_t), /*( int (*)(const void *, const void *) )*/ sortSpawnPoints);
+                //                qsort( /*( void * )*/spawnSpots.Ptr(), spawnSpots.Num(), sizeof(spawnSpot_t), /*( int (*)(const void *, const void *) )*/ sortSpawnPoints);
 
                 spawnSpots.Ptr().sortWith(sortSpawnPoints())
 
@@ -4779,8 +4708,7 @@ class Game_local {
             event.event = eventId
             event.time = time
             if (msg != null) {
-                event.paramsSize = msg.GetSize()
-                //		memcpy( event.paramsBuf, msg.GetData(), msg.GetSize() );
+                event.paramsSize = msg.GetSize() //		memcpy( event.paramsBuf, msg.GetData(), msg.GetSize() );
                 System.arraycopy(msg.GetData()!!.array(), 0, event.paramsBuf.array(), 0, msg.GetSize())
             } else {
                 event.paramsSize = 0
@@ -4884,8 +4812,7 @@ class Game_local {
                 keyval2 = serverInfo.FindKey(keyval.GetKey())
                 if (null == keyval2) {
                     return true
-                }
-                // a select set of si_ changes will cause a full restart of the server
+                } // a select set of si_ changes will cause a full restart of the server
                 if (keyval.GetValue().Cmp(keyval2.GetValue().toString()) != 0 && (0 == keyval.GetKey()
                         .Cmp("si_pure") || 0 == keyval.GetKey().Cmp("si_map"))
                 ) {
@@ -4904,14 +4831,11 @@ class Game_local {
                 userInfo[i].Clear()
                 persistentPlayerInfo[i].Clear()
                 i++
-            }
-            //	memset( usercmds, 0, sizeof( usercmds ) );
+            } //	memset( usercmds, 0, sizeof( usercmds ) );
             for (u in 0 until usercmds.size) {
                 usercmds[u] = usercmd_t()
-            }
-            //	memset( entities, 0, sizeof( entities ) );
-            entities.fill(null)
-            // FIX: Was creating new array — use fill() to clear in-place and preserve references
+            } //	memset( entities, 0, sizeof( entities ) );
+            entities.fill(null) // FIX: Was creating new array — use fill() to clear in-place and preserve references
             spawnIds.fill(-1) //	memset( spawnIds, -1, sizeof( spawnIds ) );
             firstFreeIndex = 0
             num_entities = 0
@@ -4920,8 +4844,7 @@ class Game_local {
             numEntitiesToDeactivate = 0
             sortPushers = false
             sortTeamMasters = false
-            persistentLevelInfo.Clear()
-            // FIX: Was creating new array — use fill() to clear in-place and preserve references
+            persistentLevelInfo.Clear() // FIX: Was creating new array — use fill() to clear in-place and preserve references
             globalShaderParms.fill(0f) //memset( globalShaderParms, 0, sizeof( globalShaderParms ) );
             random.SetSeed(0)
             world = null
@@ -4974,12 +4897,11 @@ class Game_local {
             lastGUIEnt.oSet(null)
             lastGUI = 0
 
-//	memset( clientEntityStates, 0, sizeof( clientEntityStates ) );
+            //	memset( clientEntityStates, 0, sizeof( clientEntityStates ) );
             // FIX: C++ zeroes pointers (= NULL), not creates new objects
             for (a in 0 until MAX_CLIENTS) {
                 clientEntityStates[a].fill(null)
-            }
-            // FIX: Was creating new array — use fill() to clear in-place and preserve references
+            } // FIX: Was creating new array — use fill() to clear in-place and preserve references
             for (a in 0 until MAX_CLIENTS) {
                 clientPVS[a].fill(0)
             } //memset( clientPVS, 0, sizeof( clientPVS ) );
@@ -4987,8 +4909,7 @@ class Game_local {
             // FIX: C++ zeroes pointers (= NULL), not creates new objects
             clientSnapshots.fill(null)
             eventQueue.Init()
-            savedEventQueue.Init()
-            // FIX: Was creating new array — clear in-place to preserve references
+            savedEventQueue.Init() // FIX: Was creating new array — clear in-place to preserve references
             for (row in lagometer) {
                 for (col in row) {
                     col.fill(0)
@@ -5018,14 +4939,13 @@ class Game_local {
                     spawnArgs.GetBool("not_nightmare", "0", result)
                 }
             }
-            var name: String?
-            // DG: dhewm3 removed ID_DEMO_BUILD guard — always inhibit medkits on nightmare
+            var name: String? // DG: dhewm3 removed ID_DEMO_BUILD guard — always inhibit medkits on nightmare
             if (SysCvar.g_skill.GetInteger() == 3) {
                 name = spawnArgs.GetString("classname")
-                if (idStr.Icmp(name, "item_medkit") == 0 || idStr.Icmp(name, "item_medkit_small") == 0
-                    || (isD3XP && (idStr.Icmp(name, "moveable_item_medkit") == 0 || idStr.Icmp(
-                        name,
-                        "moveable_item_medkit_small"
+                if (idStr.Icmp(name, "item_medkit") == 0 || idStr.Icmp(
+                        name, "item_medkit_small"
+                    ) == 0 || (isD3XP && (idStr.Icmp(name, "moveable_item_medkit") == 0 || idStr.Icmp(
+                        name, "moveable_item_medkit_small"
                     ) == 0))
                 ) {
                     result._val = true
@@ -5049,8 +4969,7 @@ class Game_local {
 
          Parses textual entity definitions out of an entstring and spawns gentities.
          ==============
-         */
-        // spawn entities from the map file
+         */ // spawn entities from the map file
         private fun SpawnMapEntities() {
             var i: Int
             var num: Int
@@ -5083,8 +5002,7 @@ class Game_local {
             while (i < numEntities) {
                 mapEnt = mapFile!!.GetEntity(i)
                 args = mapEnt.epairs
-                if (!InhibitEntitySpawn(args)) {
-                    // precache any media specified in the map entity
+                if (!InhibitEntitySpawn(args)) { // precache any media specified in the map entity
                     CacheDictionaryMedia(args)
                     SpawnEntityDef(args)
                     num++
@@ -5100,8 +5018,7 @@ class Game_local {
         private fun MapPopulate() {
             if (isMultiplayer) {
                 CVarSystem.cvarSystem.SetCVarBool("r_skipSpecular", false)
-            }
-            // parse the key/value pairs and spawn entities
+            } // parse the key/value pairs and spawn entities
             SpawnMapEntities()
 
             // mark location entities in all connected areas
@@ -5135,8 +5052,7 @@ class Game_local {
                 i++
             }
             entityHash.Clear(1024, MAX_GENTITIES)
-            if (!clearClients) {
-                // add back the hashes of the clients
+            if (!clearClients) { // add back the hashes of the clients
                 i = 0
                 while (i < MAX_CLIENTS) {
                     if (entities[i] == null) {
@@ -5292,16 +5208,14 @@ class Game_local {
                 while (ent != null) {
                     next_ent = ent.activeNode.Next()
                     master = ent.GetTeamMaster()
-                    if (null == master || master === ent) {
-                        // check if there is an actor on the team
+                    if (null == master || master === ent) { // check if there is an actor on the team
                         part = ent
                         while (part != null) {
                             if (part.GetPhysics() is idPhysics_Actor) {
                                 break
                             }
                             part = part.GetNextTeamEntity()
-                        }
-                        // if there is an actor on the team
+                        } // if there is an actor on the team
                         if (part != null) {
                             ent.activeNode.Remove()
                             ent.activeNode.AddToFront(activeEntities)
@@ -5313,16 +5227,14 @@ class Game_local {
                 while (ent != null) {
                     next_ent = ent.activeNode.Next()
                     master = ent.GetTeamMaster()
-                    if (null == master || master === ent) {
-                        // check if there is an entity on the team using parametric physics
+                    if (null == master || master === ent) { // check if there is an entity on the team using parametric physics
                         part = ent
                         while (part != null) {
                             if (part.GetPhysics() is idPhysics_Parametric) {
                                 break
                             }
                             part = part.GetNextTeamEntity()
-                        }
-                        // if there is an entity on the team using parametric physics
+                        } // if there is an entity on the team using parametric physics
                         if (part != null) {
                             ent.activeNode.Remove()
                             ent.activeNode.AddToFront(activeEntities)
@@ -5562,8 +5474,7 @@ class Game_local {
             collisionModelManager.DebugOutput(player.GetEyePosition())
         }
 
-        private fun InitScriptForMap() {
-            // create a thread to run frame commands on
+        private fun InitScriptForMap() { // create a thread to run frame commands on
             frameCommandThread = idThread()
             frameCommandThread!!.ManualDelete()
             frameCommandThread!!.SetThreadName("frameCommands")
@@ -5572,9 +5483,8 @@ class Game_local {
             val func = program.FindFunction(Game.SCRIPT_DEFAULTFUNC)
             if (func != null) {
                 val thread = idThread(func)
-                if (thread.Start()) {
-                    // thread has finished executing, so delete it
-//			delete thread;
+                if (thread.Start()) { // thread has finished executing, so delete it
+                    //			delete thread;
                 }
             }
         }
@@ -6053,10 +5963,9 @@ class Game_local {
                 )
                 CmdSystem.cmdSystem.AddCommand(
                     "clientMessageMode", MessageMode_f.getInstance(), CmdSystem.CMD_FL_GAME, "ingame gui message mode"
-                )
-                // FIXME: implement
-//	cmdSystem.AddCommand( "clientVote",			idMultiplayerGame.Vote_f.getInstance(),	CMD_FL_GAME,				"cast your vote: clientVote yes | no" );
-//	cmdSystem.AddCommand( "clientCallVote",		idMultiplayerGame.CallVote_f.getInstance(),	CMD_FL_GAME,			"call a vote: clientCallVote si_.. proposed_value" );
+                ) // FIXME: implement
+                //	cmdSystem.AddCommand( "clientVote",			idMultiplayerGame.Vote_f.getInstance(),	CMD_FL_GAME,				"cast your vote: clientVote yes | no" );
+                //	cmdSystem.AddCommand( "clientCallVote",		idMultiplayerGame.CallVote_f.getInstance(),	CMD_FL_GAME,			"call a vote: clientCallVote si_.. proposed_value" );
                 CmdSystem.cmdSystem.AddCommand(
                     "clientVoiceChat",
                     VoiceChat_f.getInstance(),
@@ -6094,8 +6003,7 @@ class Game_local {
                 Cmd_TestId_f.getInstance(),
                 CmdSystem.CMD_FL_GAME or CmdSystem.CMD_FL_CHEAT,
                 "output the string for the specified id."
-            )
-            // D3XP
+            ) // D3XP
             if (isD3XP) {
                 CmdSystem.cmdSystem.AddCommand(
                     "setActorState",
@@ -6123,11 +6031,11 @@ class Game_local {
                 i++
             }
 
-//	memset( clientEntityStates, 0, sizeof( clientEntityStates ) );
-            clientEntityStates = Array(clientEntityStates.size) { arrayOfNulls(clientEntityStates[0].size) }
-            //	memset( clientPVS, 0, sizeof( clientPVS ) );
-            clientPVS = Array(clientPVS.size) { IntArray(clientPVS[0].size) }
-            //	memset( clientSnapshots, 0, sizeof( clientSnapshots ) );
+            //	memset( clientEntityStates, 0, sizeof( clientEntityStates ) );
+            clientEntityStates =
+                Array(clientEntityStates.size) { arrayOfNulls(clientEntityStates[0].size) } //	memset( clientPVS, 0, sizeof( clientPVS ) );
+            clientPVS =
+                Array(clientPVS.size) { IntArray(clientPVS[0].size) } //	memset( clientSnapshots, 0, sizeof( clientSnapshots ) );
             clientSnapshots = arrayOfNulls(clientSnapshots.size)
             eventQueue.Init()
             savedEventQueue.Init()
@@ -6138,16 +6046,14 @@ class Game_local {
             clientSmoothing = Game_network.net_clientSmoothing.GetFloat()
         }
 
-        private fun ShutdownAsyncNetwork() {
-//            entityStateAllocator.Shutdown();
-//            snapshotAllocator.Shutdown();
+        private fun ShutdownAsyncNetwork() { //            entityStateAllocator.Shutdown();
+            //            snapshotAllocator.Shutdown();
             eventQueue.Shutdown()
-            savedEventQueue.Shutdown()
-            //	memset( clientEntityStates, 0, sizeof( clientEntityStates ) );
-            clientEntityStates = Array(clientEntityStates.size) { arrayOfNulls(clientEntityStates[0].size) }
-            //	memset( clientPVS, 0, sizeof( clientPVS ) );
-            clientPVS = Array(clientPVS.size) { IntArray(clientPVS[0].size) }
-            //	memset( clientSnapshots, 0, sizeof( clientSnapshots ) );
+            savedEventQueue.Shutdown() //	memset( clientEntityStates, 0, sizeof( clientEntityStates ) );
+            clientEntityStates =
+                Array(clientEntityStates.size) { arrayOfNulls(clientEntityStates[0].size) } //	memset( clientPVS, 0, sizeof( clientPVS ) );
+            clientPVS =
+                Array(clientPVS.size) { IntArray(clientPVS[0].size) } //	memset( clientSnapshots, 0, sizeof( clientSnapshots ) );
             clientSnapshots = arrayOfNulls(clientSnapshots.size)
         }
 
@@ -6180,8 +6086,7 @@ class Game_local {
                 i = 0
                 while (i < num) {
                     val decl = declManager.DeclByIndex(declType_t.entries[type], i, false)!!
-                    if (decl.IsImplicit()) {
-                        // once the first implicit decl is found all remaining decls are considered implicit as well
+                    if (decl.IsImplicit()) { // once the first implicit decl is found all remaining decls are considered implicit as well
                         break
                     }
                     clientDeclRemap[clientNum][type]!![i] = i
@@ -6198,12 +6103,10 @@ class Game_local {
             // if no client connected for this spot
             if (entities[clientNum] == null) {
                 return
-            }
-            // increase size of list if required
+            } // increase size of list if required
             if (index >= clientDeclRemap[clientNum][type.ordinal]!!.Num()) {
                 clientDeclRemap[clientNum][type.ordinal]!!.AssureSize(index + 1, -1)
-            }
-            // if already remapped
+            } // if already remapped
             if (clientDeclRemap[clientNum][type.ordinal]!![index] != -1) {
                 return
             }
@@ -6247,8 +6150,7 @@ class Game_local {
                         lastSnapshot.next = snapshot.next
                     } else {
                         clientSnapshots[clientNum] = snapshot.next
-                    }
-                    //                    snapshotAllocator.Free(snapshot);
+                    } //                    snapshotAllocator.Free(snapshot);
                 } else {
                     lastSnapshot = snapshot
                 }
@@ -6269,20 +6171,17 @@ class Game_local {
                 if (snapshot.sequence == sequence) {
                     state = snapshot.firstEntityState
                     while (state != null) {
-                        if (clientEntityStates[clientNum][state.entityNumber] != null) {
-//                            entityStateAllocator.Free(clientEntityStates[clientNum][state.entityNumber]);
+                        if (clientEntityStates[clientNum][state.entityNumber] != null) { //                            entityStateAllocator.Free(clientEntityStates[clientNum][state.entityNumber]);
                         }
                         clientEntityStates[clientNum][state.entityNumber] = state
                         state = state.next
-                    }
-                    //			memcpy( clientPVS[clientNum], snapshot.pvs, sizeof( snapshot.pvs ) );
+                    } //			memcpy( clientPVS[clientNum], snapshot.pvs, sizeof( snapshot.pvs ) );
                     System.arraycopy(snapshot.pvs, 0, clientPVS[clientNum], 0, snapshot.pvs.size)
                     if (lastSnapshot != null) {
                         lastSnapshot.next = nextSnapshot
                     } else {
                         clientSnapshots[clientNum] = nextSnapshot
-                    }
-                    //                    snapshotAllocator.Free(snapshot);
+                    } //                    snapshotAllocator.Free(snapshot);
                     return true
                 } else {
                     lastSnapshot = snapshot
@@ -6363,8 +6262,7 @@ class Game_local {
                 }
                 val entPtr = idEntityPtr<idEntity?>()
                 if (!entPtr.SetSpawnId(event.spawnId)) {
-                    if (null == gameLocal.entities[event.spawnId and (1 shl GENTITYNUM_BITS) - 1]) {
-                        // if new entity exists in this position, silently ignore
+                    if (null == gameLocal.entities[event.spawnId and (1 shl GENTITYNUM_BITS) - 1]) { // if new entity exists in this position, silently ignore
                         NetworkEventWarning(event, "Entity does not exist any longer, or has not been spawned yet.")
                     }
                 } else {
@@ -6473,8 +6371,7 @@ class Game_local {
                 return
             }
             spawnSpots.Clear()
-            initialSpots.Clear()
-            // D3XP CTF
+            initialSpots.Clear() // D3XP CTF
             if (isD3XP) {
                 teamSpawnSpots[0].Clear()
                 teamSpawnSpots[1].Clear()
@@ -6484,8 +6381,7 @@ class Game_local {
 
             spot.dist = 0
             spot.ent = FindEntityUsingDef(null, "info_player_deathmatch")
-            while (spot.ent != null) {
-                // D3XP CTF: read team spawnarg and sort into team lists
+            while (spot.ent != null) { // D3XP CTF: read team spawnarg and sort into team lists
                 if (isD3XP) {
                     spot.team = spot.ent!!.spawnArgs.GetInt("team", "-1")
                     if (mpGame.IsGametypeFlagBased()) {
@@ -6500,8 +6396,7 @@ class Game_local {
                 }
 
                 spawnSpots.Append(spawnSpot_t().also { it.ent = spot.ent; it.dist = spot.dist; it.team = spot.team })
-                if (spot.ent!!.spawnArgs.GetBool("initial")) {
-                    // D3XP CTF
+                if (spot.ent!!.spawnArgs.GetBool("initial")) { // D3XP CTF
                     if (isD3XP && mpGame.IsGametypeFlagBased()) {
                         assert(spot.team == 0 || spot.team == 1)
                         teamInitialSpots[spot.team].Append(spot.ent!!)
@@ -6556,8 +6451,9 @@ class Game_local {
                 }
             }
 
-            Common.common.Printf("%d spawns (%d initials)\n", spawnSpots.Num(), initialSpots.Num())
-            // if there are no initial spots in the map, consider they can all be used as initial
+            Common.common.Printf(
+                "%d spawns (%d initials)\n", spawnSpots.Num(), initialSpots.Num()
+            ) // if there are no initial spots in the map, consider they can all be used as initial
             if (0 == initialSpots.Num()) {
                 Common.common.Warning("no info_player_deathmatch entities marked initial in map")
                 i = 0
@@ -6590,8 +6486,7 @@ class Game_local {
                 initialSpots[i] = initialSpots[j]
                 initialSpots[j] = ent
                 i++
-            }
-            // reset the counter
+            } // reset the counter
             currentInitialSpot = 0
 
             // D3XP CTF
@@ -6637,8 +6532,7 @@ class Game_local {
                                 j++
                                 continue
                             }
-                        }
-                        // don't OGG sounds that cause a shake because that would
+                        } // don't OGG sounds that cause a shake because that would
                         // cause continuous seeking on the OGG file which is expensive
                         if (parms.shakes != 0.0f) {
                             shakeSounds.addUnique(soundName)
@@ -6652,8 +6546,7 @@ class Game_local {
                             ) == -1 && soundName.Find("/bfgcarnage/", false) == -1 && soundName.Find(
                                 "/enpro/", false
                             ) == -1 && soundName.Find("/soulcube/energize_01.wav", false) == -1
-                        ) {
-                            // don't OGG weapon sounds
+                        ) { // don't OGG weapon sounds
                             if (soundName.Find("weapon", false) != -1 || soundName.Find(
                                     "gun", false
                                 ) != -1 || soundName.Find("bullet", false) != -1 || soundName.Find(
@@ -6750,8 +6643,9 @@ class Game_local {
             return time
         }
 
-        override fun GetBestGameType(map: String, gametype: String, buf: CharArray /*[MAX_STRING_CHARS ]*/) {
-            // D3XP: delegate to mpGame to check map's supported gametypes
+        override fun GetBestGameType(
+            map: String, gametype: String, buf: CharArray /*[MAX_STRING_CHARS ]*/
+        ) { // D3XP: delegate to mpGame to check map's supported gametypes
             val aux = mpGame.GetBestGametype(map, gametype)
             val src = aux.toCharArray()
             val len = minOf(src.size, MAX_STRING_CHARS - 1)
@@ -6760,26 +6654,25 @@ class Game_local {
             buf[MAX_STRING_CHARS - 1] = '\u0000'
         }
 
-        private fun Tokenize(out: idStrList, `in`: String) {
-//	char buf[ MAX_STRING_CHARS ];
-//	char *token, *next;
-//
-//	idStr::Copynz( buf, in, MAX_STRING_CHARS );
-//	token = buf;
-//	next = strchr( token, ';' );
-//	while ( token ) {
-//		if ( next ) {
-//			*next = '\0';
-//		}
-//		idStr::ToLower( token );
-//		out.Append( token );
-//		if ( next ) {
-//			token = next + 1;
-//			next = strchr( token, ';' );
-//		} else {
-//			token = NULL;
-//		}
-//	}
+        private fun Tokenize(out: idStrList, `in`: String) { //	char buf[ MAX_STRING_CHARS ];
+            //	char *token, *next;
+            //
+            //	idStr::Copynz( buf, in, MAX_STRING_CHARS );
+            //	token = buf;
+            //	next = strchr( token, ';' );
+            //	while ( token ) {
+            //		if ( next ) {
+            //			*next = '\0';
+            //		}
+            //		idStr::ToLower( token );
+            //		out.Append( token );
+            //		if ( next ) {
+            //			token = next + 1;
+            //			next = strchr( token, ';' );
+            //		} else {
+            //			token = NULL;
+            //		}
+            //	}
             val tokens: Array<String> = `in`.split(";").toTypedArray()
             for (token in tokens) {
                 out.add(token.lowercase())
@@ -6793,7 +6686,7 @@ class Game_local {
             i = 0
             while (i < LAGO_HEIGHT) {
 
-//                memmove( (byte *)lagometer + LAGO_WIDTH * 4 * i, (byte *)lagometer + LAGO_WIDTH * 4 * i + 4, ( LAGO_WIDTH - 1 ) * 4 );
+                //                memmove( (byte *)lagometer + LAGO_WIDTH * 4 * i, (byte *)lagometer + LAGO_WIDTH * 4 * i + 4, ( LAGO_WIDTH - 1 ) * 4 );
                 memmove(
                     lagometer, LAGO_WIDTH * 4 * i, lagometer, LAGO_WIDTH * 4 * i + 4, (LAGO_WIDTH - 1) * 4
                 ) //TODO:flatten 3d array and copy
@@ -6861,8 +6754,7 @@ class Game_local {
                     Common.common.Printf("server is not running\n")
                     return
                 }
-                gameLocal.NextMap()
-                // next map was either voted for or triggered by a server command - always restart
+                gameLocal.NextMap() // next map was either voted for or triggered by a server command - always restart
                 gameLocal.MapRestart()
             }
 
@@ -6934,13 +6826,11 @@ class Game_local {
 
         override fun SelectTimeGroup(timeGroup: Int) {
             if (!isD3XP) return
-            if (timeGroup != 0) {
-                // fast timeline (player speed)
+            if (timeGroup != 0) { // fast timeline (player speed)
                 time = fast.time; previousTime = fast.previousTime
                 msec = fast.msec; framenum = fast.framenum
                 realClientTime = fast.realClientTime; msecPrecise = fast.msecPrecise
-            } else {
-                // slow timeline (world speed)
+            } else { // slow timeline (world speed)
                 time = slow.time; previousTime = slow.previousTime
                 msec = slow.msec; framenum = slow.framenum
                 realClientTime = slow.realClientTime; msecPrecise = slow.msecPrecise
@@ -7002,8 +6892,7 @@ class Game_local {
         fun RunTimeGroup2(msecFast: Int) {
             if (!isD3XP) return
 
-            fast.Increment(msecFast)
-            // fast.Get equivalent: switch global time fields to fast timeline
+            fast.Increment(msecFast) // fast.Get equivalent: switch global time fields to fast timeline
             time = fast.time; previousTime = fast.previousTime
             msec = fast.msec; framenum = fast.framenum
             realClientTime = fast.realClientTime; msecPrecise = fast.msecPrecise
@@ -7059,14 +6948,10 @@ class Game_local {
                 idVec3(1.0f, -1.0f, 0.0f)
             )
 
-            fun Error(fmt: String, vararg args: Any?) {
-//	va_list		argptr;
+            fun Error(fmt: String, vararg args: Any?) { //	va_list		argptr;
                 val text = StringBuilder(MAX_STRING_CHARS)
-                val thread: idThread?
-                //
-//	va_start( argptr, fmt );
-//	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
-//	va_end( argptr );
+                val thread: idThread? // //	va_start( argptr, fmt ); //	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
+                //	va_end( argptr );
                 text.append(String.format(fmt, *args))
                 thread = idThread.CurrentThread()
                 if (thread != null) {
@@ -7081,13 +6966,12 @@ class Game_local {
          gameError
          ===============
          */
-            fun gameError(fmt: String, vararg args: Any?) {
-//	va_list		argptr;
-//	char		text[MAX_STRING_CHARS];
-//
-//	va_start( argptr, fmt );
-//	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
-//	va_end( argptr );
+            fun gameError(fmt: String, vararg args: Any?) { //	va_list		argptr;
+                //	char		text[MAX_STRING_CHARS];
+                //
+                //	va_start( argptr, fmt );
+                //	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
+                //	va_end( argptr );
                 Error("%s", String.format(fmt, *args))
             }
         }
@@ -7289,8 +7173,7 @@ class Game_local {
      ============
      */
         fun GetGameAPI(gameImport: gameImport_t): gameExport_t {
-            if (gameImport.version == Game.GAME_API_VERSION) {
-                // set interface pointers used by the game
+            if (gameImport.version == Game.GAME_API_VERSION) { // set interface pointers used by the game
                 setSysLocal(gameImport.sys)
                 Common.setCommons(gameImport.common)
                 CmdSystem.setCmdSystems(gameImport.cmdSystem)

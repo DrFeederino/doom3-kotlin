@@ -33,8 +33,7 @@ object Token {
      idToken is a token read from a file or memory with idLexer or idParser
 
      ===============================================================================
-     */
-    // token types
+     */ // token types
     const val TT_STRING = 1 // string
     const val TT_UNSIGNED = 0x00040 // unsigned int
     const val TT_VALUESVALID = 0x10000 // set if intvalue and floatvalue are valid
@@ -124,8 +123,7 @@ object Token {
             var pIndex = 0
             assert(type == TT_NUMBER)
             floatValue = 0.0f
-            intValue = 0
-            // floating point number
+            intValue = 0 // floating point number
             if (subtype and TT_FLOAT != 0) {
                 if (subtype and (TT_INFINITE or TT_INDEFINITE or TT_NAN) != 0) {
                     if (subtype and TT_INFINITE != 0) {            // 1.#INF
@@ -168,16 +166,14 @@ object Token {
                     c++
                 }
                 floatValue = intValue.toFloat()
-            } else if (subtype and TT_OCTAL != 0) {
-                // step over the first zero
+            } else if (subtype and TT_OCTAL != 0) { // step over the first zero
                 pIndex += 1
                 while (pIndex < len) {
                     intValue = (intValue shl 3) + (TokenCharAt(pIndex) - '0')
                     pIndex++
                 }
                 floatValue = intValue.toFloat()
-            } else if (subtype and TT_HEX != 0) {
-                // step over the leading 0x or 0X
+            } else if (subtype and TT_HEX != 0) { // step over the leading 0x or 0X
                 pIndex += 2
                 while (pIndex < len) {
                     val p = TokenCharAt(pIndex)
@@ -192,8 +188,7 @@ object Token {
                     pIndex++
                 }
                 floatValue = intValue.toFloat()
-            } else if (subtype and TT_BINARY != 0) {
-                // step over the leading 0b or 0B
+            } else if (subtype and TT_BINARY != 0) { // step over the leading 0b or 0B
                 pIndex += 2
                 while (pIndex < len) {
                     intValue = (intValue shl 1) + (TokenCharAt(pIndex) - '0')
@@ -295,8 +290,7 @@ object Token {
         override fun equals(obj: Any?): Boolean {
             if (obj == null) {
                 return false
-            }
-            //idStr
+            } //idStr
             if (javaClass != obj.javaClass) {
                 return super.equals(obj)
             }

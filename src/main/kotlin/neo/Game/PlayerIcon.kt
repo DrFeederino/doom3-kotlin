@@ -31,9 +31,7 @@ import neo.idlib.math.idVec3
 
 object PlayerIcon {
     val iconKeys /*[ ICON_NONE ]*/: Array<String> = arrayOf(
-        "mtr_icon_lag",
-        "mtr_icon_chat",
-        "mtr_icon_redteam",   // D3XP CTF
+        "mtr_icon_lag", "mtr_icon_chat", "mtr_icon_redteam",   // D3XP CTF
         "mtr_icon_blueteam"   // D3XP CTF
     )
 
@@ -70,8 +68,7 @@ object PlayerIcon {
                 return
             }
             val axis = localPlayer.GetRenderView()!!.viewaxis
-            if (player.isLagged && !player.spectating) {
-                // create the icon if necessary, or update if already created
+            if (player.isLagged && !player.spectating) { // create the icon if necessary, or update if already created
                 if (!CreateIcon(player, playerIconType_t.ICON_LAG, origin, axis)) {
                     UpdateIcon(player, origin, axis)
                 }
@@ -79,14 +76,7 @@ object PlayerIcon {
                 if (!CreateIcon(player, playerIconType_t.ICON_CHAT, origin, axis)) {
                     UpdateIcon(player, origin, axis)
                 }
-            } else if (isD3XP
-                && SysCvar.g_CTFArrows.GetBool()
-                && Game_local.gameLocal.mpGame.IsGametypeFlagBased()
-                && Game_local.gameLocal.GetLocalPlayer() != null
-                && player.team == Game_local.gameLocal.GetLocalPlayer()!!.team
-                && !player.IsHidden()
-                && !player.AI_DEAD.underscore()!!
-            ) {
+            } else if (isD3XP && SysCvar.g_CTFArrows.GetBool() && Game_local.gameLocal.mpGame.IsGametypeFlagBased() && Game_local.gameLocal.GetLocalPlayer() != null && player.team == Game_local.gameLocal.GetLocalPlayer()!!.team && !player.IsHidden() && !player.AI_DEAD.underscore()!!) {
                 val icon = playerIconType_t.ICON_TEAM_RED.ordinal + player.team
                 if (icon != playerIconType_t.ICON_TEAM_RED.ordinal && icon != playerIconType_t.ICON_TEAM_BLUE.ordinal) {
                     return
@@ -108,11 +98,7 @@ object PlayerIcon {
         }
 
         fun CreateIcon(
-            player: idPlayer?,
-            type: playerIconType_t,
-            mtr: String,
-            origin: idVec3,
-            axis: idMat3
+            player: idPlayer?, type: playerIconType_t, mtr: String, origin: idVec3, axis: idMat3
         ): Boolean {
             assert(type != playerIconType_t.ICON_NONE)
             if (type == iconType) {
@@ -120,7 +106,7 @@ object PlayerIcon {
             }
             FreeIcon()
 
-//	memset( &renderEnt, 0, sizeof( renderEnt ) );
+            //	memset( &renderEnt, 0, sizeof( renderEnt ) );
             renderEnt = renderEntity_s()
             renderEnt.origin.set(origin)
             renderEnt.axis.set(axis)

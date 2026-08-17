@@ -135,20 +135,13 @@ object EditWindow {
                 color = hoverColor.oCastIdVec4()
             }
             dc!!.DrawText(
-                buffer,
-                scale,
-                0,
-                color,
-                rect,
-                wrap,
-                if ((flags and Window.WIN_FOCUS).toBoolean()) cursorPos else -1
+                buffer, scale, 0, color, rect, wrap, if ((flags and Window.WIN_FOCUS).toBoolean()) cursorPos else -1
             )
         }
 
         override fun HandleEvent(event: sysEvent_s, updateVisuals: CBool?): String? {
             var ret: String? = ""
-            if (wrap) {
-                // need to call this to allow proper focus and capturing on embedded children
+            if (wrap) { // need to call this to allow proper focus and capturing on embedded children
                 ret = super.HandleEvent(event, updateVisuals)
                 if (ret != null && !ret.isEmpty()) {
                     return ret
@@ -187,8 +180,7 @@ object EditWindow {
                         if (cursorPos >= len) {
                             buffer[len - 1] = 0.toChar()
                             cursorPos = len - 1
-                        } else {
-//					memmove( &buffer[ cursorPos - 1 ], &buffer[ cursorPos ], len + 1 - cursorPos);
+                        } else { //					memmove( &buffer[ cursorPos - 1 ], &buffer[ cursorPos ], len + 1 - cursorPos);
                             System.arraycopy(buffer, cursorPos, buffer, cursorPos - 1, len + 1 - cursorPos)
                             cursorPos--
                         }
@@ -218,8 +210,7 @@ object EditWindow {
                 } else {
                     if (len == MAX_EDITFIELD - 1 || maxChars != 0 && len >= maxChars) {
                         return ""
-                    }
-                    //			memmove( &buffer[ cursorPos + 1 ], &buffer[ cursorPos ], len + 1 - cursorPos );
+                    } //			memmove( &buffer[ cursorPos + 1 ], &buffer[ cursorPos ], len + 1 - cursorPos );
                     System.arraycopy(buffer, cursorPos, buffer, cursorPos + 1, len + 1 - cursorPos)
                 }
                 buffer[cursorPos] = key.toChar()
@@ -238,8 +229,7 @@ object EditWindow {
                     if (readonly) {
                         return ret
                     }
-                    if (cursorPos < len) {
-//				memmove( &buffer[cursorPos], &buffer[cursorPos + 1], len - cursorPos);
+                    if (cursorPos < len) { //				memmove( &buffer[cursorPos], &buffer[cursorPos + 1], len - cursorPos);
                         System.arraycopy(buffer, cursorPos + 1, buffer, cursorPos, len - cursorPos)
                         text.Set(String(buffer).substringBefore('\u0000'))
                         UpdateCvar(false)
@@ -249,8 +239,7 @@ object EditWindow {
                 }
                 if (key == K_RIGHTARROW) {
                     if (cursorPos < len) {
-                        if (IsDown(K_CTRL)) {
-                            // skip to next word
+                        if (IsDown(K_CTRL)) { // skip to next word
                             while (cursorPos < len && buffer[cursorPos] != ' ') {
                                 cursorPos++
                             }
@@ -267,8 +256,7 @@ object EditWindow {
                     return ret
                 }
                 if (key == K_LEFTARROW) {
-                    if (IsDown(K_CTRL)) {
-                        // skip to previous word
+                    if (IsDown(K_CTRL)) { // skip to previous word
                         while (cursorPos > 0 && buffer[cursorPos - 1] == ' ') {
                             cursorPos--
                         }
@@ -357,7 +345,7 @@ object EditWindow {
             if (sourceFile.Length() != 0) {
                 val buffer = arrayOf<ByteBuffer?>(null)
                 fileSystem.ReadFile(sourceFile, buffer)
-                text.data!!.set(String(buffer[0]!!.array()))
+                text.data.set(String(buffer[0]!!.array()))
                 fileSystem.FreeFile(buffer)
             }
             InitCvar()
@@ -372,9 +360,7 @@ object EditWindow {
         }
 
         override fun GetWinVarByName(
-            _name: String?,
-            winLookup: Boolean /*= false*/,
-            owner: Array<drawWin_t?>? /*= NULL*/
+            _name: String?, winLookup: Boolean /*= false*/, owner: Array<drawWin_t?>? /*= NULL*/
         ): idWinVar? {
             if (Icmp(_name!!, "cvar") == 0) {
                 return cvarStr
@@ -405,13 +391,13 @@ object EditWindow {
             if (0 == Cmpn(eventName!!, "cvar read ", 10)) {
                 event = idStr(eventName)
                 group = event.Mid(10, event.Length() - 10)
-                if (group.Cmp(cvarGroup.data!!) == 0) {
+                if (group.Cmp(cvarGroup.data) == 0) {
                     UpdateCvar(true, true)
                 }
             } else if (0 == Cmpn(eventName, "cvar write ", 11)) {
                 event = idStr(eventName)
                 group = event.Mid(11, event.Length() - 11)
-                if (group.Cmp(cvarGroup.data!!) == 0) {
+                if (group.Cmp(cvarGroup.data) == 0) {
                     UpdateCvar(false, true)
                 }
             }
@@ -454,7 +440,7 @@ object EditWindow {
         }
 
         private fun InitCvar() {
-            if (cvarStr.data == null || cvarStr.data!!.IsEmpty()) {
+            if (cvarStr.data == null || cvarStr.data.IsEmpty()) {
                 if (text.GetName().isEmpty()) {
                     common.Warning(
                         "idEditWindow::InitCvar: gui '%s' window '%s' has an empty cvar string",
@@ -484,7 +470,7 @@ object EditWindow {
             if (force || liveUpdate.data) {
                 if (cvar != null) {
                     if (read) {
-                        text.data!!.set(cvar!!.GetString())
+                        text.data.set(cvar!!.GetString())
                     } else {
                         cvar!!.SetString(text.data.toString())
                         if (cvarMax != 0 && cvar!!.GetInteger() > cvarMax) {
@@ -532,10 +518,10 @@ object EditWindow {
                 } else {
                     var i = 0
                     while (i < text.Length() && i < cursorPos) {
-                        if (IsColor(ctos(text.data!![i]))) {
+                        if (IsColor(ctos(text.data[i]))) {
                             i += 2
                         } else {
-                            cursorX += dc!!.CharWidth(text.data!![i], textScale.data)
+                            cursorX += dc!!.CharWidth(text.data[i], textScale.data)
                             i++
                         }
                     }
@@ -543,8 +529,7 @@ object EditWindow {
                 val maxWidth = GetMaxCharWidth().toInt()
                 val left = cursorX - maxWidth
                 val right = (cursorX - textRect.w + maxWidth).toInt()
-                if (paintOffset > left) {
-                    // When we go past the left side, we want the text to jump 6 characters
+                if (paintOffset > left) { // When we go past the left side, we want the text to jump 6 characters
                     paintOffset = left - maxWidth * 6
                 }
                 if (paintOffset < right) {
@@ -554,8 +539,7 @@ object EditWindow {
                     paintOffset = 0
                 }
                 scroller!!.SetRange(0.0f, 0.0f, 1.0f)
-            } else {
-                // Word wrap
+            } else { // Word wrap
                 breaks.Clear()
                 val rect = idRectangle(textRect)
                 rect.w -= sizeBias
@@ -573,8 +557,7 @@ object EditWindow {
                 val fit = (textRect.h / (GetMaxCharHeight() + 5)).toInt()
                 if (fit < breaks.Num() + 1) {
                     scroller!!.SetRange(0.0f, (breaks.Num() + 1 - fit).toFloat(), 1.0f)
-                } else {
-                    // The text fits completely in the box
+                } else { // The text fits completely in the box
                     scroller!!.SetRange(0.0f, 0.0f, 1.0f)
                 }
                 if (forceScroll) {
@@ -631,14 +614,7 @@ object EditWindow {
                 scrollRect.h = clientRect.h
             }
             scroller!!.InitWithDefaults(
-                scrollerName,
-                scrollRect,
-                foreColor.data,
-                matColor.data,
-                mat.GetName(),
-                thumbImage,
-                !horizontal,
-                true
+                scrollerName, scrollRect, foreColor.data, matColor.data, mat.GetName(), thumbImage, !horizontal, true
             )
             InsertChild(scroller!!, null)
             scroller!!.SetBuddy(this)

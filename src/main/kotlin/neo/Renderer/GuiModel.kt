@@ -263,8 +263,7 @@ class GuiModel {
             viewDef.worldSpace.modelViewMatrix[10] = 1.0f
             viewDef.worldSpace.modelViewMatrix[15] = 1.0f
             viewDef.maxDrawSurfs = surfaces.Num()
-            viewDef.drawSurfs =
-                drawSurf_s.generateArray(viewDef.maxDrawSurfs)
+            viewDef.drawSurfs = drawSurf_s.generateArray(viewDef.maxDrawSurfs)
             viewDef.numDrawSurfs = 0
             val oldViewDef = tr.viewDef
             tr.viewDef = viewDef
@@ -442,15 +441,7 @@ class GuiModel {
          =============
          */
         fun DrawStretchPic(
-            x: Float,
-            y: Float,
-            w: Float,
-            h: Float,
-            s1: Float,
-            t1: Float,
-            s2: Float,
-            t2: Float,
-            hShader: idMaterial?
+            x: Float, y: Float, w: Float, h: Float, s1: Float, t1: Float, s2: Float, t2: Float, hShader: idMaterial?
         ) {
             var x = x
             var y = y
@@ -559,13 +550,7 @@ class GuiModel {
          =============
          */
         fun DrawStretchTri(
-            p1: idVec2,
-            p2: idVec2,
-            p3: idVec2,
-            t1: idVec2,
-            t2: idVec2,
-            t3: idVec2,
-            material: idMaterial?
+            p1: idVec2, p2: idVec2, p3: idVec2, t1: idVec2, t2: idVec2, t3: idVec2, material: idMaterial?
         ) {
             val tempVerts = stretchTriVerts
             val tempIndexes = stretchTriIndexes
@@ -577,55 +562,55 @@ class GuiModel {
             if (null == material) {
                 return
             }
-            tempVerts[0]!!.xyz[0] = p1.x
-            tempVerts[0]!!.xyz[1] = p1.y
-            tempVerts[0]!!.xyz[2] = 0.0f
-            tempVerts[0]!!.st[0] = t1.x
-            tempVerts[0]!!.st[1] = t1.y
-            tempVerts[0]!!.normal[0] = 0.0f
-            tempVerts[0]!!.normal[1] = 0.0f
-            tempVerts[0]!!.normal[2] = 1.0f
-            tempVerts[0]!!.tangents[0][0] = 1.0f
-            tempVerts[0]!!.tangents[0][1] = 0.0f
-            tempVerts[0]!!.tangents[0][2] = 0.0f
-            tempVerts[0]!!.tangents[1][0] = 0.0f
-            tempVerts[0]!!.tangents[1][1] = 1.0f
-            tempVerts[0]!!.tangents[1][2] = 0.0f
-            tempVerts[1]!!.xyz[0] = p2.x
-            tempVerts[1]!!.xyz[1] = p2.y
-            tempVerts[1]!!.xyz[2] = 0.0f
-            tempVerts[1]!!.st[0] = t2.x
-            tempVerts[1]!!.st[1] = t2.y
-            tempVerts[1]!!.normal[0] = 0.0f
-            tempVerts[1]!!.normal[1] = 0.0f
-            tempVerts[1]!!.normal[2] = 1.0f
-            tempVerts[1]!!.tangents[0][0] = 1.0f
-            tempVerts[1]!!.tangents[0][1] = 0.0f
-            tempVerts[1]!!.tangents[0][2] = 0.0f
-            tempVerts[1]!!.tangents[1][0] = 0.0f
-            tempVerts[1]!!.tangents[1][1] = 1.0f
-            tempVerts[1]!!.tangents[1][2] = 0.0f
-            tempVerts[2]!!.xyz[0] = p3.x
-            tempVerts[2]!!.xyz[1] = p3.y
-            tempVerts[2]!!.xyz[2] = 0.0f
-            tempVerts[2]!!.st[0] = t3.x
-            tempVerts[2]!!.st[1] = t3.y
-            tempVerts[2]!!.normal[0] = 0.0f
-            tempVerts[2]!!.normal[1] = 0.0f
-            tempVerts[2]!!.normal[2] = 1.0f
-            tempVerts[2]!!.tangents[0][0] = 1.0f
-            tempVerts[2]!!.tangents[0][1] = 0.0f
-            tempVerts[2]!!.tangents[0][2] = 0.0f
-            tempVerts[2]!!.tangents[1][0] = 0.0f
-            tempVerts[2]!!.tangents[1][1] = 1.0f
-            tempVerts[2]!!.tangents[1][2] = 0.0f
+            tempVerts[0].xyz[0] = p1.x
+            tempVerts[0].xyz[1] = p1.y
+            tempVerts[0].xyz[2] = 0.0f
+            tempVerts[0].st[0] = t1.x
+            tempVerts[0].st[1] = t1.y
+            tempVerts[0].normal[0] = 0.0f
+            tempVerts[0].normal[1] = 0.0f
+            tempVerts[0].normal[2] = 1.0f
+            tempVerts[0].tangents[0][0] = 1.0f
+            tempVerts[0].tangents[0][1] = 0.0f
+            tempVerts[0].tangents[0][2] = 0.0f
+            tempVerts[0].tangents[1][0] = 0.0f
+            tempVerts[0].tangents[1][1] = 1.0f
+            tempVerts[0].tangents[1][2] = 0.0f
+            tempVerts[1].xyz[0] = p2.x
+            tempVerts[1].xyz[1] = p2.y
+            tempVerts[1].xyz[2] = 0.0f
+            tempVerts[1].st[0] = t2.x
+            tempVerts[1].st[1] = t2.y
+            tempVerts[1].normal[0] = 0.0f
+            tempVerts[1].normal[1] = 0.0f
+            tempVerts[1].normal[2] = 1.0f
+            tempVerts[1].tangents[0][0] = 1.0f
+            tempVerts[1].tangents[0][1] = 0.0f
+            tempVerts[1].tangents[0][2] = 0.0f
+            tempVerts[1].tangents[1][0] = 0.0f
+            tempVerts[1].tangents[1][1] = 1.0f
+            tempVerts[1].tangents[1][2] = 0.0f
+            tempVerts[2].xyz[0] = p3.x
+            tempVerts[2].xyz[1] = p3.y
+            tempVerts[2].xyz[2] = 0.0f
+            tempVerts[2].st[0] = t3.x
+            tempVerts[2].st[1] = t3.y
+            tempVerts[2].normal[0] = 0.0f
+            tempVerts[2].normal[1] = 0.0f
+            tempVerts[2].normal[2] = 1.0f
+            tempVerts[2].tangents[0][0] = 1.0f
+            tempVerts[2].tangents[0][1] = 0.0f
+            tempVerts[2].tangents[0][2] = 0.0f
+            tempVerts[2].tangents[1][0] = 0.0f
+            tempVerts[2].tangents[1][1] = 1.0f
+            tempVerts[2].tangents[1][2] = 0.0f
 
             // break the current surface if we are changing to a new material
             if (material !== surf!!.material) {
                 if (surf!!.numVerts != 0) {
                     AdvanceSurf()
                 }
-                /*const_cast<idMaterial *>*/material.EnsureNotPurged() // in case it was a gui item started before a level change
+                material.EnsureNotPurged() // in case it was a gui item started before a level change
                 surf!!.material = material
             }
             val numVerts = verts.Num()
@@ -639,7 +624,7 @@ class GuiModel {
             }
 
             for (i in 0 until vertCount) {
-                verts[numVerts + i].set(tempVerts[i]!!)
+                verts[numVerts + i].set(tempVerts[i])
             }
         }
 

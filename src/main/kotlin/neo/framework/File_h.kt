@@ -58,18 +58,15 @@ object File_h {
                     when (fmt[fmt_ptr]) {
                         'f', 'e', 'E', 'g', 'G' -> {
                             f = (argPtr[va_ptr++] as Number).toFloat()
-                            if (format.length <= 2) {
-                                // high precision floating point number without trailing zeros
-//                                sprintf(tmp, "%1.10f", f);
+                            if (format.length <= 2) { // high precision floating point number without trailing zeros
+                                //                                sprintf(tmp, "%1.10f", f);
                                 tmp = idStr(String.format("%1.10f", f))
                                 tmp.StripTrailing('0')
                                 tmp.StripTrailing('.')
                                 temp = String.format("%s", tmp)
                                 System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
-                                index += temp.length
-                                //                                index += sprintf(buf + index, "%s", tmp.c_str());
-                            } else {
-//                                index += sprintf(buf + index, format, f);
+                                index += temp.length //                                index += sprintf(buf + index, "%s", tmp.c_str());
+                            } else { //                                index += sprintf(buf + index, format, f);
                                 temp = String.format(format, f)
                                 System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
                                 index += temp.length
@@ -77,8 +74,8 @@ object File_h {
                         }
 
                         'd', 'i' -> {
-                            i = (argPtr[va_ptr++] as Number).toLong()
-                            //                            index += sprintf(buf + index, format, i);
+                            i =
+                                (argPtr[va_ptr++] as Number).toLong() //                            index += sprintf(buf + index, format, i);
                             temp = String.format(format, i)
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
                             index += temp.length
@@ -92,47 +89,46 @@ object File_h {
                         }
 
                         'o' -> {
-                            u = (argPtr[va_ptr++] as Number).toLong()
-                            //                            index += sprintf(buf + index, format, u);
+                            u =
+                                (argPtr[va_ptr++] as Number).toLong() //                            index += sprintf(buf + index, format, u);
                             temp = String.format(format, u)
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
                             index += temp.length
                         }
 
                         'x' -> {
-                            u = (argPtr[va_ptr++] as Number).toLong()
-                            //                            index += sprintf(buf + index, format, u);
+                            u =
+                                (argPtr[va_ptr++] as Number).toLong() //                            index += sprintf(buf + index, format, u);
                             temp = String.format(format, u)
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
                             index += temp.length
                         }
 
                         'X' -> {
-                            u = (argPtr[va_ptr++] as Number).toLong()
-                            //                            index += sprintf(buf + index, format, u);
+                            u =
+                                (argPtr[va_ptr++] as Number).toLong() //                            index += sprintf(buf + index, format, u);
                             temp = String.format(format, u)
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
                             index += temp.length
                         }
 
                         'c' -> {
-                            i = (argPtr[va_ptr++] as Number).toLong()
-                            //                            index += sprintf(buf + index, format, (char) i);
+                            i =
+                                (argPtr[va_ptr++] as Number).toLong() //                            index += sprintf(buf + index, format, (char) i);
                             temp = String.format(format, i)
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
                             index += temp.length
                         }
 
                         's' -> {
-                            str = argPtr[va_ptr++]?.toString()
-                            //                            index += sprintf(buf + index, format, str);
+                            str =
+                                argPtr[va_ptr++].toString() //                            index += sprintf(buf + index, format, str);
                             temp = String.format(format, str)
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
                             index += temp.length
                         }
 
-                        '%' -> {
-                            //                            index += sprintf(buf + index, format);
+                        '%' -> { //                            index += sprintf(buf + index, format);
                             temp = String.format(format)
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
                             index += temp.length
@@ -162,8 +158,7 @@ object File_h {
                     fmt_ptr++
                 }
 
-                else -> {
-                    //                    index += sprintf(buf + index, "%c", fmt[fmt_ptr]);
+                else -> { //                    index += sprintf(buf + index, "%c", fmt[fmt_ptr]);
                     buf[index++] = fmt[fmt_ptr]
                     fmt_ptr++
                 }
@@ -178,8 +173,7 @@ object File_h {
      File Streams.
 
      ==============================================================
-     */
-    // mode parm for Seek
+     */ // mode parm for Seek
     enum class fsOrigin_t {
         FS_SEEK_CUR,
         FS_SEEK_END,
@@ -233,8 +227,9 @@ object File_h {
             return Tell() - before
         }
 
-        fun Read(`object`: idSerializable, len: Int): Int {
-            // idStr serializes as `len` raw bytes (length is known externally by the caller).
+        fun Read(
+            `object`: idSerializable, len: Int
+        ): Int { // idStr serializes as `len` raw bytes (length is known externally by the caller).
             // Bypass readFrom() which would read its fixed BYTES-sized slot.
             if (`object` is idStr) {
                 if (len <= 0) {
@@ -830,21 +825,18 @@ object File_h {
                 }
                 val extra = granularity * (1 + alloc / granularity)
                 val newPtr = ByteBuffer.allocate(allocated + extra) // Heap.Mem_Alloc(allocated + extra);
-                if (allocated != 0) {
-//                    memcpy(newPtr, filePtr, allocated);
+                if (allocated != 0) { //                    memcpy(newPtr, filePtr, allocated);
                     //copy old data to new array
                     newPtr.put(filePtr)
                 }
-                allocated += extra
-                //                curPtr = newPtr + (curPtr - filePtr);
-//                if (filePtr != null) {
-//                    Mem_Free(filePtr);
-//                    filePtr = null;
-//                }
+                allocated += extra //                curPtr = newPtr + (curPtr - filePtr);
+                //                if (filePtr != null) {
+                //                    Mem_Free(filePtr);
+                //                    filePtr = null;
+                //                }
                 //copy new (resized) array to old one
                 filePtr = newPtr
-            }
-            //            memcpy(curPtr, buffer, len);
+            } //            memcpy(curPtr, buffer, len);
             val savedLimit = buffer.limit()
             buffer.limit(buffer.position() + len)
             filePtr!!.position(curPtr)
@@ -897,13 +889,11 @@ object File_h {
                     return false //-1;
                 }
             }
-            if (curPtr <  /*filePtr*/0) {
-//		curPtr = filePtr;
+            if (curPtr <  /*filePtr*/0) { //		curPtr = filePtr;
                 curPtr = 0
                 return false //-1;
             }
-            if (curPtr >  /*filePtr +*/fileSize) {
-//		curPtr = filePtr + fileSize;
+            if (curPtr >  /*filePtr +*/fileSize) { //		curPtr = filePtr + fileSize;
                 curPtr = fileSize //TODO:-1
                 return false //-1;
             }
@@ -923,8 +913,7 @@ object File_h {
             fileSize = 0
             granularity = 16384
             if (freeMemory) {
-                allocated = 0
-                //		Mem_Free( filePtr );
+                allocated = 0 //		Mem_Free( filePtr );
                 filePtr = null
                 curPtr = 0
             } else {
@@ -997,8 +986,9 @@ object File_h {
             return Read(buffer, buffer.capacity())
         }
 
-        override fun Read(buffer: ByteBuffer, len: Int): Int {
-            //buffer.order(ByteOrder.LITTLE_ENDIAN) //TODO: make sure BitMsg also need little endianness
+        override fun Read(
+            buffer: ByteBuffer, len: Int
+        ): Int { //buffer.order(ByteOrder.LITTLE_ENDIAN) //TODO: make sure BitMsg also need little endianness
             if (0 == mode and (1 shl fsMode_t.FS_READ.ordinal)) {
                 idLib.common.FatalError("idFile_BitMsg::Read: %s not opened in read mode", name)
                 return 0
@@ -1116,8 +1106,7 @@ object File_h {
             try {
                 while (remaining != 0) {
                     read = o!!.read(buffer)
-                    if (read == -1 || read == 0) {
-                        // we might have been trying to read from a CD, which
+                    if (read == -1 || read == 0) { // we might have been trying to read from a CD, which
                         // sometimes returns a 0 read on windows
                         if (!tries) {
                             tries = true
@@ -1137,8 +1126,7 @@ object File_h {
                 Logger.getLogger(File_h::class.java.name).log(Level.SEVERE, null, ex)
             }
 
-            FileSystem_h.fileSystem.AddToReadCount(len)
-            // Kotlin specific bytbuffer shenanigans to reset position in buffer
+            FileSystem_h.fileSystem.AddToReadCount(len) // Kotlin specific bytbuffer shenanigans to reset position in buffer
             buffer.clear()
 
             return len
@@ -1442,14 +1430,13 @@ object File_h {
                     run {
 
                         // set the file position in the zip file (also sets the current file info)
-//                    unzSetCurrentFileInfoPosition( z, zipFilePos );
+                        //                    unzSetCurrentFileInfoPosition( z, zipFilePos );
                         unzOpenCurrentFile()
                         if (offset <= 0) {
                             return true //0;
                         }
                     }
-                    run {
-                        //TODO: negative offsets?
+                    run { //TODO: negative offsets?
                         buf = ByteBuffer.allocate(ZIP_SEEK_BUF_SIZE)
                         i = 0
                         while (i < offset - ZIP_SEEK_BUF_SIZE) {
@@ -1536,8 +1523,7 @@ object File_h {
             fullPath = idStr()
             zipFilePos = 0
             fileSize = 0
-            byteCounter = 0
-            // memset( &z, 0, sizeof( z ) );//TODO:size of void ptr
+            byteCounter = 0 // memset( &z, 0, sizeof( z ) );//TODO:size of void ptr
         }
     }
 }

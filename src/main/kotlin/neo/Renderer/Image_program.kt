@@ -159,12 +159,7 @@ object Image_program {
             // process it
             if (pic != null && pic[0] != null) {
                 R_AddNormalMaps(
-                    pic[0],
-                    width!![0],
-                    height!![0],
-                    pic2!![0],
-                    width2[0],
-                    height2[0]
+                    pic[0], width!![0], height!![0], pic2!![0], width2[0], height2[0]
                 )
                 pic2 = null
                 if (depth != null) {
@@ -329,8 +324,7 @@ object Image_program {
      AppendToken
      ===================
      */
-    fun AppendToken(token: idToken) {
-        // add a leading space if not at the beginning
+    fun AppendToken(token: idToken) { // add a leading space if not at the beginning
         if (parseBuffer.length > 0) {
             parseBuffer.append(" ")
         }
@@ -345,8 +339,7 @@ object Image_program {
     fun MatchAndAppendToken(src: idLexer, match: String?) {
         if (!src.ExpectTokenString((match)!!)) {
             return
-        }
-        // a matched token won't need a leading space
+        } // a matched token won't need a leading space
         parseBuffer.append(match)
     }
 
@@ -454,13 +447,11 @@ object Image_program {
                         `in` = (((j + l) and (height - 1)) * width + ((i + k) and (width - 1))) * 4
 
                         // ignore 000 and -1 -1 -1
-                        if ((orig[`in` + 0].toInt() and 0xFF) == 0 && (orig[`in` + 1].toInt() and 0xFF) == 0 && (orig[`in` + 2].toInt() and 0xFF) == 0
-                        ) {
+                        if ((orig[`in` + 0].toInt() and 0xFF) == 0 && (orig[`in` + 1].toInt() and 0xFF) == 0 && (orig[`in` + 2].toInt() and 0xFF) == 0) {
                             l++
                             continue
                         }
-                        if ((orig[`in` + 0].toInt() and 0xFF) == 128 && (orig[`in` + 1].toInt() and 0xFF) == 128 && (orig[`in` + 2].toInt() and 0xFF) == 128
-                        ) {
+                        if ((orig[`in` + 0].toInt() and 0xFF) == 128 && (orig[`in` + 1].toInt() and 0xFF) == 128 && (orig[`in` + 2].toInt() and 0xFF) == 128) {
                             l++
                             continue
                         }

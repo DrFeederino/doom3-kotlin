@@ -22,9 +22,7 @@ import java.nio.ByteOrder
 object snd_wavefile {
     val fourcc_riff = mmioFOURCC('R'.code, 'I'.code, 'F'.code, 'F'.code)
     fun mmioFOURCC(ch0: Int, ch1: Int, ch2: Int, ch3: Int): Long {
-        return (ch0 or (ch1 shl 8)
-                or (ch2 shl 16)
-                or (ch3 shl 24)).toLong()
+        return (ch0 or (ch1 shl 8) or (ch2 shl 16) or (ch3 shl 24)).toLong()
     }
 
     /*
@@ -96,8 +94,7 @@ object snd_wavefile {
                 mhmmio = null
                 return -1
             }
-            if (ReadMMIO() != 0) {
-                // ReadMMIO will fail if its an not a wave file
+            if (ReadMMIO() != 0) { // ReadMMIO will fail if its an not a wave file
                 Close()
                 return -1
             }
@@ -150,8 +147,7 @@ object snd_wavefile {
                 }
                 if (mpbDataCur!!.position() + dwSizeToRead > mulDataSize.toInt()) {
                     dwSizeToRead = (mulDataSize - mpbDataCur!!.position()).toInt()
-                }
-                // FIX: SIMDProcessor.Memcpy(ByteBuffer, ByteBuffer, Int) resolves to no-op catch-all.
+                } // FIX: SIMDProcessor.Memcpy(ByteBuffer, ByteBuffer, Int) resolves to no-op catch-all.
                 // Use direct ByteBuffer copy instead.
                 val src = mpbDataCur!!.duplicate()
                 src.limit(src.position() + dwSizeToRead)
@@ -168,8 +164,9 @@ object snd_wavefile {
                 if (pBuffer == null) {
                     return -1
                 }
-                dwSizeToRead = mhmmio!!.Read(pBuffer, dwSizeToRead)
-                // this is hit by ogg code, which does it's own byte swapping internally
+                dwSizeToRead = mhmmio!!.Read(
+                    pBuffer, dwSizeToRead
+                ) // this is hit by ogg code, which does it's own byte swapping internally
                 if (!isOgg) {
                     LittleRevBytes(pBuffer.array(), 2, dwSizeToRead / 2)
                 }
@@ -221,8 +218,7 @@ object snd_wavefile {
         //       beginning of the file again 
         //-----------------------------------------------------------------------------
         fun ResetFile(): Int {
-            if (mbIsReadingFromMemory) {
-                // FIX: C++ pointer reassignment. Kotlin reference assignment would alias.
+            if (mbIsReadingFromMemory) { // FIX: C++ pointer reassignment. Kotlin reference assignment would alias.
                 // Must duplicate() to create an independent ByteBuffer pointing to same data.
                 mpbDataCur = mpbData!!.duplicate()
                 mpbDataCur!!.position(0)
@@ -271,8 +267,8 @@ object snd_wavefile {
         private fun ReadMMIO(): Int {
             val ckIn = mminfo_s() // chunk info. for general use.
             val pcmWaveFormat = pcmwaveformat_s() // Temp PCM structure to load in.       
-            mpwfx = waveformatextensible_s()
-            // RIFF header: ckid + cksize + fccType (12 bytes; dwDataOffset is set manually below)
+            mpwfx =
+                waveformatextensible_s() // RIFF header: ckid + cksize + fccType (12 bytes; dwDataOffset is set manually below)
             mckRiff.ckid = Integer.toUnsignedLong(mhmmio!!.ReadInt())
             mckRiff.cksize = mhmmio!!.ReadInt()
             mckRiff.fccType = Integer.toUnsignedLong(mhmmio!!.ReadInt())
@@ -281,10 +277,7 @@ object snd_wavefile {
 
             // Check to make sure this is a valid wave file
             if (mckRiff.ckid != fourcc_riff || mckRiff.fccType != mmioFOURCC(
-                    'W'.code,
-                    'A'.code,
-                    'V'.code,
-                    'E'.code
+                    'W'.code, 'A'.code, 'V'.code, 'E'.code
                 )
             ) {
                 return -1
@@ -292,8 +285,7 @@ object snd_wavefile {
 
             // Search the input file for for the 'fmt ' chunk.
             ckIn.dwDataOffset = 12
-            do {
-                // Chunk header: ckid + cksize (8 bytes)
+            do { // Chunk header: ckid + cksize (8 bytes)
                 val before = mhmmio!!.Tell()
                 ckIn.ckid = Integer.toUnsignedLong(mhmmio!!.ReadInt())
                 ckIn.cksize = mhmmio!!.ReadInt()
@@ -343,13 +335,14 @@ object snd_wavefile {
                 // memset( &mpwfx, 0, sizeof( waveformatextensible_t ) );
                 // return -1;
                 // }
-// #endif
+                // #endif
             }
             return 0
         }
 
-        private fun OpenOGG(strFileName: String, pwfx: Array<waveformatex_s> /*= NULL*/): Int {
-            // FIX: C++ zeroes pwfx on entry
+        private fun OpenOGG(
+            strFileName: String, pwfx: Array<waveformatex_s> /*= NULL*/
+        ): Int { // FIX: C++ zeroes pwfx on entry
             pwfx[0] = waveformatex_s()
             val error = intArrayOf(0)
             mhmmio = FileSystem_h.fileSystem.OpenFileRead(strFileName)
@@ -389,8 +382,7 @@ object snd_wavefile {
                     mpwfx.Format.wFormatTag = snd_local.WAVE_FORMAT_TAG_OGG
                     mhmmio = FileSystem_h.fileSystem.OpenFileRead(strFileName)
                     mMemSize = mhmmio!!.Length().toLong()
-                } else {
-                    // FIX: C++ stores the stb_vorbis handle and keeps oggData alive.
+                } else { // FIX: C++ stores the stb_vorbis handle and keeps oggData alive.
                     // Kotlin was closing the handle immediately and setting ogg to a dummy string.
                     ogg = ov
                     oggData = d_buffer // keep the direct buffer alive so stb_vorbis can read from it
@@ -408,8 +400,8 @@ object snd_wavefile {
         // FIX: Was a stub throwing TODO_Exception. Implemented from dhewm3 snd_decoder.cpp:229-262.
         // Note: stb_vorbis operates on shorts, not bytes like the old ov_read.
         private fun ReadOGG(pBuffer: ByteArray?, dwSizeToRead: Int, pdwSizeRead: IntArray?): Int {
-            var total = dwSizeToRead / 2 // sizeof(short)
-            // LWJGL stb_vorbis_get_samples_short_interleaved uses ShortBuffer position/limit
+            var total =
+                dwSizeToRead / 2 // sizeof(short) // LWJGL stb_vorbis_get_samples_short_interleaved uses ShortBuffer position/limit
             val shortBuf = BufferUtils.createShortBuffer(total)
             val ov = ogg
 
@@ -422,12 +414,10 @@ object snd_wavefile {
                 }
                 if (ret < 0) {
                     Common.common.Warning(
-                        "idWaveFile::ReadOGG() stb_vorbis_get_samples_short_interleaved() %d shorts failed\n",
-                        numShorts
+                        "idWaveFile::ReadOGG() stb_vorbis_get_samples_short_interleaved() %d shorts failed\n", numShorts
                     )
                     return -1
-                }
-                // stb_vorbis returns samples per channel, multiply by nChannels to get total shorts
+                } // stb_vorbis returns samples per channel, multiply by nChannels to get total shorts
                 val decoded = ret * mpwfx.Format.nChannels
                 shortBuf.position(shortBuf.position() + decoded)
                 total -= decoded

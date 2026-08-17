@@ -97,8 +97,8 @@ object Licensee {
     // two distinct files for easier win32 installer job
     const val CDKEY_FILE: String = "doomkey"
     const val XPKEY_FILE: String = "xpkey"
-    val CDKEY_TEXT: String = "\n// Do not give this file to ANYONE.\n" +
-            "// id Software or Zenimax will NEVER ask you to send this file to them.\n"
+    val CDKEY_TEXT: String =
+        "\n// Do not give this file to ANYONE.\n" + "// id Software or Zenimax will NEVER ask you to send this file to them.\n"
 
     const val CONFIG_SPEC: String = "config.spec"
 

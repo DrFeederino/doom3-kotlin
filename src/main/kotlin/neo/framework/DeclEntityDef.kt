@@ -51,8 +51,7 @@ class DeclEntityDef {
          =================
          idDeclEntityDef::Size
          =================
-         */
-        // NOTE: The C++ version overrides Size() to return sizeof(idDeclEntityDef) + dict.Allocated().
+         */ // NOTE: The C++ version overrides Size() to return sizeof(idDeclEntityDef) + dict.Allocated().
         // In the Kotlin architecture, idDecl does not expose Size() as an overridable method —
         // Size() is defined on idDeclBase and implemented by idDeclLocal, which does not delegate
         // to the idDecl subclass. This means dict.Allocated() is never included in the reported
@@ -118,9 +117,7 @@ class DeclEntityDef {
                     break
                 }
                 val copy = DeclManager.declManager.FindType(
-                    declType_t.DECL_ENTITYDEF,
-                    kv.GetValue(),
-                    false
+                    declType_t.DECL_ENTITYDEF, kv.GetValue(), false
                 ) as idDeclEntityDef?
                 if (null == copy) {
                     src.Warning("Unknown entityDef '%s' inherited by '%s'", kv.GetValue(), GetName())
@@ -140,8 +137,8 @@ class DeclEntityDef {
             // precache all referenced media
             // do this as long as we arent in modview
             // DG: ... and only if we currently have a loaded/loading map
-            if (0 == Common.com_editors and (Common.EDITOR_RADIANT or Common.EDITOR_AAS)
-                && Session.session.GetCurrentMapName().isNotEmpty()
+            if (0 == Common.com_editors and (Common.EDITOR_RADIANT or Common.EDITOR_AAS) && Session.session.GetCurrentMapName()
+                    .isNotEmpty()
             ) {
                 Game_local.game.CacheDictionaryMedia(dict)
             }

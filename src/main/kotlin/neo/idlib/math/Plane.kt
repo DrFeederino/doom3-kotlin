@@ -283,8 +283,7 @@ class idPlane {
 
     // fix degenerate normal and dist
     fun FixDegeneracies(distEpsilon: Float): Boolean {
-        val fixedNormal = FixDegenerateNormal()
-        // only fix dist if the normal was degenerate
+        val fixedNormal = FixDegenerateNormal() // only fix dist if the normal was degenerate
         if (fixedNormal) {
             if (abs(d - idMath.Rint(d)) < distEpsilon) {
                 d = idMath.Rint(d)
@@ -375,8 +374,7 @@ class idPlane {
             return true
         }
         if (numPoints == 2) {
-            dir.set(points[1] - points[0])
-            // Normal() = dir.Cross( idVec3( 0, 0, 1 ) ).Cross( dir );
+            dir.set(points[1] - points[0]) // Normal() = dir.Cross( idVec3( 0, 0, 1 ) ).Cross( dir );
             run {
                 val oldD = d //save old d
                 this.set(dir.Cross(idVec3(0.0f, 0.0f, 1.0f)).Cross(dir))
@@ -531,7 +529,10 @@ class idPlane {
     fun ToString(precision: Int = 2): String {
         return String.format(
             "%." + precision + "f %." + precision + "f %." + precision + "f %." + precision + "f",
-            abc.x, abc.y, abc.z, d
+            abc.x,
+            abc.y,
+            abc.z,
+            d
         )
     }
 
@@ -555,11 +556,7 @@ class idPlane {
     }
 
     override fun toString(): String {
-        return ("idPlane{"
-                + "a=" + abc.x
-                + ", b=" + abc.y
-                + ", c=" + abc.z
-                + ", d=" + d + "}")
+        return ("idPlane{" + "a=" + abc.x + ", b=" + abc.y + ", c=" + abc.z + ", d=" + d + "}")
     }
 
     companion object {

@@ -50,8 +50,7 @@ object idSIMD {
         SIMDProcessor = generic
     }
 
-    fun Test_f(args: CmdArgs) {
-        // Test functionality would be implemented here
+    fun Test_f(args: CmdArgs) { // Test functionality would be implemented here
         // This matches the C++ Test_f method signature
     }
 
@@ -59,8 +58,7 @@ object idSIMD {
         val cpuid = idLib.sys.GetProcessorId()
         val newProcessor: idSIMDProcessor = if (forceGeneric) {
             generic!!
-        } else {
-            // Processor selection logic would go here based on cpuid
+        } else { // Processor selection logic would go here based on cpuid
             // For now, using generic as fallback
             generic!!
         }
@@ -77,11 +75,9 @@ object idSIMD {
     }
 
     fun Shutdown() {
-        if (processor != generic) {
-            // delete processor would go here in C++
+        if (processor != generic) { // delete processor would go here in C++
             processor = null
-        }
-        // delete generic would go here in C++
+        } // delete generic would go here in C++
         generic = null
         processor = null
         SIMDProcessor = null
@@ -159,11 +155,7 @@ abstract class idSIMDProcessor {
     abstract fun MinMax(min: idVec3, max: idVec3, src: Array<idVec3>, count: Int)
     abstract fun MinMax(min: idVec3, max: idVec3, src: Array<idDrawVert>, count: Int)
     abstract fun MinMax(
-        min: idVec3,
-        max: idVec3,
-        src: Array<idDrawVert>,
-        indexes: IntArray,
-        count: Int
+        min: idVec3, max: idVec3, src: Array<idDrawVert>, indexes: IntArray, count: Int
     )
 
     abstract fun Clamp(dst: FloatArray, src: FloatArray, min: Float, max: Float, count: Int)
@@ -202,8 +194,7 @@ abstract class idSIMDProcessor {
         }
     }
 
-    fun Memcpy(dst: Any, src: Any, count: Int) {
-        // Generic memory copy for Any types
+    fun Memcpy(dst: Any, src: Any, count: Int) { // Generic memory copy for Any types
         // This would need specific implementation based on actual types
         // For now, this is a placeholder matching the C++ signature
     }
@@ -232,10 +223,7 @@ abstract class idSIMDProcessor {
     abstract fun MatX_MultiplyMatX(dst: idMatX, m1: idMatX, m2: idMatX)
     abstract fun MatX_TransposeMultiplyMatX(dst: idMatX, m1: idMatX, m2: idMatX)
     abstract fun MatX_LowerTriangularSolve(
-        L: idMatX,
-        x: FloatArray,
-        b: FloatArray,
-        n: Int /*, int skip = 0*/
+        L: idMatX, x: FloatArray, b: FloatArray, n: Int /*, int skip = 0*/
     )
 
     fun MatX_LowerTriangularSolve(L: idMatX, x: FloatArray, b: FloatBuffer, n: Int /*, int skip = 0*/) {
@@ -262,37 +250,23 @@ abstract class idSIMDProcessor {
 
     // rendering
     abstract fun BlendJoints(
-        joints: Array<idJointQuat>,
-        blendJoints: Array<idJointQuat>,
-        lerp: Float,
-        index: IntArray,
-        numJoints: Int
+        joints: Array<idJointQuat>, blendJoints: Array<idJointQuat>, lerp: Float, index: IntArray, numJoints: Int
     )
 
     abstract fun ConvertJointQuatsToJointMats(
-        jointMats: Array<idJointMat>,
-        jointQuats: Array<idJointQuat>,
-        numJoints: Int
+        jointMats: Array<idJointMat>, jointQuats: Array<idJointQuat>, numJoints: Int
     )
 
     abstract fun ConvertJointMatsToJointQuats(
-        jointQuats: List.idList<idJointQuat>,
-        jointMats: Array<idJointMat>,
-        numJoints: Int
+        jointQuats: List.idList<idJointQuat>, jointMats: Array<idJointMat>, numJoints: Int
     )
 
     abstract fun TransformJoints(
-        jointMats: Array<idJointMat>,
-        parents: IntArray,
-        firstJoint: Int,
-        lastJoint: Int
+        jointMats: Array<idJointMat>, parents: IntArray, firstJoint: Int, lastJoint: Int
     )
 
     abstract fun UntransformJoints(
-        jointMats: Array<idJointMat>,
-        parents: IntArray,
-        firstJoint: Int,
-        lastJoint: Int
+        jointMats: Array<idJointMat>, parents: IntArray, firstJoint: Int, lastJoint: Int
     )
 
     abstract fun TransformVerts(
@@ -314,40 +288,23 @@ abstract class idSIMDProcessor {
     )
 
     abstract fun DecalPointCull(
-        cullBits: ByteArray,
-        planes: Array<idPlane>,
-        verts: Array<idDrawVert>,
-        numVerts: Int
+        cullBits: ByteArray, planes: Array<idPlane>, verts: Array<idDrawVert>, numVerts: Int
     )
 
     abstract fun OverlayPointCull(
-        cullBits: ByteArray,
-        texCoords: Array<idVec2>,
-        planes: Array<idPlane>,
-        verts: Array<idDrawVert>,
-        numVerts: Int
+        cullBits: ByteArray, texCoords: Array<idVec2>, planes: Array<idPlane>, verts: Array<idDrawVert>, numVerts: Int
     )
 
     abstract fun DeriveTriPlanes(
-        planes: Array<idPlane>,
-        verts: Array<idDrawVert>,
-        numVerts: Int,
-        indexes: IntArray,
-        numIndexes: Int
+        planes: Array<idPlane>, verts: Array<idDrawVert>, numVerts: Int, indexes: IntArray, numIndexes: Int
     )
 
     abstract fun DeriveTangents(
-        planes: Array<idPlane>,
-        verts: Array<idDrawVert>,
-        numVerts: Int,
-        indexes: IntArray,
-        numIndexes: Int
+        planes: Array<idPlane>, verts: Array<idDrawVert>, numVerts: Int, indexes: IntArray, numIndexes: Int
     )
 
     abstract fun DeriveUnsmoothedTangents(
-        verts: Array<idDrawVert>,
-        dominantTris: Array<dominantTri_s>,
-        numVerts: Int
+        verts: Array<idDrawVert>, dominantTris: Array<dominantTri_s>, numVerts: Int
     )
 
     abstract fun NormalizeTangents(verts: Array<idDrawVert>, numVerts: Int)
@@ -367,8 +324,7 @@ abstract class idSIMDProcessor {
         numVerts: Int,
         indexes: IntArray,
         numIndexes: Int
-    ) {
-        // This overload should calculate texture space light vectors
+    ) { // This overload should calculate texture space light vectors
         // Implementation would match the C++ version
         // For now, this is a placeholder
     }
@@ -384,99 +340,59 @@ abstract class idSIMDProcessor {
     )
 
     abstract fun CreateShadowCache(
-        vertexCache: Array<idVec4>,
-        vertRemap: IntArray,
-        lightOrigin: idVec3,
-        verts: Array<idDrawVert>,
-        numVerts: Int
+        vertexCache: Array<idVec4>, vertRemap: IntArray, lightOrigin: idVec3, verts: Array<idDrawVert>, numVerts: Int
     ): Int
 
     abstract fun CreateVertexProgramShadowCache(
-        vertexCache: Array<idVec4>,
-        verts: Array<idDrawVert>,
-        numVerts: Int
+        vertexCache: Array<idVec4>, verts: Array<idDrawVert>, numVerts: Int
     ): Int
 
-    fun CreateVertexProgramShadowCache(vertexCache: idVec4, verts: Array<idDrawVert>, numVerts: Int) {
-        // This overload should create vertex program shadow cache
+    fun CreateVertexProgramShadowCache(
+        vertexCache: idVec4,
+        verts: Array<idDrawVert>,
+        numVerts: Int
+    ) { // This overload should create vertex program shadow cache
         // Implementation would match the C++ version
         // For now, this is a placeholder
     }
 
     // sound mixing
     abstract fun UpSamplePCMTo44kHz(
-        dest: FloatArray,
-        pcm: ShortArray,
-        numSamples: Int,
-        kHz: Int,
-        numChannels: Int
+        dest: FloatArray, pcm: ShortArray, numSamples: Int, kHz: Int, numChannels: Int
     )
 
     fun UpSampleOGGTo44kHz(
-        dest: FloatArray,
-        ogg: Array<FloatArray>,
-        numSamples: Int,
-        kHz: Int,
-        numChannels: Int
+        dest: FloatArray, ogg: Array<FloatArray>, numSamples: Int, kHz: Int, numChannels: Int
     ) {
         this.UpSampleOGGTo44kHz(dest, 0, ogg, numSamples, kHz, numChannels)
     }
 
     abstract fun UpSampleOGGTo44kHz(
-        dest: FloatArray,
-        offset: Int,
-        ogg: Array<FloatArray>,
-        numSamples: Int,
-        kHz: Int,
-        numChannels: Int
+        dest: FloatArray, offset: Int, ogg: Array<FloatArray>, numSamples: Int, kHz: Int, numChannels: Int
     )
 
     abstract fun UpSampleOGGTo44kHz(
-        dest: FloatBuffer,
-        offset: Int,
-        ogg: Array<FloatArray>,
-        numSamples: Int,
-        kHz: Int,
-        numChannels: Int
+        dest: FloatBuffer, offset: Int, ogg: Array<FloatArray>, numSamples: Int, kHz: Int, numChannels: Int
     )
 
     abstract fun MixSoundTwoSpeakerMono(
-        mixBuffer: FloatArray,
-        samples: FloatArray,
-        numSamples: Int,
-        lastV: FloatArray,
-        currentV: FloatArray
+        mixBuffer: FloatArray, samples: FloatArray, numSamples: Int, lastV: FloatArray, currentV: FloatArray
     )
 
     abstract fun MixSoundTwoSpeakerStereo(
-        mixBuffer: FloatArray,
-        samples: FloatArray,
-        numSamples: Int,
-        lastV: FloatArray,
-        currentV: FloatArray
+        mixBuffer: FloatArray, samples: FloatArray, numSamples: Int, lastV: FloatArray, currentV: FloatArray
     )
 
     abstract fun MixSoundSixSpeakerMono(
-        mixBuffer: FloatArray,
-        samples: FloatArray,
-        numSamples: Int,
-        lastV: FloatArray,
-        currentV: FloatArray
+        mixBuffer: FloatArray, samples: FloatArray, numSamples: Int, lastV: FloatArray, currentV: FloatArray
     )
 
     abstract fun MixSoundSixSpeakerStereo(
-        mixBuffer: FloatArray,
-        samples: FloatArray,
-        numSamples: Int,
-        lastV: FloatArray,
-        currentV: FloatArray
+        mixBuffer: FloatArray, samples: FloatArray, numSamples: Int, lastV: FloatArray, currentV: FloatArray
     )
 
     abstract fun MixedSoundToSamples(
-        samples: ShortArray,
-        offset: Int,
-        mixBuffer: FloatArray,
-        numSamples: Int
+        samples: ShortArray, offset: Int, mixBuffer: FloatArray, numSamples: Int
     )
 
     fun MixedSoundToSamples(samples: ShortArray, mixBuffer: FloatArray, numSamples: Int) {

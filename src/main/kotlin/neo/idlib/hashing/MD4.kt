@@ -120,10 +120,9 @@ private class MD4 {
 
     fun blockChecksum(): Long {
         val digest = finalDigest()
-        val hash = littleEndianInt(digest, 0) xor
-                littleEndianInt(digest, 4) xor
-                littleEndianInt(digest, 8) xor
-                littleEndianInt(digest, 12)
+        val hash = littleEndianInt(digest, 0) xor littleEndianInt(digest, 4) xor littleEndianInt(
+            digest, 8
+        ) xor littleEndianInt(digest, 12)
         return hash.toLong() and 0xffffffffL
     }
 
@@ -253,8 +252,5 @@ private class MD4 {
 }
 
 private fun littleEndianInt(bytes: ByteArray, offset: Int): Int {
-    return (bytes[offset].toInt() and 0xff) or
-            ((bytes[offset + 1].toInt() and 0xff) shl 8) or
-            ((bytes[offset + 2].toInt() and 0xff) shl 16) or
-            ((bytes[offset + 3].toInt() and 0xff) shl 24)
+    return (bytes[offset].toInt() and 0xff) or ((bytes[offset + 1].toInt() and 0xff) shl 8) or ((bytes[offset + 2].toInt() and 0xff) shl 16) or ((bytes[offset + 3].toInt() and 0xff) shl 24)
 }

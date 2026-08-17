@@ -53,15 +53,9 @@ object Image_files {
      ================
      R_WritePalTGA
      ================
-     */
-    // data is an 8 bit index into palette, which is RGB (no A)
+     */ // data is an 8 bit index into palette, which is RGB (no A)
     fun R_WritePalTGA(
-        filename: String?,
-        data: ByteArray?,
-        palette: ByteArray?,
-        width: Int,
-        height: Int,
-        flipVertical: Boolean = false
+        filename: String?, data: ByteArray?, palette: ByteArray?, width: Int, height: Int, flipVertical: Boolean = false
     ) {
         val bufferSize = (width * height) + (256 * 3) + 18
         val palStart = 18
@@ -144,8 +138,7 @@ object Image_files {
      BMP LOADING
 
      ========================================================================================================
-     */
-    /*
+     *//*
      ==============
      LoadBMP
      ==============
@@ -214,10 +207,7 @@ object Image_files {
         }
         if (bmpHeader.fileSize != length) {
             common.Error(
-                "LoadBMP: header size does not match file size (%d vs. %d) (%s)\n",
-                bmpHeader.fileSize,
-                length,
-                name
+                "LoadBMP: header size does not match file size (%d vs. %d) (%s)\n", bmpHeader.fileSize, length, name
             )
         }
         if (bmpHeader.compression != 0) {
@@ -249,8 +239,7 @@ object Image_files {
                 var palIndex: Int
                 var shortPixel: Short
                 when (bmpHeader.bitsPerPixel.toInt()) {
-                    8 -> {
-                        // mask with 0xFF to get unsigned palette index (Kotlin bytes are signed)
+                    8 -> { // mask with 0xFF to get unsigned palette index (Kotlin bytes are signed)
                         palIndex = buf_p.get().toInt() and 0xFF
                         pixbuf.put(bmpHeader.palette[palIndex][2])
                         pixbuf.put(bmpHeader.palette[palIndex][1])
@@ -258,8 +247,7 @@ object Image_files {
                         pixbuf.put(0xff.toByte())
                     }
 
-                    16 -> {
-                        // C++ reads shortPixel from pixbuf (output buffer), advances 2
+                    16 -> { // C++ reads shortPixel from pixbuf (output buffer), advances 2
                         shortPixel = pixbuf.getShort()
                         pixbuf.put(((shortPixel.toInt() and (31 shl 10)) shr 7).toByte())
                         pixbuf.put(((shortPixel.toInt() and (31 shl 5)) shr 2).toByte())
@@ -289,9 +277,7 @@ object Image_files {
                     }
 
                     else -> common.Error(
-                        "LoadBMP: illegal pixel_size '%d' in file '%s'\n",
-                        bmpHeader.bitsPerPixel,
-                        name
+                        "LoadBMP: illegal pixel_size '%d' in file '%s'\n", bmpHeader.bitsPerPixel, name
                     )
                 }
                 column++
@@ -307,8 +293,7 @@ object Image_files {
      PCX LOADING
 
      ========================================================================================================
-     */
-    /*
+     *//*
      ==============
      LoadPCX
      ==============
@@ -357,13 +342,7 @@ object Image_files {
 
         xmax = LittleShort(pcx.xmax).toInt()
         ymax = LittleShort(pcx.ymax).toInt()
-        if ((pcx.manufacturer.code != 0x0a
-                    ) || (pcx.version.code != 5
-                    ) || (pcx.encoding.code != 1
-                    ) || (pcx.bits_per_pixel.code != 8
-                    ) || (xmax >= 1024
-                    ) || (ymax >= 1024)
-        ) {
+        if ((pcx.manufacturer.code != 0x0a) || (pcx.version.code != 5) || (pcx.encoding.code != 1) || (pcx.bits_per_pixel.code != 8) || (xmax >= 1024) || (ymax >= 1024)) {
             common.Printf("Bad pcx file %s (%d x %d) (%d x %d)\n", filename, xmax + 1, ymax + 1, pcx.xmax, pcx.ymax)
             return
         }
@@ -399,8 +378,7 @@ object Image_files {
                     dataByte = raw[0]!!.get()
                 } else {
                     runLength = 1
-                }
-                // Use absolute index for correct row positioning (pix[x++] in C++)
+                } // Use absolute index for correct row positioning (pix[x++] in C++)
                 while (runLength-- > 0) {
                     out.put(y * (xmax + 1) + x++, dataByte)
                 }
@@ -437,8 +415,7 @@ object Image_files {
         pic = BufferUtils.createByteBuffer(4 * c)
         i = 0
         while (i < c) {
-            val offset = i * 4
-            // mask with 0xFF to get unsigned palette index (Kotlin bytes are signed)
+            val offset = i * 4 // mask with 0xFF to get unsigned palette index (Kotlin bytes are signed)
             p = pic8[0]!!.get(i).toInt() and 0xFF
             pic.put(offset, palette[0]!!.get(p * 3))
             pic.put(offset + 1, palette[0]!!.get(p * 3 + 1))
@@ -518,8 +495,7 @@ object Image_files {
         if (targa_header.id_length.toInt() != 0) {
             buf_p.position(buf_p.position() + targa_header.id_length) // skip TARGA image comment
         }
-        if (targa_header.image_type.toInt() == 2 || targa_header.image_type.toInt() == 3) {
-            // Uncompressed RGB or gray scale image
+        if (targa_header.image_type.toInt() == 2 || targa_header.image_type.toInt() == 3) { // Uncompressed RGB or gray scale image
             row = rows - 1
             while (row >= 0) {
                 pixbuf = targa_rgba.duplicate()
@@ -605,9 +581,7 @@ object Image_files {
                             }
 
                             else -> common.Error(
-                                "LoadTGA( %s ): illegal pixel_size '%d'\n",
-                                name,
-                                targa_header.pixel_size
+                                "LoadTGA( %s ): illegal pixel_size '%d'\n", name, targa_header.pixel_size
                             )
                         }
                         j = 0
@@ -655,9 +629,7 @@ object Image_files {
                                 }
 
                                 else -> common.Error(
-                                    "LoadTGA( %s ): illegal pixel_size '%d'\n",
-                                    name,
-                                    targa_header.pixel_size
+                                    "LoadTGA( %s ): illegal pixel_size '%d'\n", name, targa_header.pixel_size
                                 )
                             }
                             column++
@@ -692,8 +664,7 @@ object Image_files {
      Uses Java ImageIO (replaces original libjpeg / dhewm3 stb_image)
 
      ========================================================================================================
-     */
-    /*
+     *//*
      =============
      LoadJPG
      =============
@@ -773,11 +744,7 @@ object Image_files {
      =================
      */
     fun R_LoadImage(
-        cname: String?,
-        width: IntArray?,
-        height: IntArray?,
-        timestamp: LongArray?,
-        makePowerOf2: Boolean
+        cname: String?, width: IntArray?, height: IntArray?, timestamp: LongArray?, makePowerOf2: Boolean
     ): ByteBuffer? {
         val name = idStr((cname)!!)
         var pic: ByteBuffer? = null
@@ -811,9 +778,7 @@ object Image_files {
         } else if (ext.equals("jpg")) {
             pic = LoadJPG(name.toString(), width, height, timestamp)
         }
-        if (((width != null && width[0] < 1)
-                    || (height != null && height[0] < 1))
-        ) {
+        if (((width != null && width[0] < 1) || (height != null && height[0] < 1))) {
             if (pic != null) {
                 pic = null
             }
@@ -851,7 +816,11 @@ object Image_files {
                 if (outWidth._val != scaled_width || outHeight._val != scaled_height) {
                     common.Warning(
                         "Texture '%s' didn't have power-of-two size *and* was too big, scaled from %dx%d to %dx%d",
-                        name.toString(), w, h, outWidth._val, outHeight._val
+                        name.toString(),
+                        w,
+                        h,
+                        outWidth._val,
+                        outHeight._val
                     )
                 }
                 pic = resampledBuffer
@@ -905,8 +874,7 @@ object Image_files {
         while (i < 6) {
             snPrintf(fullName, fullName.size, "%s%s", (imgName)!!, sides[i])
             val thisTime = LongArray(1)
-            if (null == pics) {
-                // just checking timestamps
+            if (null == pics) { // just checking timestamps
                 R_LoadImageProgram(ctos(fullName), width, height, thisTime)
             } else {
                 pics[i] = R_LoadImageProgram(ctos(fullName), width, height, thisTime)
@@ -926,8 +894,7 @@ object Image_files {
                     timestamp[0] = thisTime[0]
                 }
             }
-            if (pics != null && extensions == cubeFiles_t.CF_CAMERA) {
-                // convert from "camera" images to native cube map images
+            if (pics != null && extensions == cubeFiles_t.CF_CAMERA) { // convert from "camera" images to native cube map images
                 when (i) {
                     0 -> Image_process.R_RotatePic(pics[i], width[0])
                     1 -> {
@@ -944,8 +911,7 @@ object Image_files {
             }
             i++
         }
-        if (i != 6) {
-            // we had an error, so free everything
+        if (i != 6) { // we had an error, so free everything
             if (pics != null) {
                 j = 0
                 while (j < i) {

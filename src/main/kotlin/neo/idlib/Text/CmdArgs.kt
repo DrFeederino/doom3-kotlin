@@ -6,7 +6,8 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
 import neo.idlib.idException
 import neo.idlib.idLib
-import neo.idlib.math.*
+import neo.idlib.math.clam
+import neo.idlib.math.unClam
 import java.util.*
 
 class CmdArgs {
@@ -23,8 +24,7 @@ class CmdArgs {
         private var argc // number of arguments
                 = 0
         private val argv: CharArray = CharArray(MAX_COMMAND_ARGS) // points into tokenized
-        private val tokenized: CharArray =
-            CharArray(MAX_COMMAND_STRING) // will have 0 bytes inserted
+        private val tokenized: CharArray = CharArray(MAX_COMMAND_STRING) // will have 0 bytes inserted
 
         //
         //
@@ -38,12 +38,12 @@ class CmdArgs {
 
         //
         fun oSet(args: idCmdArgs?) {
-            argc = args!!.argc
-            //	memcpy( tokenized, args.tokenized, MAX_COMMAND_STRING );
-            System.arraycopy(args.tokenized, 0, tokenized, 0, MAX_COMMAND_STRING)
-            //            for (i = 0; i < argc; i++) {
-//		argv[ i ] = tokenized + ( args.argv[ i ] - args.tokenized );
-//            }
+            argc = args!!.argc //	memcpy( tokenized, args.tokenized, MAX_COMMAND_STRING );
+            System.arraycopy(
+                args.tokenized, 0, tokenized, 0, MAX_COMMAND_STRING
+            ) //            for (i = 0; i < argc; i++) {
+            //		argv[ i ] = tokenized + ( args.argv[ i ] - args.tokenized );
+            //            }
             System.arraycopy(args.argv, 0, argv, 0, argc)
         }
 
@@ -61,8 +61,7 @@ class CmdArgs {
         // Returns a single string containing argv(start) to argv(end)
         // escapeArgs is a fugly way to put the string back into a state ready to tokenize again
         //public	String			Args( int start = 1, int end = -1, bool escapeArgs = false ) const;
-        fun Args(start: Int, end: Int, escapeArgs: Boolean): String {
-//	static char cmd_args[MAX_COMMAND_STRING];
+        fun Args(start: Int, end: Int, escapeArgs: Boolean): String { //	static char cmd_args[MAX_COMMAND_STRING];
             var end = end
             var cmd_args = ""
             var i: Int
@@ -72,8 +71,7 @@ class CmdArgs {
                 end = argc - 1
             }
             cmd_args += '\u0000'
-            if (escapeArgs) {
-//		strcat( cmd_args, "\"" );
+            if (escapeArgs) { //		strcat( cmd_args, "\"" );
                 cmd_args += "\""
             }
             i = start
@@ -118,8 +116,7 @@ class CmdArgs {
          are inserted in the appropriate place. The argv array
          will point into this temporary buffer.
          ============
-         */
-        // Takes a null terminated string and breaks the string up into arg tokens.
+         */ // Takes a null terminated string and breaks the string up into arg tokens.
         // Does not need to be /n terminated.
         // Set keepAsStrings to true to only seperate tokens from whitespace and comments, ignoring punctuation
         @Throws(idException::class)
@@ -137,12 +134,7 @@ class CmdArgs {
             }
             lex.LoadMemory(text, text.length, "idCmdSystemLocal::TokenizeString")
             lex.SetFlags(
-                Lexer.LEXFL_NOERRORS
-                        or Lexer.LEXFL_NOWARNINGS
-                        or Lexer.LEXFL_NOSTRINGCONCAT
-                        or Lexer.LEXFL_ALLOWPATHNAMES
-                        or Lexer.LEXFL_NOSTRINGESCAPECHARS
-                        or Lexer.LEXFL_ALLOWIPADDRESSES or if (keepAsStrings) Lexer.LEXFL_ONLYSTRINGS else 0
+                Lexer.LEXFL_NOERRORS or Lexer.LEXFL_NOWARNINGS or Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_ALLOWPATHNAMES or Lexer.LEXFL_NOSTRINGESCAPECHARS or Lexer.LEXFL_ALLOWIPADDRESSES or if (keepAsStrings) Lexer.LEXFL_ONLYSTRINGS else 0
             )
             totalLen = 0
             while (true) {

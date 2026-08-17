@@ -140,8 +140,7 @@ class Dict_h {
 
          clear existing key/value pairs and copy all key/value pairs from other
          ================
-         */
-        // clear existing key/value pairs and copy all key/value pairs from other
+         */ // clear existing key/value pairs and copy all key/value pairs from other
         fun set(other: idDict): idDict {
             var i: Int
 
@@ -150,8 +149,7 @@ class Dict_h {
                 return this
             }
             Clear()
-            argHash.set(other.argHash)
-            // C++ args = other.args copies idKeyValue structs by value.
+            argHash.set(other.argHash) // C++ args = other.args copies idKeyValue structs by value.
             // Kotlin idList.set() copies references, which causes both dicts to
             // share the same idKeyValue objects. Any Set() call on either dict
             // then corrupts the other's pool string reference counts.
@@ -173,8 +171,7 @@ class Dict_h {
 
          copy all key value pairs without removing existing key/value pairs not present in the other dict
          ================
-         */
-        // copy from other while leaving existing key/value pairs in place
+         */ // copy from other while leaving existing key/value pairs in place
         @Throws(idException::class)
         fun Copy(other: idDict) {
             var i: Int
@@ -198,8 +195,7 @@ class Dict_h {
             }
             i = 0
             while (i < n) {
-                if (found != null && found[i] != -1) {
-                    // first set the new value and then free the old value to allow proper self copying
+                if (found != null && found[i] != -1) { // first set the new value and then free the old value to allow proper self copying
                     val oldValue = args[found[i]].value
                     args[found[i]].value = globalValues.CopyString(other.args[i].value)
                     globalValues.FreeString(oldValue)
@@ -219,8 +215,7 @@ class Dict_h {
 
          clear existing key/value pairs and transfer key/value pairs from other
          ================
-         */
-        // clear existing key/value pairs and transfer key/value pairs from other
+         */ // clear existing key/value pairs and transfer key/value pairs from other
         @Throws(idException::class)
         fun TransferKeyValues(other: idDict) {
             var i: Int
@@ -351,13 +346,12 @@ class Dict_h {
             val i: Int
             val kv = idKeyValue()
 
-//            System.out.println(DBG_Set++ + " " + key);
+            //            System.out.println(DBG_Set++ + " " + key);
             if (key == null || key.isEmpty() || key[0] == '\u0000') {
                 return
             }
             i = FindKeyIndex(key)
-            if (i != -1) {
-                // first set the new value and then free the old value to allow proper self copying
+            if (i != -1) { // first set the new value and then free the old value to allow proper self copying
                 val oldValue = args[i].value
                 args[i].value = globalValues.AllocString(value)
                 globalValues.FreeString(oldValue)
@@ -715,14 +709,13 @@ class Dict_h {
                     break
                 }
                 i = argHash.Next(i)
-            }
-            //
-//#if 0
-//	// make sure all keys can still be found in the hash index
-//	for ( i = 0; i < args.Num(); i++ ) {
-//		assert( FindKey( args[i].GetKey() ) != NULL );
-//	}
-//#endif
+            } //
+            //#if 0
+            //	// make sure all keys can still be found in the hash index
+            //	for ( i = 0; i < args.Num(); i++ ) {
+            //		assert( FindKey( args[i].GetKey() ) != NULL );
+            //	}
+            //#endif
         }
 
         fun Delete(key: idStr) {
@@ -810,8 +803,7 @@ class Dict_h {
             while (i < n) {
                 CRC32.CRC32_UpdateChecksum(ret, sorted[i].GetKey().data.toCharArray(), sorted[i].GetKey().Length())
                 CRC32.CRC32_UpdateChecksum(
-                    ret, sorted[i].GetValue().data.toCharArray(),
-                    sorted[i].GetValue().Length()
+                    ret, sorted[i].GetValue().data.toCharArray(), sorted[i].GetValue().Length()
                 )
                 i++
             }

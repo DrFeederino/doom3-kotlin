@@ -58,8 +58,7 @@ class BindWindow {
         override fun PostParse() {
             super.PostParse()
             bindName.SetGuiInfo(gui!!.GetStateDict(), bindName.c_str())
-            bindName.Update()
-            //bindName = state.GetString("bind");
+            bindName.Update() //bindName = state.GetString("bind");
             flags = flags or (Window.WIN_HOLDCAPTURE or Window.WIN_CANFOCUS)
         }
 
@@ -95,7 +94,7 @@ class BindWindow {
         }
 
         private fun CommonInit() {
-            bindName.data!!.set("")
+            bindName.data.set("")
             waitingOnKey = false
         }
 

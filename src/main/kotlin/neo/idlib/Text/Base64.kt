@@ -113,8 +113,7 @@ class Base64 {
             val from = data
             var f_ptr = 0
             var t_ptr = 0
-            if (!tab_init) {
-//                memset(base64_to_sixtet, 0, 256);
+            if (!tab_init) { //                memset(base64_to_sixtet, 0, 256);
                 i = 0
                 while (sixtet_to_base64[i].also { j = it.code } != '\u0000') {
                     base64_to_sixtet[j] = i.toChar()
@@ -153,17 +152,14 @@ class Base64 {
         //
         fun Decode(dest: Array<idStr>) { // decodes the binary content to an idStr (a bit dodgy, \0 and other non-ascii are possible in the decoded content)
             val buf = ByteArray(DecodeLength() + 1) // +1 for trailing \0
-            Decode(buf)
-            //            buf[out] = '\0';
-            dest[0] = idStr(String(buf))
-            //	delete[] buf;
+            Decode(buf) //            buf[out] = '\0';
+            dest[0] = idStr(String(buf)) //	delete[] buf;
         }
 
         fun Decode(dest: idFile) {
             val buf = ByteBuffer.allocate(DecodeLength() + 1) // +1 for trailing \0
             val out = Decode(buf.array())
-            dest.Write(buf, out)
-            //	delete[] buf;
+            dest.Write(buf, out) //	delete[] buf;
         }
 
         //
@@ -185,10 +181,9 @@ class Base64 {
             data = ByteArray(0)
         }
 
-        private fun Release() {
-//	if ( data ) {
-//		delete[] data;
-//	}
+        private fun Release() { //	if ( data ) {
+            //		delete[] data;
+            //	}
             Init()
         }
 
