@@ -613,7 +613,7 @@ open class idEntity : idClass() {
             ent = Game_local.gameLocal.FindEntity(entName[0]!!)
             if (null == ent) {
                 Game_local.gameLocal.Warning(
-                    "Couldn't find entity '%s' specified in '%s' key in entity '%s'", entName, key, e.name
+                    "Couldn't find entity '%s' specified in '%s' key in entity '%s'", entName[0], key.value, e.name
                 )
             }
             idThread.ReturnEntity(ent)
