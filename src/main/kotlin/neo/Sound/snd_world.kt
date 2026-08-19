@@ -134,7 +134,8 @@ class snd_world {
         // E3: scratch for the mean direction of a speaker mask
         private val maskPinDir = idVec3()
 
-        // s_lufs global mix normalizer: smoothed master gain plus the
+        // s_lufs global mix normalizer: smoothed master gain, applied to
+        // the FINAL mix (AL_LISTENER_GAIN in MixLoop), driven by the
         // per-mix-block accumulators of the expected mix level, filled by
         // AddChannelContribution and consumed by UpdateLoudnessGain
         private var loudnessGainDb = 0.0f
@@ -1458,11 +1459,13 @@ class snd_world {
                 return
             }
 
-            // s_lufs global normalization: add this channel's expected
-            // contribution to the mix level, then apply the smoothed master
-            // gain.  Measured before speaker masks so all energy is
-            // accounted for; applied here so every AL_GAIN write and the
-            // software mix inherit it.
+            // s_lufs global normalization: account for this channel's
+            // expected contribution to the mix level.  The gain itself is
+            // applied to the final mix (AL_LISTENER_GAIN in MixLoop and a
+            // scale of the software mix), never per channel, so the
+            // relative levels between sounds -- the dynamic range -- are
+            // preserved.  Measured before speaker masks so all energy is
+            // accounted for.
             var loudSample = sample
             if (looping && current44kHz - chan.trigger44kHzTime >= sample.LengthIn44kHzSamples()) {
                 loudSample = shader.entries[0] ?: sample
@@ -1475,7 +1478,6 @@ class snd_world {
                 loudnessPeakSq += (lufsPeak * lufsPeak).toDouble()
                 loudnessChannels++
             }
-            volume *= loudnessGainLin
             chan.lastVolume = volume
 
             //
@@ -1821,8 +1823,10 @@ class snd_world {
             listenerOrientation.put(2, -listenerAxis[0].x.toFloat())
             listenerOrientation.put(3, -listenerAxis[2].y.toFloat())
             listenerOrientation.put(4, +listenerAxis[2].z.toFloat())
-            listenerOrientation.put(5, -listenerAxis[2].x.toFloat())
-            AL10.alListenerf(AL10.AL_GAIN, 1.0f)
+            listenerOrientation.put(5, -listenerAxis[2].x.toFloat()) // s_lufs: the smoothed master gain rides on the final mix
+            // (previous frame's value, one 16.7 ms block of smoothing
+            // lag); 1.0f when the cvar is disabled, i.e. retail behavior
+            AL10.alListenerf(AL10.AL_GAIN, loudnessGainLin)
             AL10.alListener3f(AL10.AL_POSITION, listenerPosition[0], listenerPosition[1], listenerPosition[2])
             AL10.alListenerfv(AL10.AL_ORIENTATION, listenerOrientation)
 
@@ -1875,6 +1879,7 @@ class snd_world {
                         j++
                     }
                 }
+                ApplyMixTrim(finalMixBuffer, numSpeakers)
                 UpdateLoudnessGain()
                 return
             }
@@ -1907,32 +1912,60 @@ class snd_world {
             if (false && enviroSuitActive) {
                 snd_system.soundSystemLocal.DoEnviroSuit(finalMixBuffer, MIXBUFFER_SAMPLES, numSpeakers)
             }
+            ApplyMixTrim(finalMixBuffer, numSpeakers)
             UpdateLoudnessGain()
+        }
+
+        /*
+         ===================
+         idSoundWorldLocal::ApplyMixTrim
+
+         s_lufs: scale the software-mixed block (com_asyncSound == 2) by
+         the smoothed master gain so the software path matches what
+         AL_LISTENER_GAIN does to the hardware mix.
+         ===================
+         */
+        private fun ApplyMixTrim(mixBuffer: FloatArray, numSpeakers: Int) {
+            if (loudnessGainLin == 1.0f || Common.com_asyncSound.GetInteger() != 2) {
+                return
+            }
+            val count = MIXBUFFER_SAMPLES * numSpeakers
+            for (i in 0 until count) {
+                mixBuffer[i] *= loudnessGainLin
+            }
         }
 
         /*
          ===================
          idSoundWorldLocal::UpdateLoudnessGain
 
-         Implements the s_lufs cvar: normalizes the whole game mix to a
-         target loudness level.  s_lufs holds the target as a positive
-         magnitude (value 12 = -12 LUFS, range 6-18, higher is quieter),
-         so increasing it gives more headroom against clipping.
+         Implements the s_lufs cvar: trims the game mix toward a target
+         loudness level without reshaping it.  s_lufs holds the target as
+         a positive magnitude (value 12 = -12 LUFS, range 6-18, higher is
+         quieter); 0 disables the trim entirely, so the mix passes
+         through exactly as it did before the cvar existed.
 
          AddChannelContribution accumulated the expected level of this
          mix block as the sum of squared full-scale RMS (loudnessPower)
-         and the squared volume-weighted peaks (loudnessPeakSq).  From
-         that the current mix level in LUFS is derived (plain RMS + 3 dB
-         approximates LUFS for typical game content; a game engine has
-         no K-weighting) and the correction is approached with a fast
-         attack and a slow release.  The gain is capped by an estimate
-         of the normalized mix's output peak (the larger of a 4x crest
-         factor on the mix RMS and the root-sum-square of the per-channel
-         peaks; peaks of uncorrelated sources almost never align in
-         phase, so the plain sum would overestimate the worst case by
-         10+ dB and pin the gain in normal multi-channel scenes), so
-         the normalizer stays far from clipping without nullifying the
-         normalization.
+         and the squared volume-weighted peaks (loudnessPeakSq).  The
+         root-sum-square of the per-channel contributions is the
+         hardware mix level itself for uncorrelated sources (their
+         peaks almost never align in phase, so a plain sum would
+         overestimate the worst case by 10+ dB and pin the gain in
+         normal multi-channel scenes).  From that the current mix level
+         in LUFS is derived (plain RMS + 3 dB approximates LUFS for
+         typical game content; a game engine has no K-weighting) and the
+         correction is approached with a fast attack and a slow release.
+         The desired gain is clamped to a small +/-6 dB trim so the
+         normalizer nudges the mix instead of re-leveling it (that
+         pumping is what destroys the game's dynamic range), and it is
+         further capped by an estimate of the normalized mix's output
+         peak (the larger of a 4x crest factor on the mix RMS and the
+         root-sum-square of the per-channel peaks) so it stays far from
+         clipping.  The smoothed result is applied to the FINAL mix --
+         AL_LISTENER_GAIN for the hardware path, ApplyMixTrim for the
+         software path -- a single multiplier over everything, so the
+         relative levels between sounds are preserved.
          ===================
          */
         fun UpdateLoudnessGain() {
@@ -1954,12 +1987,12 @@ class snd_world {
             var peakEst = 0.0f
             if (loudnessPower > 0.0) {
                 val measuredLufts = 10.0 * log10(loudnessPower) + 3.0
-                desired = (-target.toDouble() - measuredLufts).toFloat()
-                if (desired > 12.0f) {
-                    desired = 12.0f
+                desired = (-target.toDouble() - measuredLufts).toFloat() // small trim only: keep the mix's own dynamic range
+                if (desired > 6.0f) {
+                    desired = 6.0f
                 }
-                if (desired < -40.0f) {
-                    desired = -40.0f
+                if (desired < -6.0f) {
+                    desired = -6.0f
                 }
                 peakEst = maxOf(4.0f * sqrt(loudnessPower).toFloat(), sqrt(loudnessPeakSq).toFloat())
                 if (peakEst > 0.0f) {

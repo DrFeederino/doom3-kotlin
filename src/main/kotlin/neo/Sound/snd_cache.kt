@@ -43,6 +43,7 @@ import neo.idlib.math.idMath
 import org.lwjgl.BufferUtils
 import org.lwjgl.openal.AL10
 import java.nio.ByteBuffer
+import kotlin.math.abs
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -113,61 +114,110 @@ object snd_cache {
          idSoundSample::ComputeLoudness
 
          Precomputes the sample's full-scale normalized RMS and peak for
-         the s_lufs global mix normalizer.  PCM data is walked straight
-         from nonCacheData; OGG samples keep the encoded stream there, so
-         they are decoded once through the sample decoder.
+         the s_lufs global mix normalizer.  The RMS is measured over the
+         sample's ACTIVE region (first to last sample above a small
+         threshold) so silent lead-ins and tails don't drag the level
+         down and make the normalizer over-boost; the peak is measured
+         over the whole sample.  PCM data is walked straight from
+         nonCacheData (wave files are little-endian; the shorts are read
+         manually so the shared buffer's byte order is left untouched);
+         OGG samples keep the encoded stream there, so they are decoded
+         through the sample decoder.
          ===================
          */
+        private fun leShort(buf: ByteBuffer, byteOffset: Int): Short {
+            val lo = buf.get(byteOffset).toInt() and 0xFF
+            val hi = buf.get(byteOffset + 1).toInt() and 0xFF
+            return (lo or (hi shl 8)).toShort()
+        }
+
         fun ComputeLoudness() {
-            var rms = 0.0f
             var pk = 0.0f
-            var sumSq = 0.0
-            var n = 0
+            var firstActive = -1
+            var lastActive = -1
+            var rms = 0.0f
+            val threshold = 32.0 / 32768.0 // ~-50 dBFS: below this is silence
             val data = nonCacheData
             if (data != null && objectSize > 0) {
-                if (objectInfo.wFormatTag == snd_local.WAVE_FORMAT_TAG_PCM) {
-                    val total = minOf(objectSize, data.limit() shr 1)
-                    for (b in 0 until total step 2) {
-                        val s = data.getShort(b) / 32768.0f
-                        if (s > pk) {
-                            pk = s
-                        } else if (-s > pk) {
-                            pk = -s
+                if (objectInfo.wFormatTag == snd_local.WAVE_FORMAT_TAG_PCM) { // objectSize is per-channel samples; stereo data is
+                    // interleaved, so the short count is nChannels times
+                    val total = minOf(objectSize * objectInfo.nChannels, data.limit() shr 1)
+                    for (i in 0 until total) {
+                        val a = abs(leShort(data, i * 2).toFloat()) / 32768.0
+                        if (a > pk) {
+                            pk = a.toFloat()
                         }
-                        sumSq += s * s
-                        n++
+                        if (a > threshold) {
+                            if (firstActive < 0) {
+                                firstActive = i
+                            }
+                            lastActive = i
+                        }
+                    }
+                    var sumSq = 0.0
+                    var n = 0
+                    if (firstActive >= 0) {
+                        for (i in firstActive..lastActive) {
+                            val s = leShort(data, i * 2).toFloat() / 32768.0
+                            sumSq += s * s
+                            n++
+                        }
+                    }
+                    if (n > 0) {
+                        rms = sqrt(sumSq / n).toFloat()
                     }
                 } else if (objectInfo.wFormatTag == snd_local.WAVE_FORMAT_TAG_OGG) {
                     val decoder = idSampleDecoder.Alloc()
                     try {
                         val total = LengthIn44kHzSamples()
                         val scratch = BufferUtils.createFloatBuffer(44100)
-                        var offset = 0
+                        var offset = 0 // pass 1: whole-file peak + active range
                         while (offset < total) {
                             val len = minOf(44100, total - offset)
                             decoder.Decode(this, offset, len, scratch)
                             for (i in 0 until len) {
-                                val s = scratch.get(i) / 32768.0f
-                                if (s > pk) {
-                                    pk = s
-                                } else if (-s > pk) {
-                                    pk = -s
+                                val a = abs(scratch.get(i)) / 32768.0
+                                if (a > pk) {
+                                    pk = a.toFloat()
                                 }
-                                sumSq += s * s
-                                n++
+                                val idx = offset + i
+                                if (a > threshold) {
+                                    if (firstActive < 0) {
+                                        firstActive = idx
+                                    }
+                                    lastActive = idx
+                                }
                             }
                             offset += len
+                        } // pass 2: RMS over the active region only
+                        if (firstActive >= 0) {
+                            var sumSq = 0.0
+                            var n = 0
+                            offset = 0
+                            while (offset < total) {
+                                val len = minOf(44100, total - offset)
+                                decoder.Decode(this, offset, len, scratch)
+                                for (i in 0 until len) {
+                                    val idx = offset + i
+                                    if (idx >= firstActive && idx <= lastActive) {
+                                        val s = scratch.get(i) / 32768.0
+                                        sumSq += s * s
+                                        n++
+                                    }
+                                }
+                                offset += len
+                            }
+                            if (n > 0) {
+                                rms = sqrt(sumSq / n).toFloat()
+                            }
                         }
                     } finally {
                         idSampleDecoder.Free(decoder)
                     }
                 }
             }
-            if (n > 0) {
-                rms = sqrt(sumSq / n).toFloat()
-            }
             rms16 = rms
-            peak16 = pk
+            peak16 = pk.toFloat()
         }
 
         // turns it into a beep	

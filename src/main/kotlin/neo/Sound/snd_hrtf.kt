@@ -7,6 +7,7 @@ import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 import kotlin.math.atan2
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 object snd_hrtf {
     /*
@@ -20,6 +21,11 @@ object snd_hrtf {
     0 = front, positive = right, 180 = back; the left hemisphere is the
     L/R swap of the mirrored azimuth (verified from the data: the right
     channel carries the strong direct-path taps for azimuths 10..130).
+
+    The leak ships the taps at full scale (per-ear L2 norm ~6, sum|tap| ~60):
+    convolving at face value boosts stationary content ~16 dB and hard-clips
+    it, so each ear's filter is power-normalized to unit L2 at load and
+    levels stay controlled by the engine's volume/attenuation.
 
     A spatialized mono channel's streaming blocks are convolved with the
     IR for its current listener direction, producing a binaural stereo
@@ -65,8 +71,27 @@ object snd_hrtf {
                 left[az][i] = bb.getShort(i * 4).toInt() / 32768.0f
                 right[az][i] = bb.getShort(i * 4 + 2).toInt() / 32768.0f
             }
+            normalizeUnitL2(left[az])
+            normalizeUnitL2(right[az])
         }
         return true
+    }
+
+    /*
+    Scale a filter to unit L2 norm so convolution is power-neutral for
+    stationary (white-noise-like) content: the leak's taps carry ~16 dB of
+    energy gain at face value (measured 2026-08-19: per-ear L2 5.7..6.8),
+    which pushed every spatialized mono sound to full scale and clipped it.
+    */
+    private fun normalizeUnitL2(ir: FloatArray) {
+        var e = 0.0f
+        for (i in 0 until TAPS) {
+            e += ir[i] * ir[i]
+        }
+        val g = 1.0f / sqrt(e)
+        for (i in 0 until TAPS) {
+            ir[i] *= g
+        }
     }
 
     /*

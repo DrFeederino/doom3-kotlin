@@ -185,7 +185,7 @@ class snd_system {
                 "s_lufs",
                 "12",
                 CVarSystem.CVAR_SOUND or CVarSystem.CVAR_FLOAT or CVarSystem.CVAR_ARCHIVE,
-                "normalize the game mix to this loudness level in LUFS (value 12 = -12 LUFS, range 6-18, higher is quieter, 0 = disable). treat this as a solution to volume clipping and normalization of sounds to your liking. if you hear clipping, increase the value."
+                "trim the final game mix toward this loudness level in LUFS (value 12 = -12 LUFS, range 6-18, higher is quieter, 0 = disable). the trim is limited to +/-6 dB and applied to the finished mix, so the mix's dynamic range is preserved. treat this as a solution to volume clipping and normalization of sounds to your liking. if you hear clipping, increase the value."
             )
             val s_showLoudness: idCVar = idCVar(
                 "s_showLoudness",
