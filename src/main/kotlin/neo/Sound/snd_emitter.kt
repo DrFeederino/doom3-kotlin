@@ -428,6 +428,11 @@ object snd_emitter {
         var stopped = false
         var paused = false  // DG: currently paused, but generally still playing
 
+        // E3 dialect: -1 = normal spatialization, else the 5.1 speaker this
+        // channel's five_dot_one wave is pinned to (0..5 = L R C LFE BL BR)
+        var pinnedSpeaker = -1
+        var hrtfTail = FloatArray(snd_hrtf.TAIL) // E3 HRTF filter history across streaming blocks
+
         //						~idSoundChannel( void );
         fun Clear() {
             var j: Int
@@ -448,6 +453,8 @@ object snd_emitter {
             parms = snd_shader.soundShaderParms_t()
             triggered = false
             paused = false
+            pinnedSpeaker = -1
+            hrtfTail.fill(0.0f)
             openalSource = 0 //null;
             openalStreamingOffset = 0
             openalStreamingBuffer.put(0, 0).put(1, 0).put(2, 0)
@@ -628,6 +635,9 @@ object snd_emitter {
         var playing // if false, no channel is active
                 = false
 
+        // E3 dialect: ActiveEntryIndices scratch, reused per StartSound
+        val activeEntryScratch = IntArray(snd_shader.SOUND_MAX_LIST_WAVS)
+
         //						    // or a point through a portal chain
         var realDistance // in meters
                 = 0.0f
@@ -654,7 +664,7 @@ object snd_emitter {
                 return
             }
             if (idSoundSystemLocal.s_showStartSound.GetInteger() != 0) {
-                Common.common.Printf("FreeSound (%d,%d)\n", index, immediate)
+                Common.common.Printf("FreeSound (%d,%d)\n", index, if (immediate) 1 else 0)
             }
             if (soundWorld != null && soundWorld!!.writeDemo != null) {
                 soundWorld!!.writeDemo!!.WriteInt(demoSystem_t.DS_SOUND)
@@ -748,7 +758,12 @@ object snd_emitter {
             //
             // pick which sound to play from the shader
             //
-            if (0 == shader.numEntries) {
+            // E3 dialect: the choice is restricted to the branch active for the
+            // current speaker mode ("if (speakers == 2/6)" groups)
+            val numSpeakers = idSoundSystemLocal.s_numberOfSpeakers.GetInteger()
+            val pinnedGroup = shader.HasPinned51Group(numSpeakers)
+            val activeCount = shader.ActiveEntryIndices(numSpeakers, activeEntryScratch, pinnedGroup)
+            if (0 == activeCount) {
                 if (idSoundSystemLocal.s_showStartSound.GetInteger() != 0) {
                     Common.common.Printf("no samples in sound shader\n")
                 }
@@ -757,10 +772,11 @@ object snd_emitter {
             var choice: Int
 
             // pick a sound from the list based on the passed diversity
-            choice = (diversity * shader.numEntries).toInt()
-            if (choice < 0 || choice >= shader.numEntries) {
-                choice = 0
+            var choicePos = (diversity * activeCount).toInt()
+            if (choicePos < 0 || choicePos >= activeCount) {
+                choicePos = 0
             }
+            choice = activeEntryScratch[choicePos]
 
             // bump the choice if the exact sound was just played and we are NO_DUPS
             if (chanParms[0].soundShaderFlags and snd_shader.SSF_NO_DUPS != 0) {
@@ -774,7 +790,8 @@ object snd_emitter {
                 while (i < snd_local.SOUND_MAX_CHANNELS) {
                     val chan = channels[i]
                     if (chan.leadinSample === sample) {
-                        choice = (choice + 1) % shader.numEntries
+                        choicePos = (choicePos + 1) % activeCount
+                        choice = activeEntryScratch[choicePos]
                         break
                     }
                     i++
@@ -808,6 +825,55 @@ object snd_emitter {
                     return 0
                 }
                 i++
+            }
+
+            // E3 dialect: a complete set of five_dot_one speaker waves plays as
+            // a group, one channel per speaker
+            if (pinnedGroup) {
+                Sys_EnterCriticalSection()
+                var startedAny = false
+                var maxLength = 0
+                i = 0
+                while (i <= 5) {
+                    val pIdx = shader.PinnedEntryForSpeaker(i, numSpeakers)
+                    if (pIdx >= 0) {
+                        var gChan: idSoundChannel? = null
+                        var c = 0
+                        while (c < snd_local.SOUND_MAX_CHANNELS) {
+                            if (!channels[c].triggerState) {
+                                gChan = channels[c]
+                                break
+                            }
+                            c++
+                        }
+                        if (gChan != null) { // ArmChannel pins the channel to the entry's speaker
+                            val len = ArmChannel(
+                                gChan,
+                                shader,
+                                pIdx,
+                                SCHANNEL_ANY,
+                                chanParms[0],
+                                start44kHz,
+                                diversity,
+                                allowSlow
+                            )
+                            if (len > maxLength) {
+                                maxLength = len
+                            }
+                            startedAny = true
+                        }
+                    }
+                    i++
+                }
+                Sys_LeaveCriticalSection()
+                if (!startedAny) {
+                    if (idSoundSystemLocal.s_showStartSound.GetInteger() != 0) {
+                        Common.common.Printf("no channels available\n")
+                    }
+                    return 0
+                }
+                playing = true
+                return maxLength
             }
             Sys_EnterCriticalSection()
 
@@ -851,11 +917,40 @@ object snd_emitter {
                 return 0
             }
             chan = channels[i]
-            if (shader.leadins[choice] != null) {
-                chan.leadinSample = shader.leadins[choice]
+            val length = ArmChannel(chan, shader, choice, channel, chanParms[0], start44kHz, diversity, allowSlow)
+            Sys_LeaveCriticalSection()
+            return length
+        }
+
+        /*
+         =====================
+         idSoundEmitterLocal::ArmChannel
+
+         Bind a free channel to the given entry of a shader (its leadin if
+         it has one), load it if onDemand, trigger it, spatialize it
+         immediately and return the sound length in ms.
+         The caller must hold the sound lock.
+         =====================
+         */
+        private fun ArmChannel(
+            chan: idSoundChannel,
+            shader: idSoundShader,
+            entryIndex: Int,
+            triggerChannel: Int,
+            chanParms: snd_shader.soundShaderParms_t,
+            start44kHz: Int,
+            diversity: Float,
+            allowSlow: Boolean
+        ): Int {
+            var start44kHz = start44kHz
+            if (shader.leadins[entryIndex] != null) {
+                chan.leadinSample = shader.leadins[entryIndex]
             } else {
-                chan.leadinSample = shader.entries[choice]
-            }
+                chan.leadinSample = shader.entries[entryIndex]
+            } // re-arm the E3 dialect state for this entry (the channel may have
+            // held a pinned 5.1 wave or an HRTF sound before)
+            chan.pinnedSpeaker = shader.entrySpeaker[entryIndex]
+            chan.hrtfTail.fill(0.0f)
 
             // if the sample is onDemand (voice mails, etc), load it now
             if (chan.leadinSample!!.purged) {
@@ -880,11 +975,12 @@ object snd_emitter {
             // the sound will start mixing in the next async mix block
             chan.triggered = true
             chan.openalStreamingOffset = 0
-            chan.trigger44kHzTime = start44kHz
-            chan.parms = chanParms[0]
+            chan.trigger44kHzTime = start44kHz // C++ copies the parms struct by value; a pinned 5.1 group arms
+            // six channels from the same parms, so keep the copy per channel
+            chan.parms = snd_shader.soundShaderParms_t(chanParms)
             chan.triggerGame44kHzTime = soundWorld!!.game44kHz
             chan.soundShader = shader
-            chan.triggerChannel = channel
+            chan.triggerChannel = triggerChannel
             chan.stopped = false  // FIX: C++ sets chan->stopped = false before Start()
             chan.Start()
 
@@ -912,7 +1008,6 @@ object snd_emitter {
                 chan.triggerGame44kHzTime = chan.triggerGame44kHzTime and 7.inv()
             }
             length = (length * (1000.0f / snd_local.PRIMARYFREQ)).toInt()
-            Sys_LeaveCriticalSection()
             return length
         }
 

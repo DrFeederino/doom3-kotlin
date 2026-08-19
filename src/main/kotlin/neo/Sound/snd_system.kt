@@ -160,6 +160,12 @@ class snd_system {
                 CVarSystem.CVAR_SOUND or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_ARCHIVE,
                 "Enable HRTF for better surround sound with stereo *headphones*. 0: Disable, 1: Enable, -1: Let OpenAL decide (default)"
             )
+            val s_hrtf: idCVar = idCVar(
+                "s_hrtf",
+                "0",
+                CVarSystem.CVAR_SOUND or CVarSystem.CVAR_BOOL or CVarSystem.CVAR_ARCHIVE,
+                "E3-alpha HRTF: binaural-encode spatialized mono sounds with the leak's sound/hrtf impulse responses (best with headphones)"
+            )
             val s_alOutputLimiter: idCVar = idCVar(
                 "s_alOutputLimiter",
                 "-1",
@@ -174,6 +180,18 @@ class snd_system {
                 "1",
                 CVarSystem.CVAR_SOUND or CVarSystem.CVAR_BOOL or CVarSystem.CVAR_ARCHIVE,
                 "clamp and scale down all volumes to prevent drowning by too many loud sounds"
+            )
+            val s_lufs: idCVar = idCVar(
+                "s_lufs",
+                "12",
+                CVarSystem.CVAR_SOUND or CVarSystem.CVAR_FLOAT or CVarSystem.CVAR_ARCHIVE,
+                "normalize the game mix to this loudness level in LUFS (value 12 = -12 LUFS, range 6-18, higher is quieter, 0 = disable). treat this as a solution to volume clipping and normalization of sounds to your liking. if you hear clipping, increase the value."
+            )
+            val s_showLoudness: idCVar = idCVar(
+                "s_showLoudness",
+                "0",
+                CVarSystem.CVAR_SOUND or CVarSystem.CVAR_BOOL,
+                "print the s_lufs normalizer state (measured level, target, gain) once a second"
             )
             val s_reverbFeedback: idCVar =
                 idCVar("s_reverbFeedback", "0.333", CVarSystem.CVAR_SOUND or CVarSystem.CVAR_FLOAT, "")

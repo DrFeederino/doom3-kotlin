@@ -44,6 +44,7 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.openal.AL10
 import java.nio.ByteBuffer
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 object snd_cache {
     /*
@@ -80,6 +81,10 @@ object snd_cache {
         var purged: Boolean
         var   /*ID_TIME_T*/timestamp // the most recent of all images used in creation, for reloadImages command
                 : Long = 0
+        var rms16 // full-scale normalized RMS of the sample (0..1), computed at load for the s_lufs mix normalizer
+                = 0.0f
+        var peak16 // full-scale normalized peak of the sample (0..1), computed at load for the s_lufs mix normalizer
+                = 0.0f
 
         // ~idSoundSample();
         fun LengthIn44kHzSamples(): Int { // objectSize is samples
@@ -101,6 +106,68 @@ object snd_cache {
                 FileSystem_h.fileSystem.ReadFile(oggName.toString(), null, timestamp)
             }
             return timestamp[0]
+        }
+
+        /*
+         ===================
+         idSoundSample::ComputeLoudness
+
+         Precomputes the sample's full-scale normalized RMS and peak for
+         the s_lufs global mix normalizer.  PCM data is walked straight
+         from nonCacheData; OGG samples keep the encoded stream there, so
+         they are decoded once through the sample decoder.
+         ===================
+         */
+        fun ComputeLoudness() {
+            var rms = 0.0f
+            var pk = 0.0f
+            var sumSq = 0.0
+            var n = 0
+            val data = nonCacheData
+            if (data != null && objectSize > 0) {
+                if (objectInfo.wFormatTag == snd_local.WAVE_FORMAT_TAG_PCM) {
+                    val total = minOf(objectSize, data.limit() shr 1)
+                    for (b in 0 until total step 2) {
+                        val s = data.getShort(b) / 32768.0f
+                        if (s > pk) {
+                            pk = s
+                        } else if (-s > pk) {
+                            pk = -s
+                        }
+                        sumSq += s * s
+                        n++
+                    }
+                } else if (objectInfo.wFormatTag == snd_local.WAVE_FORMAT_TAG_OGG) {
+                    val decoder = idSampleDecoder.Alloc()
+                    try {
+                        val total = LengthIn44kHzSamples()
+                        val scratch = BufferUtils.createFloatBuffer(44100)
+                        var offset = 0
+                        while (offset < total) {
+                            val len = minOf(44100, total - offset)
+                            decoder.Decode(this, offset, len, scratch)
+                            for (i in 0 until len) {
+                                val s = scratch.get(i) / 32768.0f
+                                if (s > pk) {
+                                    pk = s
+                                } else if (-s > pk) {
+                                    pk = -s
+                                }
+                                sumSq += s * s
+                                n++
+                            }
+                            offset += len
+                        }
+                    } finally {
+                        idSampleDecoder.Free(decoder)
+                    }
+                }
+            }
+            if (n > 0) {
+                rms = sqrt(sumSq / n).toFloat()
+            }
+            rms16 = rms
+            peak16 = pk
         }
 
         // turns it into a beep	
@@ -143,6 +210,7 @@ object snd_cache {
                 hardwareBuffer = true
             }
             defaultSound = true
+            ComputeLoudness()
         }
 
         /*
@@ -306,6 +374,8 @@ object snd_cache {
             }
 
             fh.Close()
+
+            ComputeLoudness()
         }
 
         // reloads if timestamp has changed, or always if force
@@ -346,6 +416,8 @@ object snd_cache {
             if (nonCacheData != null) {
                 nonCacheData = null
             }
+            rms16 = 0.0f
+            peak16 = 0.0f
         }
 
         fun CheckForDownSample() {        // down sample if required

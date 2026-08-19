@@ -40,8 +40,10 @@ import org.lwjgl.openal.EXTEfx
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.nio.ShortBuffer
-import kotlin.math.atan
-import kotlin.math.min
+import kotlin.math.*
+
+// E3 dialect: pinned 5.1 speaker placement distance from the listener (meters)
+private const val SPEAKER_PIN_DISTANCE = 1.0f
 
 class snd_world {
     class s_stats {
@@ -128,6 +130,19 @@ class snd_world {
         private val streamingSampleBytes: ByteBuffer =
             BufferUtils.createByteBuffer(MIXBUFFER_SAMPLES * 2 * java.lang.Short.BYTES)
         private val streamingSampleShorts: ShortBuffer = streamingSampleBytes.asShortBuffer()
+
+        // E3: scratch for the mean direction of a speaker mask
+        private val maskPinDir = idVec3()
+
+        // s_lufs global mix normalizer: smoothed master gain plus the
+        // per-mix-block accumulators of the expected mix level, filled by
+        // AddChannelContribution and consumed by UpdateLoudnessGain
+        private var loudnessGainDb = 0.0f
+        private var loudnessGainLin = 1.0f
+        private var loudnessPower = 0.0
+        private var loudnessPeakSq = 0.0
+        private var loudnessChannels = 0
+        private var loudnessDebugFrames = 0
 
         // virtual					~idSoundWorldLocal();
         // call at each map start
@@ -1442,6 +1457,25 @@ class snd_world {
             if (volume < snd_local.SND_EPSILON && chan.lastVolume < snd_local.SND_EPSILON) {
                 return
             }
+
+            // s_lufs global normalization: add this channel's expected
+            // contribution to the mix level, then apply the smoothed master
+            // gain.  Measured before speaker masks so all energy is
+            // accounted for; applied here so every AL_GAIN write and the
+            // software mix inherit it.
+            var loudSample = sample
+            if (looping && current44kHz - chan.trigger44kHzTime >= sample.LengthIn44kHzSamples()) {
+                loudSample = shader.entries[0] ?: sample
+            }
+            val loudV = if (volume > 1.0f) 1.0f else volume
+            if (loudV > 0.0f) {
+                val lufsRms = loudV * loudSample.rms16
+                loudnessPower += (lufsRms * lufsRms).toDouble()
+                val lufsPeak = loudV * loudSample.peak16
+                loudnessPeakSq += (lufsPeak * lufsPeak).toDouble()
+                loudnessChannels++
+            }
+            volume *= loudnessGainLin
             chan.lastVolume = volume
 
             //
@@ -1467,8 +1501,43 @@ class snd_world {
                         AL10.alSourceStop(chan.openalSource)
                     }
 
+                    // E3 dialect: a five_dot_one wave (or a speaker-masked sound in 5.1
+                    // mode) is pinned to its speaker direction; a spatialized mono
+                    // sound may instead be binaural-encoded with the E3 HRTF
+                    val useMaskPin =
+                        chan.pinnedSpeaker < 0 && mask != 0 && numSpeakers == 6 // s_hrtf is checked before IsActive(): without the cvar the
+                    // leak's impulse responses must not even be probed (a retail
+                    // run has no sound/hrtf data, and no reason to look)
+                    val useE3Hrtf =
+                        !useMaskPin && chan.pinnedSpeaker < 0 && !global && !omni && idSoundSystemLocal.s_hrtf.GetBool() && snd_hrtf.IsActive() && sample.objectInfo.nChannels == 1
+
                     // update source parameters
-                    if (global || omni) {
+                    if (chan.pinnedSpeaker >= 0 || useMaskPin) {
+                        val dir =
+                            if (chan.pinnedSpeaker >= 0) speakerVector[chan.pinnedSpeaker] else maskDirection(mask)
+                        AL10.alSourcei(chan.openalSource, AL10.AL_SOURCE_RELATIVE, AL10.AL_FALSE)
+                        AL10.alSource3f(
+                            chan.openalSource,
+                            AL10.AL_POSITION,
+                            -(listenerPos.y + dir.y * SPEAKER_PIN_DISTANCE),
+                            listenerPos.z + dir.z * SPEAKER_PIN_DISTANCE,
+                            -(listenerPos.x + dir.x * SPEAKER_PIN_DISTANCE)
+                        )
+                        AL10.alSourcef(
+                            chan.openalSource,
+                            AL10.AL_GAIN,
+                            min(volume.toFloat(), 1.0f)
+                        ) // the engine already applied the distance falloff to `volume`;
+                        // place the speaker exactly at the reference distance so
+                        // OpenAL does not attenuate it a second time
+                        AL10.alSourcef(chan.openalSource, AL10.AL_REFERENCE_DISTANCE, SPEAKER_PIN_DISTANCE)
+                        AL10.alSourcef(chan.openalSource, AL10.AL_MAX_DISTANCE, 1.0e9f)
+                    } else if (useE3Hrtf) { // the streamed buffer is already binaural; play it
+                        // listener-relative so OpenAL adds no further spatialization
+                        AL10.alSourcei(chan.openalSource, AL10.AL_SOURCE_RELATIVE, AL10.AL_TRUE)
+                        AL10.alSource3f(chan.openalSource, AL10.AL_POSITION, 0.0f, 0.0f, 0.0f)
+                        AL10.alSourcef(chan.openalSource, AL10.AL_GAIN, min(volume.toFloat(), 1.0f))
+                    } else if (global || omni) {
                         AL10.alSourcei(chan.openalSource, AL10.AL_SOURCE_RELATIVE, AL10.AL_TRUE)
                         AL10.alSource3f(chan.openalSource, AL10.AL_POSITION, 0.0f, 0.0f, 0.0f)
                         AL10.alSourcef(chan.openalSource, AL10.AL_GAIN, min(volume.toFloat(), 1.0f))
@@ -1491,8 +1560,10 @@ class snd_world {
                         AL10.AL_LOOPING,
                         if (looping && chan.soundShader!!.entries[0]!!.hardwareBuffer && !haveLeadin) AL10.AL_TRUE else AL10.AL_FALSE
                     )
-                    AL10.alSourcef(chan.openalSource, AL10.AL_REFERENCE_DISTANCE, minD.toFloat())
-                    AL10.alSourcef(chan.openalSource, AL10.AL_MAX_DISTANCE, maxD.toFloat())
+                    if (chan.pinnedSpeaker < 0 && !useMaskPin) { // pinned speakers carry their own reference distance
+                        AL10.alSourcef(chan.openalSource, AL10.AL_REFERENCE_DISTANCE, minD.toFloat())
+                        AL10.alSourcef(chan.openalSource, AL10.AL_MAX_DISTANCE, maxD.toFloat())
+                    }
                     AL10.alSourcef(
                         chan.openalSource,
                         AL10.AL_PITCH,
@@ -1518,7 +1589,7 @@ class snd_world {
                         }
                     }
 
-                    if (!looping && chan.leadinSample!!.hardwareBuffer || looping && !haveLeadin && chan.soundShader!!.entries[0]!!.hardwareBuffer) { // handle uncompressed (non streaming) single shot and looping sounds
+                    if (!useE3Hrtf && (!looping && chan.leadinSample!!.hardwareBuffer || looping && !haveLeadin && chan.soundShader!!.entries[0]!!.hardwareBuffer)) { // handle uncompressed (non streaming) single shot and looping sounds
                         if (chan.triggered) {
                             AL10.alSourcei(
                                 chan.openalSource,
@@ -1561,23 +1632,37 @@ class snd_world {
                                 chan.openalStreamingOffset * sample.objectInfo.nChannels, length, mixInputSamplesBuffer
                             )
                             streamingSampleBytes.clear()
-                            streamingSampleBytes.limit(length * java.lang.Short.BYTES)
-                            for (i in 0 until length) {
-                                if (alignedInputSamples[i] < -32768.0f) {
-                                    streamingSampleShorts.put(i, Short.MIN_VALUE)
-                                } else if (alignedInputSamples[i] > 32767.0f) {
-                                    streamingSampleShorts.put(i, Short.MAX_VALUE)
-                                } else {
-                                    val bla = idMath.FtoiFast(alignedInputSamples[i]).toShort()
-                                    streamingSampleShorts.put(i, bla)
+                            if (useE3Hrtf) { // binaural-encode this mono block for the sound's
+                                // current direction relative to the listener
+                                snd_hrtf.ConvolveBlock(
+                                    chan.hrtfTail,
+                                    spatializedOriginInMeters.x - listenerPos.x,
+                                    spatializedOriginInMeters.y - listenerPos.y,
+                                    mixInputSamplesBuffer,
+                                    length,
+                                    streamingSampleShorts
+                                )
+                                streamingSampleBytes.limit(length * 4) // 2 channels per sample
+                                AL10.alBufferData(buffers[j], AL10.AL_FORMAT_STEREO16, streamingSampleBytes, 44100)
+                            } else {
+                                streamingSampleBytes.limit(length * java.lang.Short.BYTES)
+                                for (i in 0 until length) {
+                                    if (alignedInputSamples[i] < -32768.0f) {
+                                        streamingSampleShorts.put(i, Short.MIN_VALUE)
+                                    } else if (alignedInputSamples[i] > 32767.0f) {
+                                        streamingSampleShorts.put(i, Short.MAX_VALUE)
+                                    } else {
+                                        val bla = idMath.FtoiFast(alignedInputSamples[i]).toShort()
+                                        streamingSampleShorts.put(i, bla)
+                                    }
                                 }
+                                AL10.alBufferData(
+                                    buffers[j],
+                                    if (chan.leadinSample!!.objectInfo.nChannels == 1) AL10.AL_FORMAT_MONO16 else AL10.AL_FORMAT_STEREO16,
+                                    streamingSampleBytes,
+                                    44100
+                                )
                             }
-                            AL10.alBufferData(
-                                buffers[j],
-                                if (chan.leadinSample!!.objectInfo.nChannels == 1) AL10.AL_FORMAT_MONO16 else AL10.AL_FORMAT_STEREO16,
-                                streamingSampleBytes,
-                                44100
-                            )
                             chan.openalStreamingOffset += MIXBUFFER_SAMPLES
                             j++
                         }
@@ -1641,6 +1726,13 @@ class snd_world {
                     if (0 == mask and (1 shl i)) {
                         ears[i] = 0.0f
                     }
+                } // E3 dialect: a five_dot_one channel plays only on its pinned
+                // speaker at full volume (retail mask_* only zeroes ears)
+                if (chan.pinnedSpeaker in 0..5) {
+                    for (i in 0..5) {
+                        ears[i] = 0.0f
+                    }
+                    ears[chan.pinnedSpeaker] = volume
                 }
 
                 // if sounds are generally normalized, using a mixing volume over 1.0f will
@@ -1713,6 +1805,7 @@ class snd_world {
             // if noclip flying outside the world, leave silence
             if (listenerArea == -1) {
                 AL10.alListenerf(AL10.AL_GAIN, 0.0f)
+                UpdateLoudnessGain()
                 return
             }
 
@@ -1782,6 +1875,7 @@ class snd_world {
                         j++
                     }
                 }
+                UpdateLoudnessGain()
                 return
             }
             i = 1
@@ -1813,6 +1907,94 @@ class snd_world {
             if (false && enviroSuitActive) {
                 snd_system.soundSystemLocal.DoEnviroSuit(finalMixBuffer, MIXBUFFER_SAMPLES, numSpeakers)
             }
+            UpdateLoudnessGain()
+        }
+
+        /*
+         ===================
+         idSoundWorldLocal::UpdateLoudnessGain
+
+         Implements the s_lufs cvar: normalizes the whole game mix to a
+         target loudness level.  s_lufs holds the target as a positive
+         magnitude (value 12 = -12 LUFS, range 6-18, higher is quieter),
+         so increasing it gives more headroom against clipping.
+
+         AddChannelContribution accumulated the expected level of this
+         mix block as the sum of squared full-scale RMS (loudnessPower)
+         and the squared volume-weighted peaks (loudnessPeakSq).  From
+         that the current mix level in LUFS is derived (plain RMS + 3 dB
+         approximates LUFS for typical game content; a game engine has
+         no K-weighting) and the correction is approached with a fast
+         attack and a slow release.  The gain is capped by an estimate
+         of the normalized mix's output peak (the larger of a 4x crest
+         factor on the mix RMS and the root-sum-square of the per-channel
+         peaks; peaks of uncorrelated sources almost never align in
+         phase, so the plain sum would overestimate the worst case by
+         10+ dB and pin the gain in normal multi-channel scenes), so
+         the normalizer stays far from clipping without nullifying the
+         normalization.
+         ===================
+         */
+        fun UpdateLoudnessGain() {
+            var target = idSoundSystemLocal.s_lufs.GetFloat()
+            if (target <= 0.0f) { // disabled: pass the mix through untouched
+                loudnessGainDb = 0.0f
+                loudnessGainLin = 1.0f
+                loudnessPower = 0.0
+                loudnessPeakSq = 0.0
+                loudnessChannels = 0
+                return
+            }
+            if (target < 6.0f) {
+                target = 6.0f
+            } else if (target > 18.0f) {
+                target = 18.0f
+            }
+            var desired = 0.0f
+            var peakEst = 0.0f
+            if (loudnessPower > 0.0) {
+                val measuredLufts = 10.0 * log10(loudnessPower) + 3.0
+                desired = (-target.toDouble() - measuredLufts).toFloat()
+                if (desired > 12.0f) {
+                    desired = 12.0f
+                }
+                if (desired < -40.0f) {
+                    desired = -40.0f
+                }
+                peakEst = maxOf(4.0f * sqrt(loudnessPower).toFloat(), sqrt(loudnessPeakSq).toFloat())
+                if (peakEst > 0.0f) {
+                    val peakCeiling = (20.0 * log10(0.98 / peakEst.toDouble())).toFloat()
+                    if (desired > peakCeiling) {
+                        desired = peakCeiling
+                    }
+                }
+            } // one mix block is one frame (~16.7 ms): pull the gain down
+            // fast to keep from pumping, release back to the target slowly
+            val alpha = if (desired < loudnessGainDb) 0.5f else 0.06f
+            loudnessGainDb += (desired - loudnessGainDb) * alpha
+            loudnessGainLin = 10.0.pow(loudnessGainDb.toDouble() / 20.0).toFloat()
+            if (!loudnessGainLin.isFinite() || loudnessGainLin < 0.0f) {
+                loudnessGainDb = 0.0f
+                loudnessGainLin = 1.0f
+            }
+            if (idSoundSystemLocal.s_showLoudness.GetBool()) {
+                loudnessDebugFrames++
+                if (loudnessDebugFrames >= 60) {
+                    loudnessDebugFrames = 0
+                    val measured = if (loudnessPower > 0.0) 10.0 * log10(loudnessPower) + 3.0 else -99.0
+                    Common.common.Printf(
+                        "s_lufs: measured %+.1f target -%.0f gain %+.1f dB peakEst %.2f ch %d\n",
+                        measured,
+                        target,
+                        loudnessGainDb,
+                        peakEst,
+                        loudnessChannels
+                    )
+                }
+            }
+            loudnessPower = 0.0
+            loudnessPeakSq = 0.0
+            loudnessChannels = 0
         }
 
         /*
@@ -2094,6 +2276,24 @@ class snd_world {
             return sout
         }
 
+        // E3: mean direction of the masked speakers; the LFE carries no
+        // direction, so a sub-only mask pins the sound to the listener
+        private fun maskDirection(mask: Int): idVec3 {
+            maskPinDir.set(0.0f, 0.0f, 0.0f)
+            for (spk in 0..5) {
+                if (spk == 3) {
+                    continue
+                }
+                if (mask and (1 shl spk) != 0) {
+                    val sv = speakerVector[spk]
+                    maskPinDir.x += sv.x
+                    maskPinDir.y += sv.y
+                    maskPinDir.z += sv.z
+                }
+            }
+            return maskPinDir
+        }
+
         companion object {
             /*
          ===================
@@ -2155,6 +2355,7 @@ class snd_world {
                 idVec3(-0.707f, 0.707f, 0.0f),  // rear left
                 idVec3(-0.707f, -0.707f, 0.0f) // rear right
             )
+
 
             /*
          ===============

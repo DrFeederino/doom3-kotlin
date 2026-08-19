@@ -105,6 +105,14 @@ object snd_shader {
         private var onDemand // only load when played, and free when finished
                 = false
 
+        // E3-alpha dialect: wave group membership and 5.1 speaker pinning.
+        // entryBranch: 0 = always, 1 = only when s_numberOfSpeakers==2,
+        //              2 = only when s_numberOfSpeakers==6
+        // entrySpeaker: -1 = normal spatialization, else the 5.1 speaker the
+        //               wave is pinned to (five_dot_one: 0..5 = L R C LFE BL BR)
+        val entryBranch = IntArray(SOUND_MAX_LIST_WAVS)
+        val entrySpeaker = IntArray(SOUND_MAX_LIST_WAVS)
+
         override fun SetDefaultText(): Boolean {
             val wavName: idStr
             wavName = idStr(GetName())
@@ -228,6 +236,74 @@ object snd_shader {
             return numLeadins + numEntries
         }
 
+        /*
+         ===============
+         idSoundShader::ActiveEntryIndices
+
+         E3-alpha dialect: fill out with the indexes of the entries that are
+         active for the given speaker mode (s_numberOfSpeakers 2 or 6).
+         Entries from "if (speakers == N)" groups only play in their mode.
+         Pinned five_dot_one entries are only active when the whole
+         six-speaker group is armed for playback.
+         Returns the number of active entries.
+         ===============
+         */
+        fun ActiveEntryIndices(numSpeakers: Int, out: IntArray, pinnedGroupArmed: Boolean): Int {
+            val mode = if (numSpeakers == 6) 2 else 1
+            var n = 0
+            for (i in 0 until numEntries) { // speaker-pinned waves are only routed through the six-speaker
+                // group arming; never play one as a regular pick (it would
+                // spatialize a wave meant for a specific speaker, possibly a
+                // default/error sample for a missing file)
+                if (entrySpeaker[i] >= 0 && (mode == 1 || !pinnedGroupArmed)) {
+                    continue
+                }
+                val b = entryBranch[i]
+                if (b == 0 || b == mode) {
+                    out[n++] = i
+                }
+            }
+            return n
+        }
+
+        /*
+         ===============
+         idSoundShader::PinnedEntryForSpeaker
+
+         E3-alpha dialect: the entry index of the wave pinned to the given
+         5.1 speaker (five_dot_one), or -1 if there is none.
+         ===============
+         */
+        fun PinnedEntryForSpeaker(speaker: Int, numSpeakers: Int): Int {
+            if (numSpeakers != 6 || speaker !in 0..5) {
+                return -1
+            }
+            for (i in 0 until numEntries) {
+                if (entrySpeaker[i] == speaker && (entryBranch[i] == 0 || entryBranch[i] == 2)) {
+                    return i
+                }
+            }
+            return -1
+        }
+
+        // E3-alpha dialect: a complete set of six five_dot_one speaker waves.
+        // Every pinned entry must hold a real sample: retail's speaker_test
+        // shader uses the dialect but ships without its waves, and its
+        // default (error) samples must not arm a six-channel group
+        fun HasPinned51Group(numSpeakers: Int): Boolean {
+            if (numSpeakers != 6) {
+                return false
+            }
+            for (spk in 0..5) {
+                val idx = PinnedEntryForSpeaker(spk, numSpeakers)
+                val smp = if (idx >= 0) entries[idx] else null
+                if (smp == null || smp.defaultSound) {
+                    return false
+                }
+            }
+            return true
+        }
+
         fun GetSound(index: Int): String {
             var index = index
             if (index >= 0) {
@@ -276,6 +352,8 @@ object snd_shader {
             numLeadins = 0
             leadinVolume = 0.0f
             altSound = null
+            entryBranch.fill(0)
+            entrySpeaker.fill(-1)
         }
 
         private fun ParseShader(src: idLexer): Boolean {
@@ -293,10 +371,15 @@ object snd_shader {
             while (i < SOUND_MAX_LIST_WAVS) {
                 leadins[i] = null
                 entries[i] = null
+                entryBranch[i] = 0
+                entrySpeaker[i] = -1
                 i++
             }
             numEntries = 0
-            numLeadins = 0
+            numLeadins = 0 // E3-alpha dialect parse state
+            var pendingBranch = 0 // 0 none, 1 speakers==2, 2 speakers==6
+            var pendingSkip = false // inside an "if (...)" group that is false at parse time
+            var pendingPin = -1 // next five_dot_one speaker to pin (0..5)
             var maxSamples: Int = idSoundSystemLocal.s_maxSoundsPerShader.GetInteger()
             if (Common.com_makingBuild.GetBool() || maxSamples <= 0 || maxSamples > SOUND_MAX_LIST_WAVS) {
                 maxSamples = SOUND_MAX_LIST_WAVS
@@ -411,18 +494,67 @@ object snd_shader {
                 } // onDemand can't be a parms, because we must track all references and overrides would confuse it
                 else if (0 == token.Icmp("onDemand")) { // no longer loading sounds on demand
                     //onDemand = true;
+                } // E3-alpha: the 2002 name for omnidirectional
+                else if (0 == token.Icmp("stereo_omni")) {
+                    parms.soundShaderFlags = parms.soundShaderFlags or SSF_OMNIDIRECTIONAL
+                } // E3-alpha: the next waves are per-speaker (L, R, C, LFE, BL, BR)
+                else if (0 == token.Icmp("five_dot_one")) {
+                    pendingPin = 0
+                } // E3-alpha conditional group: if (var == N) / if (var != N)
+                else if (0 == token.Icmp("if")) { // "speakers" selects the wave group by s_numberOfSpeakers;
+                    // other vars (parm*) have no runtime binding here, so the
+                    // group is evaluated at parse time with the var == 0
+                    if (!src.ExpectTokenString("(")) {
+                        src.FreeSource()
+                        return false
+                    }
+                    val condVar = idToken()
+                    if (!src.ExpectAnyToken(condVar)) {
+                        src.FreeSource()
+                        return false
+                    }
+                    val condOp = idToken()
+                    if (!src.ExpectAnyToken(condOp)) {
+                        src.FreeSource()
+                        return false
+                    }
+                    val condVal = idToken()
+                    if (!src.ExpectAnyToken(condVal)) {
+                        src.FreeSource()
+                        return false
+                    }
+                    if (!src.ExpectTokenString(")")) {
+                        src.FreeSource()
+                        return false
+                    }
+                    pendingSkip = false
+                    pendingBranch = 0
+                    if (condVar.toString().equals("speakers", ignoreCase = true)) {
+                        val isEq = 0 == condOp.Icmp("==")
+                        pendingBranch = when {
+                            isEq && condVal.GetFloatValue() == 2.0f -> 1
+                            isEq && condVal.GetFloatValue() == 6.0f -> 2
+                            !isEq && condVal.GetFloatValue() == 2.0f -> 2
+                            !isEq && condVal.GetFloatValue() == 6.0f -> 1
+                            else -> 0
+                        }
+                    } else {
+                        val isEq = 0 == condOp.Icmp("==")
+                        pendingSkip = if (isEq) condVal.GetFloatValue() != 0.0f else condVal.GetFloatValue() == 0.0f
+                    }
                 } // the wave files
                 else if (0 == token.Icmp("leadin")) { // add to the leadin list
                     if (!src.ReadToken(token)) {
                         src.Warning("Expected sound after leadin")
                         return false
                     }
-                    if (snd_system.soundSystemLocal.soundCache != null && numLeadins < maxSamples) {
+                    if (!pendingSkip && snd_system.soundSystemLocal.soundCache != null && numLeadins < maxSamples) {
                         leadins[numLeadins] = snd_system.soundSystemLocal.soundCache!!.FindSound(token, onDemand)
                         numLeadins++
                     }
                 } else if (token.Find(".wav", false) != -1 || token.Find(".ogg", false) != -1) { // add to the wav list
-                    if (snd_system.soundSystemLocal.soundCache != null && numEntries < maxSamples) {
+                    if (pendingSkip) { // wave in a conditional group that is false at parse time
+                    } else if (snd_system.soundSystemLocal.soundCache != null && numEntries < maxSamples) {
                         token.BackSlashesToSlashes()
                         val lang = CVarSystem.cvarSystem.GetCVarString("sys_lang")
                         if (!lang.equals("english", ignoreCase = true) && token.Find("sound/vo/", false) >= 0) {
@@ -438,6 +570,8 @@ object snd_shader {
                             }
                         }
                         entries[numEntries] = snd_system.soundSystemLocal.soundCache!!.FindSound(token, onDemand)
+                        entryBranch[numEntries] = pendingBranch
+                        entrySpeaker[numEntries] = if (pendingPin in 0..5) pendingPin++ else -1
                         numEntries++
                     }
                 } else {
