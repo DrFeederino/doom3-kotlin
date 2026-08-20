@@ -1412,7 +1412,7 @@ object DeclParticle {
                 }
             } else { // table
                 parm.table =  /*static_cast<const idDeclTable *>*/
-                    DeclManager.declManager.FindType(declType_t.DECL_TABLE, token, false) as idDeclTable
+                    DeclManager.declManager.FindType(declType_t.DECL_TABLE, token, false) as idDeclTable?
             }
         }
 

@@ -3437,8 +3437,8 @@ class Game_local {
             }
 
             // check if we should spawn a class object
-            spawnArgs.GetString("spawnclass", "", spawn)
-            if (!spawn[0].isNullOrEmpty()) {
+            spawnArgs.GetString("spawnclass", null, spawn)
+            if (spawn[0] != null) {
                 val cls = idClass.GetClass(spawn[0])
                 if (cls == null) {
                     Warning("Could not spawn '%s'. Class '%s' not found%s.", classname[0], spawn[0], error)
@@ -3453,7 +3453,7 @@ class Game_local {
             }
 
             // check if we should call a script function to spawn
-            spawnArgs.GetString("spawnfunc", "", spawn)
+            spawnArgs.GetString("spawnfunc", null, spawn)
             if (spawn[0] != null) {
                 val func = program.FindFunction(spawn[0])
                 if (null == func) {
