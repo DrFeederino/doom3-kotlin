@@ -1507,11 +1507,12 @@ class snd_world {
                     // mode) is pinned to its speaker direction; a spatialized mono
                     // sound may instead be binaural-encoded with the E3 HRTF
                     val useMaskPin =
-                        chan.pinnedSpeaker < 0 && mask != 0 && numSpeakers == 6 // s_hrtf is checked before IsActive(): without the cvar the
+                        chan.pinnedSpeaker < 0 && mask != 0 && numSpeakers == 6 // the leak's HRTF data is headphone material: the 2002 engine had // no s_hrtf cvar and only ever applied it for two-speaker output.
+                    // s_hrtf is checked before IsActive(): without the cvar the
                     // leak's impulse responses must not even be probed (a retail
                     // run has no sound/hrtf data, and no reason to look)
                     val useE3Hrtf =
-                        !useMaskPin && chan.pinnedSpeaker < 0 && !global && !omni && idSoundSystemLocal.s_hrtf.GetBool() && snd_hrtf.IsActive() && sample.objectInfo.nChannels == 1
+                        !useMaskPin && chan.pinnedSpeaker < 0 && !global && !omni && numSpeakers == 2 && idSoundSystemLocal.s_hrtf.GetBool() && snd_hrtf.IsActive() && sample.objectInfo.nChannels == 1
 
                     // update source parameters
                     if (chan.pinnedSpeaker >= 0 || useMaskPin) {
@@ -1635,11 +1636,17 @@ class snd_world {
                             )
                             streamingSampleBytes.clear()
                             if (useE3Hrtf) { // binaural-encode this mono block for the sound's
-                                // current direction relative to the listener
+                                // current direction relative to the listener: project the
+                                // world-space offset onto the listener axis rows (x = forward,
+                                // y = right) the same way CalcEars does — the HRTF azimuth is
+                                // meaningless in world space because it must follow the head
+                                val relX = spatializedOriginInMeters.x - listenerPos.x
+                                val relY = spatializedOriginInMeters.y - listenerPos.y
+                                val relZ = spatializedOriginInMeters.z - listenerPos.z
                                 snd_hrtf.ConvolveBlock(
                                     chan.hrtfTail,
-                                    spatializedOriginInMeters.x - listenerPos.x,
-                                    spatializedOriginInMeters.y - listenerPos.y,
+                                    relX * listenerAxis[0].x + relY * listenerAxis[0].y + relZ * listenerAxis[0].z,
+                                    -(relX * listenerAxis[1].x + relY * listenerAxis[1].y + relZ * listenerAxis[1].z),
                                     mixInputSamplesBuffer,
                                     length,
                                     streamingSampleShorts

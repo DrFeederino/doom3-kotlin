@@ -162,9 +162,9 @@ class snd_system {
             )
             val s_hrtf: idCVar = idCVar(
                 "s_hrtf",
-                "0",
+                "1",
                 CVarSystem.CVAR_SOUND or CVarSystem.CVAR_BOOL or CVarSystem.CVAR_ARCHIVE,
-                "E3-alpha HRTF: binaural-encode spatialized mono sounds with the leak's sound/hrtf impulse responses (best with headphones)"
+                "E3 HRTF: binaural-encode spatialized mono sounds with the leak's sound/hrtf KEMAR impulse responses; only active with s_numberOfSpeakers 2 (headphones), 0 disables"
             )
             val s_alOutputLimiter: idCVar = idCVar(
                 "s_alOutputLimiter",

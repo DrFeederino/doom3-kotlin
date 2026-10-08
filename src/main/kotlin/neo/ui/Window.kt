@@ -1666,7 +1666,7 @@ object Window {
             if (flags and WIN_SHOWTIME != 0) {
                 dc!!.DrawText(
                     va(
-                        " %0.1f seconds\n%s", (time - timeLine).toFloat() / 1000, gui!!.State().GetString("name")
+                        " %.1f seconds\n%s", (time - timeLine).toFloat() / 1000, gui!!.State().GetString("name")
                     ), 0.35f, 0, idDeviceContext.colorWhite, idRectangle(100.0f, 0.0f, 80.0f, 80.0f), false
                 )
             }

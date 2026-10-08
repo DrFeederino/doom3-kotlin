@@ -136,6 +136,12 @@ object Pvs {
 
             numAreas = Game_local.gameRenderWorld!!.NumAreas()
             if (numAreas <= 0) {
+                areaVisBytes = 0
+                for (i in 0 until MAX_CURRENT_PVS) {
+                    currentPVS[i].handle.i = -1
+                    currentPVS[i].handle.h = 0
+                    currentPVS[i].pvs = ByteArray(0)
+                }
                 return
             }
             connectedAreas = BooleanArray(numAreas)
