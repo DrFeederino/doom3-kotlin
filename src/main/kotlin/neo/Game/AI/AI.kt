@@ -2892,9 +2892,7 @@ open class idAI : idActor() {
         val moveResult: monsterMoveResult_t?
         val newDest = idVec3()
         val oldOrigin =
-            idVec3(physicsObj.GetOrigin()) // FIX: Was `val oldAxis = viewAxis` which copies the reference, not the value.
-        // Turn() modifies viewAxis in-place via .set(), so oldAxis and viewAxis would be
-        // the same object, causing GetMoveDelta to receive identical matrices.
+            idVec3(physicsObj.GetOrigin()) // FIX: Was `val oldAxis = viewAxis` which copies the reference, not the value. // Turn() modifies viewAxis in-place via .set(), so oldAxis and viewAxis would be // the same object, causing GetMoveDelta to receive identical matrices.
         val oldAxis = idMat3(viewAxis)
         AI_BLOCKED.underscore(false)
         if ((move.moveCommand).ordinal < (moveCommand_t.NUM_NONMOVING_COMMANDS).ordinal) {
@@ -5604,8 +5602,7 @@ open class idAI : idActor() {
             )
         } else if (focusEnt is idActor) {
             focusPos.set(
-                focusEnt.GetEyePosition()
-                    .minus(focusEnt.GetPhysics().GetGravityNormal().times(eyeVerticalOffset))
+                focusEnt.GetEyePosition().minus(focusEnt.GetPhysics().GetGravityNormal().times(eyeVerticalOffset))
             )
         } else {
             focusPos.set(focusEnt.GetPhysics().GetOrigin())
@@ -7934,8 +7931,7 @@ open class idAI : idActor() {
      */
     protected fun Event_LookAtEntity(_ent: idEventArg<idEntity>, duration: idEventArg<Float>) {
         var ent: idEntity? =
-            _ent.value // FIX: C++ sets ent = NULL when looking at self, then falls through to the second if.
-        // Was using else-if (mutually exclusive) and had the null assignment commented out.
+            _ent.value // FIX: C++ sets ent = NULL when looking at self, then falls through to the second if. // Was using else-if (mutually exclusive) and had the null assignment commented out.
         if (ent === this) {
             ent = null
         }

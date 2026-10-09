@@ -1948,9 +1948,7 @@ object Str {
             fun snPrintf(dest: StringBuffer, size: Int, fmt: String, vararg args: Any): Int {
                 var len: Int
                 val bufferSize = 32000
-                val buffer =
-                    StringBuffer(bufferSize) // //	va_start( argptr, fmt ); //	len = vsprintf( buffer, fmt, argptr );
-                //	va_end( argptr );
+                val buffer = StringBuffer(bufferSize)
                 len = buffer.append(String.format(fmt, *args)).length
                 if (len >= bufferSize) {
                     idLib.common.Error("idStr::snPrintf: overflowed buffer")

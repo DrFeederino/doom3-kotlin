@@ -3140,8 +3140,7 @@ class Game_local {
 
         fun Warning(fmt: String, vararg args: Any?) { //	va_list		argptr;
             val text = StringBuilder(MAX_STRING_CHARS)
-            val thread: idThread? // //	va_start( argptr, fmt ); //	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
-            //	va_end( argptr );
+            val thread: idThread?
             text.append(String.format(fmt, *args))
             thread = idThread.CurrentThread()
             if (thread != null) {
@@ -6950,8 +6949,7 @@ class Game_local {
 
             fun Error(fmt: String, vararg args: Any?) { //	va_list		argptr;
                 val text = StringBuilder(MAX_STRING_CHARS)
-                val thread: idThread? // //	va_start( argptr, fmt ); //	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
-                //	va_end( argptr );
+                val thread: idThread?
                 text.append(String.format(fmt, *args))
                 thread = idThread.CurrentThread()
                 if (thread != null) {

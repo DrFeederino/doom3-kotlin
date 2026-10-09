@@ -118,11 +118,7 @@ object Clip {
                 = 0
         var children: Array<clipSector_s?> = arrayOfNulls(2)
         var clipLinks: clipLink_s? = null
-        var dist = 0.0f //        private void oSet(clipSector_s clip) { //            this.axis = clip.axis;
-        //            this.dist = clip.dist;
-        //            this.children = clip.children;
-        //            this.clipLinks = clip.clipLinks;
-        //        }
+        var dist = 0.0f
     }
 
     class clipLink_s {

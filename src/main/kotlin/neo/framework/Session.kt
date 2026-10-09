@@ -54,9 +54,7 @@ import neo.ui.UserInterface.idUserInterface
 class Session {
     fun RandomizeStack() { // attempt to force uninitialized stack memory bugs
         val bytes = 4000000
-        val buf =
-            ByteArray(bytes) // FIX: Math.random() returns [0.0, 1.0), toInt() truncates to 0, so fill was always 0.
-        // C++ uses rand()&255 which produces a random byte value.
+        val buf = ByteArray(bytes)
         val fill = ((Math.random() * 256).toInt() and 255).toByte()
         for (i in 0 until bytes) {
             buf[i] = fill

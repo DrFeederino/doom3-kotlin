@@ -846,11 +846,9 @@ object Compressor {
             return i
         }
 
-        // FIX: Rewritten to use NodeSlot for head pointer-pointer semantics
         private fun AddRef(ch: Byte) {
             val tnode: huffmanNode_t
-            val tnode2: huffmanNode_t // FIX: ch.toInt() sign-extends for bytes > 127 (e.g. 0xFF -> -1), causing AIOOBE.
-            // C++ uses unsigned char (0-255); mask with 0xFF to simulate unsigned.
+            val tnode2: huffmanNode_t
             val chIdx = ch.toInt() and 0xFF
             if (loc[chIdx] == null) { /* if this is the first transmission of this node */
                 tnode = nodeList[blocNode++]

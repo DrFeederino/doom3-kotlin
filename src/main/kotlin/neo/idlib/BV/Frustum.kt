@@ -1140,8 +1140,8 @@ object Frustum {
          */
         fun AxisProjection(ax: idMat3, bounds: idBounds) {
             val indexPoints: Array<idVec3> = idVec3.generateArray(8)
-            val cornerVecs: Array<idVec3> = idVec3.generateArray(4) // needed to bypass &float stuff for AxisProjection
-            // Wrap it in CFloats and write to them
+            val cornerVecs: Array<idVec3> =
+                idVec3.generateArray(4) // needed to bypass &float stuff for AxisProjection // Wrap it in CFloats and write to them
             val b00 = CFloat(bounds[0][0])
             val b01 = CFloat(bounds[0][1])
             val b02 = CFloat(bounds[0][2])

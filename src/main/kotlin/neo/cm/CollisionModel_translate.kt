@@ -97,8 +97,7 @@ fun CM_SetEdgeSidedness(edge: cm_edge_s, vpl: idPluecker, epl: idPluecker, bitNu
 fun CM_TranslationPlaneFraction(plane: idPlane, start: idVec3, end: idVec3): Float {
     val d2eps: Float
     var d2: Float =
-        plane.Distance(end) // if the end point is closer to the plane than an epsilon we still take it for a collision
-    // if ( d2 >= CM_CLIP_EPSILON ) {
+        plane.Distance(end) // if the end point is closer to the plane than an epsilon we still take it for a collision // if ( d2 >= CM_CLIP_EPSILON ) {
     d2eps = d2 - CM_CLIP_EPSILON
     if (FLOATSIGNBITNOTSET(d2eps) != 0) {
         return 1.0f

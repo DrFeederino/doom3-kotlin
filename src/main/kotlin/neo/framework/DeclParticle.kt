@@ -81,8 +81,7 @@ object DeclParticle {
     enum class prtDistribution_t {
         PDIST_RECT,  // ( sizeX sizeY sizeZ )
         PDIST_CYLINDER,  // ( sizeX sizeY sizeZ )
-        PDIST_SPHERE // ( sizeX sizeY sizeZ ringFraction ) // a ringFraction of zero allows the entire sphere, 0.9 would only
-        // allow the outer 10% of the sphere
+        PDIST_SPHERE // ( sizeX sizeY sizeZ ringFraction ) // a ringFraction of zero allows the entire sphere, 0.9 would only // allow the outer 10% of the sphere
     }
 
     enum class prtOrientation_t {
@@ -448,9 +447,7 @@ object DeclParticle {
             // if we are doing strip-animation, we need to double the quad and cross fade it
             val width = 1.0f / animationFrames
             val frac = g.animationFrameFrac
-            val iFrac =
-                1.0f - frac // FIX: color bytes are stored as signed (Kotlin Byte), but C++ uses unsigned char (0-255).
-            // Must mask with 0xFF before multiplying to avoid sign-extension producing negative results.
+            val iFrac = 1.0f - frac
             for (i in 0 until numVerts) {
                 verts[numVerts + i].set(verts[i])
                 verts[numVerts + i].st.x += width

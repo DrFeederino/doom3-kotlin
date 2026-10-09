@@ -608,8 +608,7 @@ object GuiScript {
         override fun run(window: idWindow, src: idList<idGSWinVar>) { // transitions always affect rect or vec4 vars
             if (src.Num() >= 4) {
                 var rect: Winvar.idWinRectangle? = null
-                val vec4 = src[0].winvar as? Winvar.idWinVec4 //
-                //  added float variable
+                val vec4 = src[0].winvar as? Winvar.idWinVec4 // //  added float variable
                 var `val`: Winvar.idWinFloat? = null //
                 if (null == vec4) {
                     rect = src[0].winvar as? Winvar.idWinRectangle //
@@ -620,8 +619,7 @@ object GuiScript {
                 }
                 val from = src[1].winvar as? Winvar.idWinVec4
                 val to = src[2].winvar as? Winvar.idWinVec4
-                val timeStr = src[3].winvar as? idWinStr //
-                //  added float variable					
+                val timeStr = src[3].winvar as? idWinStr // //  added float variable
                 if (!((vec4 != null || rect != null || `val` != null) && from != null && to != null && timeStr != null)) { //
                     Common.common.Warning(
                         "Bad transition in gui %s in window %s\n", window.GetGui().GetSourceFile(), window.GetName()

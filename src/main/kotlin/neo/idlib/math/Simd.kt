@@ -348,9 +348,7 @@ abstract class idSIMDProcessor {
     ): Int
 
     fun CreateVertexProgramShadowCache(
-        vertexCache: idVec4,
-        verts: Array<idDrawVert>,
-        numVerts: Int
+        vertexCache: idVec4, verts: Array<idDrawVert>, numVerts: Int
     ) { // This overload should create vertex program shadow cache
         // Implementation would match the C++ version
         // For now, this is a placeholder

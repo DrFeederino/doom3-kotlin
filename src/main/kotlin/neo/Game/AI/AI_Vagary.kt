@@ -141,8 +141,7 @@ class AI_Vagary {
                         enemyEyePos,
                         speed.value,
                         entPhys.GetGravity(),
-                        entPhys.GetClipModel()!!,
-                        entPhys.GetClipMask(), MAX_WORLD_SIZE.toFloat(), null, enemyEnt,
+                        entPhys.GetClipModel()!!, entPhys.GetClipMask(), MAX_WORLD_SIZE.toFloat(), null, enemyEnt,
                         if (SysCvar.ai_debugTrajectory.GetBool()) 4000 else 0,
                         vel
                     )

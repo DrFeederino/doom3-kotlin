@@ -191,8 +191,7 @@ class UserInterfaceLocal {
                         //       Otherwise xOffset/yOffset will just be 0
                         var xOffset = (realW - w) * 0.5f
                         var yOffset =
-                            (realH - h) * 0.5f // offset the mouse coordinates into 4:3 area and scale down to 640x480
-                        // yes, result could be negative, doesn't matter, code below checks that anyway
+                            (realH - h) * 0.5f // offset the mouse coordinates into 4:3 area and scale down to 640x480 // yes, result could be negative, doesn't matter, code below checks that anyway
                         cursorX = (event.evValue - xOffset) * ((VIRTUAL_WIDTH).toFloat() / w)
                         cursorY = (event.evValue2 - yOffset) * ((VIRTUAL_HEIGHT).toFloat() / h)
                     }

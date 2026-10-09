@@ -654,9 +654,7 @@ object MultiplayerGame {
         }
 
         fun AddChatLine(fmt: String, vararg objects: Any?) { //id_attribute((format(printf,2,3)));
-            val temp: idStr //            va_list argptr; // //            va_start(argptr, fmt);
-            //            vsprintf(temp, fmt, argptr);
-            //            va_end(argptr);
+            val temp: idStr
             temp = idStr(String.format(fmt, *objects))
             Game_local.gameLocal.Printf("%s\n", temp.toString())
             chatHistory[chatHistoryIndex % NUM_CHAT_NOTIFY].line = temp

@@ -588,8 +588,8 @@ object TypeInfo {
             val vars = classInfo.variables ?: return
             var i = 0
             while (vars[i].name != null) {
-                val classVar = vars[i] // C++: void *varPtr = (void *) (((byte *)classPtr) + classVar.offset);
-                // On JVM, we set the ByteBuffer position to simulate the offset
+                val classVar =
+                    vars[i] // C++: void *varPtr = (void *) (((byte *)classPtr) + classVar.offset); // On JVM, we set the ByteBuffer position to simulate the offset
                 if (classVar.offset < classPtr.capacity()) {
                     classPtr.position(classVar.offset)
                 }

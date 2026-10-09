@@ -81,8 +81,8 @@ class HashTable {
         //public	size_t			Size( void ) const;
         //
         fun Set(key: String?, value: Type?) {
-            val hash: Int = GetHash(key) // Walk the chain to find insertion point (sorted by key).
-            // Track the previous node so we can splice in the new node.
+            val hash: Int =
+                GetHash(key) // Walk the chain to find insertion point (sorted by key). // Track the previous node so we can splice in the new node.
             var prev: hashnode_s<*>? = null
             var node: hashnode_s<*>? = heads[hash]
             while (node != null) {

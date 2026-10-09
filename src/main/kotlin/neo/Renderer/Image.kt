@@ -886,7 +886,12 @@ object Image {
                         GL11.GL_TEXTURE_2D,
                         miplevel,
                         internalFormat,
-                        scaled_width._val, scaled_height._val, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, scaledBuffer
+                        scaled_width._val,
+                        scaled_height._val,
+                        0,
+                        GL11.GL_RGBA,
+                        GL11.GL_UNSIGNED_BYTE,
+                        scaledBuffer
                     )
                 }
             }
@@ -1222,9 +1227,7 @@ object Image {
                         GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB8, x, y, imageWidth._val, imageHeight._val, 0
                     )
                 } else {
-                    var junk: ByteBuffer? // we need to create a dummy image with power of two dimensions,
-                    // then do a qglCopyTexSubImage2D of the data we want
-                    // this might be a 16+ meg allocation, which could fail on _alloca
+                    var junk: ByteBuffer? // we need to create a dummy image with power of two dimensions, // then do a qglCopyTexSubImage2D of the data we want // this might be a 16+ meg allocation, which could fail on _alloca
                     junk = BufferUtils.createByteBuffer(potWidth._val * potHeight._val * 4)
                     qgl.qglTexImage2D(
                         GL11.GL_TEXTURE_2D,

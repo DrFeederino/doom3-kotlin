@@ -1892,9 +1892,7 @@ object Session_local {
             ScrubSaveGameFileName(saveFilePathBase)
             saveFilePathBase.set("savegames/" + saveFilePathBase)
 
-            var game: String? =
-                cvarSystem.GetCVarString("fs_game") // FIX: C++ checks `game != NULL && game[0] == '\0'` meaning "if game is not null AND is empty".
-            // Kotlin had `isNotEmpty()` which is the opposite.
+            var game: String? = cvarSystem.GetCVarString("fs_game")
             if (game != null && game.isEmpty()) {
                 game = null
             }
@@ -3316,9 +3314,7 @@ object Session_local {
                 return true
             }
             if (0 == idStr.Icmp(cmd, "saveGame")) {
-                val saveGameName = guiActive!!.State()
-                    .GetString("saveGameName") // FIX: C++ `saveGameName && saveGameName[0]` means "non-null AND non-empty".
-                // Kotlin had `saveGameName.isEmpty()` which is the opposite.
+                val saveGameName = guiActive!!.State().GetString("saveGameName")
                 if (saveGameName != null && saveGameName.isNotEmpty()) {
 
                     // First see if the file already exists unless they pass '1' to authorize the overwrite
@@ -3489,9 +3485,7 @@ object Session_local {
                     return
                 }
                 if (0 == idStr.Icmp(cmd, "loadMod")) {
-                    val choice = guiActive!!.State()
-                        .GetInt("modsList_sel_0") //                    if (choice >= 0 && choice < modsList.size()) { //                        CVarSystem.cvarSystem.SetCVarString("fs_game", modsList[choice].toString()) //                        CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "reloadEngine menu\n")
-                    //                    }
+                    val choice = guiActive!!.State().GetInt("modsList_sel_0")
                     if (choice >= 0 && choice < modsList.size()) {
                         loadMod(modsList[choice])
                     }

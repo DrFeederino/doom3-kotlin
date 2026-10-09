@@ -3,9 +3,9 @@ package neo.idlib.math.Matrix
 import neo.idlib.math.idMath
 import neo.idlib.math.idSIMD
 import neo.idlib.math.idVecX
-import org.junit.Assert
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import kotlin.math.abs
 
 class idMatXTest {
@@ -27,7 +27,7 @@ class idMatXTest {
     private var index1: IntArray = IntArray(0)
     private var index2: IntArray = IntArray(0)
 
-    @Before
+    @BeforeEach
     fun setUpTest() {
         idSIMD.Init()
         idMath.Init()
@@ -45,7 +45,7 @@ class idMatXTest {
         m2.set(m1)
         m2.InverseSelf()
         m1.LowerTriangularInverse()
-        Assert.assertTrue("idMatX::LowerTriangularInverse failed", m1.Compare(m2, 1e-4f))
+        Assertions.assertTrue(m1.Compare(m2, 1e-4f), "idMatX::LowerTriangularInverse failed")
     }
 
     @Test
@@ -55,7 +55,7 @@ class idMatXTest {
         m2.set(m1)
         m2.InverseSelf()
         m1.UpperTriangularInverse()
-        Assert.assertTrue("idMatX::UpperTriangularInverse failed", m1.Compare(m2, 1e-4f))
+        Assertions.assertTrue(m1.Compare(m2, 1e-4f), "idMatX::UpperTriangularInverse failed")
     }
 
     @Test
@@ -63,7 +63,7 @@ class idMatXTest {
         m1.set(original)
         m1.Inverse_GaussJordan()
         m1.timesAssign(original)
-        Assert.assertTrue("idMatX::Inverse_GaussJordan failed", m1.IsIdentity(1e-4f))
+        Assertions.assertTrue(m1.IsIdentity(1e-4f), "idMatX::Inverse_GaussJordan failed")
     }
 
     @Test
@@ -84,7 +84,7 @@ class idMatXTest {
 
         // update inverse of m1
         m1.Inverse_UpdateRankOne(v, w, 1.0f)
-        Assert.assertTrue("idMatX::Inverse_UpdateRankOne failed", m1.Compare(m2, 1e-4f))
+        Assertions.assertTrue(m1.Compare(m2, 1e-4f), "idMatX::Inverse_UpdateRankOne failed")
     }
 
     @Test
@@ -108,7 +108,7 @@ class idMatXTest {
 
             // update inverse of m1
             m1.Inverse_UpdateRowColumn(v, w, offset)
-            Assert.assertTrue("idMatX::Inverse_UpdateRowColumn failed", m1.Compare(m2, 1e-3f))
+            Assertions.assertTrue(m1.Compare(m2, 1e-3f), "idMatX::Inverse_UpdateRowColumn failed")
             offset++
         }
     }
@@ -132,7 +132,7 @@ class idMatXTest {
 
         // update inverse of m1
         m1.Inverse_UpdateIncrement(v, w)
-        Assert.assertTrue("idMatX::Inverse_UpdateIncrement failed", m1.Compare(m2, 1e-4f))
+        Assertions.assertTrue(m1.Compare(m2, 1e-4f), "idMatX::Inverse_UpdateIncrement failed")
     }
 
     @Test
@@ -160,8 +160,8 @@ class idMatXTest {
             // update inverse of m1
             m1.Inverse_UpdateDecrement(v, w, offset)
 
-//            Assert.assertTrue("idMatX::Inverse_UpdateDecrement failed " + offset, m1.Compare(m2, 1e-3f));//TODO: fix this?
-            Assert.assertTrue("idMatX::Inverse_UpdateDecrement failed $offset", m1.Compare(m2, 1e-2f))
+            //            Assertions.assertTrue("idMatX::Inverse_UpdateDecrement failed " + offset, m1.Compare(m2, 1e-3f));//TODO: fix this?
+            Assertions.assertTrue(m1.Compare(m2, 1e-2f), "idMatX::Inverse_UpdateDecrement failed $offset")
             offset++
         }
     }
@@ -172,7 +172,7 @@ class idMatXTest {
         m1.LU_Factor(null) // no pivoting
         m1.LU_UnpackFactors(m2, m3)
         m1.set(m2.times(m3))
-        Assert.assertTrue("idMatX::LU_Factor failed", original.Compare(m1, 1e-4f))
+        Assertions.assertTrue(original.Compare(m1, 1e-4f), "idMatX::LU_Factor failed")
     }
 
     @Test
@@ -197,7 +197,7 @@ class idMatXTest {
         m1.LU_UpdateRankOne(v, w, 1.0f, index1)
         m1.LU_MultiplyFactors(m3, index1)
         m1.set(m3)
-        Assert.assertTrue("idMatX::LU_UpdateRankOne failed", m1.Compare(m2, 1e-4f))
+        Assertions.assertTrue(m1.Compare(m2, 1e-4f), "idMatX::LU_UpdateRankOne failed")
     }
 
     @Test
@@ -225,7 +225,7 @@ class idMatXTest {
             m1.LU_UpdateRowColumn(v, w, offset, index1)
             m1.LU_MultiplyFactors(m3, index1)
             m1.set(m3)
-            Assert.assertTrue("idMatX::LU_UpdateRowColumn failed", m1.Compare(m2, 1e-3f))
+            Assertions.assertTrue(m1.Compare(m2, 1e-3f), "idMatX::LU_UpdateRowColumn failed")
             offset++
         }
     }
@@ -253,7 +253,7 @@ class idMatXTest {
         m1.LU_UpdateIncrement(v, w, index1)
         m1.LU_MultiplyFactors(m3, index1)
         m1.set(m3)
-        Assert.assertTrue("idMatX::LU_UpdateIncrement failed", m1.Compare(m2, 1e-4f))
+        Assertions.assertTrue(m1.Compare(m2, 1e-4f), "idMatX::LU_UpdateIncrement failed")
     }
 
     @Test
@@ -289,7 +289,7 @@ class idMatXTest {
             m1.LU_UpdateDecrement(v, w, u, offset, index1)
             m1.LU_MultiplyFactors(m3, index1)
             m1.set(m3)
-            Assert.assertTrue("idMatX::LU_UpdateDecrement failed", m1.Compare(m2, 1e-3f))
+            Assertions.assertTrue(m1.Compare(m2, 1e-3f), "idMatX::LU_UpdateDecrement failed")
             offset++
         }
     }
@@ -300,7 +300,7 @@ class idMatXTest {
         m2.LU_Factor(null)
         m2.LU_Inverse(m1, null)
         m1.timesAssign(original)
-        Assert.assertTrue("idMatX::LU_Inverse failed", m1.IsIdentity(1e-4f))
+        Assertions.assertTrue(m1.IsIdentity(1e-4f), "idMatX::LU_Inverse failed")
     }
 
     @Test
@@ -311,7 +311,7 @@ class idMatXTest {
         m1.QR_Factor(c, d)
         m1.QR_UnpackFactors(q1, r1, c, d)
         m1.set(q1.times(r1))
-        Assert.assertTrue("idMatX::QR_Factor failed", original.Compare(m1, 1e-4f))
+        Assertions.assertTrue(original.Compare(m1, 1e-4f), "idMatX::QR_Factor failed")
     }
 
     @Test
@@ -338,7 +338,7 @@ class idMatXTest {
         // update factored m1
         q1.QR_UpdateRankOne(r1, v, w, 1.0f)
         m1 = q1.times(r1)
-        Assert.assertTrue("idMatX::QR_UpdateRankOne failed", m1.Compare(m2, 1e-4f))
+        Assertions.assertTrue(m1.Compare(m2, 1e-4f), "idMatX::QR_UpdateRankOne failed")
     }
 
     @Test
@@ -368,7 +368,7 @@ class idMatXTest {
             // update m1
             q1.QR_UpdateRowColumn(r1, v, w, offset)
             m1 = q1.times(r1)
-            Assert.assertTrue("idMatX::QR_UpdateRowColumn failed", m1.Compare(m2, 1e-3f))
+            Assertions.assertTrue(m1.Compare(m2, 1e-3f), "idMatX::QR_UpdateRowColumn failed")
             offset++
         }
     }
@@ -398,7 +398,7 @@ class idMatXTest {
         // update factored m1
         q1.QR_UpdateIncrement(r1, v, w)
         m1 = q1.times(r1)
-        Assert.assertTrue("idMatX::QR_UpdateIncrement failed", m1.Compare(m2, 1e-4f))
+        Assertions.assertTrue(m1.Compare(m2, 1e-4f), "idMatX::QR_UpdateIncrement failed")
     }
 
     @Test
@@ -435,7 +435,7 @@ class idMatXTest {
             // update factors of m1
             q1.QR_UpdateDecrement(r1, v, w, offset)
             m1.set(q1.times(r1))
-            Assert.assertTrue("idMatX::QR_UpdateDecrement failed", m1.Compare(m2, 1e-3f))
+            Assertions.assertTrue(m1.Compare(m2, 1e-3f), "idMatX::QR_UpdateDecrement failed")
             offset++
         }
     }
@@ -447,13 +447,13 @@ class idMatXTest {
         m2.QR_Factor(c, d)
         m2.QR_Inverse(m1, c, d)
         m1.timesAssign(original)
-        Assert.assertTrue("idMatX::QR_Inverse failed", m1.IsIdentity(1e-4f))
+        Assertions.assertTrue(m1.IsIdentity(1e-4f), "idMatX::QR_Inverse failed")
     }
 
     @Test
     fun SVD_FactorTest() {
         SVD_FactorSetUp()
-        Assert.assertTrue("idMatX::SVD_Factor failed", original.Compare(m1, 1e-4f))
+        Assertions.assertTrue(original.Compare(m1, 1e-4f), "idMatX::SVD_Factor failed")
     }
 
     private fun SVD_FactorSetUp() {
@@ -473,7 +473,7 @@ class idMatXTest {
         m2.SVD_Factor(w, m3)
         m2.SVD_Inverse(m1, w, m3)
         m1.timesAssign(original)
-        Assert.assertTrue("idMatX::SVD_Inverse failed", m1.IsIdentity(1e-4f))
+        Assertions.assertTrue(m1.IsIdentity(1e-4f), "idMatX::SVD_Inverse failed")
     }
 
     @Test
@@ -481,7 +481,7 @@ class idMatXTest {
         m1.set(original)
         m1.Cholesky_Factor()
         m1.Cholesky_MultiplyFactors(m2)
-        Assert.assertTrue("idMatX::Cholesky_Factor failed", original.Compare(m2, 1e-4f))
+        Assertions.assertTrue(original.Compare(m2, 1e-4f), "idMatX::Cholesky_Factor failed")
     }
 
     @Test
@@ -503,7 +503,7 @@ class idMatXTest {
 
         // update factored m1
         m1.Cholesky_UpdateRankOne(w, 1.0f, 0)
-        Assert.assertTrue("idMatX::Cholesky_UpdateRankOne failed", m1.Compare(m2, 1e-4f))
+        Assertions.assertTrue(m1.Compare(m2, 1e-4f), "idMatX::Cholesky_UpdateRankOne failed")
     }
 
     @Test
@@ -529,7 +529,7 @@ class idMatXTest {
 
             // update m1
             m1.Cholesky_UpdateRowColumn(w, offset)
-            Assert.assertTrue("idMatX::Cholesky_UpdateRowColumn failed", m1.Compare(m2, 1e-3f))
+            Assertions.assertTrue(m1.Compare(m2, 1e-3f), "idMatX::Cholesky_UpdateRowColumn failed")
             offset++
         }
     }
@@ -558,7 +558,7 @@ class idMatXTest {
         m1.Cholesky_UpdateIncrement(w)
         m1.ClearUpperTriangle()
         m2.ClearUpperTriangle()
-        Assert.assertTrue("idMatX::Cholesky_UpdateIncrement failed", m1.Compare(m2, 1e-4f))
+        Assertions.assertTrue(m1.Compare(m2, 1e-4f), "idMatX::Cholesky_UpdateIncrement failed")
     }
 
     @Test
@@ -583,7 +583,7 @@ class idMatXTest {
 
             // update factors of m1
             m1.Cholesky_UpdateDecrement(v, offset)
-            Assert.assertTrue("idMatX::Cholesky_UpdateDecrement failed", m1.Compare(m2, 1e-3f))
+            Assertions.assertTrue(m1.Compare(m2, 1e-3f), "idMatX::Cholesky_UpdateDecrement failed")
             offset += size - 1
         }
     }
@@ -594,7 +594,7 @@ class idMatXTest {
         m2.Cholesky_Factor()
         m2.Cholesky_Inverse(m1)
         m1.timesAssign(original)
-        Assert.assertTrue("idMatX::Cholesky_Inverse failed", m1.IsIdentity(1e-4f))
+        Assertions.assertTrue(m1.IsIdentity(1e-4f), "idMatX::Cholesky_Inverse failed")
     }
 
     @Test
@@ -602,10 +602,10 @@ class idMatXTest {
         m1.set(original)
         m1.LDLT_Factor()
         m1.LDLT_MultiplyFactors(m2)
-        Assert.assertTrue("idMatX::LDLT_Factor failed", original.Compare(m2, 1e-4f))
+        Assertions.assertTrue(original.Compare(m2, 1e-4f), "idMatX::LDLT_Factor failed")
         m1.LDLT_UnpackFactors(m2, m3)
         m2 = m2.times(m3).times(m2.Transpose())
-        Assert.assertTrue("idMatX::LDLT_Factor failed", original.Compare(m2, 1e-4f))
+        Assertions.assertTrue(original.Compare(m2, 1e-4f), "idMatX::LDLT_Factor failed")
     }
 
     @Test
@@ -627,7 +627,7 @@ class idMatXTest {
 
         // update factored m1
         m1.LDLT_UpdateRankOne(w, 1.0f, 0)
-        Assert.assertTrue("idMatX::LDLT_UpdateRankOne failed", m1.Compare(m2, 1e-4f))
+        Assertions.assertTrue(m1.Compare(m2, 1e-4f), "idMatX::LDLT_UpdateRankOne failed")
     }
 
     @Test
@@ -651,7 +651,7 @@ class idMatXTest {
 
             // update m1
             m1.LDLT_UpdateRowColumn(w, offset)
-            Assert.assertTrue("idMatX::LDLT_UpdateRowColumn failed", m1.Compare(m2, 1e-3f))
+            Assertions.assertTrue(m1.Compare(m2, 1e-3f), "idMatX::LDLT_UpdateRowColumn failed")
             offset++
         }
     }
@@ -680,7 +680,7 @@ class idMatXTest {
         m1.LDLT_UpdateIncrement(w)
         m1.ClearUpperTriangle()
         m2.ClearUpperTriangle()
-        Assert.assertTrue("idMatX::LDLT_UpdateIncrement failed", m1.Compare(m2, 1e-4f))
+        Assertions.assertTrue(m1.Compare(m2, 1e-4f), "idMatX::LDLT_UpdateIncrement failed")
     }
 
     @Test
@@ -705,7 +705,7 @@ class idMatXTest {
 
             // update factors of m1
             m1.LDLT_UpdateDecrement(v, offset)
-            Assert.assertTrue("idMatX::LDLT_UpdateDecrement failed", m1.Compare(m2, 1e-3f))
+            Assertions.assertTrue(m1.Compare(m2, 1e-3f), "idMatX::LDLT_UpdateDecrement failed")
             offset++
         }
     }
@@ -713,7 +713,7 @@ class idMatXTest {
     @Test
     fun LDLT_InverseTest() {
         LDLT_InverseSetUp()
-        Assert.assertTrue("idMatX::LDLT_Inverse failed", m1.IsIdentity(1e-4f))
+        Assertions.assertTrue(m1.IsIdentity(1e-4f), "idMatX::LDLT_Inverse failed")
     }
 
     private fun LDLT_InverseSetUp() {
@@ -737,7 +737,7 @@ class idMatXTest {
                 m1.timesAssign(i, j, v.p[j])
             }
         }
-        Assert.assertTrue("idMatX::Eigen_SolveSymmetricTriDiagonal failed", m1.Compare(m2, 1e-4f))
+        Assertions.assertTrue(m1.Compare(m2, 1e-4f), "idMatX::Eigen_SolveSymmetricTriDiagonal failed")
     }
 
     @Test
@@ -753,7 +753,7 @@ class idMatXTest {
                 m1.timesAssign(i, j, v.p[j])
             }
         }
-        Assert.assertTrue("idMatX::Eigen_SolveSymmetric failed", m1.Compare(m2, 1e-4f))
+        Assertions.assertTrue(m1.Compare(m2, 1e-4f), "idMatX::Eigen_SolveSymmetric failed")
     }
 
     @Test
@@ -770,11 +770,11 @@ class idMatXTest {
                 m1.timesAssign(i, j, v.p[j])
             }
         }
-        Assert.assertTrue("idMatX::Eigen_Solve failed", m1.Compare(m2, 1e-4f))
+        Assertions.assertTrue(m1.Compare(m2, 1e-4f), "idMatX::Eigen_Solve failed")
     }
 
     @Test
     fun checkEqualityAbsAndIdFabs() {
-        Assert.assertTrue(abs(-1.0f) == abs(-1.0f))
+        Assertions.assertTrue(abs(-1.0f) == abs(-1.0f))
     }
 }

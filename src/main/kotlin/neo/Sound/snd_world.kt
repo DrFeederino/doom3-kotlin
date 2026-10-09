@@ -1507,9 +1507,7 @@ class snd_world {
                     // mode) is pinned to its speaker direction; a spatialized mono
                     // sound may instead be binaural-encoded with the E3 HRTF
                     val useMaskPin =
-                        chan.pinnedSpeaker < 0 && mask != 0 && numSpeakers == 6 // the leak's HRTF data is headphone material: the 2002 engine had // no s_hrtf cvar and only ever applied it for two-speaker output.
-                    // s_hrtf is checked before IsActive(): without the cvar the
-                    // leak's impulse responses must not even be probed (a retail
+                        chan.pinnedSpeaker < 0 && mask != 0 && numSpeakers == 6 // the leak's HRTF data is headphone material: the 2002 engine had // no s_hrtf cvar and only ever applied it for two-speaker output. // s_hrtf is checked before IsActive(): without the cvar the // leak's impulse responses must not even be probed (a retail
                     // run has no sound/hrtf data, and no reason to look)
                     val useE3Hrtf =
                         !useMaskPin && chan.pinnedSpeaker < 0 && !global && !omni && numSpeakers == 2 && idSoundSystemLocal.s_hrtf.GetBool() && snd_hrtf.IsActive() && sample.objectInfo.nChannels == 1
@@ -1527,9 +1525,7 @@ class snd_world {
                             -(listenerPos.x + dir.x * SPEAKER_PIN_DISTANCE)
                         )
                         AL10.alSourcef(
-                            chan.openalSource,
-                            AL10.AL_GAIN,
-                            min(volume.toFloat(), 1.0f)
+                            chan.openalSource, AL10.AL_GAIN, min(volume.toFloat(), 1.0f)
                         ) // the engine already applied the distance falloff to `volume`;
                         // place the speaker exactly at the reference distance so
                         // OpenAL does not attenuate it a second time
@@ -1830,7 +1826,9 @@ class snd_world {
             listenerOrientation.put(2, -listenerAxis[0].x.toFloat())
             listenerOrientation.put(3, -listenerAxis[2].y.toFloat())
             listenerOrientation.put(4, +listenerAxis[2].z.toFloat())
-            listenerOrientation.put(5, -listenerAxis[2].x.toFloat()) // s_lufs: the smoothed master gain rides on the final mix
+            listenerOrientation.put(
+                5, -listenerAxis[2].x.toFloat()
+            ) // s_lufs: the smoothed master gain rides on the final mix
             // (previous frame's value, one 16.7 ms block of smoothing
             // lag); 1.0f when the cvar is disabled, i.e. retail behavior
             AL10.alListenerf(AL10.AL_GAIN, loudnessGainLin)
@@ -1994,7 +1992,8 @@ class snd_world {
             var peakEst = 0.0f
             if (loudnessPower > 0.0) {
                 val measuredLufts = 10.0 * log10(loudnessPower) + 3.0
-                desired = (-target.toDouble() - measuredLufts).toFloat() // small trim only: keep the mix's own dynamic range
+                desired =
+                    (-target.toDouble() - measuredLufts).toFloat() // small trim only: keep the mix's own dynamic range
                 if (desired > 6.0f) {
                     desired = 6.0f
                 }
@@ -2260,8 +2259,7 @@ class snd_world {
                     val plitudeData = sample.amplitudeData
                     if (plitudeData != null) {
                         val amplitudeData =
-                            plitudeData.asShortBuffer() // when the amplitudeData is present use that fill a dummy sourceBuffer
-                        // this is to allow for amplitude based effect on hardware audio solutions
+                            plitudeData.asShortBuffer() // when the amplitudeData is present use that fill a dummy sourceBuffer // this is to allow for amplitude based effect on hardware audio solutions
                         if (looping) {
                             offset %= size
                         }

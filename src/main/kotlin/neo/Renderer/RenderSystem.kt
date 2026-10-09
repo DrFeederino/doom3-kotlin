@@ -356,9 +356,7 @@ object RenderSystem {
 
         var vidWidth: Int = 0
         var vidHeight: Int =
-            0 // passed to R_BeginFrame // For some reason people decided that we need displays with ultra small pixels,
-        // so everything rendered on them must be scaled up to be legible.
-        // unfortunately, this bullshit feature was "improved" upon by deciding that the best
+            0 // passed to R_BeginFrame // For some reason people decided that we need displays with ultra small pixels, // so everything rendered on them must be scaled up to be legible. // unfortunately, this bullshit feature was "improved" upon by deciding that the best
         // way to implement "High DPI" was to pretend that windows have fewer pixels than they
         // actually do, so the window size you get and mouse coordinates in them etc
         // are in e.g. 1024x768, while the physical window size is e.g. 1536x1152 pixels

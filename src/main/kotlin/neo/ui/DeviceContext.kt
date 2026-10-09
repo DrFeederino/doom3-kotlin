@@ -487,14 +487,7 @@ object DeviceContext {
             )
             DrawStretchPic(x1[0], y1[0], w1[0], size, 0f, 0f, 0f, 0f, whiteImage, true)
             DrawStretchPic(
-                x1[0], y1[0] + h1[0] - size, w1[0],
-                size,
-                0f,
-                0f,
-                0f,
-                0f,
-                whiteImage,
-                true
+                x1[0], y1[0] + h1[0] - size, w1[0], size, 0f, 0f, 0f, 0f, whiteImage, true
             ) //#modified-fva; END
 
         }
@@ -577,9 +570,7 @@ object DeviceContext {
                 }
                 var nextCharWidth = (if (CharIsPrintable(p.code)) CharWidth(
                     p, textScale
-                ) else cursorSkip).toInt() // FIXME: this is a temp hack until the guis can be fixed not not overflow the bounding rectangles
-                //	      the side-effect is that list boxes and edit boxes will draw over their scroll bars
-                //  The following line and the !linebreak in the if statement below should be removed
+                ) else cursorSkip).toInt() // FIXME: this is a temp hack until the guis can be fixed not not overflow the bounding rectangles //	      the side-effect is that list boxes and edit boxes will draw over their scroll bars //  The following line and the !linebreak in the if statement below should be removed
                 nextCharWidth = 0
                 if (!lineBreak && textWidth + nextCharWidth > rectDraw.w) { // The next character will cause us to overflow, if we haven't yet found a suitable
                     // break spot, set it to be this character
@@ -807,8 +798,7 @@ object DeviceContext {
             val x1 = floatArrayOf(x)
             val y1 = floatArrayOf(y)
             val w1 = floatArrayOf(w)
-            val h1 = floatArrayOf(h) //
-            //  handle negative scales as well
+            val h1 = floatArrayOf(h) // //  handle negative scales as well
             if (scalex < 0) {
                 w1[0] *= -1.0f
                 scalex *= -1.0f

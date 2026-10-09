@@ -1093,7 +1093,8 @@ object Misc {
                             sound as idEventArg<String>,
                             launchjoint as idEventArg<String>,
                             targetjoint as idEventArg<String>,
-                            numshots as idEventArg<Int>, framedelay as idEventArg<Float>
+                            numshots as idEventArg<Int>,
+                            framedelay as idEventArg<Float>
                         )
                     }
                 eventCallbacks[EV_LaunchMissilesUpdate] =
@@ -1395,8 +1396,7 @@ object Misc {
             projectilename: idEventArg<String>,
             sound: idEventArg<String>,
             launchjoint: idEventArg<String>,
-            targetjoint: idEventArg<String>,
-            numshots: idEventArg<Int>, framedelay: idEventArg<Float>
+            targetjoint: idEventArg<String>, numshots: idEventArg<Int>, framedelay: idEventArg<Float>
         ) {
             val projectileDef: idDict?
             val   /*jointHandle_t*/launch: Int

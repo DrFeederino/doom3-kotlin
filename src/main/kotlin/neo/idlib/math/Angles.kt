@@ -195,6 +195,7 @@ class idAngles : idSerializable {
     fun notEquals(a: idAngles): Boolean { // exact compare, no epsilon
         return !Compare(a)
     } //
+
     /**
      * ================= idAngles::Normalize360
      *

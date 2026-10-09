@@ -535,8 +535,7 @@ class Physics_Static {
                     results,
                     current.origin,
                     rotation,
-                    clipModel,
-                    current.axis, Game_local.MASK_SOLID, model.Handle(), model.GetOrigin(), model.GetAxis()
+                    clipModel, current.axis, Game_local.MASK_SOLID, model.Handle(), model.GetOrigin(), model.GetAxis()
                 )
             } else {
                 Game_local.gameLocal.clip.Rotation(
@@ -555,8 +554,7 @@ class Physics_Static {
                 if (model != null) {
                     Game_local.gameLocal.clip.ContentsModel(
                         clipModel!!.GetOrigin(),
-                        clipModel,
-                        clipModel!!.GetAxis(), -1, model.Handle(), model.GetOrigin(), model.GetAxis()
+                        clipModel, clipModel!!.GetAxis(), -1, model.Handle(), model.GetOrigin(), model.GetAxis()
                     )
                 } else {
                     Game_local.gameLocal.clip.Contents(

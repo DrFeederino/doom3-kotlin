@@ -326,8 +326,8 @@ object tr_shadowbounds {
         val omodel: idMat4 = make_idMat4(entityDef.modelMatrix)
 
         // compute light polyhedron
-        val lvol: polyhedron = PolyhedronFromBounds(lightDef.frustumTris!!.bounds) // transform it into world space
-        //lvol.transform( lmodel );
+        val lvol: polyhedron =
+            PolyhedronFromBounds(lightDef.frustumTris!!.bounds) // transform it into world space //lvol.transform( lmodel );
 
         // debug //
         if (r_useInteractionScissors.GetInteger() == -2) {

@@ -1189,9 +1189,7 @@ object PlayerView {
         fun CalculateShake() { //            idVec3 origin, matrix;
             val shakeVolume = Game_local.gameSoundWorld!!.CurrentShakeAmplitudeForPosition(
                 Game_local.gameLocal.time, player!!.firstPersonViewOrigin
-            ) //
-            // shakeVolume should somehow be molded into an angle here
-            // it should be thought of as being in the range 0.0f . 1.0f, although
+            ) // shakeVolume should somehow be molded into an angle here // it should be thought of as being in the range 0.0f . 1.0f, although
             // since CurrentShakeAmplitudeForPosition() returns all the shake sounds
             // the player can hear, it can go over 1.0f too.
             //

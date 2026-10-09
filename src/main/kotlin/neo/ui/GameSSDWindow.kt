@@ -1025,6 +1025,7 @@ object GameSSDWindow {
             }
         }
     } //
+
     /**
      * Powerups work in two phases: 1.) Closed container hurls at you If you
      * shoot the container it open 3.) If an opened powerup hits the player he

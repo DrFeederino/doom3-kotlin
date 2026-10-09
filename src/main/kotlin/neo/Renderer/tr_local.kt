@@ -522,9 +522,7 @@ class shadowFrustum_t {
     //
     var makeClippedPlanes: Boolean = false
     var numPlanes: Int =
-        0 // this is always 6 for now // a projected light with a single frustum needs to make sil planes
-    // from triangles that clip against side planes, but a point light
-    // that has adjacent frustums doesn't need to
+        0 // this is always 6 for now // a projected light with a single frustum needs to make sil planes // from triangles that clip against side planes, but a point light // that has adjacent frustums doesn't need to
 }
 
 // areas have references to hold all the lights and entities in them

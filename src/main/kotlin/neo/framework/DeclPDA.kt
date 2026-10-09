@@ -82,8 +82,7 @@ class DeclPDA {
          */
         @Throws(idException::class)
         override fun Parse(_text: String, textLength: Int): Boolean {
-            val src = idLexer() // FIX: Moved token declaration outside the loop to match C++ (single token
-            // reused across iterations). Now uses .set() for value-copy semantics.
+            val src = idLexer()
             val token = idToken()
 
             src.LoadMemory(_text, textLength, GetFileName(), GetLineNum())

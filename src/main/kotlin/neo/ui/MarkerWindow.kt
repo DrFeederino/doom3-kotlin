@@ -78,10 +78,8 @@ class MarkerWindow {
                         gui!!.SetStateInt("currentMarker", md.time)
                         stopTime = md.time
                         gui!!.GetDesktop()!!.SetChildWinVarVal(
-                                "markerText",
-                                "text",
-                                va("Marker set at %.2i:%.2i", md.time / 60 / 60, md.time / 60 % 60)
-                            )
+                            "markerText", "text", va("Marker set at %.2i:%.2i", md.time / 60 / 60, md.time / 60 % 60)
+                        )
                         gui!!.GetDesktop()!!.SetChildWinVarVal("markerText", "visible", "1")
                         gui!!.GetDesktop()!!.SetChildWinVarVal("markerBackground", "matcolor", "1 1 1 1")
                         gui!!.GetDesktop()!!.SetChildWinVarVal("markerBackground", "text", "")
@@ -95,10 +93,10 @@ class MarkerWindow {
                     gui!!.SetStateInt("currentMarker", currentTime)
                     stopTime = currentTime
                     gui!!.GetDesktop()!!.SetChildWinVarVal(
-                            "markerText",
-                            "text",
-                            va("Marker set at %.2i:%.2i", currentTime / 60 / 60, currentTime / 60 % 60)
-                        )
+                        "markerText",
+                        "text",
+                        va("Marker set at %.2i:%.2i", currentTime / 60 / 60, currentTime / 60 % 60)
+                    )
                     gui!!.GetDesktop()!!.SetChildWinVarVal("markerText", "visible", "1")
                     gui!!.GetDesktop()!!.SetChildWinVarVal("markerBackground", "matcolor", "0 0 0 0")
                     gui!!.GetDesktop()!!.SetChildWinVarVal("markerBackground", "text", "No Preview")

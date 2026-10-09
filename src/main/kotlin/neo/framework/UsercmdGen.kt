@@ -1142,9 +1142,7 @@ object UsercmdGen {
 
         inner class MouseButtonCallback : GLFWMouseButtonCallback() {
             override fun invoke(window: Long, button: Int, action: Int, mods: Int) {
-                val dwTimeStamp = Instant.now().toEpochMilli() //
-                // Study each of the buffer elements and process them.
-                //
+                val dwTimeStamp = Instant.now().toEpochMilli()
                 if (button != -1) {
                     val isDown = action != GLFW_RELEASE
                     mouseButton = KeyInput.K_MOUSE1 + button

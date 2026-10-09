@@ -1373,9 +1373,7 @@ object Weapon {
                 if (null == projectileDef) {
                     Game_local.gameLocal.Warning("Unknown projectile '%s' in weapon '%s'", projectileName, objectName)
                 } else {
-                    val spawnclass =
-                        projectileDef.dict.GetString("spawnclass") // NOTE: Differs from C++ — original uses idClass::GetClass(spawnclass)->IsType() to check
-                    // type metadata without constructing an entity. Kotlin creates a throwaway entity via GetEntity().
+                    val spawnclass = projectileDef.dict.GetString("spawnclass")
                     val spawnEntity: idEntity = GetClass(spawnclass)!!.createInstance.invoke() as idEntity
                     if (spawnEntity !is idProjectile) {
                         Game_local.gameLocal.Warning(

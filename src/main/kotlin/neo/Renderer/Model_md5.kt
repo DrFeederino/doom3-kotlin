@@ -587,8 +587,8 @@ object Model_md5 {
                     )
                     pose.t.set(
                         (poseMat3[i]!!.ToVec3().minus(poseMat3[parentNum]!!.ToVec3())).times(
-                                poseMat3[parentNum]!!.ToMat3().Transpose()
-                            )
+                            poseMat3[parentNum]!!.ToMat3().Transpose()
+                        )
                     )
                 }
                 i++

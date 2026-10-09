@@ -3232,8 +3232,7 @@ object FileSystem_h {
             var list = list
             var i: Int
             var j: Int
-            val ret: Int // no need, better to call it with empty string then null //            if (null == extension) { //                extension = ""
-            //            }
+            val ret: Int
             if (!fs_caseSensitiveOS.GetBool()) {
                 return Sys_ListFiles(directory, extension, list)
             }
@@ -4135,12 +4134,7 @@ object FileSystem_h {
                 while (i < uf.size() /*gi.number_entry*/) {
 
                     // go to the next file in the zip
-                    val entry =
-                        entries.nextElement() //                err = unzGetCurrentFileInfo(uf, file_info, filename_inzip, sizeof(filename_inzip), null, 0, null, 0); //                if (err != UNZ_OK) { //                    break;
-                    //                }
-                    //                if (file_info.uncompressed_size > 0) {
-                    //                    fs_headerLongs[fs_numHeaderLongs++] = LittleLong(file_info.crc);
-                    //                }
+                    val entry = entries.nextElement()
                     filename_inzip = entry.name
                     if (entry.size > 0) {
                         fs_headerLongs[fs_numHeaderLongs++] = LittleLong(entry.crc)

@@ -169,12 +169,13 @@ object RenderWorld {
 
         // = 1,
         PS_BLOCK_LOCATION, // = 2,  // game map location strings often stop in hallways
+
         /**
          * padding
          */
         __3,
-        PS_BLOCK_AIR, // = 4,       // windows between pressurized and unpresurized areas
-        //
+        PS_BLOCK_AIR, // = 4,       // windows between pressurized and unpresurized areas //
+
         /**
          * padding
          */

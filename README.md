@@ -4,6 +4,31 @@ Inspired by [DJOOM 3 by Blackbeard334](https://github.com/blackbeard334/djoom3/)
 </br>
 Compilation is recommended under JDK 25 & Kotlin ver. 2.3.21.
 
+## How to build and run
+
+What you need:
+
+- JDK 25 (e.g. Azul Zulu) and Maven
+- A legal copy of DOOM 3 installed (Steam/GOG) — the game data is not part of this repository
+
+Build once:
+
+    mvn package
+
+That compiles the code, runs the tests and packages the game into `target/`, then drops a launcher
+script into the project root: `run-game.sh` on macOS/Linux, `run-game.bat` on Windows.
+
+Then play:
+
+    ./run-game.sh        # macOS / Linux
+    run-game.bat         # Windows
+
+The launcher runs the already-built jar, so you only need `mvn package` again after changing code.
+The engine locates a default DOOM 3 installation on its own, so if your game is installed in the
+usual place, there is nothing else to configure. If it is somewhere non-default, pass it through:
+
+    ./run-game.sh +set fs_basepath '/path/to/doom 3'
+
 #### 21-06-2022
 
 Version 0.0.1

@@ -634,8 +634,8 @@ object Image_init {
             val data: ByteBuffer = ByteBuffer.allocate(256 * 4)
             x = 0
             while (x < 256) {
-                var f: Float = x / 255.0f // this is the behavior of the hacked up fragment programs that
-                // can't really do a power function
+                var f: Float =
+                    x / 255.0f // this is the behavior of the hacked up fragment programs that // can't really do a power function
                 f = (f - 0.75f) * 4
                 if (f < 0) {
                     f = 0.0f

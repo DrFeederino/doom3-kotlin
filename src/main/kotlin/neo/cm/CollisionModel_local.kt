@@ -6017,8 +6017,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     private fun HashVec(vec: idVec3, hash: CInt, althash: CInt): Int {
         val offs = idVec3(
             vec.x - cm_modelBounds[0].x, vec.y - cm_modelBounds[0].y, vec.z - cm_modelBounds[0].z
-        ) // in the original calculation for the "real" hash, 0.38 is added before casting to int etc
-        // do two checks here: 0.38 +/- 0.1 (VERTEX_EPSILON)
+        )
         val checkOffs = arrayOf(idVec3(0.28f, 0.28f, 0.28f), idVec3(0.48f, 0.48f, 0.48f))
         val xs = IntArray(2)
         val ys = IntArray(2)

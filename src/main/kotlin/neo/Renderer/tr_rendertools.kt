@@ -492,8 +492,8 @@ object tr_rendertools {
             val w = 1.0f
             val h = 1.0f
             val tx = 0.0f
-            val ty = 0.0f // the actual texturesize of currentDepthImage is the next bigger power of two (POT),
-            // so the normalized width/height of the part of it we actually wanna show is the following
+            val ty =
+                0.0f // the actual texturesize of currentDepthImage is the next bigger power of two (POT), // so the normalized width/height of the part of it we actually wanna show is the following
             val tw = glConfig.vidWidth.toFloat() / Image.globalImages.currentDepthImage!!.uploadWidth._val.toFloat()
             val th = glConfig.vidHeight.toFloat() / Image.globalImages.currentDepthImage!!.uploadHeight._val.toFloat()
 

@@ -740,7 +740,11 @@ object Physics_StaticMulti {
                         contents or Game_local.gameLocal.clip.ContentsModel(
                             clipModels[i]!!.GetOrigin(),
                             clipModels[i],
-                            clipModels[i]!!.GetAxis(), -1, model.Handle(), model.GetOrigin(), model.GetAxis()
+                            clipModels[i]!!.GetAxis(),
+                            -1,
+                            model.Handle(),
+                            model.GetOrigin(),
+                            model.GetAxis()
                         )
                     } else {
                         contents or Game_local.gameLocal.clip.Contents(

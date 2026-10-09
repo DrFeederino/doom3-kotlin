@@ -848,14 +848,7 @@ object snd_emitter {
                         }
                         if (gChan != null) { // ArmChannel pins the channel to the entry's speaker
                             val len = ArmChannel(
-                                gChan,
-                                shader,
-                                pIdx,
-                                SCHANNEL_ANY,
-                                chanParms[0],
-                                start44kHz,
-                                diversity,
-                                allowSlow
+                                gChan, shader, pIdx, SCHANNEL_ANY, chanParms[0], start44kHz, diversity, allowSlow
                             )
                             if (len > maxLength) {
                                 maxLength = len
