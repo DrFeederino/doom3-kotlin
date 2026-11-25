@@ -71,8 +71,7 @@ class DeclSkin {/*
         @Throws(idException::class)
         override fun SetDefaultText(): Boolean { // if there exists a material with the same name
             return if (DeclManager.declManager.FindType(declType_t.DECL_MATERIAL, GetName(), false) != null) {
-                val generated =
-                    StringBuffer(2048) // FIX: Was using trimIndent() raw string which produced an extra trailing newline
+                val generated = StringBuffer(2048)
                 idStr.snPrintf(
                     generated, generated.capacity(),
                     "skin %s // IMPLICITLY GENERATED\n{\n_default %s\n}\n",
@@ -167,7 +166,6 @@ class DeclSkin {/*
                 val map = mappings[i]
 
                 // NULL = wildcard match
-                // FIX: Was using == (structural equality); C++ compares pointers (reference identity)
                 if (map.from == null || map.from === shader) {
                     return map.to
                 }

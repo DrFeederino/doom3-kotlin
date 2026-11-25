@@ -1,3 +1,30 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
 package neo.framework
 
 import neo.Game.Game.escReply_t
@@ -526,7 +553,7 @@ object Session_local {
                         return
                     }
                 }
-            } // FIX: C++ just returns silently on recursive calls (the FatalError is commented out)
+            }
             if (insideUpdateScreen) {
                 return
             }
@@ -656,7 +683,7 @@ object Session_local {
             if (com_minTics.GetInteger() > 1) {
                 minTic = lastGameTic + com_minTics.GetInteger()
             }
-            if (readDemo != null) { // FIX: C++ `!timeDemo` means `timeDemo == TD_NO` (0 is falsy), not null check
+            if (readDemo != null) {
                 minTic = if (timeDemo == timeDemo_t.TD_NO && numDemoFrames != 1) {
                     lastDemoTic + USERCMD_PER_DEMO_FRAME
                 } else { // timedemos and demoshots will run as fast as they can, other demos
@@ -819,7 +846,6 @@ object Session_local {
 
         @Throws(idException::class)
         override fun ProcessEvent(event: sysEvent_s): Boolean { // hitting escape anywhere brings up the menu
-            // FIX: C++ also checks `!idKeyInput::IsDown( K_SHIFT )` — Shift+Escape opens console, not menu
             if (guiActive == null && event.evType == sysEventType_t.SE_KEY && event.evValue2 == 1 && event.evValue == KeyInput.K_ESCAPE && !idKeyInput.IsDown(
                     KeyInput.K_SHIFT
                 )
@@ -1239,8 +1265,7 @@ object Session_local {
             }
         }
 
-        override fun SetPlayingSoundWorld() { // FIX: C++ has `guiActive == guiLoading || ( guiActive == guiMsg && !mapSpawned )`
-            // Kotlin had `guiActive == guiLoading != null` which is always true (Boolean != null)
+        override fun SetPlayingSoundWorld() {
             if (guiActive != null && (guiActive == guiMainMenu || guiActive == guiIntro || guiActive == guiLoading || (guiActive == guiMsg && !mapSpawned))) {
                 snd_system.soundSystem.SetPlayingSoundWorld(menuSoundWorld!!)
             } else {
@@ -1329,7 +1354,7 @@ object Session_local {
             if (!xp) {
                 return ctos(cdkey)
             }
-            return if (xpkey_state == cdKeyState_t.CDKEY_OK || xpkey_state == cdKeyState_t.CDKEY_CHECKING) { // FIX: C++ returns `xpkey`, not `cdkey`, when requesting the XP key
+            return if (xpkey_state == cdKeyState_t.CDKEY_OK || xpkey_state == cdKeyState_t.CDKEY_CHECKING) {
                 ctos(xpkey)
             } else null
         }
@@ -1439,8 +1464,7 @@ object Session_local {
         override fun CDKeysAreValid(strict: Boolean): Boolean {
             var i: Int
             var emitAuth = false
-            if (cdkey_state == cdKeyState_t.CDKEY_UNKNOWN) { // FIX: C++ uses `strlen(cdkey)` which counts chars until null terminator.
-                // cdkey.size always returns CDKEY_BUF_LEN (17), making the check always fail.
+            if (cdkey_state == cdKeyState_t.CDKEY_UNKNOWN) {
                 if (ctos(cdkey).length != CDKEY_BUF_LEN - 1) {
                     cdkey_state = cdKeyState_t.CDKEY_INVALID
                 } else {
@@ -1492,14 +1516,12 @@ object Session_local {
 
         override fun ClearCDKey(valid: BooleanArray) {
             if (!valid[0]) { //		memset( cdkey, 0, CDKEY_BUF_LEN );
-                // FIX: C++ memset fills with 0 (null char), not '0' (digit character)
                 Arrays.fill(cdkey, '\u0000')
                 cdkey_state = cdKeyState_t.CDKEY_UNKNOWN
             } else if (cdkey_state == cdKeyState_t.CDKEY_CHECKING) { // if a key was in checking and not explicitely asked for clearing, put it back to ok
                 cdkey_state = cdKeyState_t.CDKEY_OK
             }
             if (!valid[1]) { //		memset( xpkey, 0, CDKEY_BUF_LEN );
-                // FIX: C++ clears `xpkey`, not `cdkey`; also fills with 0 not '0'
                 Arrays.fill(xpkey, '\u0000')
                 xpkey_state = cdKeyState_t.CDKEY_UNKNOWN
             } else if (xpkey_state == cdKeyState_t.CDKEY_CHECKING) {
@@ -1597,7 +1619,7 @@ object Session_local {
             mapSpawnData.serverInfo.Set("si_map", mapName)
             ExecuteMapChange()
             if (!com_disableAutoSaves.GetBool() && !mapSpawnData.serverInfo.GetBool("devmap")) {
-                val saveFileName = "Autosave_$mapName"
+                val saveFileName = autoSaveFileName(mapName)
                 SaveGame(GetAutoSaveName(mapName), true, saveFileName)
             }
             SetGUI(null, null)
@@ -2084,8 +2106,7 @@ object Session_local {
             ScrubSaveGameFileName(saveFilePathBase)
             saveFilePathBase.set("savegames/" + saveFilePathBase)
 
-            var game: String? =
-                cvarSystem.GetCVarString("fs_game") // FIX: Same as QuickLoad — C++ checks if game string is empty to set null
+            var game: String? = cvarSystem.GetCVarString("fs_game")
             if (game != null && game.isEmpty()) {
                 game = null
             }
@@ -2460,7 +2481,7 @@ object Session_local {
             if (writeDemo != null) { // allow it to act like a toggle
                 StopRecordingRenderDemo()
                 return
-            } // FIX: C++ `!demoName[0]` means "is empty". Kotlin had `isNotEmpty()` — inverted.
+            }
             if (demoName.isEmpty()) {
                 Common.common.Printf("idSessionLocal::StartRecordingRenderDemo: no name specified\n")
                 return
@@ -2494,7 +2515,7 @@ object Session_local {
         }
 
         @Throws(idException::class)
-        fun StartPlayingRenderDemo(demoName: idStr) { // FIX: C++ `!demoName[0]` means "is empty". Kotlin had `isNotEmpty()` — inverted.
+        fun StartPlayingRenderDemo(demoName: idStr) {
             if (demoName != null && demoName.toString().isEmpty()) {
                 Common.common.Printf("idSessionLocal::StartPlayingRenderDemo: no name specified\n")
                 return
@@ -2546,8 +2567,6 @@ object Session_local {
             StartPlayingRenderDemo(idStr(demoName))
         }
 
-        // FIX: Entire function body was a copy/paste of StopRecordingRenderDemo.
-        // Rewritten to match C++ StopPlayingRenderDemo.
         fun StopPlayingRenderDemo() {
             if (readDemo == null) {
                 timeDemo = timeDemo_t.TD_NO
@@ -3266,8 +3285,7 @@ object Session_local {
                 } else if (cmd.startsWith("sound ")) { // pipe the GUI sound commands not handled by the game to the main menu code
                     HandleMainMenuCommands(cmd)
                 }
-            } else if (guiHandle != null) { // FIX: C++ calls `(*guiHandle)(menuCommand)` and returns if it returns non-null.
-                // Kotlin was checking `menuCommand != null` (always true) instead of invoking the callback.
+            } else if (guiHandle != null) {
                 if (guiHandle!!.run(menuCommand) != null) {
                     return
                 }
@@ -3465,7 +3483,7 @@ object Session_local {
                     cvarSystem.SetCVarInteger("g_skill", guiMainMenu!!.State().GetInt("skill"))
                     if (icmd._val < args.Argc()) {
                         StartNewGame(args.Argv(icmd.increment()))
-                    } else { // FIX: Branches were swapped — demo build should use demo map, not full game map
+                    } else {
                         if (ID_DEMO_BUILD) {
                             StartNewGame("game/demo_mars_city1")
                         } else {
@@ -3639,11 +3657,7 @@ object Session_local {
                                         Str.va(
                                             Common.common.GetLanguageDict().GetString("#str_04315"),
                                             if (dedicated != 0) maxclients else Min(8, maxclients + 1)
-                                        ),
-                                        Common.common.GetLanguageDict().GetString("#str_04316"),
-                                        true,
-                                        "OK" // FIX: C++ checks `[0] == '\0'` meaning "result is empty" (user cancelled).
-                                        // Kotlin had `isNotEmpty()` which is the opposite.
+                                        ), Common.common.GetLanguageDict().GetString("#str_04316"), true, "OK"
                                     ).isEmpty()
                                 ) { //[0] == '\0') {
                                     continue
@@ -3734,7 +3748,7 @@ object Session_local {
                 // triggered from mainmenu or mpmain
                 if (0 == idStr.Icmp(cmd, "sound")) {
                     var vcmd = idStr()
-                    if (args.Argc() - icmd._val >= 1) { // FIX: C++ does `vcmd = args.Argv( icmd++ )` — post-increments icmd
+                    if (args.Argc() - icmd._val >= 1) {
                         vcmd = idStr(args.Argv(icmd.increment()))
                     }
                     if (0 == vcmd.Length() || 0 == vcmd.Icmp("speakers")) {
@@ -4023,8 +4037,9 @@ object Session_local {
                     continue
                 }
                 if (0 == idStr.Icmp(cmd, "restart")) {
-                    if (com_disableAutoSaves.GetBool() || !LoadGame(GetAutoSaveName(mapSpawnData.serverInfo.GetString("si_map")))) { // If we can't load the autosave then just restart the map
-                        MoveToNewMap(mapSpawnData.serverInfo.GetString("si_map"))
+                    val mapName = mapSpawnData.serverInfo.GetString("si_map")
+                    if (com_disableAutoSaves.GetBool() || !LoadGame(autoSaveFileName(mapName))) { // If we can't load the autosave then just restart the map
+                        MoveToNewMap(mapName)
                     }
                     continue
                 }
@@ -4432,6 +4447,8 @@ object Session_local {
         }
 
         companion object {
+            internal fun autoSaveFileName(mapName: String): String = "Autosave_$mapName"
+
             val com_aviDemoHeight: idCVar = idCVar("com_aviDemoHeight", "256", CVarSystem.CVAR_SYSTEM, "")
             val com_aviDemoSamples: idCVar = idCVar("com_aviDemoSamples", "16", CVarSystem.CVAR_SYSTEM, "")
             val com_aviDemoTics: idCVar =

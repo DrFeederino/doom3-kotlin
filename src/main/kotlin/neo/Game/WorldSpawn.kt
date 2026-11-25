@@ -94,7 +94,7 @@ class WorldSpawn {
          ================
          idWorldspawn::~idWorldspawn
          ================
-         */ // FIX: Added missing destructor — C++ ~idWorldspawn clears gameLocal.world
+         */
         override fun _deconstructor() {
             if (Game_local.gameLocal.world === this) {
                 Game_local.gameLocal.world = null

@@ -23,7 +23,12 @@
  * ===========================================================================
  *
  * Original source: neo/sound/snd_efxfile.cpp, neo/sound/efxlib.h
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Sound
 
@@ -54,9 +59,7 @@ class snd_efxfile {
      ===============
      idSoundEffect
      ===============
-     */ // FIX: Replaced data/datasize fields with 'effect' (ALuint) to match dhewm3 C++.
-    // The old fields were from original id Tech 4 code that used EAXREVERBPROPERTIES structs;
-    // dhewm3 uses OpenAL EFX effects directly.
+     */
     class idSoundEffect {
         var name: idStr = idStr()
         var effect: Int = 0 // ALuint - OpenAL effect handle
@@ -111,7 +114,7 @@ class snd_efxfile {
          ===============
          idEFXFile::FindEffect
          ===============
-         */ // FIX: Signature changed to match C++: returns ALuint effect handle, not object + index
+         */
         fun FindEffect(name: idStr, effect: IntArray): Boolean {
             for (i in 0 until effects.Num()) {
                 if (effects[i].name == name) {
@@ -126,8 +129,7 @@ class snd_efxfile {
          ===============
          idEFXFile::ReadEffect
          ===============
-         */ // FIX: Was a non-functional stub returning false. Fully implemented from dhewm3 C++ source.
-        // Uses LWJGL3 EXTEfx directly instead of C++ function pointers loaded via alGetProcAddress.
+         */
         fun ReadEffect(src: idLexer, effect: idSoundEffect): Boolean {
             val name = idToken()
             val token = idToken()
@@ -402,7 +404,7 @@ class snd_efxfile {
          ===============
          idEFXFile::LoadFile
          ===============
-         */ // FIX: Main effects loading loop was commented out. Fully implemented from C++ source.
+         */
         fun LoadFile(filename: String, OSPath: Boolean = false): Boolean {
             val src = idLexer(Lexer.LEXFL_NOSTRINGCONCAT)
             src.LoadFile(filename, OSPath)

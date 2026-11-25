@@ -715,7 +715,7 @@ object UsercmdGen {
 
         override fun MouseState(
             x: IntArray, y: IntArray, button: IntArray, down: BooleanArray
-        ) { // FIX: x/y assignments were commented out, but C++ sets all four output parameters
+        ) {
             x[0] = continuousMouseX.toInt()
             y[0] = continuousMouseY.toInt()
             button[0] = mouseButton
@@ -1126,8 +1126,7 @@ object UsercmdGen {
                 val dwTimeStamp = Instant.now().toEpochMilli()
 
                 // mouse wheel actions are impulses, without a specific up / down
-                val key =
-                    if (yoffset < 0) KeyInput.K_MWHEELDOWN else KeyInput.K_MWHEELUP // FIX: C++ uses abs(value) before the loop; without it, negative scroll never fires
+                val key = if (yoffset < 0) KeyInput.K_MWHEELDOWN else KeyInput.K_MWHEELUP
                 var wheelValue = abs(yoffset.toInt())
                 while (wheelValue-- > 0) {
                     Key(key, true)

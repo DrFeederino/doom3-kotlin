@@ -1,3 +1,31 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
 package neo.Game
 
 import neo.Game.AI.*
@@ -607,7 +635,7 @@ class Game_local {
          */
         override fun Init() {
             val dict: idDict?
-            var aas: idAAS // FIX: Was inverted — C++ uses #ifndef GAME_DLL for TestGameAPI, #else for idLib init
+            var aas: idAAS
             if (!GAME_DLL) {
                 TestGameAPI()
             } else {
@@ -1730,7 +1758,7 @@ class Game_local {
                     }
 
                     // display how long it took to calculate the current game frame
-                    if (SysCvar.g_frametime.GetBool()) { // FIX: Was %.1f (float) — C++ uses %u (unsigned int); Milliseconds() returns Long
+                    if (SysCvar.g_frametime.GetBool()) {
                         Printf(
                             "game %d: all:%d th:%d ev:%d %d ents \n",
                             time,
@@ -3743,8 +3771,7 @@ class Game_local {
                     ratio_y = 10.0f
                 }
 
-                else -> { // FIX: Was returning base_fov — C++ default/-1 case uses auto mode from screen resolution
-                    // auto mode => use aspect ratio from resolution, assuming screen's pixels are squares
+                else -> {
                     ratio_x = RenderSystem.renderSystem.GetScreenWidth().toFloat()
                     ratio_y = RenderSystem.renderSystem.GetScreenHeight().toFloat()
                     if (ratio_x <= 0.0f || ratio_y <= 0.0f) { // for some reason (maybe this is a dedicated server?) GetScreenWidth()/Height()
@@ -4834,7 +4861,7 @@ class Game_local {
             for (u in 0 until usercmds.size) {
                 usercmds[u] = usercmd_t()
             } //	memset( entities, 0, sizeof( entities ) );
-            entities.fill(null) // FIX: Was creating new array — use fill() to clear in-place and preserve references
+            entities.fill(null)
             spawnIds.fill(-1) //	memset( spawnIds, -1, sizeof( spawnIds ) );
             firstFreeIndex = 0
             num_entities = 0
@@ -4843,7 +4870,7 @@ class Game_local {
             numEntitiesToDeactivate = 0
             sortPushers = false
             sortTeamMasters = false
-            persistentLevelInfo.Clear() // FIX: Was creating new array — use fill() to clear in-place and preserve references
+            persistentLevelInfo.Clear()
             globalShaderParms.fill(0f) //memset( globalShaderParms, 0, sizeof( globalShaderParms ) );
             random.SetSeed(0)
             world = null
@@ -4897,18 +4924,16 @@ class Game_local {
             lastGUI = 0
 
             //	memset( clientEntityStates, 0, sizeof( clientEntityStates ) );
-            // FIX: C++ zeroes pointers (= NULL), not creates new objects
             for (a in 0 until MAX_CLIENTS) {
                 clientEntityStates[a].fill(null)
-            } // FIX: Was creating new array — use fill() to clear in-place and preserve references
+            }
             for (a in 0 until MAX_CLIENTS) {
                 clientPVS[a].fill(0)
             } //memset( clientPVS, 0, sizeof( clientPVS ) );
             //	memset( clientSnapshots, 0, sizeof( clientSnapshots ) );
-            // FIX: C++ zeroes pointers (= NULL), not creates new objects
             clientSnapshots.fill(null)
             eventQueue.Init()
-            savedEventQueue.Init() // FIX: Was creating new array — clear in-place to preserve references
+            savedEventQueue.Init()
             for (row in lagometer) {
                 for (col in row) {
                     col.fill(0)

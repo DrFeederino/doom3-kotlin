@@ -21,6 +21,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
 
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+
 ===========================================================================
 */
 
@@ -66,8 +71,7 @@ object Image_process {
             outheight = MAX_DIMENSION
         } // write clamped values back
         _outwidth._val = outwidth
-        _outheight._val =
-            outheight // FIX: was ByteBuffer.allocate() (heap) — must be direct for potential OpenGL upload
+        _outheight._val = outheight
         out = BufferUtils.createByteBuffer(outwidth * outheight * 4)
         fracstep = inwidth * 0x10000 / outwidth
         frac = fracstep shr 2

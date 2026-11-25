@@ -20,7 +20,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Doom 3 Source Code. If not, see <http://www.gnu.org/licenses/>.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.framework
 
@@ -193,7 +198,7 @@ class DeclFX {
             val list = this
 
             Common.common.Printf("%d events\n", list.events.Num())
-            for (i in 0 until list.events.Num()) { // FIX: C++ uses switch(type) which falls through on -1; Kotlin !! would NPE on null
+            for (i in 0 until list.events.Num()) {
                 when (list.events[i].type) {
                     fx_enum.FX_LIGHT -> Common.common.Printf("FX_LIGHT %s\n", list.events[i].data.toString())
                     fx_enum.FX_PARTICLE -> Common.common.Printf("FX_PARTICLE %s\n", list.events[i].data.toString())

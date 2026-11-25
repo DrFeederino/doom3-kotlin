@@ -14,7 +14,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game
 
@@ -203,8 +208,7 @@ object Light {
             // the renderer will ignore this value after a light has been moved,
             // but there may still be a chance to get it wrong if the game moves
             // a light before the first present, and doesn't clear the prelight
-            renderLight.prelightModel =
-                null // FIX: C++ name[0] safely returns '\0' on empty string; Kotlin name[0] would throw IndexOutOfBoundsException
+            renderLight.prelightModel = null
             if (name.Length() > 0) { // this will return 0 if not found
                 renderLight.prelightModel = ModelManager.renderModelManager.CheckModel(Str.va("_prelight_%s", name))
             }
@@ -439,7 +443,6 @@ object Light {
             SetLightLevel()
         }
 
-        // FIX: Missing SetColor(idVec3) overload — C++ idLight overrides this to set baseColor and call SetLightLevel
         override fun SetColor(color: idVec3) {
             baseColor.set(color)
             SetLightLevel()
@@ -502,7 +505,7 @@ object Light {
             PresentLightDefChange()
         }
 
-        fun SetRadius(radius: Float) { // FIX: Was using fragile chained set() calls; simplified to match C++ direct assignment
+        fun SetRadius(radius: Float) {
             renderLight.lightRadius[0] = radius
             renderLight.lightRadius[1] = radius
             renderLight.lightRadius[2] = radius

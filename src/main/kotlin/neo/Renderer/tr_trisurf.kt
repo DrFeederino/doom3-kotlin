@@ -21,6 +21,11 @@ along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
 
 Translated to Kotlin by Dr. Feederino with support of Claude Code.
 
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+
 ===========================================================================
 */
 package neo.Renderer
@@ -1725,66 +1730,6 @@ fun R_CleanupTriangles(
     } else {
         R_DeriveTangents(tri)
     }
-}
-
-/*
- ===================
- R_BuildDeformInfo
- ===================
- */
-fun R_BuildDeformInfo(
-    numVerts: Int, verts: idDrawVert?, numIndexes: Int, indexes: IntArray, useUnsmoothedTangents: Boolean
-): deformInfo_s {
-    val deform: deformInfo_s
-    val tri: srfTriangles_s
-    var i: Int
-    tri = srfTriangles_s()
-    tri.numVerts = numVerts
-    R_AllocStaticTriSurfVerts(tri, tri.numVerts) // deep copy - C++ memcpy copies bytes, Kotlin must copy objects
-    SIMDProcessor!!.Memcpy(tri.verts as Array<idDrawVert>, verts as Array<idDrawVert>, tri.numVerts)
-    tri.numIndexes = numIndexes
-    R_AllocStaticTriSurfIndexes(tri, tri.numIndexes)
-
-    // don't memcpy, so we can change the index type from int to short without changing the interface
-    i = 0
-    while (i < tri.numIndexes) {
-        tri.indexes!![i] = indexes[i]
-        i++
-    }
-    R_RangeCheckIndexes(tri)
-    R_CreateSilIndexes(tri)
-
-    // should we order the indexes here?
-    //	R_RemoveDuplicatedTriangles( &tri );
-    //	R_RemoveDegenerateTriangles( &tri );
-    //	R_RemoveUnusedVerts( &tri );
-    R_IdentifySilEdges(tri, false) // we cannot remove coplanar edges, because
-    // they can deform to silhouettes
-    R_DuplicateMirroredVertexes(tri) // split mirror points into multiple points
-    R_CreateDupVerts(tri)
-    if (useUnsmoothedTangents) {
-        R_BuildDominantTris(tri)
-    }
-    deform = deformInfo_s()
-    deform.numSourceVerts = numVerts
-    deform.numOutputVerts = tri.numVerts
-    deform.numIndexes = numIndexes
-    deform.indexes = tri.indexes!!
-    deform.silIndexes = tri.silIndexes!!
-    deform.numSilEdges = tri.numSilEdges
-    deform.silEdges = tri.silEdges as Array<silEdge_t>
-    deform.dominantTris = tri.dominantTris as Array<dominantTri_s>
-    deform.numMirroredVerts = tri.numMirroredVerts
-    deform.mirroredVerts = tri.mirroredVerts!!
-    deform.numDupVerts = tri.numDupVerts
-    deform.dupVerts = tri.dupVerts!!
-    if (tri.verts != null) {
-        tri.verts = null
-    }
-    if (tri.facePlanes != null) {
-        tri.facePlanes = null
-    }
-    return deform
 }
 
 fun R_BuildDeformInfo(

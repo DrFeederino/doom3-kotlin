@@ -4,7 +4,12 @@
  *
  * This file is part of the Doom 3 Kotlin project.
  * Original source: neo/Game/Physics/Physics_Static.h, neo/Game/Physics/Physics_Static.cpp
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game.Physics
 
@@ -535,7 +540,12 @@ class Physics_Static {
                     results,
                     current.origin,
                     rotation,
-                    clipModel, current.axis, Game_local.MASK_SOLID, model.Handle(), model.GetOrigin(), model.GetAxis()
+                    clipModel,
+                    current.axis,
+                    Game_local.MASK_SOLID,
+                    model.Handle(),
+                    model.GetOrigin(),
+                    model.GetAxis()
                 )
             } else {
                 Game_local.gameLocal.clip.Rotation(
@@ -554,7 +564,12 @@ class Physics_Static {
                 if (model != null) {
                     Game_local.gameLocal.clip.ContentsModel(
                         clipModel!!.GetOrigin(),
-                        clipModel, clipModel!!.GetAxis(), -1, model.Handle(), model.GetOrigin(), model.GetAxis()
+                        clipModel,
+                        clipModel!!.GetAxis(),
+                        -1,
+                        model.Handle(),
+                        model.GetOrigin(),
+                        model.GetAxis()
                     )
                 } else {
                     Game_local.gameLocal.clip.Contents(

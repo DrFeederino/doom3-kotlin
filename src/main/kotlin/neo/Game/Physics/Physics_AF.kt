@@ -4,7 +4,12 @@
  *
  * This file is part of the Doom 3 Kotlin project.
  * Original source: neo/Game/Physics/Physics_AF.h, neo/Game/Physics/Physics_AF.cpp
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game.Physics
 
@@ -5101,7 +5106,6 @@ object Physics_AF {
         val pushVelocity // velocity with which the af is pushed
                 : idVec6 = idVec6()
 
-        // FIX: Deep copy method to prevent reference aliasing in SaveState/RestoreState.
         fun set(other: AFPState_s) {
             activateTime = other.activateTime
             atRest = other.atRest
@@ -6051,7 +6055,7 @@ object Physics_AF {
                 val masterAxis = idMat3()
                 self!!.GetMasterPosition(
                     masterOrigin, masterAxis
-                ) // FIX: Was !== (referential), C++ uses != (structural equality) to check if master actually moved
+                )
                 if (current.atRest >= 0 && (masterBody!!.current.worldOrigin != masterOrigin || masterBody!!.current.worldAxis != masterAxis)) {
                     Activate()
                 }
@@ -6349,7 +6353,7 @@ object Physics_AF {
         ================
         */
         override fun SaveState() {
-            var i: Int // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias
+            var i: Int
             saved.set(current)
             i = 0
             while (i < bodies.Num()) {
@@ -6366,7 +6370,7 @@ object Physics_AF {
         ================
         */
         override fun RestoreState() {
-            var i: Int // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias
+            var i: Int
             current.set(saved)
             i = 0
             while (i < bodies.Num()) {
@@ -8460,8 +8464,7 @@ object Physics_AF {
             lcp = idLCP.AllocSymmetric()
             current = AFPState_s() //memset( &current, 0, sizeof( current ) );
             current.atRest = -1
-            current.lastTimeStep =
-                UsercmdGen.USERCMD_MSEC.toFloat() // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias
+            current.lastTimeStep = UsercmdGen.USERCMD_MSEC.toFloat()
             saved = AFPState_s()
             saved.set(current)
             linearFriction = 0.005f

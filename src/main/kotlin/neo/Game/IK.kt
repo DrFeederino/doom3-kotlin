@@ -17,7 +17,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Doom 3 Source Code. If not, see <http://www.gnu.org/licenses/>.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game
 
@@ -421,7 +426,7 @@ object IK {
          */
         override fun Restore(savefile: idRestoreGame) {
             var i: Int
-            super.Restore(savefile) // FIX: was footModel!! which would NPE when footModel is null (always null after construction)
+            super.Restore(savefile)
             footModel = savefile.ReadClipModel()
             numLegs = savefile.ReadInt()
             enabledLegs = savefile.ReadInt()
@@ -1021,8 +1026,7 @@ object IK {
                 hipJoints[i] = Model.INVALID_JOINT
                 dirJoints[i] = Model.INVALID_JOINT
                 upperLegLength[i] = 0.0f
-                lowerLegLength[i] = 0.0f // FIX: was = idMat3.getMat3_identity() which assigns shared constant reference
-                // C++ calls .Identity() in-place
+                lowerLegLength[i] = 0.0f
                 upperLegToHipJoint[i].Identity()
                 lowerLegToKneeJoint[i].Identity()
                 oldAnkleHeights[i] = 0.0f

@@ -17,7 +17,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Doom 3 Source Code. If not, see <http://www.gnu.org/licenses/>.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.framework
 
@@ -32,5 +37,5 @@ package neo.framework
 object DemoChecksum {
     // every time a new demo pk4 file is built, this checksum must be updated.
     // the easiest way to get it is to just run the game and see what it spits out
-    const val DEMO_PAK_CHECKSUM: Long = -0x018A4411 // FIX: Was -0x55873742 (wrong value). C++ original: 0xFE75BBEF
+    const val DEMO_PAK_CHECKSUM: Long = -0x018A4411
 }

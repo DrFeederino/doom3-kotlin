@@ -1,3 +1,30 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
 package neo.Sound
 
 import neo.Renderer.Cinematic.cinData_t
@@ -145,7 +172,6 @@ class snd_system {
             val s_quadraticFalloff: idCVar =
                 idCVar("s_quadraticFalloff", "1", CVarSystem.CVAR_SOUND or CVarSystem.CVAR_BOOL, "")
 
-            // FIX: Missing CVar from dhewm3 — allows reducing reverb effect gain globally
             val s_alReverbGain: idCVar = idCVar(
                 "s_alReverbGain",
                 "0.5",
@@ -355,7 +381,7 @@ class snd_system {
         //
         var realAccum: FloatArray = FloatArray(6 * MIXBUFFER_SAMPLES + 16)
 
-        @Volatile
+        @kotlin.concurrent.Volatile
         var shutdown = false
         var soundCache: idSoundCache? = null
 
@@ -499,7 +525,6 @@ class snd_system {
                         Common.common.Printf("OpenAL renderer: %s\n", AL10.alGetString(AL10.AL_RENDERER)!!)
                         Common.common.Printf("OpenAL version: %s\n", AL10.alGetString(AL10.AL_VERSION)!!)
 
-                        // FIX: dhewm3 uses ALC_EXT_EFX (standard OpenAL EFX), not proprietary EAX4.0
                         if (ALC10.alcIsExtensionPresent(openalDevice, "ALC_EXT_EFX")) {
                             Common.common.Printf("OpenAL: found EFX extension\n")
                             EFXAvailable = 1
@@ -625,7 +650,7 @@ class snd_system {
             return true
         }
 
-        override fun InitHW(): Boolean { // FIX: dhewm3 validates numSpeakers and checks openalContext before proceeding
+        override fun InitHW(): Boolean {
             var numSpeakers = s_numberOfSpeakers.GetInteger()
             if (numSpeakers != 2 && numSpeakers != 6) {
                 Common.common.Warning("invalid value for s_numberOfSpeakers. Use either 2 or 6")
@@ -633,7 +658,6 @@ class snd_system {
                 s_numberOfSpeakers.SetInteger(numSpeakers)
             }
 
-            // FIX: dhewm3 returns false if openalContext is NULL (no audio device)
             if (s_noSound.GetBool() || openalContext == 0L) {
                 return false
             }

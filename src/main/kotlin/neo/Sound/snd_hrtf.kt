@@ -1,3 +1,7 @@
+/*
+This file is part of the DOOM 3 Kotlin project.
+It is distributed under the GNU GPL version 3 or later. See LICENSE.txt and COPYING.txt.
+*/
 package neo.Sound
 
 import neo.framework.FileSystem_h

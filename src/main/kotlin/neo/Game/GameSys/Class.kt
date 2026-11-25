@@ -30,7 +30,12 @@
  * that auto-registers into a central HashMap registry on construction.
  * This replaces the C++ CLASS_DECLARATION macro system. Event dispatch
  * continues through per-class getEventCallBack() virtual methods.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 package neo.Game.GameSys
 
 import neo.Game.*
@@ -348,8 +353,6 @@ class Class {
             //
             private var initialized = false
 
-            // FIX: Changed from const val to var — C++ modifies these in operator new/delete.
-            // In JVM we don't override new/delete, but these should still be mutable for tracking.
             private var memused = 0
             private var numobjects = 0
             private var typeNumBits = 0
@@ -601,8 +604,6 @@ class Class {
             return PostEventArgs(ev, time, 0)
         }
 
-        // FIX: Changed time parameter from Float to Int to match C++ PostEventMS(ev, int time, idEventArg).
-        // Callers using float literals (e.g., 0.0f) need to be updated to int literals (e.g., 0).
         fun PostEventMS(ev: idEventDef, time: Int, arg1: Any?): Boolean {
             return PostEventArgs(ev, time, 1, idEventArg.toArg<Any?>(arg1))
         }
@@ -1084,8 +1085,6 @@ class Class {
             assert(ev != null)
             assert(Event.initialized)
 
-            // FIX: Restored the eventMap check that was commented out.
-            // C++ checks c->eventMap[ev->GetEventNum()] before copying args.
             if (getEventCallBack(ev) == null) { // we don't respond to this event, so ignore it
                 return false
             }

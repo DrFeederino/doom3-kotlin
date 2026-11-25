@@ -14,7 +14,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 package neo.framework
 
 /*
@@ -27,12 +32,10 @@ package neo.framework
 object Licensee {
 
     const val GAME_NAME: String = "dhewm 3"                            // appears on window titles and errors
-    const val ENGINE_VERSION: String = "dhewm3 1.5.5rc3"           // printed in console
+    const val ENGINE_VERSION: String = "dhewm3 1.5.5"              // printed in console
     const val D3_OSTYPE = "windows" // we are faking it
     const val D3_ARCH = "x86_64"
     const val D3_SHORT_SIZE: Short = 8
-
-    // NOTE: Differs from C++ "dhewm3 1.5.3pre" — intentional for this port
 
     // paths
     const val BASE_GAMEDIR: String = "base"

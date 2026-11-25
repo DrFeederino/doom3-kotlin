@@ -14,7 +14,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game.AI
 
@@ -386,8 +391,6 @@ class idAASFindCover(hideFromPos: idVec3) : AAS.idAASCallback() {
     private val PVSAreas: IntArray = IntArray(idEntity.MAX_PVS_AREAS)
     private val hidePVS: pvsHandle_t
 
-    // FIX: C++ destructor calls FreeCurrentPVS. Kotlin has no deterministic destructor,
-    // so callers must call cleanup() explicitly after use.
     fun cleanup() {
         Game_local.gameLocal.pvs.FreeCurrentPVS(hidePVS)
     }
@@ -464,8 +467,6 @@ class idAASFindAttackPosition(
     private val targetPos: idVec3 = idVec3()
 
     // ~idAASFindAttackPosition();
-    // FIX: C++ destructor calls FreeCurrentPVS. Kotlin has no deterministic destructor,
-    // so callers must call cleanup() explicitly after use.
     fun cleanup() {
         Game_local.gameLocal.pvs.FreeCurrentPVS(targetPVS)
     }
@@ -561,7 +562,7 @@ open class idAI : idActor() {
             path.seekPosObstacle = null
             if (null == aas) {
                 return true
-            } // FIX: C++ copies by value; Kotlin reference would corrupt shared settings
+            }
             bounds[1].set(aas.GetSettings()!!.boundingBoxes[0][1])
             bounds[0].set(bounds[1].unaryMinus())
             bounds[1].z = 32.0f
@@ -586,9 +587,6 @@ open class idAI : idActor() {
             )
 
             // get a source position outside the obstacles
-            // FIX: ToVec2() returns a disconnected copy in Kotlin. In C++, it returns a reference
-            // to the first two components of the idVec3, so modifications propagate back.
-            // Use a temp idVec2 and write back to the idVec3.
             val startPosVec2 = path.startPosOutsideObstacles.ToVec2()
             GetPointOutsideObstacles(
                 obstacles, numObstacles, startPosVec2, insideObstacle, CInt()
@@ -1757,7 +1755,7 @@ open class idAI : idActor() {
         savefile.ReadVec3(projectileVelocity)
         savefile.ReadVec3(projectileGravity)
         projectile.Restore(savefile)
-        savefile.ReadString(attack) // FIX: chat_snd may be null; create temp object for ReadSoundShader which requires non-null
+        savefile.ReadString(attack)
         val tempSoundShader = savefile.ReadSoundShader()
         chat_snd = tempSoundShader
         chat_min = savefile.ReadInt()
@@ -2222,7 +2220,7 @@ open class idAI : idActor() {
         val use_aas = idStr()
         spawnArgs.GetString("use_aas", null, use_aas)
         aas = Game_local.gameLocal.GetAAS(use_aas.toString())
-        if (aas != null) { // FIX: GetSettings() returns nullable; was using !! which would NPE when settings is null
+        if (aas != null) {
             val settings = aas!!.GetSettings()
             if (settings != null) {
                 if (!ValidForBounds(settings, physicsObj.GetBounds())) {
@@ -2360,8 +2358,7 @@ open class idAI : idActor() {
         }
         if (fl.hidden && allowHiddenMovement) { // UpdateAnimation won't call frame commands when hidden, so call them here when we allow hidden movement
             animator.ServiceAnims(Game_local.gameLocal.previousTime, Game_local.gameLocal.time)
-        }
-        /*	this still draws in retail builds.. not sure why.. don't care at this point.
+        }/*	this still draws in retail builds.. not sure why.. don't care at this point.
              if ( !aas && developer.GetBool() && !fl.hidden && !num_cinematics ) {
              gameRenderWorld->DrawText( "No AAS", physicsObj.GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
              }
@@ -2891,8 +2888,7 @@ open class idAI : idActor() {
         val goalDist: Float
         val moveResult: monsterMoveResult_t?
         val newDest = idVec3()
-        val oldOrigin =
-            idVec3(physicsObj.GetOrigin()) // FIX: Was `val oldAxis = viewAxis` which copies the reference, not the value. // Turn() modifies viewAxis in-place via .set(), so oldAxis and viewAxis would be // the same object, causing GetMoveDelta to receive identical matrices.
+        val oldOrigin = idVec3(physicsObj.GetOrigin())
         val oldAxis = idMat3(viewAxis)
         AI_BLOCKED.underscore(false)
         if ((move.moveCommand).ordinal < (moveCommand_t.NUM_NONMOVING_COMMANDS).ordinal) {
@@ -3568,8 +3564,6 @@ open class idAI : idActor() {
         org.set(physicsObj.GetOrigin())
 
         // find all possible obstacles
-        // FIX: GetAbsBounds() returns a reference in Kotlin; C++ copies by value.
-        // Must deep-copy to avoid corrupting physics internal bounds via TranslateSelf/ExpandSelf.
         clipBounds = idBounds(physicsObj.GetAbsBounds())
         clipBounds.TranslateSelf(dir.times(32.0f))
         clipBounds.ExpandSelf(8.0f)
@@ -3718,7 +3712,7 @@ open class idAI : idActor() {
         }
         size.set(aas!!.GetSettings()!!.boundingBoxes[0][1].times(boundsScale))
         bounds[0].set(size.unaryMinus())
-        size.z = 32.0f // FIX: C++ copies by value; use .set() to avoid aliasing bounds[1] with size
+        size.z = 32.0f
         bounds[1].set(size)
         areaNum = if (move.moveType == moveType_t.MOVETYPE_FLY) {
             aas!!.PointReachableAreaNum(pos, bounds, AASFile.AREA_REACHABLE_WALK or AASFile.AREA_REACHABLE_FLY)
@@ -5258,7 +5252,7 @@ open class idAI : idActor() {
         bounds.TranslateSelf(org)
         val enemyOrg = idVec3(
             enemyEnt.GetPhysics().GetOrigin()
-        ) // FIX: Was direct reference alias; TranslateSelf would corrupt the physics bounds in-place
+        )
         val enemyBounds = idBounds(enemyEnt.GetPhysics().GetBounds())
         enemyBounds.TranslateSelf(enemyOrg)
         if (SysCvar.ai_debugMove.GetBool()) {
@@ -5606,9 +5600,7 @@ open class idAI : idActor() {
             )
         } else {
             focusPos.set(focusEnt.GetPhysics().GetOrigin())
-        } // FIX: Was currentFocusPos.plus(focusPos.minus(currentFocusPos)).times(eyeFocusRate)
-        // which chains left-to-right: (currentFocusPos + (focusPos - currentFocusPos)) * rate = focusPos * rate
-        // C++ original: currentFocusPos + (focusPos - currentFocusPos) * eyeFocusRate (standard lerp)
+        }
         currentFocusPos.set(
             currentFocusPos.plus(
                 focusPos.minus(currentFocusPos).times(eyeFocusRate)
@@ -6186,7 +6178,7 @@ open class idAI : idActor() {
         if (null == projectileDef) {
             Game_local.gameLocal.Warning(
                 "%s (%s) doesn't have a projectile specified", name, GetEntityDefName()
-            ) // FIX: C++ uses `return idThread::ReturnEntity(NULL)` to exit early
+            )
             return idThread.ReturnEntity(null)
         }
         GetMuzzle(jointname, muzzle, axis)
@@ -7653,8 +7645,7 @@ open class idAI : idActor() {
      idAI::Event_SaveMove
      ================
      */
-    protected fun Event_SaveMove() { // FIX: Was `savedMove = move` which copies the reference (both point to same object).
-        // C++ performs a memberwise value copy. Use copyFrom() for deep copy.
+    protected fun Event_SaveMove() {
         savedMove.copyFrom(move)
     }
 
@@ -7930,8 +7921,7 @@ open class idAI : idActor() {
      ================
      */
     protected fun Event_LookAtEntity(_ent: idEventArg<idEntity>, duration: idEventArg<Float>) {
-        var ent: idEntity? =
-            _ent.value // FIX: C++ sets ent = NULL when looking at self, then falls through to the second if. // Was using else-if (mutually exclusive) and had the null assignment commented out.
+        var ent: idEntity? = _ent.value
         if (ent === this) {
             ent = null
         }
@@ -8342,8 +8332,7 @@ open class idAI : idActor() {
             } else {
                 if (!ent.GetFloorPos(
                         64.0f, pos
-                    )
-                ) { // FIX: Was missing return; C++ uses `return idThread::ReturnVector(vec3_zero)`
+                    )) {
                     idThread.ReturnVector(vec3_zero)
                     return
                 }

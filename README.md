@@ -1,79 +1,78 @@
-# DOOM3 Kotlin
+# DOOM 3 Kotlin
 
-Inspired by [DJOOM 3 by Blackbeard334](https://github.com/blackbeard334/djoom3/)
-</br>
-Compilation is recommended under JDK 25 & Kotlin ver. 2.3.21.
+A Kotlin reimplementation of the DOOM 3 engine, inspired by [DJOOM 3](https://github.com/blackbeard334/djoom3/)
+and informed by the original id Software source code and the [dhewm3](https://github.com/dhewm/dhewm3)
+source port.
 
-## How to build and run
+## Current status
 
-What you need:
+The engine version of this Kotlin port is not a one-to-one snapshot of
+upstream but very largely the same as upstream and is 1.5.5 as of 25/11/2026.
+Under the hood the project runs on Kotlin's, Java's and LWJGL's APIs, unlike the dhewm3 source port this project is
+coded to support both base and Resurrection of Evil (D3XP) campaigns without the need to recompile. Known bugs in the
+original campaign due to D3XP code were addressed.
 
-- JDK 25 (e.g. Azul Zulu) and Maven
-- A legal copy of DOOM 3 installed (Steam/GOG) — the game data is not part of this repository
+## Game data
 
-Build once:
+Game assets are not included. You need legally obtained retail **DOOM 3** data, (preferably and tested) updated to
+version 1.3.1.
+The original DOOM 3 and Resurrection of Evil data are supported; **DOOM 3: BFG Edition is not supported**.
+The data remains subject to the original game's EULA and must not be redistributed with this source.
 
-    mvn package
+The engine needs the game installation root—the directory containing `base/` (and, for Resurrection of
+Evil, `d3xp/`). The retail `base/` directory contains the `pak000.pk4` through `pak008.pk4` archives.
+Keep the original directory layout rather than copying game archives into this repository. For Steam
+installations and platform-specific data extraction details, see the dhewm3's wiki as this project mirrors the behavior:
+[dhewm3 game-data installation guide](https://dhewm3.org/#how-to-install) and its
+[FAQ](https://github.com/dhewm/dhewm3/wiki/FAQ).
 
-That compiles the code, runs the tests and packages the game into `target/`, then drops a launcher
-script into the project root: `run-game.sh` on macOS/Linux, `run-game.bat` on Windows.
+## About AI usage
 
-Then play:
+In the first few years of me porting the Java code to Kotlin was done by me, with bare hands, for the purpose of
+learning and seeing if I can do it. I spent tons of restless hours identifying the bugs that came from Java code and
+even finding the vanilla bugs that I kept forgetting to report back to dhewm3 but they were fixed earlier this or last
+year. Earlier this year as the project matured and LLMs became more capable, I adopted the usage and used them
+extensively to polish the project to the current state. I do not include Agents file yet as I deem it unnecessary and my
+local version needs a huge revise of it.
 
-    ./run-game.sh        # macOS / Linux
-    run-game.bat         # Windows
+## Future work
 
-The launcher runs the already-built jar, so you only need `mvn package` again after changing code.
-The engine locates a default DOOM 3 installation on its own, so if your game is installed in the
-usual place, there is nothing else to configure. If it is somewhere non-default, pass it through:
+I see this project as fun pet project that introduced me to various different game engine inner workings and graphical
+codebase. Needless to say, I learned quite a lot in the past few years that I have been working, mainly - debugging is a
+bi...! I am currently working on the tooling to port e3 assets to retail version of the game (from playable maps to
+complete walkthrough), I will likely include the conversion tools here as I am lazy to create another repo.
+Additionally, I am very early days into the ray tracing, but first I would need to add support for another frontend
+renderer - Vulkan, which is another bag of doritos I haven't opened yet. No promises, just ramblings and wishes.
 
-    ./run-game.sh +set fs_basepath '/path/to/doom 3'
+## Launching
 
-#### 21-06-2022
+When using a packaged distribution, start its platform launcher:
 
-Version 0.0.1
+```
+java -jar doom3-kotlin-1.0.0.jar
+```
 
-This version is the first milestone: re-write djoom 3 in kotlin.
-</br>
-A lot of stuff works to my surprise, however, currently it only compiles and does some basic initializing stuff. Fails
-at Script Compiling.
-</br>
-Next version will feature at least playable menu, hopefully :)
+Note: Additional engine console arguments can be appended to the launcher command at the end, e.g.:
 
-#### 29-08-2023
-Version 0.0.2
-</br>
--Fixed Script Compilation
-</br>
--Moved to Java 17 and Kotlin 1.7.0
-</br>
--Fixed nasty Filesystem issues (e.g. reading wrong bits due to Kotlin's difference of operator precedence)
-</br>
--A lot of fixes to make more inline with Java version
+```
+java -jar doom3-kotlin-1.0.0.jar "+set fs_basepath '/path/to/doom3'"
+```"
 
-#### 09-10-2026
+## Multiplayer safety
 
-~~Version 0.0.3~~ → Version 1.0.0
-</br>
-The engine now plays the whole game.
-</br>
--Full Doom 3 single player campaign, playable from start to finish
-</br>
--Resurrection of Evil (D3XP) expansion supported
-</br>
--Save games and loading games implemented
-</br>
--Multiplayer support
-</br>
--Renderer: stencil shadows fixed, skybox rendering, MSAA, proper full screen scaling, reworked macOS rendering path
-</br>
--Sound system reworked, with HRTF support for headphone playback
-</br>
--AI, scripting and GUI fixes throughout the game
-</br>
--Performance: much lower memory usage, faster startup and save times
-</br>
--Moved to Java 25 and Kotlin 2.3.21
-</br>
--and many more bugs I don't remember to list
+**Do not connect this engine, vanilla DOOM 3, or other DOOM 3 source ports to public multiplayer servers,
+and do not host public servers.** The inherited multiplayer protocol is considered fundamentally unsafe:
+malicious servers or clients may be able to execute code on a peer's system. Single-player is fine when
+using trusted game data and mods; multiplayer should be limited to a LAN or VPN with trusted participants.
+See the warning in the [dhewm3 README](https://github.com/dhewm/dhewm3/blob/master/README.md) for context.
+
+## Credits and license
+
+- id Software for DOOM 3 and its GPL source release.
+- Daniel Gibson and contributors for dhewm3 and its engine fixes.
+- Blackbeard334 for DJOOM 3, which inspired this Kotlin reimplementation.
+- Dr. Feederino for the Kotlin port.
+
+The source is distributed under the GNU GPL v3 or later and is subject to the additional terms attached
+to the original DOOM 3 source code. See [`LICENSE.txt`](LICENSE.txt) and [`COPYING.txt`](COPYING.txt).
 

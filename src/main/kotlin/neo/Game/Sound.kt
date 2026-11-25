@@ -21,6 +21,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
 
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+
 ===========================================================================
 */
 
@@ -220,9 +225,7 @@ object Sound { // NOTE: SSF constants and soundShaderParms_t originate from neo/
                     DoSound(true)
                     PostEventSec(EV_Speaker_Timer, wait + Game_local.gameLocal.random.CRandomFloat() * random)
                 }
-            } else { // FIX: Restructured to match C++ explicit if/else toggle pattern.
-                // Previously used compressed boolean expression DoSound(condition) which was
-                // functionally equivalent but harder to read and maintain.
+            } else {
                 if (Game_local.gameLocal.isMultiplayer) {
                     if (refSound.referenceSound != null && Game_local.gameLocal.time < playingUntilTime) {
                         DoSound(false)

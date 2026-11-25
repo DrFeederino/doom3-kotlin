@@ -1,3 +1,31 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
 package neo.Sound
 
 import neo.Renderer.RenderWorld.idRenderWorld
@@ -263,7 +291,7 @@ object snd_emitter {
         // functions
         fun GenerateSlowChannel(
             playPos: FracTime, sampleCount44k: Int, finalBuffer: FloatArray
-        ) { // FIX: Added null check from C++ — GetPlayingSoundWorld() can return null during level transitions
+        ) {
             val sw = snd_system.soundSystemLocal.GetPlayingSoundWorld() as? idSoundWorldLocal
             val `in` = slowIn
             val out = slowOut
@@ -279,7 +307,6 @@ object snd_emitter {
 
             //            src = in + 2;
             //            spline = out + 2;
-            // FIX: C++ checks if sw is null and defaults to 1.0f
             slowmoSpeed = sw?.slowmoSpeed ?: 1.0f
             neededSamples = (sampleCount44k * slowmoSpeed + 4).toInt()
 
@@ -344,8 +371,7 @@ object snd_emitter {
             this.chan = chan
         }
 
-        fun Reset() { // FIX: C++ memset(this, 0, sizeof(*this)) zeroes ALL fields before setting overrides.
-            // Kotlin was only resetting a subset, leaving active/playbackState/lowpass stale.
+        fun Reset() {
             active = false
             chan = null
             playbackState = 0
@@ -424,7 +450,6 @@ object snd_emitter {
         var triggerState = false
         var triggered = false
 
-        // FIX: Missing from Kotlin — C++ snd_local.h declares both fields
         var stopped = false
         var paused = false  // DG: currently paused, but generally still playing
 
@@ -443,7 +468,7 @@ object snd_emitter {
             channelFade.Clear()
             diversity = 0.0f
             leadinSample = null
-            trigger44kHzTime = 0 // FIX: C++ sets stopped = false and paused = false in Clear()
+            trigger44kHzTime = 0
             stopped = false
             j = 0
             while (j < 6) {
@@ -470,7 +495,7 @@ object snd_emitter {
 
         fun Stop() {
             triggerState = false
-            stopped = true  // FIX: C++ sets stopped = true in Stop()
+            stopped = true
             if (decoder != null) {
                 idSampleDecoder.Free(decoder!!)
                 decoder = null
@@ -497,7 +522,7 @@ object snd_emitter {
                 len = -sampleOffset44k
                 if (len > sampleCount44k) {
                     len = sampleCount44k
-                } // FIX: C++ memset zeroes the negative-offset region
+                }
                 for (i in dest_p until dest_p + len) {
                     dest.put(i, 0.0f)
                 }
@@ -508,7 +533,7 @@ object snd_emitter {
 
             // grab part of the leadin sample
             val leadin = leadinSample
-            if (leadin == null || sampleOffset44k < 0 || sampleCount44k <= 0) { // FIX: C++ memset zeroes remaining buffer before returning
+            if (leadin == null || sampleOffset44k < 0 || sampleCount44k <= 0) {
                 for (i in dest_p until dest_p + sampleCount44k) {
                     dest.put(i, 0.0f)
                 }
@@ -528,7 +553,7 @@ object snd_emitter {
             }
 
             // if not looping, zero fill any remaining spots
-            if (null == soundShader || 0 == parms!!.soundShaderFlags and snd_shader.SSF_LOOPING) { // FIX: C++ memset zeroes remaining buffer before returning
+            if (null == soundShader || 0 == parms!!.soundShaderFlags and snd_shader.SSF_LOOPING) {
                 for (i in dest_p until dest_p + sampleCount44k) {
                     dest.put(i, 0.0f)
                 }
@@ -537,7 +562,7 @@ object snd_emitter {
 
             // fill the remainder with looped samples
             val loop = soundShader!!.entries[0]
-            if (loop == null) { // FIX: C++ memset zeroes remaining buffer before returning
+            if (loop == null) {
                 for (i in dest_p until dest_p + sampleCount44k) {
                     dest.put(i, 0.0f)
                 }
@@ -568,7 +593,7 @@ object snd_emitter {
                 AL10.alSourceStop(openalSource)
                 AL10.alSourcei(
                     openalSource, AL10.AL_BUFFER, 0
-                ) // FIX: C++ unassociates effect slot from source so it can be deleted on shutdown
+                )
                 alSource3i(
                     openalSource, EXTEfx.AL_AUXILIARY_SEND_FILTER, EXTEfx.AL_EFFECTSLOT_NULL, 0, EXTEfx.AL_FILTER_NULL
                 )
@@ -699,8 +724,7 @@ object snd_emitter {
                 soundWorld!!.writeDemo!!.WriteInt(parms.soundClass)
             }
             this.origin.set(origin)
-            this.listenerId =
-                listenerId // FIX: C++ does struct value copy (*parms). Kotlin reference assignment would alias.
+            this.listenerId = listenerId
             this.parms = snd_shader.soundShaderParms_t(parms)
 
             // FIXME: change values on all channels?
@@ -974,7 +998,7 @@ object snd_emitter {
             chan.triggerGame44kHzTime = soundWorld!!.game44kHz
             chan.soundShader = shader
             chan.triggerChannel = triggerChannel
-            chan.stopped = false  // FIX: C++ sets chan->stopped = false before Start()
+            chan.stopped = false
             chan.Start()
 
             // we need to start updating the def and mixing it in
@@ -1090,7 +1114,6 @@ object snd_emitter {
             Sys_LeaveCriticalSection()
         }
 
-        // FIX: Missing from Kotlin — dhewm3 C++ additions for pause/resume on menu open/close
 
         // DG: to pause active OpenAL sources when entering menu etc
         fun PauseAll() {

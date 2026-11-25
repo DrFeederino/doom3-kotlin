@@ -14,7 +14,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game
 
@@ -148,7 +153,6 @@ open class idMultiModelAF : idEntity() {
     }
 
     //							~idMultiModelAF( void );
-    // FIX: Added missing destructor - C++ frees entity defs for all model handles
     override fun _deconstructor() {
         var i: Int
         i = 0
@@ -354,7 +358,6 @@ class idAFAttachment : idAnimatedEntity() {
     protected var idleAnim = 0
 
     // virtual					~idAFAttachment( void );
-    // FIX: Added missing destructor - C++ stops sounds and deletes combatModel
     override fun _deconstructor() {
         StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
         combatModel = null
@@ -587,7 +590,6 @@ open class idAFEntity_Base : idAnimatedEntity() {
     protected val spawnAxis // rotation axis used when spawned
             : idMat3
 
-    // FIX: Added missing destructor - C++ deletes combatModel
     override fun _deconstructor() {
         combatModel = null
         super._deconstructor()
@@ -1766,7 +1768,7 @@ class idAFEntity_VehicleFourWheels : idAFEntity_Vehicle() {
                 idGameLocal.Error(
                     "idAFEntity_VehicleFourWheels '%s' no '%s' specified", name, wheelBodyKeys[i]
                 )
-            } // FIX: Removed !! that would NPE before null check could execute
+            }
             wheels[i] = af.GetPhysics().GetBody(wheelBodyName)
             if (wheels[i] == null) {
                 idGameLocal.Error(
@@ -1960,7 +1962,7 @@ open class idAFEntity_VehicleSixWheels : idAFEntity_Vehicle() {
                 idGameLocal.Error(
                     "idAFEntity_VehicleSixWheels '%s' no '%s' specified", name, wheelBodyKeys[i]
                 )
-            } // FIX: Removed !! that would NPE before null check could execute
+            }
             wheels[i] = af.GetPhysics().GetBody(wheelBodyName)
             if (wheels[i] == null) {
                 idGameLocal.Error(
@@ -2172,7 +2174,6 @@ class idAFEntity_SteamPipe : idAFEntity_Base() {
     private var steamUpForce = 0.0f
 
     // ~idAFEntity_SteamPipe();
-    // FIX: Added missing destructor - C++ frees steamModelDefHandle entity def
     override fun _deconstructor() {
         if (steamModelDefHandle >= 0) {
             Game_local.gameRenderWorld!!.FreeEntityDef(steamModelDefHandle)
@@ -2435,14 +2436,23 @@ class idAFEntity_VehicleAutomated : idAFEntity_VehicleSixWheels() {
         init {
             eventCallbacks.putAll(idAFEntity_VehicleSixWheels.getEventCallBacks())
             eventCallbacks[EV_PostSpawn] = eventCallback_t0<idAFEntity_VehicleAutomated> { obj -> obj.PostSpawn() }
-            eventCallbacks[EV_Vehicle_setVelocity] =
-                eventCallback_t1<idAFEntity_VehicleAutomated> { obj, v -> obj.Event_SetVelocity((v as Number).toFloat()) }
-            eventCallbacks[EV_Vehicle_setTorque] =
-                eventCallback_t1<idAFEntity_VehicleAutomated> { obj, t -> obj.Event_SetTorque((t as Number).toFloat()) }
-            eventCallbacks[EV_Vehicle_setSteeringSpeed] =
-                eventCallback_t1<idAFEntity_VehicleAutomated> { obj, s -> obj.Event_SetSteeringSpeed((s as Number).toFloat()) }
+            eventCallbacks[EV_Vehicle_setVelocity] = eventCallback_t1<idAFEntity_VehicleAutomated> { obj, v ->
+                obj.Event_SetVelocity(
+                    (v.value as? Number)?.toFloat() ?: 0f
+                )
+            }
+            eventCallbacks[EV_Vehicle_setTorque] = eventCallback_t1<idAFEntity_VehicleAutomated> { obj, t ->
+                obj.Event_SetTorque(
+                    (t.value as? Number)?.toFloat() ?: 0f
+                )
+            }
+            eventCallbacks[EV_Vehicle_setSteeringSpeed] = eventCallback_t1<idAFEntity_VehicleAutomated> { obj, s ->
+                obj.Event_SetSteeringSpeed(
+                    (s.value as? Number)?.toFloat() ?: 0f
+                )
+            }
             eventCallbacks[EV_Vehicle_setWaypoint] =
-                eventCallback_t1<idAFEntity_VehicleAutomated> { obj, e -> obj.Event_SetWayPoint(e as? idEntity) }
+                eventCallback_t1<idAFEntity_VehicleAutomated> { obj, e -> obj.Event_SetWayPoint(e.value as? idEntity) }
         }
     }
 

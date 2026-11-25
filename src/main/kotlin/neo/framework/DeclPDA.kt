@@ -55,9 +55,6 @@ class DeclPDA {
      ===============================================================================
      */
     class idDeclEmail : idDecl() {
-        // FIX: Changed from lateinit to initialized fields — C++ default-constructs
-        // idStr to empty. lateinit would crash with UninitializedPropertyAccessException
-        // if any field was not set during Parse().
         private val text: idStr = idStr()
         private val subject: idStr = idStr()
         private val date: idStr = idStr()
@@ -69,8 +66,7 @@ class DeclPDA {
          ===================
          idDeclEmail::DefaultDefinition
          ===================
-         */ // FIX: Raw string literal had wrong indentation (source code whitespace leaked
-        // into the string). Now matches C++ output exactly.
+         */
         override fun DefaultDefinition(): String {
             return "{\n\t{\n\t\tto\t5Mail recipient\n\t\tsubject\t5Nothing\n\t\tfrom\t5No one\n\t}\n}"
         }
@@ -103,8 +99,7 @@ class DeclPDA {
                 }
 
                 if (0 == token.Icmp("subject")) {
-                    src.ReadToken(token) // FIX: Was `subject = token` (reference assignment). Now uses .set()
-                    // for value-copy matching C++ `subject = token` (idStr::operator=).
+                    src.ReadToken(token)
                     subject.set(token)
                     continue
                 }
@@ -213,8 +208,6 @@ class DeclPDA {
      ===============================================================================
      */
     class idDeclVideo : idDecl() {
-        // FIX: Changed from lateinit to initialized fields — matches C++ default
-        // construction of idStr members.
         private val preview: idStr = idStr()
         private val video: idStr = idStr()
         private val videoName: idStr = idStr()
@@ -225,7 +218,7 @@ class DeclPDA {
          ===================
          idDeclVideo::DefaultDefinition
          ===================
-         */ // FIX: Raw string literal had wrong indentation. Now matches C++ output exactly.
+         */
         override fun DefaultDefinition(): String {
             return "{\n\t{\n\t\tname\t5Default Video\n\t}\n}"
         }
@@ -237,7 +230,7 @@ class DeclPDA {
          */
         @Throws(idException::class)
         override fun Parse(text: String, textLength: Int): Boolean {
-            val src = idLexer() // FIX: Moved token declaration outside the loop to match C++.
+            val src = idLexer()
             val token = idToken()
 
             src.LoadMemory(text, textLength, GetFileName(), GetLineNum())
@@ -258,8 +251,7 @@ class DeclPDA {
                 }
 
                 if (0 == token.Icmp("name")) {
-                    src.ReadToken(token) // FIX: Was `videoName = token` (reference assignment). Now uses .set()
-                    // for value-copy matching C++ `videoName = token` (idStr::operator=).
+                    src.ReadToken(token)
                     videoName.set(token)
                     continue
                 }
@@ -354,8 +346,6 @@ class DeclPDA {
      ===============================================================================
      */
     class idDeclAudio : idDecl() {
-        // FIX: Changed from lateinit to initialized fields — matches C++ default
-        // construction of idStr members.
         private val audio: idStr = idStr()
         private val audioName: idStr = idStr()
         private val info: idStr = idStr()
@@ -365,7 +355,7 @@ class DeclPDA {
          ===================
          idDeclAudio::DefaultDefinition
          ===================
-         */ // FIX: Raw string literal had wrong indentation. Now matches C++ output exactly.
+         */
         override fun DefaultDefinition(): String {
             return "{\n\t{\n\t\tname\t5Default Audio\n\t}\n}"
         }
@@ -377,7 +367,7 @@ class DeclPDA {
          */
         @Throws(idException::class)
         override fun Parse(text: String, textLength: Int): Boolean {
-            val src = idLexer() // FIX: Moved token declaration outside the loop to match C++.
+            val src = idLexer()
             val token = idToken()
 
             src.LoadMemory(text, textLength, GetFileName(), GetLineNum())
@@ -398,8 +388,7 @@ class DeclPDA {
                 }
 
                 if (0 == token.Icmp("name")) {
-                    src.ReadToken(token) // FIX: Was `audioName = token` (reference assignment). Now uses .set()
-                    // for value-copy matching C++ `audioName = token` (idStr::operator=).
+                    src.ReadToken(token)
                     audioName.set(token)
                     continue
                 }
@@ -500,7 +489,7 @@ class DeclPDA {
          ===================
          idDeclPDA::DefaultDefinition
          ===================
-         */ // FIX: Raw string literal had wrong indentation. Now matches C++ output exactly.
+         */
         override fun DefaultDefinition(): String {
             return "{\n\tname  \"default pda\"\n}"
         }
@@ -641,8 +630,7 @@ class DeclPDA {
          =================
          idDeclPDA::AddVideo
          =================
-         */ // FIX: Added default parameter `= true` for unique — was commented out but
-        // C++ declares `bool unique = true`.
+         */
         @Throws(idException::class)
         fun AddVideo(_name: String, unique: Boolean = true) {
             val name = idStr(_name)
@@ -660,8 +648,7 @@ class DeclPDA {
          =================
          idDeclPDA::AddAudio
          =================
-         */ // FIX: Added default parameter `= true` for unique — was commented out but
-        // C++ declares `bool unique = true`.
+         */
         @Throws(idException::class)
         fun AddAudio(_name: String, unique: Boolean = true) {
             val name = idStr(_name)

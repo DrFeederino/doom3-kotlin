@@ -96,7 +96,7 @@ class EventLoop {
             }
 
             if (com_journalFile == null || com_journalDataFile == null) {
-                com_journal.SetInteger(0) // FIX: C++ sets both to NULL here; Kotlin had these commented out
+                com_journal.SetInteger(0)
                 com_journalFile = null
                 com_journalDataFile = null
                 Common.common.Printf("Couldn't open journal files\n")

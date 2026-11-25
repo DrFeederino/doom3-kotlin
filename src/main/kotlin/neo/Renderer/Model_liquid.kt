@@ -21,6 +21,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
 
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+
 ===========================================================================
 */
 
@@ -41,7 +46,6 @@ import neo.idlib.Text.Lexer.LEXFL_NOSTRINGESCAPECHARS
 import neo.idlib.Text.Parser.idParser
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
-import neo.idlib.containers.List
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.List.idSwap
 import neo.idlib.geometry.DrawVert.idDrawVert
@@ -77,8 +81,6 @@ object Model_liquid {
         private var liquid_type: Int = 0
         private lateinit var page1: FloatArray
         private lateinit var page2: FloatArray
-
-        private val pages: List.idFloatList = List.idFloatList()
 
         private val random: idRandom = idRandom()
         private var scale_x: Float = 256.0f
@@ -169,7 +171,6 @@ object Model_liquid {
             }
             scale_x = size_x / (verts_x - 1)
             scale_y = size_y / (verts_y - 1)
-            pages.SetNum(2 * verts_x * verts_y)
             page1 = FloatArray(verts_x * verts_y)
             page2 = FloatArray(verts_x * verts_y)
             verts.SetNum(verts_x * verts_y)
@@ -270,14 +271,12 @@ object Model_liquid {
             var i: Int
             var x: Int
             var y: Int
-            if (pages.Num() < 2 * verts_x * verts_y) {
+            if (!this::page1.isInitialized || !this::page2.isInitialized) {
                 return
             }
             nextDropTime = 0
             time = 0
             random.SetSeed(seed)
-            page1 = FloatArray(verts_x * verts_y)
-            page2 = FloatArray(verts_x * verts_y)
             i = 0
             y = 0
             while (y < verts_y) {

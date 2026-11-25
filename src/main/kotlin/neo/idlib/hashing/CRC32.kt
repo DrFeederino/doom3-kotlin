@@ -1,9 +1,9 @@
-package neo.idlib.hashing
-
 /*
  CRC-32
  Copyright (C) 1995-1998 Mark Adler
  */
+package neo.idlib.hashing
+
 class CRC32 {
     /*
      Generate a table for a byte-wise 32-bit CRC calculation on the polynomial:

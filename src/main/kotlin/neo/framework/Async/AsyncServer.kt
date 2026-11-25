@@ -1,3 +1,31 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
 package neo.framework.Async
 
 import neo.Game.Game.allowReply_t
@@ -278,8 +306,6 @@ object AsyncServer {
 
             //	memset( challenges, 0, sizeof( challenges ) );
             //	memset( userCmds, 0, sizeof( userCmds ) );
-            // FIX: Arrays.fill(challenges, null) violates non-null type safety.
-            // C++ memset zeros all bytes; Kotlin equivalent is to create fresh objects.
             for (c in challenges.indices) {
                 challenges[c] = challenge_s()
             }
@@ -2440,7 +2466,7 @@ object AsyncServer {
                     "client %d: got reliable pure while != SCS_PUREWAIT, sending a reload\n", clientNum
                 )
                 outMsg.Init(msgBuf, msgBuf.capacity())
-                outMsg.WriteByte(SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_RELOAD.ordinal.toByte()) // FIX: was sending msg (incoming message) instead of outMsg (crafted reload message)
+                outMsg.WriteByte(SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_RELOAD.ordinal.toByte())
                 SendReliableMessage(
                     clientNum, outMsg
                 ) // go back to SCS_CONNECTED to sleep on the client until it goes away for a reconnect

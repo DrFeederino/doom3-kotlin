@@ -17,7 +17,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Doom 3 Source Code. If not, see <http://www.gnu.org/licenses/>.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game.Animation
 
@@ -120,8 +125,7 @@ class idAnim {
         this.modelDef = modelDef
         numAnims = anim.numAnims
         name.set(anim.name)
-        realname.set(anim.realname) // FIX: C++ copies animFlags_t by value; Kotlin reference-copy shares the same object.
-        // Deep-copy the boolean fields instead.
+        realname.set(anim.realname)
         flags = animFlags_t()
         flags.ai_no_turn = anim.flags.ai_no_turn
         flags.anim_turn = anim.flags.anim_turn
@@ -135,8 +139,6 @@ class idAnim {
             i++
         }
 
-        // FIX: C++ memcpy deep-copies frameLookup_t structs; Kotlin was reference-copying.
-        // Create new frameLookup_t instances to avoid shared mutable state.
         frameLookup.SetNum(anim.frameLookup.Num())
         if (frameLookup.Num() > 0) {
             i = 0
@@ -150,8 +152,6 @@ class idAnim {
             }
         }
 
-        // FIX: C++ struct assignment deep-copies frameCommand_t; Kotlin was reference-copying.
-        // Create new frameCommand_t instances and copy all fields.
         frameCommands.SetNum(anim.frameCommands.Num())
         i = 0
         while (i < frameCommands.Num()) {
@@ -337,9 +337,7 @@ class idAnim {
             if (!src.ReadTokenOnLine(token)) {
                 return "Unexpected end of line"
             }
-            fc.type =
-                frameCommandType_t.FC_EVENTFUNCTION // FIX: C++ checks for NULL return from FindEvent and returns error string;
-            // Kotlin was using !! which throws NPE instead of returning the error message
+            fc.type = frameCommandType_t.FC_EVENTFUNCTION
             val ev: Event.idEventDef? = Event.idEventDef.FindEvent(token.toString())
             if (ev == null) {
                 return Str.va("Event '%s' not found", token)
@@ -1667,7 +1665,7 @@ class idDeclModelDef : idDecl {
 
         // find a specific animation
         i = 0
-        while (i < anims.Num()) { // FIX: was startsWith — C++ uses !strcmp which is exact match
+        while (i < anims.Num()) {
             if (anims[i].FullName() == name) {
                 return i + 1 // 1-based anim index (0 means "no anim")
             }
@@ -2278,7 +2276,6 @@ class idAnimBlend {
                     }
 
                     // only blend after the first anim is mixed in
-                    // FIX: C++ compares pointer identity (ptr != jointFrame), not array contents
                     if (ptr !== jointFrame) {
                         SIMDProcessor!!.BlendJoints(
                             jointFrame,
@@ -2538,7 +2535,7 @@ class idAnimBlend {
         while (i < Anim.ANIM_MaxSyncedAnims) {
             savefile.WriteFloat(animWeights[i])
             i++
-        } // FIX: C++ uses WriteShort for cycle, frame, animNum (they are short in C++)
+        }
         savefile.WriteShort(cycle.toShort())
         savefile.WriteShort(frame.toShort())
         savefile.WriteShort(animNum.toShort())
@@ -2568,7 +2565,7 @@ class idAnimBlend {
         while (i < Anim.ANIM_MaxSyncedAnims) {
             animWeights[i] = savefile.ReadFloat()
             i++
-        } // FIX: C++ uses ReadShort for cycle, frame, animNum (they are short in C++)
+        }
         cycle = savefile.ReadShort().toInt()
         frame = savefile.ReadShort().toInt()
         animNum = savefile.ReadShort().toInt()
@@ -3191,7 +3188,7 @@ class idAnimator {
         num = modelDef!!.NumJoints()
         if (0 == num) {
             return jointnum
-        } // FIX: was calling GetJoint(++i) which accesses past-the-end on last iteration
+        }
         i = 0
         while (i < num) {
             joint = modelDef!!.GetJoint(i)
@@ -3788,8 +3785,7 @@ class idAnimator {
         if (fromBlend.Anim() !== toBlend.Anim() || fromBlend.GetStartTime() != toBlend.GetStartTime() || fromBlend.GetEndTime() != toBlend.GetEndTime()) {
             PushAnims(
                 channelNum, currentTime, blendTime
-            ) // FIX: C++ copies only channels[channelNum][0] = channels[fromChannelNum][0]
-            // The old code copied ALL channels, destroying PushAnims' blend-out data
+            )
             channels[channelNum][0] = idAnimBlend(channels[fromChannelNum][0])
             toBlend = channels[channelNum][0]  // now points to TO channel
             toBlend.blendStartValue = 0.0f

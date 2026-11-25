@@ -4,7 +4,12 @@
  *
  * This file is part of the Doom 3 Kotlin project.
  * Original source: neo/Game/Physics/Physics_Base.h, neo/Game/Physics/Physics_Base.cpp
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game.Physics
 
@@ -855,7 +860,7 @@ class Physics_Base {
                 vec.set(axis[2])
                 if (abs(dir * vec) > 0.99) {
                     vec.set(axis[0])
-                } // FIX: was vec.timesVec(dir).timesVec(vec) (element-wise), should be dot-product-then-scale
+                }
                 vec.minusAssign(vec * (vec * dir))
                 vec.Normalize()
                 vec.timesAssign(4.0f)

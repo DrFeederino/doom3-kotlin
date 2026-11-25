@@ -14,7 +14,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 package neo.Game
 
 import neo.Game.AI.idAI
@@ -227,7 +232,7 @@ object Moveable {
             physicsObj.SetSelf(this)
             physicsObj.SetClipModel(
                 idClipModel(trm), density._val
-            ) // FIX: C++ SetMaterial accepts null; Kotlin requires non-null. Guard with null check.
+            )
             val clipMaterial = GetRenderModelMaterial()
             if (clipMaterial != null) {
                 physicsObj.GetClipModel()!!.SetMaterial(clipMaterial)
@@ -1011,7 +1016,7 @@ object Moveable {
                     dir2.Normalize()
                     Game_local.gameLocal.SpawnEntityDef(
                         debris_args, ent, false
-                    ) // FIX: Was ent.isEmpty() which is always false since arrayOfNulls(1) has size 1
+                    )
                     if (ent[0] == null || ent[0] !is idDebris) {
                         idGameLocal.Error("'projectile_debris' is not an idDebris")
                     }

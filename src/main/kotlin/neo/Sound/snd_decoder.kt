@@ -23,7 +23,12 @@
  * ===========================================================================
  *
  * Original source: neo/sound/snd_decoder.cpp, neo/sound/snd_local.h
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Sound
 
@@ -153,7 +158,7 @@ object snd_decoder {/*
 
             lastDecodeTime = snd_system.soundSystemLocal.CurrentSoundTime
 
-            if (failed) { // FIX: Was dest.array() which crashes on direct FloatBuffers
+            if (failed) {
                 for (i in 0 until sampleCount44k) {
                     dest.put(i, 0.0f)
                 }
@@ -180,7 +185,7 @@ object snd_decoder {/*
                 win_main.Sys_LeaveCriticalSection(CRITICAL_SECTION_ONE)
             }
 
-            if (readSamples44k < sampleCount44k) { // FIX: Was dest.array() which crashes on direct FloatBuffers
+            if (readSamples44k < sampleCount44k) {
                 for (i in readSamples44k until sampleCount44k) {
                     dest.put(i, 0.0f)
                 }
@@ -246,7 +251,7 @@ object snd_decoder {/*
          ====================
          idSampleDecoderLocal::DecodePCM
          ====================
-         */ // FIX: Was a stub throwing TODO_Exception — now fully implemented from C++ source
+         */
         fun DecodePCM(sample: idSoundSample, sampleOffset44k: Int, sampleCount44k: Int, dest: FloatBuffer): Int {
             lastFormat = snd_local.WAVE_FORMAT_TAG_PCM
             lastSample = sample
@@ -333,7 +338,7 @@ object snd_decoder {/*
                 file.SetData(sample.nonCacheData!!, sample.objectMemSize)
                 oggOpenError[0] = 0
                 ogg = ov_openFile(file, oggOpenError)
-                if (oggOpenError[0] != 0) { // FIX: Was using java.util.logging.Logger — matches C++ common->Warning()
+                if (oggOpenError[0] != 0) {
                     Common.common.Warning(
                         "idSampleDecoderLocal::DecodeOGG() stb_vorbis_open_memory() for %s failed: %s\n",
                         sample.name,
@@ -346,7 +351,6 @@ object snd_decoder {/*
                 lastSample = sample
             }
 
-            // FIX: Added >2 channels check from dhewm3 C++ (was missing)
             if (sample.objectInfo.nChannels > 2) {
                 Common.common.Warning("Ogg Vorbis files with >2 channels are not supported!\n")
                 failed = true

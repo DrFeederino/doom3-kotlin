@@ -26,6 +26,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
 
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+
 ===========================================================================
 */
 
@@ -306,13 +311,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             vertex?.get(i)!!.p.set(trm.verts[i])
             vertex[i].sideSet = 0
         } // edges
-        model.numEdges = trm.numEdges // FIX: C++ uses `edge = model->edges + 1` and `const trmEdge = trm.edges + 1`
-        // Both pointers are offset by +1 (edges are 1-based in the collision model).
-        // The original Kotlin created a reference alias `trmEdge = trm.edges` then did
-        // `trmEdge[i] = trm.edges[i + 1]` which CORRUPTED the cached trace model's edges
-        // array by shifting references left. Also `edge.set(i, model.edges[i+1])` corrupted
-        // model edges through self-aliasing. Fix: read from trm.edges[i+1], write to
-        // model.edges[i+1], never modify trm.
+        model.numEdges = trm.numEdges
         for (i in 0 until trm.numEdges) {
             val trmE = trm.edges[i + 1]
             model.edges!![i + 1].vertexNum[0] = trmE.v[0]
@@ -602,7 +601,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             results.endAxis.set(trmAxis)
             results.c.normal.set(vec3_origin)
             results.c.material = null
-            results.c.point.set(start) // FIX: C++ checks if ( session->rw ) before calling. rw is lateinit and may not be initialized.
+            results.c.point.set(start)
             try {
                 Session.session.rw.DebugArrow(colorRed, start, end, 1)
             } catch (_: UninitializedPropertyAccessException) {
@@ -1250,8 +1249,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             )
             cm_drawColor.ClearModified()
         }
-        model =
-            models?.get(handle) // FIX: Operator precedence — C++ is (viewOrigin - modelOrigin) * modelAxis.Transpose()
+        model = models?.get(handle)
         viewPos.set((viewOrigin - modelOrigin) * modelAxis.Transpose())
         checkCount++
         DrawNodePolygons(model!!, model.node!!, modelOrigin, modelAxis, viewPos, radius)
@@ -1316,7 +1314,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         name = idStr(filename)
         model!!.name.set(name)
         name.SetFileExtension(CM_FILE_EXT)
-        Common.common.Printf("writing %s\n", name) // FIX: Use name (with .cm extension) instead of original filename
+        Common.common.Printf("writing %s\n", name)
         fp = FileSystem_h.fileSystem.OpenFileWrite(name.toString(), "fs_devpath")
         if (null == fp) {
             Common.common.Printf(
@@ -1709,9 +1707,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             tw.trace.c.dist = -trmpoly.plane.Dist()
             tw.trace.c.contents = poly.contents
             tw.trace.c.material = poly.material
-            tw.trace.c.type =
-                contactType_t.CONTACT_MODELVERTEX // FIX: C++ uses pointer arithmetic (v - tw->model->vertices) to get vertex index.
-            // Kotlin had poly.hashCode() which is completely wrong — must be the vertex index.
+            tw.trace.c.type = contactType_t.CONTACT_MODELVERTEX
             tw.trace.c.modelFeature = tw.model!!.vertices!!.indexOf(v)
             tw.trace.c.trmFeature = tw.polys.indexOf(trmpoly)
             tw.trace.c.point.set(v.p + tw.trace.fraction * (endp - v.p)) // if retrieving contacts
@@ -2044,7 +2040,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          */
     private fun RotateEdgeThroughEdge(
         tw: cm_traceWork_s, pl1: idPluecker, vc: idVec3, vd: idVec3, minTan: Float, tanHalfAngle: CFloat
-    ): Boolean { // FIX: C++ uses double for all these variables - precision-critical quadratic solver
+    ): Boolean {
         val v0: Double
         val v1: Double
         val v2: Double
@@ -2160,7 +2156,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         // transform rotation axis to z-axis
         ct.set((vc - tw.origin) * tw.matrix)
         dt.set((vd - tw.origin) * tw.matrix)
-        pl2.FromLine(ct, dt) // FIX: All computations in Double to match C++ double precision
+        pl2.FromLine(ct, dt)
         v0 = (pl2[0] * pl1[4] + pl2[4] * pl1[0]).toDouble()
         v1 = (pl2[1] * pl1[2] - pl2[2] * pl1[1] + pl2[5] * pl1[3] - pl2[3] * pl1[5]).toDouble()
         v2 = (pl2[1] * pl1[5] + pl2[2] * pl1[3] + pl2[5] * pl1[1] + pl2[3] * pl1[2]).toDouble()
@@ -2216,7 +2212,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          */
     private fun EdgeFurthestFromEdge(
         tw: cm_traceWork_s, pl1: idPluecker, vc: idVec3, vd: idVec3, tanHalfAngle: CFloat, dir: CFloat
-    ): Boolean { // FIX: C++ uses double for all these variables - precision-critical quadratic solver
+    ): Boolean {
         val v0: Double
         val v1: Double
         val v2: Double
@@ -2258,7 +2254,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         // transform rotation axis to z-axis
         ct.set((vc - tw.origin) * tw.matrix)
         dt.set((vd - tw.origin) * tw.matrix)
-        pl2.FromLine(ct, dt) // FIX: All computations in Double to match C++ double precision
+        pl2.FromLine(ct, dt)
         v0 = (pl2[0] * pl1[4] + pl2[4] * pl1[0]).toDouble()
         v1 = (pl2[1] * pl1[2] - pl2[2] * pl1[1] + pl2[5] * pl1[3] - pl2[3] * pl1[5]).toDouble()
         v2 = (pl2[1] * pl1[5] + pl2[2] * pl1[3] + pl2[5] * pl1[1] + pl2[3] * pl1[2]).toDouble()
@@ -2492,7 +2488,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          */
     private fun RotatePointThroughPlane(
         tw: cm_traceWork_s, point: idVec3, plane: idPlane, angle: Float, minTan: Float, tanHalfAngle: CFloat
-    ): Boolean { // FIX: C++ uses double for all these variables - precision-critical quadratic solver
+    ): Boolean {
         val v0: Double
         val v1: Double
         val v2: Double
@@ -2542,7 +2538,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
              */tanHalfAngle._val = (tw.maxTan)
 
         // transform rotation axis to z-axis
-        p.set((point - tw.origin) * tw.matrix) // FIX: d is Double now, convert plane distance to Double
+        p.set((point - tw.origin) * tw.matrix)
         d = (plane[3] + plane.Normal() * tw.origin).toDouble()
         normal.set(plane.Normal() * tw.matrix)
         v0 = normal[2] * p[2] + d
@@ -2600,7 +2596,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          */
     private fun PointFurthestFromPlane(
         tw: cm_traceWork_s, point: idVec3, plane: idPlane, angle: Float, tanHalfAngle: CFloat, dir: CFloat
-    ): Boolean { // FIX: C++ uses double for all these variables - precision-critical quadratic solver
+    ): Boolean {
         val v1: Double
         val v2: Double
         val a: Double
@@ -3416,11 +3412,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             if (tw.start == tw.origin) {
                 tw.axisIntersectsTrm = true
             } else { // determine if the rotation axis intersects the trm
-                plaxis.FromRay(tw.origin, tw.axis) // FIX: Restructured loop to avoid out-of-bounds array access.
-                // Original C++ uses for-loop with poly++ in loop increment:
-                //   for ( poly = tw.polys, i = 0; i < tw.numPolys; i++, poly++ )
-                // The old Kotlin while-loop accessed tw.polys[i] after i++ but before
-                // the while condition check, causing IndexOutOfBoundsException.
+                plaxis.FromRay(tw.origin, tw.axis)
                 i = 0
                 while (i < tw.numPolys) {
                     poly = tw.polys[i] // back face cull polygons
@@ -4203,7 +4195,6 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 while (i < numSteps) {
 
                     // calculate next point on approximated circle
-                    // FIX: C++ uses (float)(i+1) to force float division. Kotlin (i+1)/numSteps is integer division.
                     rot.Set(tw.origin, tw.axis, tw.angle * ((i + 1).toFloat() / numSteps))
                     end.set(rot.times(start)) // trace through spatial subdivision and then through leafs
                     TraceThroughAxialBSPTree_r(
@@ -4493,8 +4484,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 currentNode = currentNode.children[0]!!
             } else if (p1.bounds[1][currentNode.planeType] < currentNode.planeDist && p2.bounds[1][currentNode.planeType] < currentNode.planeDist) {
                 currentNode = currentNode.children[1]!!
-            } else { // FIX: C++ recurses into children[1] before iterating children[0].
-                // Kotlin was missing the recursive call, leaving stale polygon references in back subtree.
+            } else {
                 ReplacePolygons(model, currentNode.children[1]!!, p1, p2, newp)
                 currentNode = currentNode.children[0]!!
             }
@@ -5015,8 +5005,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             } // if leaf node
             if (currentNode.planeType == -1) {
                 break
-            } // FIX: First condition must test bounds[0] (min), not bounds[1] (max).
-            // C++: polygon->bounds[0][node->planeType] > node->planeDist
+            }
             currentNode = if (polygon.bounds[0][currentNode.planeType] > currentNode.planeDist) {
                 currentNode.children[0]!!
             } else if (polygon.bounds[1][currentNode.planeType] < currentNode.planeDist) {
@@ -5101,7 +5090,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
         // load it
         filename = idStr(name)
-        filename.SetFileExtension(RenderWorld.PROC_FILE_EXT) // FIX: C++ passes `filename` (with .proc extension) to idLexer, not original `name`.
+        filename.SetFileExtension(RenderWorld.PROC_FILE_EXT)
         src = idLexer(filename.toString(), Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_NODOLLARPRECOMPILE)
         if (!src.IsLoaded()) {
             Common.common.Warning(
@@ -5219,8 +5208,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             return false
         } // make a local copy of the winding
         neww = idFixedWinding(w)
-        neww.GetBounds(bounds) // FIX: C++ is (bounds[1] - bounds[0]) * 0.5f — must subtract first, then scale.
-        // Kotlin had bounds[1] - bounds[0] * 0.5f which scales bounds[0] first (wrong).
+        neww.GetBounds(bounds)
         origin.set((bounds[1] - bounds[0]) * 0.5f)
         radius = origin.Length() + CHOP_EPSILON
         origin.set(bounds[0] + (origin)) //
@@ -5280,8 +5268,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             startPlane = 0
             bestNumWindings = 1 + b.numPlanes
             chopped = false
-            do { // FIX: C++ `front = list->w[k]` copies the winding by value (stack object).
-                // Kotlin was aliasing the reference, so Split() would modify the original in the list.
+            do {
                 front = idFixedWinding(list.w[k]!!)
                 cm_tmpList!!.numWindings = 0
                 planeNum = startPlane
@@ -5326,7 +5313,6 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                             )
                             return
                         } // store the back winding in the temporary list
-                        // FIX: Must copy — C++ value-copies into the array, Kotlin would alias
                         cm_tmpList!!.w[cm_tmpList!!.numWindings] = idFixedWinding(back)
                         cm_tmpList!!.numWindings++
                         chopped = true
@@ -5461,7 +5447,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         while (i < w.GetNumPoints()) {
             cm_windingList!!.bounds.AddPoint(w[i].ToVec3())
             i++
-        } // FIX: C++ is (bounds[1] - bounds[0]) * 0.5 — subtract first, then scale.
+        }
         cm_windingList!!.origin.set(
             (cm_windingList!!.bounds[1] - cm_windingList!!.bounds[0]) * 0.5f
         )
@@ -6368,9 +6354,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                             edge.normal.timesAssign(0.5f / (0.5f + 0.5f * SHARP_EDGE_DOT) / edge.normal.Length())
                             model.numSharpEdges++
                         } else {
-                            s =
-                                0.5f / (0.5f + 0.5f * dot) // FIX: C++ is s * (edge->normal + p->plane.Normal()) — s scales entire sum.
-                            // Kotlin had edge.normal + planeNormal * s which only scales planeNormal.
+                            s = 0.5f / (0.5f + 0.5f * dot)
                             edge.normal.set((edge.normal + p.plane.Normal()) * s)
                         }
                     }
@@ -6601,7 +6585,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     idCollisionModelManagerLocal::PrintModelInfo
     ================
     */
-    private fun PrintModelInfo(model: cm_model_s) { // FIX: Added sizeof multipliers — were commented out, producing wrong KB values
+    private fun PrintModelInfo(model: cm_model_s) {
         Common.common.Printf(
             "%6d vertices (%d KB)\n", model.numVertices, model.numVertices * cm_vertex_s.BYTES shr 10
         )

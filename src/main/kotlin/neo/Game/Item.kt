@@ -14,7 +14,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game
 
@@ -860,7 +865,6 @@ open class idMoveableItem : idItem() {
             kv = ent.spawnArgs.MatchPrefix(Str.va("def_drop%sItem", type), null)
             while (kv != null) {
                 c = kv.GetKey().toString() // + kv.GetKey().Length();
-                // FIX: was using substring(length-5) / substring(length-8) which crashes on short keys
                 if (!c.endsWith("Joint", ignoreCase = true) && !c.endsWith("Rotation", ignoreCase = true)) {
                     key = kv.GetKey().toString().substring(4)
                     key2 = key
@@ -1845,13 +1849,13 @@ class idItemTeam : idMoveableItem() {
         private fun buildEventCallbacks(): MutableMap<idEventDef, eventCallback_t<*>> {
             val callbacks = idMoveableItem.getEventCallBacks().toMutableMap()
             callbacks[EV_FlagReturn] = eventCallback_t1<idItemTeam> { obj, player ->
-                obj.Event_FlagReturn(player as? idPlayer)
+                obj.Event_FlagReturn(player.value as? idPlayer)
             }
             callbacks[EV_TakeFlag] = eventCallback_t1<idItemTeam> { obj, player ->
-                obj.Event_TakeFlag(player as idPlayer)
+                obj.Event_TakeFlag(player.value as idPlayer)
             }
             callbacks[EV_DropFlag] = eventCallback_t1<idItemTeam> { obj, death ->
-                obj.Event_DropFlag((death as Number).toInt() != 0)
+                obj.Event_DropFlag(((death.value as? Number)?.toInt() ?: 0) != 0)
             }
             callbacks[EV_FlagCapture] = eventCallback_t0<idItemTeam> { obj ->
                 obj.Event_FlagCapture()

@@ -4,7 +4,12 @@
  *
  * This file is part of the Doom 3 Kotlin project.
  * Original source: neo/Game/Physics/Physics_StaticMulti.h, neo/Game/Physics/Physics_StaticMulti.cpp
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game.Physics
 
@@ -109,8 +114,7 @@ object Physics_StaticMulti {
             val num = CInt()
 
             self = savefile.ReadObject() as idEntity?
-            savefile.ReadInt(num) // FIX: AssureSize without fill value leaves new slots null in Kotlin.
-            // C++ default-constructs POD structs. Must create objects for each slot.
+            savefile.ReadInt(num)
             val oldNum = current.Num()
             current.AssureSize(num._val)
             for (j in oldNum until num._val) {
@@ -172,9 +176,7 @@ object Physics_StaticMulti {
         override fun SetClipModel(model: idClipModel?, density: Float, id: Int /*= 0*/, freeOld: Boolean /*= true*/) {
             var i: Int
             assert(self != null)
-            if (id >= clipModels.Num()) { // FIX: C++ AssureSize copies defaultState by value into each new slot.
-                // Kotlin AssureSize stores the same reference, causing aliasing corruption.
-                // Manually grow and initialize each new element independently.
+            if (id >= clipModels.Num()) {
                 val oldNum = current.Num()
                 current.AssureSize(id + 1, defaultState)
                 for (j in oldNum until current.Num()) {
@@ -183,7 +185,7 @@ object Physics_StaticMulti {
                     current[j].axis.Identity()
                     current[j].localOrigin.Zero()
                     current[j].localAxis.Identity()
-                } // FIX: C++ passes NULL, not a new clip model
+                }
                 clipModels.AssureSize(id + 1, null)
             }
             if (clipModels[id] != null && clipModels[id] !== model) {
@@ -211,7 +213,7 @@ object Physics_StaticMulti {
         idPhysics_StaticMulti::GetClipModel
         ================
         */
-        override fun GetClipModel(id: Int /*= 0*/): idClipModel? { // FIX: C++ also checks clipModels[id] != NULL before returning
+        override fun GetClipModel(id: Int /*= 0*/): idClipModel? {
             return if (id >= 0 && id < clipModels.Num() && clipModels[id] != null) {
                 clipModels[id]
             } else Game_local.gameLocal.clip.DefaultClipModel()
@@ -268,13 +270,13 @@ object Physics_StaticMulti {
         override fun GetContents(id: Int /*= -1*/): Int {
             var i: Int
             var contents = 0
-            if (id >= 0 && id < clipModels.Num()) { // FIX: C++ null-checks clipModels[id] before dereferencing
+            if (id >= 0 && id < clipModels.Num()) {
                 if (clipModels[id] != null) {
                     contents = clipModels[id]!!.GetContents()
                 }
             } else if (id == -1) {
                 i = 0
-                while (i < clipModels.Num()) { // FIX: C++ null-checks clipModels[i] before dereferencing
+                while (i < clipModels.Num()) {
                     if (clipModels[i] != null) {
                         contents = contents or clipModels[i]!!.GetContents()
                     }
@@ -307,7 +309,7 @@ object Physics_StaticMulti {
         */
         override fun GetBounds(id: Int /*= -1*/): idBounds {
             var i: Int
-            if (id >= 0 && id < clipModels.Num()) { // FIX: C++ null-checks clipModels[id] before dereferencing
+            if (id >= 0 && id < clipModels.Num()) {
                 if (clipModels[id] != null) {
                     return clipModels[id]!!.GetBounds()
                 }
@@ -315,7 +317,7 @@ object Physics_StaticMulti {
             if (id == -1) {
                 bounds.Clear()
                 i = 0
-                while (i < clipModels.Num()) { // FIX: C++ null-checks clipModels[i] before dereferencing
+                while (i < clipModels.Num()) {
                     if (clipModels[i] != null) {
                         bounds.AddBounds(clipModels[i]!!.GetAbsBounds())
                     }
@@ -342,7 +344,7 @@ object Physics_StaticMulti {
         */
         override fun GetAbsBounds(id: Int /*= -1*/): idBounds {
             var i: Int
-            if (id >= 0 && id < clipModels.Num()) { // FIX: C++ null-checks clipModels[id] before dereferencing
+            if (id >= 0 && id < clipModels.Num()) {
                 if (clipModels[id] != null) {
                     return clipModels[id]!!.GetAbsBounds()
                 }
@@ -350,7 +352,7 @@ object Physics_StaticMulti {
             if (id == -1) {
                 absBounds.Clear()
                 i = 0
-                while (i < clipModels.Num()) { // FIX: C++ null-checks clipModels[i] before dereferencing
+                while (i < clipModels.Num()) {
                     if (clipModels[i] != null) {
                         absBounds.AddBounds(clipModels[i]!!.GetAbsBounds())
                     }
@@ -734,7 +736,7 @@ object Physics_StaticMulti {
             var contents: Int
             contents = 0
             i = 0
-            while (i < clipModels.Num()) { // FIX: C++ null-checks clipModels[i] before dereferencing
+            while (i < clipModels.Num()) {
                 if (clipModels[i] != null) {
                     contents = if (model != null) {
                         contents or Game_local.gameLocal.clip.ContentsModel(
@@ -1074,8 +1076,7 @@ object Physics_StaticMulti {
             defaultState.axis.Identity()
             defaultState.localOrigin.Zero()
             defaultState.localAxis.Identity()
-            current.SetNum(1) // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias.
-            // Create a new object instead of aliasing defaultState. Must match defaultState fields.
+            current.SetNum(1)
             current[0] = staticPState_s()
             current[0].origin.Zero()
             current[0].axis.Identity()

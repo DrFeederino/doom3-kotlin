@@ -1,3 +1,31 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
 package neo.idlib.containers
 
 import neo.idlib.Text.Str.idStr
@@ -86,9 +114,7 @@ open class idStrList : Comparator<idStr> {
         return stringsList.size - 1
     }
 
-    fun add(obj: idStr): Int { // FIX: C++ idList<idStr>::Append copies by value. Must create a new idStr
-        // to avoid all elements sharing the same reference (e.g. ListWindow.UpdateList
-        // reuses one idStr in a loop — all list items ended up pointing to the same object).
+    fun add(obj: idStr): Int {
         stringsList.add(idStr(obj))
         return stringsList.size - 1
     }
@@ -118,7 +144,7 @@ open class idStrList : Comparator<idStr> {
         return insert(obj, 0)
     }
 
-    fun insert(obj: idStr, i: Int): Int { // FIX: copy by value, not reference (C++ value semantics)
+    fun insert(obj: idStr, i: Int): Int {
         stringsList.add(i, idStr(obj))
         return i
     }
@@ -189,7 +215,7 @@ open class idStrList : Comparator<idStr> {
         var i = i
         if (i >= stringsList.size) {
             i = if (stringsList.isEmpty()) 0 else stringsList.size - 1
-        } // FIX: copy by value, not reference (C++ value semantics)
+        }
         stringsList[i] = idStr(obj)
     }
 

@@ -1,3 +1,31 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
 package neo.framework
 
 import neo.Renderer.Material
@@ -362,8 +390,6 @@ class DeclManager {
         abstract fun FindType(type: declType_t, name: String?, makeDefault: Boolean /*= true*/): idDecl?
 
 
-        // FIX: name.toString() on null idStr returned the string "null" instead of null.
-        // C++ passes the const char* directly (NULL stays NULL).
         fun FindType(type: declType_t, name: idStr?, makeDefault: Boolean = true): idDecl? {
             return FindType(type, name?.toString(), makeDefault)
         }
@@ -673,9 +699,7 @@ class DeclManager {
 
             // insert new text
             val declString = arrayOf("")
-            GetText(declString) // FIX: C++ works with char* throughout (char and byte are the same in C++).
-            // Was: declText as CharArray, then System.arraycopy(CharArray -> ByteArray) which throws
-            // ArrayStoreException at runtime. Convert to bytes using ISO-8859-1 (1:1 char->byte mapping).
+            GetText(declString)
             val declBytes =
                 declString[0].toByteArray(StandardCharsets.ISO_8859_1) //	memmove( buffer + sourceTextOffset + textLength, buffer + sourceTextOffset + sourceTextLength, oldFileLength - sourceTextOffset - sourceTextLength );
             System.arraycopy(
@@ -1556,7 +1580,7 @@ class DeclManager {
         override fun GetDeclTypeFromName(typeName: String): declType_t {
             var i: Int
             i = 0
-            while (i < declTypes.Num()) { // FIX: C++ uses Icmp() (case-insensitive). Was using == (case-sensitive).
+            while (i < declTypes.Num()) {
                 if (declTypes[i] != null && declTypes[i]!!.typeName.Icmp(typeName) == 0) {
                     return declTypes[i]!!.type
                 }
@@ -1667,7 +1691,7 @@ class DeclManager {
         @Throws(idException::class)
         override fun ListType(args: CmdArgs.idCmdArgs, type: declType_t) {
             val all: Boolean
-            val ever: Boolean // FIX: C++ uses !idStr::Icmp() (case-insensitive). Was == (case-sensitive).
+            val ever: Boolean
             all = args.Argv(1).equals("all", ignoreCase = true)
             ever = args.Argv(1).equals("ever", ignoreCase = true)
             Common.common.Printf("--------------------\n")
@@ -2048,7 +2072,7 @@ class DeclManager {
                     j = 0
                     while (j < num) {
                         size += declManagerLocal.linearLists[i][j].Size().toInt()
-                        if (declManagerLocal.linearLists[i][j].self != null) { // FIX: C++ adds self->Size() (virtual, gives subclass size). Was += 4 (C++ pointer size, wrong).
+                        if (declManagerLocal.linearLists[i][j].self != null) {
                             size += declManagerLocal.linearLists[i][j].self!!.Size().toInt()
                         }
                         j++
@@ -2701,9 +2725,7 @@ class DeclManager {
          */
         private fun HuffmanCompressText(
             text: String, textLength: Int, compressed: ByteBuffer, maxCompressedSize: Int
-        ): Int { // FIX: C++ declares j inside the outer for, with the inner for resetting j=0 per character.
-            //      Was: var j: Int = 0 outside the loop — j accumulated across characters, corrupting
-            //      Huffman output for any character whose code required more than one 32-bit word.
+        ): Int {
             val msg = idBitMsg()
             totalUncompressedLength += textLength
             msg.Init(compressed, maxCompressedSize)

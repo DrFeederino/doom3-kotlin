@@ -1,3 +1,31 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
 package neo.Game.Script
 
 import neo.Game.GameSys.Class.idEventArg
@@ -20,7 +48,6 @@ import neo.framework.Common
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Append
 import neo.idlib.Text.Str.idStr.Companion.Cmp
-import neo.idlib.Text.Str.idStr.Companion.Copynz
 import neo.idlib.Text.btos
 import neo.idlib.Text.ctos
 import neo.idlib.Text.strLen
@@ -1706,7 +1733,7 @@ object Script_Interpreter {
             var scopeDepth = scopeDepth
             val reg: varEval_s?
             var d: idVarDef?
-            val funcObject = arrayOf<String>() //new char[1024];
+            val funcObject = arrayOf("") // C++: char funcObject[1024]
             val funcName: String?
             val scope: idVarDef?
             val field: idTypeDef?
@@ -1725,7 +1752,7 @@ object Script_Interpreter {
             if (func == null) {
                 return false
             }
-            Copynz(funcObject, func.Name(), 4)
+            funcObject[0] = func.Name().take(1023) // idStr::Copynz(funcObject, func->Name(), sizeof(funcObject))
             funcIndex = funcObject[0].indexOf("::")
             if (funcIndex != -1) { //                funcName = "\0";
                 scope = Game_local.gameLocal.program.GetDef(null, funcObject[0], Script_Program.def_namespace)

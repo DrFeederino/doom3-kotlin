@@ -22,6 +22,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
 
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+
 ===========================================================================
 */
 
@@ -175,8 +180,7 @@ fun CM_FindSplitter(node: cm_node_s, bounds: idBounds, planeType: CInt, planeDis
             } // don't create splitters real close to the bounds
             if (bounds[1, type] - planeDist._val > MIN_NODE_SIZE * 0.5f && planeDist._val - bounds[0, type] > MIN_NODE_SIZE * 0.5f) {
                 return true
-            } // FIX: Removed erroneous `break` that was not in the C++ original.
-            // C++ continues to next axis to try finding a better splitter.
+            }
         }
     }
     return false

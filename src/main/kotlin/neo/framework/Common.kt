@@ -1,3 +1,30 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
 package neo.framework
 
 import neo.Game.GameSys.SysCvar
@@ -199,7 +226,7 @@ class Common {
         private var com_fullyInitialized = false
         private var com_refreshOnPrint = false // update the screen every print for dmap
 
-        @Volatile
+        @kotlin.concurrent.Volatile
         private var com_shuttingDown = false
         private val errorList: idStrList
         private val errorMessage: Array<String> = arrayOf("") //new char[MAX_PRINT_MSG_SIZE];
@@ -217,7 +244,7 @@ class Common {
         // AsyncThread state
         private val asyncThread: xthreadInfo = xthreadInfo()
 
-        @Volatile
+        @kotlin.concurrent.Volatile
         private var runAsyncThread: Boolean = false
 
         override fun Init(argc: Int, argv: Array<String>?, cmdline: String) {
@@ -577,7 +604,7 @@ class Common {
         @Throws(idException::class)
         override fun WriteFlaggedCVarsToFile(filename: String, flags: Int, setCmd: String) {
             val f: idFile?
-            f = FileSystem_h.fileSystem.OpenFileWrite(filename, "fs_configpath") // FIX: C++ uses "fs_configpath"
+            f = FileSystem_h.fileSystem.OpenFileWrite(filename, "fs_configpath")
             if (null == f) {
                 Printf("Couldn't write %s.\n", filename)
                 return
@@ -594,7 +621,7 @@ class Common {
             rd_buffersize = buffersize
             rd_flush = flush
 
-            buffer.setLength(0) // FIX: C++ does *rd_buffer = 0; clear the buffer at start of redirect
+            buffer.setLength(0)
         }
 
         override fun EndRedirect() {
@@ -660,7 +687,7 @@ class Common {
             if (rd_buffer != null) {
                 if (msg[0].length + rd_buffer!!.length > rd_buffersize - 1) {
                     rd_flush!!(rd_buffer.toString())
-                    rd_buffer!!.setLength(0) // FIX: C++ clears buffer after flush (*rd_buffer = 0)
+                    rd_buffer!!.setLength(0)
                 } //		strcat( rd_buffer, msg );
                 rd_buffer!!.append(msg[0])
                 return
@@ -670,7 +697,7 @@ class Common {
             console.Print(msg[0])
 
             // remove any color codes
-            msg[0] = idStr.RemoveColors(msg[0]) // FIX: RemoveColors returns new String; must assign back
+            msg[0] = idStr.RemoveColors(msg[0])
 
             // echo to dedicated console and early console
             win_main.Sys_Printf("%s", msg[0])
@@ -1698,7 +1725,6 @@ class Common {
             stat.milliseconds = win_shared.Sys_Milliseconds()
             stat.deltaMsec =
                 stat.milliseconds - com_asyncStats[com_ticNumber - 1 and MAX_ASYNC_STATS - 1].milliseconds // DG: dhewm3 removed com_asyncInput — input is always synchronous now
-            // FIX: Cases 1,3 both call AsyncUpdateWrite (dhewm3 fall-through); case 2 calls AsyncUpdate
             when (com_asyncSound.GetInteger()) {
                 1, 3 -> snd_system.soundSystem.AsyncUpdateWrite(stat.milliseconds)
                 2 -> snd_system.soundSystem.AsyncUpdate(stat.milliseconds)
@@ -2104,7 +2130,7 @@ class Common {
                 commonLocal.Printf("freeze may only be used in developer mode\n")
                 return
             }
-            s = args.Argv(1).toFloat() // FIX: C++ uses atof(); toInt().toFloat() truncated fractional seconds
+            s = args.Argv(1).toFloat()
             start = EventLoop.eventLoop.Milliseconds()
             while (true) {
                 now = EventLoop.eventLoop.Milliseconds()
@@ -2555,8 +2581,7 @@ class Common {
                              idStr out = va("%s,%s,%s,%s\r\n", static classname.c_str(), kv.GetKey().c_str(), kv.GetValue().c_str(), file.c_str());
                              localizeFile.Write( out.c_str(), out.Length() );
                              }*/
-                            val className =
-                                ent.epairs.GetString("classname") // FIX: was "static classname" — translation artifact
+                            val className = ent.epairs.GetString("classname")
 
                             //Hack: for info_location
                             var hasLocation = false
@@ -2863,12 +2888,12 @@ class Common {
         var com_editors = 0 // currently opened editor(s)
         var com_frameNumber = 0 // variable frame number
 
-        @Volatile
+        @kotlin.concurrent.Volatile
         var com_frameTime = 0 // time for the current frame in milliseconds
         var   /*HWND*/com_hwndMsg: Long = 0
         var com_outputMsg = false
 
-        @Volatile
+        @kotlin.concurrent.Volatile
         var com_ticNumber = 0 // 60 hz tics
 
         // DG: dhewm3 precise timing state — file-level statics in C++
@@ -2937,10 +2962,10 @@ class Common {
 
         var time_backend = 0 // renderSystem backend time
         var time_frontend = 0 // renderSystem frontend time
-        var time_gameDraw = 0 // FIX: C++ uses int, not long
+        var time_gameDraw = 0
 
         // com_speeds times
-        var time_gameFrame = 0 // FIX: C++ uses int, not long
+        var time_gameFrame = 0
         var com_msgID: Long = -1
         private var commonLocal: idCommonLocal = idCommonLocal()
         var common: /*final*/idCommon = commonLocal
@@ -3000,7 +3025,7 @@ class Common {
         }
 
         fun TestMapVal(str: String): Boolean {
-            return !str.contains("#str_") // FIX: was inverted — should return true when NOT localized
+            return !str.contains("#str_")
         }
 
         //#endif
@@ -3027,7 +3052,6 @@ class Common {
                 return false
             }
 
-            // FIX: C++ Find() returns pointer, truthy=found → return false. Was: == 0 (only matched index 0)
             if (excludeList.Find(testVal) != null) {
                 return false
             }

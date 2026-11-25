@@ -4,7 +4,12 @@
  *
  * This file is part of the Doom 3 Kotlin project.
  * Original source: neo/Game/Physics/Physics_Monster.h, neo/Game/Physics/Physics_Monster.cpp
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game.Physics
 
@@ -100,8 +105,6 @@ object Physics_Monster {
             pushVelocity = idVec3()
         }
 
-        // FIX: C++ struct assignment copies by value; Kotlin reference assignment does not.
-        // This method performs a deep copy to simulate C++ struct copy semantics.
         fun set(other: monsterPState_s) {
             origin.set(other.origin)
             velocity.set(other.velocity)
@@ -463,8 +466,7 @@ object Physics_Monster {
          idPhysics_Monster::SaveState
          ================
          */
-        override fun SaveState() { // FIX: Was "saved = current" which only copies the reference in Kotlin.
-            // C++ copies the struct by value. Use deep copy instead.
+        override fun SaveState() {
             saved.set(current)
         }
 
@@ -473,7 +475,7 @@ object Physics_Monster {
          idPhysics_Monster::RestoreState
          ================
          */
-        override fun RestoreState() { // FIX: Was "current = saved" which only copies the reference in Kotlin.
+        override fun RestoreState() {
             current.set(saved)
             clipModel!!.Link(Game_local.gameLocal.clip, self, 0, current.origin, clipModel!!.GetAxis())
             EvaluateContacts()

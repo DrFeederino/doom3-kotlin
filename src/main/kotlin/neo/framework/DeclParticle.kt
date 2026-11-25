@@ -11,7 +11,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 package neo.framework
 
 import neo.Renderer.Material
@@ -611,8 +616,7 @@ object DeclParticle {
                         idMath.SinCos16(angle2, s2, c2)
                         origin[0] = c1._val * c2._val
                         origin[1] = s1._val * c2._val
-                        origin[2] =
-                            -s2._val // FIX: was origin.times(customPathParms[2]) which returns a new vector and discards it; must modify in-place
+                        origin[2] = -s2._val
                         origin.timesAssign(customPathParms[2])
                     }
 
@@ -891,9 +895,7 @@ object DeclParticle {
             directionParms[0] = src.directionParms[0]
             directionParms[1] = src.directionParms[1]
             directionParms[2] = src.directionParms[2]
-            directionParms[3] =
-                src.directionParms[3] // FIX: was 'speed = src.speed' (reference copy, causes aliasing between stages)
-            // C++ operator= copies the struct by value; replicate field-by-field
+            directionParms[3] = src.directionParms[3]
             speed.from = src.speed.from
             speed.to = src.speed.to
             speed.table = src.speed.table
@@ -913,7 +915,7 @@ object DeclParticle {
             offset.set(src.offset)
             animationFrames = src.animationFrames
             animationRate = src.animationRate
-            initialAngle = src.initialAngle // FIX: was 'rotationSpeed = src.rotationSpeed' (reference copy)
+            initialAngle = src.initialAngle
             rotationSpeed.from = src.rotationSpeed.from
             rotationSpeed.to = src.rotationSpeed.to
             rotationSpeed.table = src.rotationSpeed.table
@@ -921,8 +923,7 @@ object DeclParticle {
             orientationParms[0] = src.orientationParms[0]
             orientationParms[1] = src.orientationParms[1]
             orientationParms[2] = src.orientationParms[2]
-            orientationParms[3] =
-                src.orientationParms[3] // FIX: was 'size = src.size' / 'aspect = src.aspect' (reference copies)
+            orientationParms[3] = src.orientationParms[3]
             size.from = src.size.from
             size.to = src.size.to
             size.table = src.size.table

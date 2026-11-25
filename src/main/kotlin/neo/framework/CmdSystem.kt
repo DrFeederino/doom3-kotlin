@@ -17,7 +17,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.framework
 
@@ -471,8 +476,7 @@ object CmdSystem {
         ============
         idCmdSystemLocal::RemoveFlaggedCommands
         ============
-        */ // FIX: Original code did not check flags and did not remove commands from the linked list.
-        // Now properly implements the C++ double-pointer traversal: removes matching commands from the list.
+        */
         override fun RemoveFlaggedCommands(flags: Int) {
             var prev: commandDef_s? = null
             var cmd = commands
@@ -667,7 +671,6 @@ object CmdSystem {
                 FileSystem_h.fileSystem.FreeFileList(names)
 
                 // list files
-                // FIX: C++ uses NULL sentinel to terminate va_list; filter out null entries
                 for (extension in objects) {
                     if (extension == null) break
                     names = FileSystem_h.fileSystem.ListFiles(path.toString(), extension.toString(), true, true)
@@ -1168,8 +1171,7 @@ object CmdSystem {
                     if (0L == cmd.flags and cmdFlags_t) {
                         cmd = cmd.next
                         continue
-                    } // FIX: Filter condition was inverted — C++ skips when Filter() == 0 (no match),
-                    // meaning only matching commands are shown. The Kotlin code was skipping matches.
+                    }
                     if (match.isNotEmpty() && !idStr(cmd.name).Filter(match, false)) {
                         cmd = cmd.next
                         continue

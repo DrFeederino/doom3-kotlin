@@ -14,7 +14,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 package neo.Game.Animation
 
 import neo.Game.*
@@ -119,7 +124,6 @@ class Anim_Testmodel {
          */
         override fun Restore(savefile: idRestoreGame) {
             super.Restore(savefile) // FIXME: one day we may actually want to save/restore test models, but for now we'll just delete them
-            // FIX: Was missing cleanup logic — C++ calls `delete this` which triggers the destructor
             cleanup()
             PostEventMS(EV_Remove, 0)
         }
@@ -901,8 +905,7 @@ class Anim_Testmodel {
                 }
 
                 // delete the testModel if active
-                if (Game_local.gameLocal.testmodel != null) { // FIX: Was just nulling the reference — C++ `delete` calls the destructor
-                    // which stops sounds, removes head entity, and prints removal message
+                if (Game_local.gameLocal.testmodel != null) {
                     val oldModel = Game_local.gameLocal.testmodel!!
                     oldModel.cleanup() // NOTE: Differs from C++ — deferred removal via EV_Remove instead of immediate delete
                     oldModel.PostEventMS(EV_Remove, 0)

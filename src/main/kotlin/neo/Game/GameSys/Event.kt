@@ -22,7 +22,12 @@
  * along with Doom 3 Source Code. If not, see <http://www.gnu.org/licenses/>.
  *
  * ===========================================================================
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 /*
  * Event.cpp
@@ -200,7 +205,7 @@ object Event {
             if (numargs > D_EVENT_MAXARGS) {
                 eventError = true
                 eventErrorMsg = String.format("idEventDef::idEventDef : Too many args for '%s' event.", name)
-                return // FIX: C++ returns here; Kotlin was missing the return
+                return
             }
 
             // make sure the format for the args is valid, calculate the formatspecindex, and the offsets for each arg
@@ -220,7 +225,7 @@ object Event {
                     D_EVENT_VECTOR -> argsize += E_EVENT_SIZEOF_VEC
                     D_EVENT_STRING -> argsize += Script_Program.MAX_STRING_LEN
                     D_EVENT_ENTITY, D_EVENT_ENTITY_NULL -> argsize += SIZEOF_INTPTR
-                    D_EVENT_TRACE -> { // FIX: Was empty body — C++ original: argsize += sizeof(trace_t) + MAX_STRING_LEN + sizeof(bool)
+                    D_EVENT_TRACE -> {
                         argsize += SIZEOF_TRACE_T + Script_Program.MAX_STRING_LEN + SIZEOF_BOOL
                     }
 
@@ -229,7 +234,7 @@ object Event {
                         eventErrorMsg = String.format(
                             "idEventDef::idEventDef : Invalid arg format '%s' string for '%s' event.", formatSpec, name
                         )
-                        return // FIX: C++ returns here; Kotlin was missing the return
+                        return
                     }
                 }
                 i++
@@ -551,8 +556,7 @@ object Event {
                 i = 0
                 while (i < numargs) {
                     val arg = args[i]!!
-                    if (format[i].code != arg.type) { // FIX: C++ only suppresses the error when NULL is passed for an entity
-                        // (gets cast as integer 0). Kotlin was silently forcing type to D_EVENT_STRING.
+                    if (format[i].code != arg.type) {
                         if (!(((format[i] == D_EVENT_TRACE) || (format[i] == D_EVENT_ENTITY)) && (arg.type == D_EVENT_INTEGER.code) && (arg.value == 0 || arg.value == null))) {
                             idGameLocal.Error(
                                 "idEvent::CopyArgs : Wrong type passed in for arg # %d on '%s' event.",
@@ -1130,8 +1134,7 @@ object Event {
                             event.eventdef!!.GetName()
                         )
                     }
-                    if (argsize._val != 0) { // FIX: Was arrayOfNulls(argsize._val) — allocating by byte-size instead of arg count.
-                        // The array is indexed by argument number, so it needs GetNumArgs() elements.
+                    if (argsize._val != 0) {
                         val numArgs = event.eventdef!!.GetNumArgs()
                         event.data = arrayOfNulls(numArgs)
                         format = event.eventdef!!.GetArgFormat()
@@ -1148,17 +1151,16 @@ object Event {
                                 D_EVENT_INTEGER -> {
                                     event.data!![j] = idEventArg<Any?>(
                                         D_EVENT_INTEGER.code, savefile.ReadInt()
-                                    ) // FIX: Was missing size increment — C++: size += sizeof(intptr_t)
+                                    )
                                     size += SIZEOF_INTPTR
                                 }
 
-                                D_EVENT_ENTITY, D_EVENT_ENTITY_NULL -> { // FIX: C++ uses idEntityPtr::Restore. Read the entity pointer properly.
+                                D_EVENT_ENTITY, D_EVENT_ENTITY_NULL -> {
                                     val entityPtr = Game_local.idEntityPtr<idEntity>()
                                     entityPtr.Restore(savefile)
                                     event.data!![j] = idEventArg<Any?>(
                                         format[j].code, entityPtr.GetEntity()
-                                    ) // FIX: Was missing size increment for D_EVENT_ENTITY,
-                                    // and only had it for D_EVENT_ENTITY_NULL
+                                    )
                                     size += SIZEOF_INTPTR
                                 }
 
@@ -1169,8 +1171,7 @@ object Event {
                                     size += E_EVENT_SIZEOF_VEC
                                 }
 
-                                D_EVENT_STRING -> { // FIX: C++ reads a string, then copies into the data buffer.
-                                    // Kotlin: store the string value in the idEventArg.
+                                D_EVENT_STRING -> {
                                     val s = idStr()
                                     savefile.ReadString(s)
                                     event.data!![j] = idEventArg<Any?>(D_EVENT_STRING.code, s.toString())
@@ -1180,8 +1181,7 @@ object Event {
                                 D_EVENT_TRACE -> {
                                     val readBool = savefile.ReadBool()
                                     size += SIZEOF_BOOL
-                                    if (readBool) { // FIX: Was using SERiAL.BYTES (a bogus constant = Int.MIN_VALUE / 8).
-                                        // Use SIZEOF_TRACE_T to match the Save function.
+                                    if (readBool) {
                                         size += SIZEOF_TRACE_T
                                         val t = trace_s()
                                         val hadMaterial = RestoreTrace(savefile, t)

@@ -110,7 +110,7 @@ object DemoFile {
          ================
          */
         fun Log(p: String?) {
-            if (fLog != null && p != null && p.isNotEmpty()) { // FIX: C++ uses fLog->Write(p, strlen(p)), raw write without length prefix
+            if (fLog != null && p != null && p.isNotEmpty()) {
                 val bytes = p.toByteArray()
                 fLog!!.Write(ByteBuffer.wrap(bytes), bytes.size)
             }
@@ -150,10 +150,8 @@ object DemoFile {
 
             writing = false
 
-            // FIX: Read magicLen bytes (C++ sizeof(DEMO_MAGIC) includes null terminator)
             f!!.Read(magicBuffer, magicLen)
 
-            // FIX: Compare bytes directly like C++ memcmp, including null terminator
             val expectedMagic = ByteArray(magicLen)
             DEMO_MAGIC.toByteArray()
                 .copyInto(expectedMagic) // expectedMagic[DEMO_MAGIC.length] is already 0 (null terminator, matching C++)
@@ -190,9 +188,6 @@ object DemoFile {
 
             writing = true
 
-            // FIX: C++ uses f->Write(DEMO_MAGIC, sizeof(DEMO_MAGIC)) which is a raw write
-            // including the null terminator. The original Kotlin used WriteString which adds
-            // a 4-byte length prefix - completely wrong format.
             val magicBytes = ByteArray(magicLen)
             DEMO_MAGIC.toByteArray()
                 .copyInto(magicBytes) // magicBytes[DEMO_MAGIC.length] is already 0 (null terminator, matching C++)
@@ -247,7 +242,7 @@ object DemoFile {
             if (log && fLog != null) {
                 val text = Str.va(
                     "%s > Reading hash string\n", logStr.toString()
-                ) // FIX: C++ uses fLog->Write(text, strlen(text)), raw write without length prefix
+                )
                 val bytes = text.toByteArray()
                 fLog!!.Write(ByteBuffer.wrap(bytes), bytes.size)
             }
@@ -278,7 +273,7 @@ object DemoFile {
             if (log && fLog != null) {
                 val text = Str.va(
                     "%s > Writing hash string\n", logStr.toString()
-                ) // FIX: C++ uses fLog->Write(text, strlen(text)), raw write without length prefix
+                )
                 val bytes = text.toByteArray()
                 fLog!!.Write(ByteBuffer.wrap(bytes), bytes.size)
             }
@@ -342,9 +337,7 @@ object DemoFile {
 
         override fun Read(buffer: ByteBuffer, len: Int): Int {
             val read = compressor!!.Read(buffer, len)
-            if (read == 0 && len >= 4) { // FIX: C++ writes at buffer start: *(demoSystem_t *)buffer = DS_FINISHED
-                // Use absolute putInt(index, value) to write at position 0 regardless of
-                // the current buffer position after compressor.Read.
+            if (read == 0 && len >= 4) {
                 buffer.putInt(0, demoSystem_t.DS_FINISHED.ordinal)
             }
             return read
@@ -354,10 +347,7 @@ object DemoFile {
          ================
          idDemoFile::Write
          ================
-         */ // FIX: Must override Write(ByteBuffer) to delegate to Write(ByteBuffer, Int).
-        // The base idFile.Write(ByteBuffer) fatal errors instead of delegating (unlike
-        // Read(ByteBuffer) which correctly delegates). Without this override, all calls
-        // through WriteInt/WriteString on idDemoFile would crash.
+         */
         override fun Write(buffer: ByteBuffer): Int {
             return Write(buffer, buffer.capacity())
         }

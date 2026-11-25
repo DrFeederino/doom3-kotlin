@@ -1,3 +1,31 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
 package neo.framework.Async
 
 import neo.Game.Game_local
@@ -139,7 +167,7 @@ class AsyncNetwork {
                         Common.common.Printf("already running a server\n")
                         return
                     }
-                    if (args!!.Argc() !== 2) {
+                    if (args!!.Argc() != 2) {
                         Common.common.Printf("USAGE: connect <serverName>\n")
                         return
                     }
@@ -203,7 +231,7 @@ class AsyncNetwork {
          */
             private class UpdateUI_f private constructor() : cmdFunction_t() {
                 override fun run(args: idCmdArgs?) {
-                    if (args!!.Argc() !== 2) {
+                    if (args!!.Argc() != 2) {
                         Common.common.Warning("idAsyncNetwork::UpdateUI_f: wrong arguments\n")
                         return
                     }
@@ -374,7 +402,7 @@ class AsyncNetwork {
                     CmdSystem.CMD_FL_SYSTEM,
                     "spawns a server",
                     ArgCompletion_MapName.getInstance()
-                ) // FIX: was using Game_local.idGameLocal.NextMap_f - should use local NextMap_f per C++ original
+                )
                 cmdSystem.AddCommand(
                     "nextMap", NextMap_f.instance, CmdSystem.CMD_FL_SYSTEM, "loads the next map on the server"
                 )
@@ -503,8 +531,7 @@ class AsyncNetwork {
             fun DuplicateUsercmd(
                 previousUserCmd: usercmd_t, currentUserCmd: usercmd_t, frame: Int, time: Int
             ): Boolean {
-                if (currentUserCmd.gameTime <= previousUserCmd.gameTime) { // FIX: was reassigning local var reference instead of copying fields.
-                    // C++ operator= copies all fields; Kotlin reference reassignment just changes the pointer.
+                if (currentUserCmd.gameTime <= previousUserCmd.gameTime) {
                     currentUserCmd.gameFrame = previousUserCmd.gameFrame
                     currentUserCmd.gameTime = previousUserCmd.gameTime
                     currentUserCmd.buttons = previousUserCmd.buttons

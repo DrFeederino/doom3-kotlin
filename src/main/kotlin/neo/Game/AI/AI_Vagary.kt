@@ -14,7 +14,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game.AI
 
@@ -95,8 +100,7 @@ class AI_Vagary {
             val offsetVec = idVec3(0.0f, 0.0f, offset.value)
             val enemyEnt: idEntity? = enemy.GetEntity()
             if (null == enemyEnt) {
-                idThread.ReturnEntity(null) // FIX: C++ also lacks return here (original bug), but in Kotlin enemyEnt!! below
-                // throws NPE. Adding return to avoid Kotlin-specific crash.
+                idThread.ReturnEntity(null)
                 return
             }
             val enemyEyePos = lastVisibleEnemyPos + lastVisibleEnemyEyeOffset
@@ -141,7 +145,11 @@ class AI_Vagary {
                         enemyEyePos,
                         speed.value,
                         entPhys.GetGravity(),
-                        entPhys.GetClipModel()!!, entPhys.GetClipMask(), MAX_WORLD_SIZE.toFloat(), null, enemyEnt,
+                        entPhys.GetClipModel()!!,
+                        entPhys.GetClipMask(),
+                        MAX_WORLD_SIZE.toFloat(),
+                        null,
+                        enemyEnt,
                         if (SysCvar.ai_debugTrajectory.GetBool()) 4000 else 0,
                         vel
                     )

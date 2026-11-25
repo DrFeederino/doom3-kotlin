@@ -22,7 +22,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.framework
 
@@ -209,7 +214,7 @@ class Console {
 
         @Throws(idException::class)
         override fun ProcessEvent(event: sysEvent_s, forceAccept: Boolean): Boolean {
-            var consoleKey: Boolean // FIX: Added shift+esc as an additional console-open trigger (dhewm3 feature)
+            var consoleKey: Boolean
             consoleKey =
                 event.evType == sysEventType_t.SE_KEY && (event.evValue == win_input.Sys_GetConsoleKey(false).code || event.evValue == win_input.Sys_GetConsoleKey(
                     true
@@ -235,8 +240,7 @@ class Console {
                     CVarSystem.cvarSystem.SetCVarBool("ui_chat", false)
                 } else {
                     consoleField.Clear()
-                    keyCatching =
-                        true // FIX: shift+esc should open at 0.5f (same as normal open); only plain shift opens at 0.2f
+                    keyCatching = true
                     if (idKeyInput.IsDown(KeyInput.K_SHIFT) && event.evValue != KeyInput.K_ESCAPE) { // if the shift key is down, don't open the console as much
                         // (except when shift+esc was used — that should open at full 0.5)
                         SetDisplayFraction(0.2f)
@@ -325,7 +329,6 @@ class Console {
                 // if we are about to print a new word, check to see
                 // if we should wrap to the new line
                 if (c > ' '.code && (x == 0 || text[y * LINE_WIDTH + x - 1] <= ' '.code)) { // count word length
-                    // FIX: Added missing break — without it, word wrapping never triggers
                     l = 0
                     while (l < LINE_WIDTH) {
                         if (txt_p + l >= txt.length || txt[txt_p + l] <= ' ') {
@@ -399,7 +402,6 @@ class Console {
                 }
             }
 
-            // FIX: Restored com_showFPS guard — FPS counter should only show when the cvar is set
             if (Common.com_showFPS.GetInteger() != 0) {
                 y = SCR_DrawFPS(0.0f)
             }

@@ -17,7 +17,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Doom 3 Source Code. If not, see <http://www.gnu.org/licenses/>.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game.Animation
 
@@ -234,9 +239,7 @@ object Anim_Import {
                             dest.SetFileExtension(Model.MD5_CAMERA_EXT)
                         } else {
                             dest.SetFileExtension(command.toString())
-                        } // FIX: C++ uses commandLine.c_str() in the sprintf while writing into commandLine,
-                        // which is undefined behavior. We correctly save commandLine to 'back' first and
-                        // use that saved copy in the format string.
+                        }
                         val back = commandLine.toString()
                         commandLine.set(
                             String.format(
@@ -474,8 +477,6 @@ object Anim_Import {
         }
 
         companion object {
-            // FIX: Was `const val` which is a compile-time constant that can never change.
-            // C++ has `bool idModelExport::initialized = false` as a mutable static.
             private var initialized = false
 
             /*

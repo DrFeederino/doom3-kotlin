@@ -463,7 +463,7 @@ object win_glimp {
         return false
     }
 
-    fun GLimp_GrabInput(flags: Integer) {
+    fun GLimp_GrabInput(flags: Int) {
         if (window == 0L) {
             common.Warning("GLimp_GrabInput called without window")
             return

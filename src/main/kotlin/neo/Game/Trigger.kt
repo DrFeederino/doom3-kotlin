@@ -14,7 +14,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 package neo.Game
 
 import neo.Game.GameSys.Class.*
@@ -377,7 +382,7 @@ object Trigger {
          ================
          */
         override fun Spawn() {
-            super.Spawn() // FIX: Default strings had trailing 'f' not in C++ originals
+            super.Spawn()
             wait = spawnArgs.GetFloat("wait", "0.5")
             random = spawnArgs.GetFloat("random", "0")
             delay = spawnArgs.GetFloat("delay", "0")
@@ -515,8 +520,7 @@ object Trigger {
             // don't allow it to trigger twice in a single frame
             nextTriggerTime = Game_local.gameLocal.time + 1
             if (delay > 0) { // don't allow it to trigger again until our delay has passed
-                nextTriggerTime += SEC2MS(delay + random_delay * Game_local.gameLocal.random.CRandomFloat()) // FIX: Was passing _activator (idEventArg wrapper) instead of activator (unwrapped entity).
-                // C++ passes the raw entity pointer to PostEventSec.
+                nextTriggerTime += SEC2MS(delay + random_delay * Game_local.gameLocal.random.CRandomFloat())
                 PostEventSec(EV_TriggerAction, delay, activator)
             } else {
                 TriggerAction(activator)
@@ -596,11 +600,11 @@ object Trigger {
             init {
                 eventCallbacks.putAll(idTrigger.getEventCallBacks())
                 eventCallbacks[EV_Touch] =
-                    eventCallback_t2<idTrigger_EntityName> { obj: idTrigger_EntityName, _other: idEventArg<*>?, trace: idEventArg<*>? -> // FIX: Changed to nullable idEntity? to match C++ null checks
+                    eventCallback_t2<idTrigger_EntityName> { obj: idTrigger_EntityName, _other: idEventArg<*>?, trace: idEventArg<*>? ->
                         obj.Event_Touch(_other as idEventArg<idEntity?>, trace as idEventArg<trace_s>)
                     }
                 eventCallbacks[EV_Activate] =
-                    eventCallback_t1<idTrigger_EntityName> { obj: idTrigger_EntityName, _activator: idEventArg<*>? -> // FIX: Changed to nullable idEntity? to match C++ null checks
+                    eventCallback_t1<idTrigger_EntityName> { obj: idTrigger_EntityName, _activator: idEventArg<*>? ->
                         obj.Event_Trigger(_activator as idEventArg<idEntity?>)
                     }
                 eventCallbacks[EV_TriggerAction] =
@@ -640,7 +644,7 @@ object Trigger {
         }
 
         override fun Spawn() {
-            super.Spawn() // FIX: Default strings had trailing 'f' not in C++ originals
+            super.Spawn()
             wait = spawnArgs.GetFloat("wait", "0.5")
             random = spawnArgs.GetFloat("random", "0")
             delay = spawnArgs.GetFloat("delay", "0")
@@ -705,7 +709,7 @@ object Trigger {
             val activator = _activator.value
             if (nextTriggerTime > Game_local.gameLocal.time) { // can't retrigger until the wait is over
                 return
-            } // FIX: Added null check for activator — C++ has: if ( !activator || ( activator->name != entityName ) )
+            }
             if (activator == null || activator.name != entityName) {
                 return
             }
@@ -736,7 +740,7 @@ object Trigger {
             }
             if (nextTriggerTime > Game_local.gameLocal.time) { // can't retrigger until the wait is over
                 return
-            } // FIX: Added null check for other — C++ has: if ( !other || ( other->name != entityName ) )
+            }
             if (other == null || other.name != entityName) {
                 return
             }
@@ -1048,7 +1052,7 @@ object Trigger {
         override fun Spawn() {
             super.Spawn()
             on = spawnArgs.GetBool("on", "1")
-            delay = spawnArgs.GetFloat("delay", "1.0") // FIX: Was "1.0f" — C++ uses "1.0"
+            delay = spawnArgs.GetFloat("delay", "1.0")
             nextTime = Game_local.gameLocal.time
             Enable()
         }
@@ -1060,7 +1064,7 @@ object Trigger {
          */
         private fun Event_Touch(_other: idEventArg<idEntity>, trace: idEventArg<trace_s>) {
             val other = _other.value
-            val damage: String // FIX: Added null check for other — C++ has: if ( on && other && gameLocal.time >= nextTime )
+            val damage: String
             if (on && other != null && Game_local.gameLocal.time >= nextTime) {
                 if (isD3XP) {
                     val playerOnly = spawnArgs.GetBool("playerOnly")

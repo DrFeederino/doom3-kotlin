@@ -759,7 +759,7 @@ object Weapon {
          Called during idEntity::Spawn to see if it should construct the script object or not.
          Overridden by subclasses that need to spawn the script object themselves.
          ================
-         */ // FIX: Method name was corrupted from "Construct" to "finalruct"
+         */
         override fun ShouldConstructScriptObjectAtSpawn(): Boolean {
             return false
         }
@@ -962,17 +962,17 @@ object Weapon {
             brassDelay = savefile.ReadInt()
             savefile.ReadString(icon)
             guiLightHandle = savefile.ReadInt()
-            savefile.ReadRenderLight(guiLight) // FIX: Get fresh light handle after loading (dhewm3 fix — stale handles point to wrong lights)
+            savefile.ReadRenderLight(guiLight)
             if (guiLightHandle != -1) {
                 guiLightHandle = Game_local.gameRenderWorld!!.AddLightDef(guiLight)
             }
             muzzleFlashHandle = savefile.ReadInt()
-            savefile.ReadRenderLight(muzzleFlash) // FIX: Get fresh light handle after loading (dhewm3 fix)
+            savefile.ReadRenderLight(muzzleFlash)
             if (muzzleFlashHandle != -1) {
                 muzzleFlashHandle = Game_local.gameRenderWorld!!.AddLightDef(muzzleFlash)
             }
             worldMuzzleFlashHandle = savefile.ReadInt()
-            savefile.ReadRenderLight(worldMuzzleFlash) // FIX: Get fresh light handle after loading (dhewm3 fix)
+            savefile.ReadRenderLight(worldMuzzleFlash)
             if (worldMuzzleFlashHandle != -1) {
                 worldMuzzleFlashHandle = Game_local.gameRenderWorld!!.AddLightDef(worldMuzzleFlash)
             }
@@ -1019,11 +1019,11 @@ object Weapon {
             nozzleFxFade = savefile.ReadInt()
             lastAttack = savefile.ReadInt()
             nozzleGlowHandle = savefile.ReadInt()
-            savefile.ReadRenderLight(nozzleGlow) // FIX: Get fresh light handle after loading (dhewm3 fix)
+            savefile.ReadRenderLight(nozzleGlow)
             if (nozzleGlowHandle != -1) {
                 nozzleGlowHandle = Game_local.gameRenderWorld!!.AddLightDef(nozzleGlow)
             }
-            savefile.ReadVec3(nozzleGlowColor) // FIX: nozzleGlowShader may be null; create temp object for ReadMaterial which requires non-null
+            savefile.ReadVec3(nozzleGlowColor)
             nozzleGlowShader = savefile.ReadMaterial()
             nozzleGlowRadius = savefile.ReadFloat()
             weaponAngleOffsetAverages = savefile.ReadInt()
@@ -1100,7 +1100,7 @@ object Weapon {
             WEAPON_ATTACK.Unlink()
             WEAPON_RELOAD.Unlink()
             WEAPON_NETRELOAD.Unlink()
-            WEAPON_NETENDRELOAD.Unlink() // FIX: Added IsLinked() guard — WEAPON_NETFIRING is not linked in demo mode
+            WEAPON_NETENDRELOAD.Unlink()
             if (WEAPON_NETFIRING.IsLinked()) {
                 WEAPON_NETFIRING.Unlink()
             }
@@ -2099,7 +2099,7 @@ object Weapon {
          Can be overridden by subclasses when a thread doesn't need to be allocated.
          Not called during idGameLocal::MapShutdown.
          ================
-         */ // FIX: Method name was corrupted from "Deconstruct" to "Definalruct"
+         */
         override fun DeconstructScriptObject() {
             val destructor: function_t?
             if (null == thread) {
@@ -2193,7 +2193,7 @@ object Weapon {
                 WEAPON_ATTACK.underscore(false)
                 WEAPON_RELOAD.underscore(false)
                 WEAPON_NETRELOAD.underscore(false)
-                WEAPON_NETENDRELOAD.underscore(false) // FIX: Added IsLinked() guard — WEAPON_NETFIRING is not linked in demo mode
+                WEAPON_NETENDRELOAD.underscore(false)
                 if (WEAPON_NETFIRING.IsLinked()) {
                     WEAPON_NETFIRING.underscore(false)
                 }

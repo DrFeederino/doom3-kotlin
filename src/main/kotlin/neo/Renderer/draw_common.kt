@@ -8,6 +8,11 @@ Translated to Kotlin by Dr. Feederino with support of Claude Code
 This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 Original source: neo/renderer/draw_common.cpp
 
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+
 ===========================================================================
 */
 

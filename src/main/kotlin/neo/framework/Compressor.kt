@@ -22,7 +22,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Doom 3 Source Code. If not, see <http://www.gnu.org/licenses/>.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 package neo.framework
 
 import neo.framework.File_h.fsOrigin_t
@@ -356,7 +361,7 @@ object Compressor {
             // Short circuit for writing single bytes at a time
             if (writeBit == 0 && numBits == 8 && writeByte < writeLength) {
                 writeByte++
-                writeTotalBytes++ // FIX: C++ writes a single byte; was incorrectly using putInt (writes 4 bytes)
+                writeTotalBytes++
                 writeData!!.put(writeByte - 1, value.toByte())
                 return
             }
@@ -373,7 +378,7 @@ object Compressor {
                             writeTotalBytes += (put shr 3) + if (writeBit != 0) 1 else 0
                             return
                         }
-                    } // FIX: C++ zeroes a single byte; was using putInt (overwrites 4 bytes)
+                    }
                     writeData!!.put(writeByte, 0.toByte())
                     writeByte++
                     writeTotalBytes++
@@ -382,9 +387,7 @@ object Compressor {
                 if (put > numBits) {
                     put = numBits
                 }
-                fraction =
-                    value and ((1 shl put) - 1) // FIX: C++ does single-byte OR: writeData[pos] |= fraction << writeBit
-                // was incorrectly using getInt/putInt (reads/writes 4 bytes)
+                fraction = value and ((1 shl put) - 1)
                 val pos = writeByte - 1
                 writeData!!.put(pos, ((writeData!!.get(pos).toInt() and 0xFF) or (fraction shl writeBit)).toByte())
                 numBits -= put
@@ -404,7 +407,7 @@ object Compressor {
             // Short circuit for reading single bytes at a time
             if (readBit == 0 && numBits == 8 && readByte < readLength) {
                 readByte++
-                readTotalBytes++ // FIX: C++ returns a single unsigned byte; was incorrectly using getInt (reads 4 bytes)
+                readTotalBytes++
                 return readData!!.get(readByte - 1).toInt() and 0xFF
             }
             while (valueBits < numBits) {
@@ -487,8 +490,6 @@ object Compressor {
                 var remain = bitsRemain shr 3
 
                 // Compare the middle bytes as ints
-                // FIX: C++ compares 4 bytes at once via *(const int*)p1 == *(const int*)p2
-                // Original Kotlin compared only 1 byte (src1[p1]) but skipped 4, missing mismatches
                 while (remain >= 4 && src1[p1] == src2[p2] && src1[p1 + 1] == src2[p2 + 1] && src1[p1 + 2] == src2[p2 + 2] && src1[p1 + 3] == src2[p2 + 3]) {
                     p1 += 4
                     p2 += 4
@@ -700,7 +701,6 @@ object Compressor {
         //
         private var compressedSize = 0
 
-        // FIX: freelist was Array<huffmanNode_t> — should be NodeSlot? to model C++ huffmanNode_t** freelist
         private var freelist: NodeSlot? = null
         private var lhead: huffmanNode_t? = null
         private val loc: Array<huffmanNode_t?> = arrayOfNulls<huffmanNode_t?>(HMAX + 1)
@@ -709,7 +709,6 @@ object Compressor {
         //
         private val nodeList: Array<huffmanNode_t> = Array(768) { huffmanNode_t() }
 
-        // FIX: nodePtrs was Array<huffmanNode_t> — should be Array<NodeSlot> to model C++ huffmanNode_t* nodePtrs[768]
         private val nodePtrs: Array<NodeSlot> = Array(768) { NodeSlot() }
         private val seq = ByteBuffer.allocate(65536)
 
@@ -734,11 +733,10 @@ object Compressor {
             while (i < HMAX + 1) {
                 loc[i] = null
                 i++
-            } // FIX: C++ sets freelist = NULL; was emptyArray() which is never null
+            }
             freelist = null
             i = 0
-            while (i < 768) { // FIX: C++ does memset(&nodeList[i], 0, sizeof(huffmanNode_t)) and nodePtrs[i] = NULL
-                // The Kotlin loop body was empty — breaks on second Init call
+            while (i < 768) {
                 nodeList[i].reset()
                 nodePtrs[i].node = null
                 nodePtrs[i].nextFree = null
@@ -794,7 +792,7 @@ object Compressor {
                 return 0
             }
             i = 0
-            while (i < inLength) { // FIX: C++ reads a single byte ch = ((const byte*)inData)[i]; was using getInt (reads 4 bytes)
+            while (i < inLength) {
                 ch = inData.get(i).toInt() and 0xFF
                 Transmit(ch, seq) // Transmit symbol
                 AddRef(ch.toByte()) // Do update
@@ -836,7 +834,7 @@ object Compressor {
                         ch[0] = (ch[0] shl 1) + Get_bit()
                         j++
                     }
-                } // FIX: C++ writes a single byte: ((byte*)outData)[i] = ch; was using putInt (writes 4 bytes)
+                }
                 outData.put(i, ch[0].toByte()) // Write symbol
                 AddRef(ch[0].toByte()) // Increment node
                 i++
@@ -980,9 +978,9 @@ object Compressor {
         private fun Add_bit(bit: Int, fout: ByteBuffer) {
             val pos = bloc shr 3
             val `val` = bit shl (bloc and 7)
-            if (bloc and 7 == 0) { // FIX: C++ zeroes a single byte; was using putInt (overwrites 4 bytes)
+            if (bloc and 7 == 0) {
                 fout.put(pos, 0.toByte())
-            } // FIX: C++ does single-byte OR; was using putInt (overwrites 4 bytes)
+            }
             fout.put(pos, (fout.get(pos).toInt() and 0xFF or `val`).toByte())
             bloc++
         }
@@ -1008,7 +1006,6 @@ object Compressor {
             return t
         }
 
-        // FIX: Rewritten to use NodeSlot — models C++ huffmanNode_t** Get_ppnode()
         private fun Get_ppnode(): NodeSlot {
             return if (freelist == null) {
                 nodePtrs[blocPtrs++]
@@ -1020,7 +1017,6 @@ object Compressor {
             }
         }
 
-        // FIX: Rewritten to use NodeSlot — models C++ void Free_ppnode(huffmanNode_t** ppnode)
         private fun Free_ppnode(slot: NodeSlot) {
             slot.node = null
             slot.nextFree = freelist
@@ -1096,7 +1092,6 @@ object Compressor {
             }
         }
 
-        // FIX: Rewritten to use NodeSlot — matches C++ pointer-pointer dereference semantics
         private fun Increment(node: huffmanNode_t?) {
             val lnode: huffmanNode_t?
             if (null == node) {
@@ -1242,7 +1237,7 @@ object Compressor {
                     }
                     InitProbabilities()
                     j = 0
-                    while (j < AC_NUM_BITS) { // FIX: mask code to 16 bits (C++ unsigned short)
+                    while (j < AC_NUM_BITS) {
                         code = ((code shl 1) or ReadBits(1)) and 0xFFFF
                         j++
                     }
@@ -1331,7 +1326,7 @@ object Compressor {
             val range: Int
 
             // rescale high and low for the new symbol.
-            range = high - low + 1 // FIX: C++ uses unsigned short — must mask to 16 bits to prevent overflow
+            range = high - low + 1
             high = (low + (range.toLong() * symbol.high / scale - 1).toInt()) and 0xFFFF
             low = (low + (range.toLong() * symbol.low / scale).toInt()) and 0xFFFF
             while (true) {
@@ -1348,7 +1343,7 @@ object Compressor {
                 } else {
                     UpdateProbabilities(symbol)
                     return
-                } // FIX: mask to 16 bits after shift (C++ unsigned short auto-truncates)
+                }
                 low = (low shl 1) and 0xFFFF
                 high = ((high shl 1) or 1) and 0xFFFF
             }
@@ -1369,7 +1364,7 @@ object Compressor {
         //
         private fun RemoveSymbolFromStream(symbol: acSymbol_t) {
             val range: Long
-            range = (high - low).toLong() + 1 // FIX: C++ uses unsigned short — must mask to 16 bits
+            range = (high - low).toLong() + 1
             high = (low + (range * symbol.high / scale - 1).toInt()) and 0xFFFF
             low = (low + (range * symbol.low / scale).toInt()) and 0xFFFF
             while (true) {
@@ -1381,7 +1376,7 @@ object Compressor {
                 } else {
                     UpdateProbabilities(symbol)
                     return
-                } // FIX: mask to 16 bits after shift (C++ unsigned short auto-truncates)
+                }
                 low = (low shl 1) and 0xFFFF
                 high = ((high shl 1) or 1) and 0xFFFF
                 code = ((code shl 1) or ReadBits(1)) and 0xFFFF
@@ -1503,8 +1498,7 @@ object Compressor {
             n = 0.also { i = it }
             while (i < inLength) {
                 n = LZSS_BLOCK_SIZE - blockSize
-                if (inLength - i >= n) { // FIX: inData.get(block, i, n) reads from ByteBuffer.position() into block[i], not block[blockSize].
-                    // C++: memcpy(block + blockSize, inData + i, n)  -- use arraycopy like the else-branch.
+                if (inLength - i >= n) {
                     System.arraycopy(inData.array(), i, block, blockSize, n)
                     blockSize = LZSS_BLOCK_SIZE
                     CompressBlock()
@@ -1964,8 +1958,7 @@ object Compressor {
                 assert(i < LZW_DICT_SIZE - 1 && code >= 0)
                 chain[i++] = dictionary[code].k.toByte()
                 code = dictionary[code].w
-            } while (code >= 0) // FIX: chain[] is a signed ByteArray in Kotlin; must mask with 0xFF to treat as unsigned (as C++ does).
-            // C++ `byte` is unsigned char, so chain[i] is always 0-255 there.
+            } while (code >= 0)
             firstChar = chain[--i].toInt() and 0xFF
             while (i >= 0) {
                 WriteBits(chain[i].toInt() and 0xFF, 8)
@@ -2022,9 +2015,6 @@ object Compressor {
         }
     }
 
-    // FIX: C++ uses huffmanNode_t** (pointer-to-pointer) for the head field.
-    // Multiple nodes can share the same slot, enabling shared mutation.
-    // This wrapper class simulates that indirection in Kotlin.
     internal class NodeSlot {
         var node: huffmanNode_t? = null
         var nextFree: NodeSlot? = null  // used for freelist chaining

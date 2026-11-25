@@ -14,7 +14,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game
 
@@ -1189,8 +1194,7 @@ object PlayerView {
         fun CalculateShake() { //            idVec3 origin, matrix;
             val shakeVolume = Game_local.gameSoundWorld!!.CurrentShakeAmplitudeForPosition(
                 Game_local.gameLocal.time, player!!.firstPersonViewOrigin
-            ) // shakeVolume should somehow be molded into an angle here // it should be thought of as being in the range 0.0f . 1.0f, although
-            // since CurrentShakeAmplitudeForPosition() returns all the shake sounds
+            ) // shakeVolume should somehow be molded into an angle here // it should be thought of as being in the range 0.0f . 1.0f, although // since CurrentShakeAmplitudeForPosition() returns all the shake sounds
             // the player can hear, it can go over 1.0f too.
             //
             shakeAng[0] = Game_local.gameLocal.random.CRandomFloat() * shakeVolume
@@ -1374,7 +1378,7 @@ object PlayerView {
                 Game_local.gameRenderWorld!!.RenderScene(portalView)
                 renderSystem.CaptureRenderToImage("_currentRender")
 
-                hackedView.forceUpdate = true // FIX: for smoke particles not drawing when portalSky present
+                hackedView.forceUpdate = true
             }
 
             // D3XP: process fullscreen effects (includes RenderScene internally)

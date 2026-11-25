@@ -14,7 +14,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game
 
@@ -186,9 +191,9 @@ class idCameraView : idCamera() {
         view.vieworg.set(ent!!.GetPhysics().GetOrigin())
         if (attachedView != null) {
             dir.set(attachedView!!.GetPhysics().GetOrigin().minus(view.vieworg))
-            dir.Normalize() // FIX: Removed unnecessary idMat3() constructor wrapping - dir.ToMat3() already returns idMat3
+            dir.Normalize()
             view.viewaxis.set(dir.ToMat3())
-        } else { // FIX: Removed unnecessary idMat3() constructor wrapping - GetAxis() already returns idMat3
+        } else {
             view.viewaxis.set(ent.GetPhysics().GetAxis())
         }
         val fov_x = CFloat(view.fov_x)
@@ -253,8 +258,7 @@ class idCameraView : idCamera() {
      */
     protected fun SetAttachment(e: Array<idEntity?>, p: String) {
         val cam = spawnArgs.GetString(p)
-        if (cam.isNotEmpty()) { // FIX: Removed !! — C++ assigns FindEntity result directly, which can be NULL.
-            // Using !! would throw NPE if the entity name doesn't resolve.
+        if (cam.isNotEmpty()) {
             e[0] = Game_local.gameLocal.FindEntity(cam)
         }
     }

@@ -14,7 +14,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 package neo.framework
 
 import neo.Game.GameSys.SysCvar
@@ -240,9 +245,6 @@ object CVarSystem {
         }
 
         // Always use one of the following constructors.
-        // FIX: C++ has valueCompletion as a local parameter defaulting to NULL. The bool check sets the
-        // local, then passes it to Init. The old Kotlin code modified the member then passed null to Init,
-        // discarding the boolean auto-completion.
         constructor(name: String, value: String, flags: Int, description: String) {
             val vc: CmdSystem.argCompletion_t? =
                 if (flags and CVAR_BOOL != 0) ArgCompletion_Boolean.getInstance() else null
@@ -369,7 +371,7 @@ object CVarSystem {
             return internalVar!!.value
         }
 
-        fun GetBool(): Boolean { // FIX: C++ uses internalVar->integerValue != 0, not string comparison on this.value
+        fun GetBool(): Boolean {
             return internalVar!!.integerValue != 0
         }
 
@@ -569,9 +571,6 @@ object CVarSystem {
         val valueString // value
                 : idStr = idStr()
 
-        // FIX: C++ implicitly calls the default idCVar() constructor here, NOT the 4-arg constructor.
-        // Calling super(name, value, flags, "") invoked Init() which registered the cvar with the system
-        // during construction, causing double registration when SetInternal also adds it to the hash.
         constructor(newName: String, newValue: String, newFlags: Int) : super() {
             nameString.set(newName)
             name = newName
@@ -678,7 +677,7 @@ object CVarSystem {
 
             // only allow one non-empty reset string without a warning
             if (resetString.Length() == 0) {
-                resetString.set(cvar.GetString()!!) // FIX: C++ checks cvar->GetString()[0] which is a non-empty string check, not a null check.
+                resetString.set(cvar.GetString()!!)
             } else if (cvar.GetString()?.isNotEmpty() == true && resetString.Cmp(cvar.GetString()!!) != 0) {
                 idLib.common.Warning(
                     "cvar \"%s\" given initial values: \"%s\" and \"%s\"\n", nameString, resetString, cvar.GetString()!!
@@ -694,8 +693,7 @@ object CVarSystem {
                 if (idStr.Icmp(value!!, "0") != 0 && idStr.Icmp(
                         value!!, "1"
                     ) != 0
-                ) { // FIX: C++ idStr(bool) produces "1"/"0". Kotlin Boolean.toString() produces "true"/"false"
-                    // which would break on config save/reload since atoi("true") returns 0.
+                ) {
                     valueString.set(if (integerValue != 0) "1" else "0")
                     value = valueString.toString()
                 }
@@ -709,7 +707,7 @@ object CVarSystem {
                         integerValue = valueMax.toInt()
                         clamped = true
                     }
-                } // FIX: FindChar returns -1 when not found (like indexOf). C++ checks != -1. Was != 0 which made -1 (not found) truthy and 0 (dot at start) falsy — both wrong.
+                }
                 if (clamped || !idStr.IsNumeric(value!!) || FindChar(value!!, '.') != -1) {
                     valueString.set(integerValue.toString())
                     value = valueString.toString()
@@ -923,8 +921,7 @@ object CVarSystem {
 
         override fun SetCVarBool(
             name: String, value: Boolean, flags: Int
-        ) { // FIX: C++ uses idStr(bool) which produces "1"/"0". Kotlin "" + bool produces "true"/"false"
-            // which atoi() can't parse, causing boolean cvars to always read as false.
+        ) {
             SetInternal(name, if (value) "1" else "0", flags)
         }
 

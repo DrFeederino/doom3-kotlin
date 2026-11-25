@@ -102,7 +102,7 @@ object SysThreading {
     val threads: Array<xthreadInfo?> = arrayOfNulls(MAX_THREADS)
     var threadCount: Int = 0
 
-    @Volatile
+    @kotlin.concurrent.Volatile
     var mainThreadId: Long = Thread.currentThread().id
     var mainThreadIdSet: Boolean = false
 
@@ -620,7 +620,7 @@ object win_main {
      ================
      */
     fun Sys_QueEvent(time: Long, type: sysEventType_t, value: Int, value2: Int, ptrLength: Int, ptr: ByteBuffer?) {
-        val ev: sysEvent_s // FIX: Check overflow BEFORE replacing the slot, so old event data can be freed
+        val ev: sysEvent_s
         if (eventHead - eventTail >= MAX_QUED_EVENTS) {
             Common.common.Printf("Sys_QueEvent: overflow\n") // we are discarding an event, but don't leak memory
             eventQue[eventHead and MASK_QUED_EVENTS].evPtr?.clear()

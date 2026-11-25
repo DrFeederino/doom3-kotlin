@@ -17,7 +17,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Doom 3 Source Code. If not, see <http://www.gnu.org/licenses/>.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 package neo.Game.GameSys
 
 import neo.Game.GameSys.NoGameTypeInfo.classTypeInfo_t
@@ -291,9 +296,7 @@ object TypeInfo {
          ================
          idTypeInfoTools::IsSubclassOf
          ================
-         */ // FIX: C++ takes `const char *typeName` and reassigns the local pointer.
-        // The old Kotlin code took `typeName: idStr` and mutated it via .set(),
-        // which would corrupt the caller's idStr. Changed to use a local String variable.
+         */
         fun IsSubclassOf(typeName: String, superType: String): Boolean {
             var currentType = typeName
             while (currentType.isNotEmpty()) {
@@ -344,8 +347,7 @@ object TypeInfo {
          ================
          idTypeInfoTools::InitTypeVariables
          ================
-         */ // FIX: Was calling itself recursively (infinite recursion).
-        // C++ sets Write = InitVariable then calls WriteClass_r.
+         */
         fun InitTypeVariables(typePtr: ByteBuffer?, typeName: String?, value: Int) {
             if (typePtr == null || typeName == null) return
             fp = null
@@ -469,9 +471,7 @@ object TypeInfo {
          ================
          idTypeInfoTools::OutputString
          ================
-         */ // FIX: Original Kotlin had off-by-one — `c` was incremented before first use,
-        // skipping string[0]. C++ does `c = *string++` which reads then advances.
-        // Also the `i = 0.also { c = it }` and `for ... c++` pattern was wrong.
+         */
         private fun OutputString(string: String?): String {
             if (string.isNullOrEmpty()) {
                 return ""
@@ -637,8 +637,7 @@ object TypeInfo {
                 value: String,
                 varPtr: ByteBuffer?,
                 varSize: Int
-            ) { // FIX: C++ `value+i+1` is pointer arithmetic (substring from index i+1).
-                // Old Kotlin had `value + i + 1` which is string concatenation with integers.
+            ) {
                 var i = FindChar(value, '#', 0)
                 while (i >= 0) {
                     val sub = value.substring(i + 1)
@@ -674,7 +673,7 @@ object TypeInfo {
                 value: String,
                 varPtr: ByteBuffer?,
                 varSize: Int
-            ) { // FIX: Same pointer arithmetic bug as WriteVariable — use substring
+            ) {
                 var i = FindChar(value, '#', 0)
                 while (i >= 0) {
                     val sub = value.substring(i + 1)

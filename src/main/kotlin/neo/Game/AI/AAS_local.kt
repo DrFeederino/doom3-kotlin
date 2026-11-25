@@ -14,7 +14,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game.AI
 
@@ -685,7 +690,7 @@ class AAS_local {
                 } // get the portal routing cache
                 portalCache = GetPortalRoutingCache(
                     goalClusterNum, goalAreaNum, travelFlags
-                ) // FIX: mask with 0xFF to prevent byte sign extension (C++ uses unsigned char)
+                )
                 reach[0] = GetAreaReachability(areaNum, portalCache.reachabilities[-clusterNum].toInt() and 0xFF)
                 travelTime._val = (portalCache.travelTimes[-clusterNum] + AreaTravelTime(
                     areaNum, origin, reach[0]!!.start
@@ -1019,7 +1024,6 @@ class AAS_local {
                     }
 
                     // direction parallel to gravity
-                    // FIX: C++ uses dot product: (gravityDir * endPos) * gravityDir - (gravityDir * p) * gravityDir
                     val g = file!!.GetSettings().gravityDir
                     dir.set(g * (g * endPos) - g * (g * p))
                     if (dir.LengthSqr() > Square(file!!.GetSettings().maxStepHeight._val)) {
@@ -1028,8 +1032,6 @@ class AAS_local {
                     }
 
                     // direction orthogonal to gravity
-                    // FIX: Was endPos.minus(p.minus(dir)) which computes endPos-(p-dir) = endPos-p+dir
-                    // C++ original: dir = endPos - p - dir (left-to-right: (endPos-p)-dir)
                     dir.set(endPos.minus(p).minus(dir))
                     if (dir.LengthSqr() > Square(0.2f)) {
                         reach = reach.next
@@ -1400,7 +1402,7 @@ class AAS_local {
                     // project target origin onto movement vector through the area
                     v1.set(reach.end - curUpdate.start)
                     v1.Normalize()
-                    v2.set(target.minus(curUpdate.start)) // FIX: C++ uses dot product (v2 * v1) * v1, not element-wise multiply
+                    v2.set(target.minus(curUpdate.start))
                     p.set(curUpdate.start + v1 * (v2 * v1))
 
                     // get the point on the path closest to the target
@@ -1650,11 +1652,7 @@ class AAS_local {
             while (i < file!!.GetNumClusters()) {
                 areaCacheIndexSize += file!!.GetCluster(i).numReachableAreas
                 i++
-            } // FIX: Was Array(GetNumClusters) { Array(totalSize) { idRoutingCache(...) } } which:
-            //   (a) gave every cluster the total areaCacheIndexSize instead of per-cluster numReachableAreas
-            //   (b) initialized with live idRoutingCache objects instead of null (C++ Mem_ClearedAlloc zeroes all pointers)
-            //   (c) read portalCacheIndexSize before it was assigned (still 0 at this point)
-            // This corrupted the routing cache linked list during DeleteClusterCache.
+            }
             areaCacheIndex =
                 Array(file!!.GetNumClusters()) { i -> arrayOfNulls<idRoutingCache>(file!!.GetCluster(i).numReachableAreas) }
             portalCacheIndexSize = file!!.GetNumAreas()
@@ -2723,7 +2721,7 @@ class AAS_local {
                 Game_local.gameLocal.Printf("\n")
                 lastAreaNum = areaNum
             }
-            if (org != origin) { // FIX: C++ creates a copy; Kotlin reference would corrupt the shared settings
+            if (org != origin) {
                 val bnds = idBounds(file!!.GetSettings().boundingBoxes[0])
                 bnds[1].z = bnds[0].z
                 Game_local.gameRenderWorld!!.DebugBounds(colorYellow, bnds, org)

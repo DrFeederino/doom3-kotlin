@@ -21,6 +21,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
 
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+
 ===========================================================================
 */
 package neo.framework
@@ -75,7 +80,6 @@ class Session {
     //
     // needed by the gui system for the load game menu
     class logStats_t : idSerializable {
-        // FIX: C++ declares all fields as short. heartRate was incorrectly Float (0.0f).
         var health = 0
         var heartRate = 0
         var stamina = 0
@@ -930,9 +934,7 @@ class Session {
             if (args!!.Argc() < 2 || idStr.Icmp(
                     args.Argv(1), "quick"
                 ) == 0
-            ) { // FIX: C++ calls sessLocal.QuickSave() which handles save rotation
-                // via com_numQuicksaves. The original Kotlin called SaveGame directly
-                // with a hardcoded name, losing the rotation logic.
+            ) {
                 sessLocal.QuickSave()
             } else {
                 if (sessLocal.SaveGame(args.Argv(1))) {

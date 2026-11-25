@@ -1,3 +1,30 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
 package neo.framework
 
 import neo.framework.CVarSystem.idCVar
@@ -401,7 +428,7 @@ object FileSystem_h {
     }
 
     class backgroundDownload_s {
-        @Volatile
+        @kotlin.concurrent.Volatile
 
         var completed = false
 
@@ -427,7 +454,7 @@ object FileSystem_h {
 
             val SIZE = (CPP_class.POINTER_SIZE //backgroundDownload_s next
                     + CPP_class.ENUM_SIZE + CPP_class.POINTER_SIZE //idFile f
-                    + fileDownload_s.SIZE + urlDownload_s.SIZE + CPP_class.BOOL_SIZE) //TODO:volatile?
+                    + fileDownload_s.SIZE + urlDownload_s.SIZE + CPP_class.BOOL_SIZE)
         }
     }
 
@@ -722,7 +749,7 @@ object FileSystem_h {
     internal class excludePathPrefixAndExtension : pureExclusionFunc_t() {
         override fun run(
             excl: pureExclusion_s, l: Int, name: idStr
-        ): Boolean { // FIX: C++ checks `l > excl.nameLen`, not `l > excl.extLen`
+        ): Boolean {
             return l > excl.nameLen && 0 == idStr.Icmp(
                 name.toString().substring(l - excl.extLen), excl.ext!!
             ) && 0 == name.IcmpPrefixPath(excl.name!!)
@@ -840,7 +867,7 @@ object FileSystem_h {
         private var backgroundDownloads: backgroundDownload_s? = null
         private val backgroundThread: xthreadInfo = xthreadInfo()
 
-        @Volatile
+        @kotlin.concurrent.Volatile
         private var backgroundDownloadExit: Boolean = false
 
         //
@@ -1427,9 +1454,7 @@ object FileSystem_h {
                 while (i < dirs.size()) {
                     val gamepath = idStr(BuildOSPath(search[isearch], dirs[i].toString(), ""))
                     ListOSFiles(gamepath.toString(), ".pk4", pk4s)
-                    if (pk4s.size() != 0) { // FIX: C++ `if (!list->mods.Find(dirs[i]))` checks for NOT found (NULL pointer = falsy).
-                        // Kotlin Find() returns null when not found, not 0. Was `0 == Find()` which is always
-                        // false when null, preventing any mod from being added to the list.
+                    if (pk4s.size() != 0) {
                         if (null == list.mods.Find(dirs[i])) { // DG: ignore d3xp, it's added explicitly later, if available
                             if (dirs[i].Icmp("d3xp") != 0) {
                                 list.mods.add(dirs[i])
@@ -1450,12 +1475,10 @@ object FileSystem_h {
                     val descfile = idStr(BuildOSPath(search[isearch], list.mods[i].toString(), "description.txt"))
                     val f = OpenOSFile(descfile.toString(), "r")
                     if (f != null) {
-                        try { // FIX: clear ByteBuffer before each read — C++ uses stack-local char[256]
-                            // that gets overwritten by fgets each iteration
+                        try {
                             desc.clear()
                             val bytesRead = f.read(desc)
-                            if (bytesRead > 0) { // FIX: use only bytes actually read, not entire 256-byte array.
-                                // Also mimic C++ fgets: only take first line, trim newlines/nulls.
+                            if (bytesRead > 0) {
                                 val descStr =
                                     String(desc.array(), 0, bytesRead).substringBefore('\n').trimEnd('\r', '\u0000')
                                 list.descriptions.add(idStr(descStr))
@@ -1711,8 +1734,6 @@ object FileSystem_h {
             ofs = 1
             while (ofs < path.Length()) {
                 if (path[ofs] == PATHSEPERATOR_CHAR) { // create the directory
-                    // FIX: C++ uses null-termination (*ofs = 0) which doesn't work in Kotlin strings.
-                    // Use substring to pass only the path up to this separator.
                     win_main.Sys_Mkdir(idStr(path.toString().substring(0, ofs)))
                 }
                 ofs++
@@ -2096,8 +2117,7 @@ object FileSystem_h {
             var i: Int
             var pack: pack_t?
             restartChecksums.Clear()
-            i = 0 // FIX: C++ uses `while ( pureChecksums[ i ] )` (0-terminated sentinel),
-            // not `while (i < pureChecksums.size)` which processes the entire array
+            i = 0
             while (i < pureChecksums.size && pureChecksums[i] != 0) {
                 pack = GetPackForChecksum(pureChecksums[i], true)
                 if (null == pack) {
@@ -2618,8 +2638,7 @@ object FileSystem_h {
             if (null == searchPaths) {
                 idLib.common.FatalError("Filesystem call made without initialization\n")
             }
-            path =
-                CVarSystem.cvarSystem.GetCVarString(basePath) // FIX: C++ checks `if ( !path[0] )` meaning "if path is empty", not "if path is NOT empty"
+            path = CVarSystem.cvarSystem.GetCVarString(basePath)
             if (path.isEmpty()) {
                 path = fs_savepath.GetString()!!
             }
@@ -3044,7 +3063,7 @@ object FileSystem_h {
         }
 
         override fun FindFile(path: String, scheduleAddons: Boolean): findFile_t {
-            val pak = arrayOfNulls<pack_t?>(1) // FIX: Capture the returned file so it can be closed (resource leak)
+            val pak = arrayOfNulls<pack_t?>(1)
             val f = OpenFileReadFlags(
                 path, FSFLAG_SEARCH_DIRS or FSFLAG_SEARCH_PAKS or FSFLAG_SEARCH_ADDONS, pak
             ) ?: return findFile_t.FIND_NO
@@ -3536,8 +3555,7 @@ object FileSystem_h {
 
                     // exclude any extra packs if we have server paks to search
                     if (serverPaks.Num() != 0) {
-                        GetPackStatus(search.pack!!) // FIX: C++ `!serverPaks.Find()` checks for NOT found (NULL = falsy).
-                        // Kotlin Find() returns null when not found, not 0.
+                        GetPackStatus(search.pack!!)
                         if (search.pack!!.pureStatus != pureStatus_t.PURE_NEVER && null == serverPaks.Find(search.pack!!)) {
                             search = search.next
                             continue  // not on the pure server pak list
@@ -4296,8 +4314,7 @@ object FileSystem_h {
             while (true) {
                 if (!src.ReadToken(token)) { //			delete info;
                     return null
-                } // FIX: C++ `!token.Icmp("}")` returns true when token IS "}".
-                // Kotlin had `!= "}"` which is the opposite — breaks immediately on non-"}" tokens.
+                }
                 if (token.toString() == "}") {
                     break
                 }
@@ -4307,8 +4324,6 @@ object FileSystem_h {
                 }
                 var checksum: Int
 
-                // FIX: C++ uses sscanf with "%x" format to parse hex checksums.
-                // Kotlin had `String.format("%x", token).toInt()` which is nonsensical.
                 try {
                     checksum = java.lang.Long.decode(token.toString()).toInt()
                 } catch (e: NumberFormatException) {
@@ -4337,7 +4352,7 @@ object FileSystem_h {
                 while (true) {
                     if (!src.ReadToken(token)) {
                         break
-                    } // FIX: Same inverted comparison as above — C++ `!token.Icmp("}")` means equal
+                    }
                     if (token.toString() == "}") {
                         break
                     }

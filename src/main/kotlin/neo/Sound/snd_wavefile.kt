@@ -1,3 +1,31 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
 package neo.Sound
 
 import neo.Sound.snd_local.*
@@ -58,10 +86,8 @@ object snd_wavefile {
         private var   /*dword*/mulDataSize: Long = 0
 
         //
-        // FIX: Changed ogg from Any? to Long — stores stb_vorbis handle (0 = null) for non-realtime OGG decoding
         private var ogg: Long = 0 // stb_vorbis handle, only != 0 when !s_realTimeDecoding
 
-        // FIX: Added oggData to keep the raw OGG file data alive for stb_vorbis (memory-based decoding)
         private var oggData: ByteBuffer? = null
 
         // ~idWaveFile();
@@ -147,8 +173,7 @@ object snd_wavefile {
                 }
                 if (mpbDataCur!!.position() + dwSizeToRead > mulDataSize.toInt()) {
                     dwSizeToRead = (mulDataSize - mpbDataCur!!.position()).toInt()
-                } // FIX: SIMDProcessor.Memcpy(ByteBuffer, ByteBuffer, Int) resolves to no-op catch-all.
-                // Use direct ByteBuffer copy instead.
+                }
                 val src = mpbDataCur!!.duplicate()
                 src.limit(src.position() + dwSizeToRead)
                 pBuffer.put(src)
@@ -177,7 +202,6 @@ object snd_wavefile {
             }
         }
 
-        // FIX: Was a stub throwing TODO_Exception. Implemented from C++ snd_wavefile.cpp:333-355.
         fun Seek(offset: Int): Int {
             if (ogg != 0L) {
                 Common.common.FatalError("idWaveFile::Seek: cannot seek on an OGG file\n")
@@ -218,8 +242,7 @@ object snd_wavefile {
         //       beginning of the file again 
         //-----------------------------------------------------------------------------
         fun ResetFile(): Int {
-            if (mbIsReadingFromMemory) { // FIX: C++ pointer reassignment. Kotlin reference assignment would alias.
-                // Must duplicate() to create an independent ByteBuffer pointing to same data.
+            if (mbIsReadingFromMemory) {
                 mpbDataCur = mpbData!!.duplicate()
                 mpbDataCur!!.position(0)
             } else {
@@ -342,7 +365,7 @@ object snd_wavefile {
 
         private fun OpenOGG(
             strFileName: String, pwfx: Array<waveformatex_s> /*= NULL*/
-        ): Int { // FIX: C++ zeroes pwfx on entry
+        ): Int {
             pwfx[0] = waveformatex_s()
             val error = intArrayOf(0)
             mhmmio = FileSystem_h.fileSystem.OpenFileRead(strFileName)
@@ -368,7 +391,6 @@ object snd_wavefile {
                 mpwfx.Format.nChannels = vi.channels()
                 mpwfx.Format.wBitsPerSample = java.lang.Short.SIZE
 
-                // FIX: C++ checks for zero sample count and logs warning
                 val numSamples = STBVorbis.stb_vorbis_stream_length_in_samples(ov)
                 if (numSamples == 0) {
                     Common.common.Warning("Couldn't get sound length of '%s' with stb_vorbis\n", strFileName)
@@ -382,8 +404,7 @@ object snd_wavefile {
                     mpwfx.Format.wFormatTag = snd_local.WAVE_FORMAT_TAG_OGG
                     mhmmio = FileSystem_h.fileSystem.OpenFileRead(strFileName)
                     mMemSize = mhmmio!!.Length().toLong()
-                } else { // FIX: C++ stores the stb_vorbis handle and keeps oggData alive.
-                    // Kotlin was closing the handle immediately and setting ogg to a dummy string.
+                } else {
                     ogg = ov
                     oggData = d_buffer // keep the direct buffer alive so stb_vorbis can read from it
                     mpwfx.Format.wFormatTag = snd_local.WAVE_FORMAT_TAG_PCM
@@ -397,8 +418,6 @@ object snd_wavefile {
             return 0
         }
 
-        // FIX: Was a stub throwing TODO_Exception. Implemented from dhewm3 snd_decoder.cpp:229-262.
-        // Note: stb_vorbis operates on shorts, not bytes like the old ov_read.
         private fun ReadOGG(pBuffer: ByteArray?, dwSizeToRead: Int, pdwSizeRead: IntArray?): Int {
             var total =
                 dwSizeToRead / 2 // sizeof(short) // LWJGL stb_vorbis_get_samples_short_interleaved uses ShortBuffer position/limit
@@ -439,7 +458,6 @@ object snd_wavefile {
             return bytesRead
         }
 
-        // FIX: Was a stub throwing TODO_Exception. Implemented from dhewm3 snd_decoder.cpp:269-283.
         private fun CloseOGG(): Int {
             val ov = ogg
             if (ov != 0L) {

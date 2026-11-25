@@ -4,7 +4,12 @@
  *
  * This file is part of the Doom 3 Kotlin project.
  * Original source: neo/Game/Physics/Physics_Parametric.h, neo/Game/Physics/Physics_Parametric.cpp
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game.Physics
 
@@ -203,8 +208,6 @@ object Physics_Parametric {
         var useSplineAngles // set the orientation using the spline
                 = false
 
-        // FIX: Deep copy method to prevent reference aliasing in SaveState/RestoreState.
-        // C++ relies on struct assignment (operator=) which does member-wise value copy.
         fun set(other: parametricPState_s) {
             origin.set(other.origin)
             axis.set(other.axis)
@@ -744,7 +747,7 @@ object Physics_Parametric {
          ================
          idPhysics_Parametric::SaveState
          ================
-         */ // FIX: was `saved = current` (reference aliasing). Now uses deep copy.
+         */
         override fun SaveState() {
             saved.set(current)
         }
@@ -1257,7 +1260,7 @@ object Physics_Parametric {
             current.splineInterpolate = idInterpolateAccelDecelLinear(0f)
             current.splineInterpolate.Init(
                 0.0f, 1.0f, 1.0f, 2.0f, 0.0f, 0.0f
-            ) // FIX: was `saved = current` (reference aliasing). Create independent saved state.
+            )
             saved = parametricPState_s()
             saved.set(current)
             isPusher = false

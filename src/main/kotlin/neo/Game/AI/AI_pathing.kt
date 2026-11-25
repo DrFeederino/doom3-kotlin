@@ -14,7 +14,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game.AI
 
@@ -205,9 +210,7 @@ fun GetPointOutsideObstacles(
 
     //	memset( obstacleVisited, 0, numObstacles * sizeof( obstacleVisited[0] ) );
     obstacleVisited[bestObstacle] = true
-    bestd = idMath.INFINITY // FIX: Restructured from C++ for-loop pattern to avoid OOB on queue array.
-    // C++ for(i=queue[0]; queueStart<queueEnd; i=queue[++queueStart]) reads past
-    // array end in the update clause when loop terminates (benign UB in C++, OOB crash in Kotlin).
+    bestd = idMath.INFINITY
     while (queueStart < queueEnd) {
         i = queue[queueStart]
         w1.set(obstacles[i].winding)
@@ -928,8 +931,6 @@ fun OptimizePath(
         }
 
         // store the next position along the optimized path
-        // FIX: Was `optimizedPath[numPathPoints++] = nextNode.pos` which stores a reference.
-        // C++ copies the value via idVec2 assignment operator.
         optimizedPath[numPathPoints].set(nextNode.pos)
         numPathPoints++
         curNode = nextNode
@@ -1298,7 +1299,7 @@ class pathNode_s {
         edgeNum = parent.edgeNum
         numNodes = parent.numNodes
         this.parent = parent.parent
-        children = parent.children.copyOf() // FIX: was reference copy; C++ copies array by value
+        children = parent.children.copyOf()
         next = parent.next
     }
 

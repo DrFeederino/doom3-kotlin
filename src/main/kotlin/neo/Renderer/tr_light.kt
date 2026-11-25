@@ -21,6 +21,11 @@ along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
 
 Translated to Kotlin by Dr. Feederino with support of Claude Code.
 
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+
 ===========================================================================
 */
 package neo.Renderer
@@ -142,15 +147,22 @@ object tr_light {
         tr_main.R_GlobalPointToLocal(ent.modelMatrix, light.globalLightOrigin, localLightOrigin)
         val numVerts: Int = tri.ambientSurface!!.numVerts
         val size: Int = numVerts * lightingCache_s.BYTES
-        val cache: Array<lightingCache_s> = Array(numVerts) { lightingCache_s() }
+        val cache: Array<lightingCache_s> =
+            Array(numVerts) { lightingCache_s() } // C++ fills the contiguous per-entry vectors via &cache[0].localLightVector; // each Kotlin cache entry owns one vector, so fill a temp array and scatter back
+        val lightVectors: Array<idVec3> = Array(numVerts) { idVec3() }
         SIMDProcessor!!.CreateTextureSpaceLightVectors(
-            cache[0].localLightVector as Array<idVec3>,
+            lightVectors,
             localLightOrigin,
             tri.ambientSurface!!.verts as Array<idDrawVert>,
             numVerts,
             tri.indexes!!,
             tri.numIndexes
         )
+        for (v in 0 until numVerts) {
+            cache[v].localLightVector.x = lightVectors[v].x
+            cache[v].localLightVector.y = lightVectors[v].y
+            cache[v].localLightVector.z = lightVectors[v].z
+        }
         tri.lightingCache = VertexCache.vertexCache.Alloc(cache, size) { tri.lightingCache = null }
         return tri.lightingCache != null
     }

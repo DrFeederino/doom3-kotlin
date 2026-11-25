@@ -1,3 +1,31 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
 package neo.framework.Async
 
 import neo.Game.Game.allowReply_t
@@ -884,8 +912,7 @@ object AsyncClient {
             val serverSI = idDict()
             var last: usercmd_t?
             val pureWait: Boolean
-            serverGameInitId =
-                msg.ReadLong() // FIX: was reading msg.ReadByte() twice - once in condition, once for value
+            serverGameInitId = msg.ReadLong()
             val idByte = msg.ReadByte().toInt() and 0xFF
             if (idByte < SERVER_UNRELIABLE.entries.size) {
                 val id = SERVER_UNRELIABLE.entries[idByte]
@@ -1073,7 +1100,7 @@ object AsyncClient {
             val msgBuf = ByteBuffer.allocate(MsgChannel.MAX_MESSAGE_SIZE)
             var id: SERVER_RELIABLE
             msg.Init(msgBuf, msgBuf.capacity())
-            while (channel.GetReliableMessage(msg)) { // FIX: was reading msg.ReadByte() twice - once in condition, once for value
+            while (channel.GetReliableMessage(msg)) {
                 val idByte = msg.ReadByte().toInt() and 0xFF
                 if (idByte < SERVER_RELIABLE.entries.size) {
                     id = SERVER_RELIABLE.entries.toTypedArray()[idByte]
@@ -1355,8 +1382,7 @@ object AsyncClient {
                 serverInfo.clients++
                 i = msg.ReadByte().toInt()
             }
-            serverInfo.OSMask =
-                msg.ReadLong() // FIX: was converting InfoResponse return to boolean (0 or 1) - should preserve raw index value
+            serverInfo.OSMask = msg.ReadLong()
             index = serverList.InfoResponse(serverInfo)
             Common.common.Printf(
                 "%d: server %s - protocol %d.%d - %s\n",
@@ -2352,7 +2378,6 @@ object AsyncClient {
                     asked =
                         true // "The server only offers to download some of the files required to connect ( %s ). Download anyway?"
                     // "Missing required files"
-                    // FIX: was .isNotEmpty() (inverted) - C++ checks !...[0] meaning "if user said No"
                     if (Session.session.MessageBox(
                             msgBoxType_t.MSG_YESNO,
                             Str.va(Common.common.GetLanguageDict().GetString("#str_07222"), sizeStr.toString()),
@@ -2368,7 +2393,6 @@ object AsyncClient {
                 }
                 if (!asked && idAsyncNetwork.clientDownload.GetInteger() == 1) { // "You need to download some files to connect to this server ( %s ), proceed?"
                     // "Missing required files"
-                    // FIX: was .isNotEmpty() (inverted) - C++ checks !...[0] meaning "if user said No"
                     if (Session.session.MessageBox(
                             msgBoxType_t.MSG_YESNO,
                             Str.va(Common.common.GetLanguageDict().GetString("#str_07224"), sizeStr.toString()),
@@ -2404,7 +2428,7 @@ object AsyncClient {
             ) //            if (memcmp(dlChecksums + 1, checksums, sizeof(int) * count) || gamePakChecksum != dlChecksums[ 0]) {
             if (memcmp(dlChecksums, 1, checksums, 0, count) || gamePakChecksum != dlChecksums[0]) {
                 val newreq = idRandom()
-                dlChecksums[0] = gamePakChecksum // FIX: was calling memcmp (comparison) instead of arraycopy (memcpy)
+                dlChecksums[0] = gamePakChecksum
                 System.arraycopy(checksums, 0, dlChecksums, 1, count)
                 newreq.SetSeed(win_shared.Sys_Milliseconds())
                 dlRequest = newreq.RandomInt()

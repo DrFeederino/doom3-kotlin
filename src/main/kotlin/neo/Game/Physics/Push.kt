@@ -4,7 +4,12 @@
  *
  * This file is part of the Doom 3 Kotlin project.
  * Original source: neo/Game/Physics/Push.h, neo/Game/Physics/Push.cpp
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.Game.Physics
 
@@ -826,8 +831,6 @@ object Push {
                 } // point to rotate entity bbox around back to axial
                 rotationPoint.set(physics.GetOrigin())
             } else { // rotate entity in reverse only colliding with pusher
-                // FIX: C++ struct assignment does value copy; Kotlin = was reference alias
-                // Scale(-1) would mutate the original rotation parameter
                 newRotation.Set(rotation.GetOrigin(), rotation.GetVec(), rotation.GetAngle())
                 newRotation.Scale(-1.0f) //
                 ClipEntityRotation(

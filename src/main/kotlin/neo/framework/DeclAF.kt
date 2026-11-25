@@ -9,7 +9,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- */
+
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+*/
 
 package neo.framework
 
@@ -287,9 +292,7 @@ class DeclAF {
             inertiaScale.set(idMat3.getMat3_identity())
             linearFriction = file.defaultLinearFriction
             angularFriction = file.defaultAngularFriction
-            contactFriction =
-                file.defaultContactFriction // FIX: copy integer value, not the CInt reference — otherwise body.contents and
-            // file.contents would alias the same CInt object, corrupting file state on ParseContents
+            contactFriction = file.defaultContactFriction
             contents._val = file.contents._val
             clipMask._val = file.clipMask._val
             selfCollision = file.selfCollision
@@ -1288,8 +1291,7 @@ class DeclAF {
             }
             f.WriteFloatString("\torigin ")
             body.origin.Write(f)
-            f.WriteFloatString("\n") // FIX: use structural equality (!=) not referential (!==); !== is always true since
-            // body.angles and ang_zero are always distinct objects, causing angles to be written even when zero
+            f.WriteFloatString("\n")
             if (body.angles != ang_zero) {
                 f.WriteFloatString("\tangles ( %f, %f, %f )\n", body.angles.pitch, body.angles.yaw, body.angles.roll)
             }
@@ -1317,9 +1319,7 @@ class DeclAF {
             f.WriteFloatString("\tcontents %s\n", ContentsToString(body.contents._val, str))
             f.WriteFloatString(
                 "\tclipMask %s\n", ContentsToString(body.clipMask._val, str)
-            ) // FIX: Boolean is not a Number in Kotlin/JVM — FS_WriteFloatString casts %d args
-            // via (arg as Number).toLong(), which throws ClassCastException for Boolean.
-            // C++ implicitly promotes bool to int for variadic args; Kotlin needs explicit conversion.
+            )
             f.WriteFloatString("\tselfCollision %d\n", if (body.selfCollision) 1 else 0)
             if (body.frictionDirection.ToVec3() != vec3_origin) {
                 f.WriteFloatString("\tfrictionDirection ")

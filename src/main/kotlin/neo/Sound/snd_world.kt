@@ -1,3 +1,31 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
 package neo.Sound
 
 import neo.Renderer.Cinematic.idSndWindow
@@ -109,7 +137,6 @@ class snd_world {
         var writeDemo // if not NULL, archive commands here
                 : idDemoFile? = null
 
-        // FIX: Missing EFX fields from C++ snd_local.h. Required for reverb effects.
         var listenerEffect: Int = 0            // ALuint - current EFX effect applied to listener slot
         var listenerSlot: Int = 0              // ALuint - auxiliary effect slot for reverb
         var listenerAreFiltersInitialized = false
@@ -502,7 +529,6 @@ class snd_world {
             }
             pause44kHz = snd_system.soundSystemLocal.GetCurrent44kHzTime()
 
-            // FIX: Missing from Kotlin — dhewm3 pauses OpenAL sources when entering menus
             for (i in 0 until emitters.Num()) {
                 val emitter = emitters[i]
                 if (!emitter.playing) {
@@ -522,7 +548,6 @@ class snd_world {
             OffsetSoundTime(offset44kHz)
             pause44kHz = -1
 
-            // FIX: Missing from Kotlin — dhewm3 resumes OpenAL sources when leaving menus
             for (i in 0 until emitters.Num()) {
                 val emitter = emitters[i]
                 if (!emitter.playing) {
@@ -852,7 +877,6 @@ class snd_world {
             }
         }
 
-        // FIX: Was a stub throwing TODO_Exception. Implemented from C++ snd_world.cpp:1433-1458.
         fun ReadFromSaveGameSoundChannel(saveGame: idFile, ch: idSoundChannel) {
             ch.triggerState = saveGame.ReadBool()
             saveGame.ReadChar() // padding byte
@@ -961,7 +985,6 @@ class snd_world {
                 i++
             }
 
-            // FIX: Missing EFX cleanup from C++ Shutdown(). Deletes auxiliary effect slot and filters.
             if (useEFXReverb) {
                 if (EXTEfx.alIsAuxiliaryEffectSlot(listenerSlot)) {
                     EXTEfx.alAuxiliaryEffectSloti(listenerSlot, EXTEfx.AL_EFFECTSLOT_EFFECT, EXTEfx.AL_EFFECTSLOT_NULL)
@@ -995,8 +1018,6 @@ class snd_world {
             listenerArea = 0
             listenerAreaName.set("Undefined")
 
-            // FIX: Missing EFX initialization from C++ Init(). Creates auxiliary effect slot and lowpass filters.
-            // Guard: skip if OpenAL context not yet created (happens when AllocSoundWorld is called during static init)
             if (useEFXReverb && snd_system.soundSystemLocal.openalContext != 0L) {
                 if (!EXTEfx.alIsAuxiliaryEffectSlot(listenerSlot)) {
                     AL10.alGetError()
@@ -1377,8 +1398,6 @@ class snd_world {
                     snd_system.soundSystemLocal.dB2Scale(parms.volume)
                 }
 
-            // FIX: dhewm3 moved global volume scale (s_volume) to AFTER the clamp+0.333 scaling.
-            // Removed the original s_volume application here — it's now applied at lines below.
 
             // volume fading
             var fadeDb = chan.channelFade.FadeDbAt44kHz(current44kHz)
@@ -1507,8 +1526,7 @@ class snd_world {
                     // mode) is pinned to its speaker direction; a spatialized mono
                     // sound may instead be binaural-encoded with the E3 HRTF
                     val useMaskPin =
-                        chan.pinnedSpeaker < 0 && mask != 0 && numSpeakers == 6 // the leak's HRTF data is headphone material: the 2002 engine had // no s_hrtf cvar and only ever applied it for two-speaker output. // s_hrtf is checked before IsActive(): without the cvar the // leak's impulse responses must not even be probed (a retail
-                    // run has no sound/hrtf data, and no reason to look)
+                        chan.pinnedSpeaker < 0 && mask != 0 && numSpeakers == 6 // the leak's HRTF data is headphone material: the 2002 engine had // no s_hrtf cvar and only ever applied it for two-speaker output. // s_hrtf is checked before IsActive(): without the cvar the // leak's impulse responses must not even be probed (a retail // run has no sound/hrtf data, and no reason to look)
                     val useE3Hrtf =
                         !useMaskPin && chan.pinnedSpeaker < 0 && !global && !omni && numSpeakers == 2 && idSoundSystemLocal.s_hrtf.GetBool() && snd_hrtf.IsActive() && sample.objectInfo.nChannels == 1
 
@@ -1550,9 +1568,7 @@ class snd_world {
                             -spatializedOriginInMeters.x.toFloat()
                         )
                         AL10.alSourcef(chan.openalSource, AL10.AL_GAIN, min(volume.toFloat(), 1.0f))
-                    } // FIX: dhewm3 — looping sounds with a leadin can't use HW buffer + AL_LOOPING
-                    // because we need to switch from leadin to the looped sound
-                    // See https://github.com/dhewm/dhewm3/issues/291
+                    }
                     val haveLeadin = chan.soundShader!!.numLeadins > 0
                     AL10.alSourcei(
                         chan.openalSource,
@@ -1569,7 +1585,6 @@ class snd_world {
                         if (slowmoActive && !chan.disallowSlow) slowmoSpeed.toFloat() else 1.0f
                     )
 
-                    // FIX: dhewm3 uses EFX source sends instead of proprietary EAX occlusion
                     if (useEFXReverb) {
                         if (enviroSuitActive) {
                             AL10.alSourcei(chan.openalSource, EXTEfx.AL_DIRECT_FILTER, listenerFilters[0])
@@ -1835,7 +1850,6 @@ class snd_world {
             AL10.alListener3f(AL10.AL_POSITION, listenerPosition[0], listenerPosition[1], listenerPosition[2])
             AL10.alListenerfv(AL10.AL_ORIENTATION, listenerOrientation)
 
-            // FIX: dhewm3 EFX reverb lookup replaces old commented-out EAX code
             if (useEFXReverb && snd_system.soundSystemLocal.efxloaded) {
                 val effectHandle = effectHandleScratch
                 effectHandle[0] = 0

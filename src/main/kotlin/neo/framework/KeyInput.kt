@@ -1,3 +1,31 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
 package neo.framework
 
 import neo.framework.CVarSystem.idCVar
@@ -34,9 +62,9 @@ object KeyInput {
     const val K_AUX14 = 248
     const val K_AUX15 = 250
     const val K_AUX16 = 251
-    const val K_AUX2 = 233 // FIX: was 231, conflicted with K_CEDILLA_C. C++ auto-increments after K_GRAVE_E=232
-    const val K_AUX3 = 234 // FIX: was 232, conflicted with K_GRAVE_E. C++ auto-increments after K_AUX2=233
-    const val K_AUX4 = 235 // FIX: was 233, C++ auto-increments after K_AUX3=234
+    const val K_AUX2 = 233
+    const val K_AUX3 = 234
+    const val K_AUX4 = 235
     const val K_AUX5 = 237
     const val K_AUX6 = 238
     const val K_AUX7 = 239
@@ -120,21 +148,20 @@ object KeyInput {
     const val K_KP_DOWNARROW = 172
     const val K_KP_END = 171
     const val K_KP_ENTER = 174
-    const val K_KP_EQUALS = 184 // FIX: was 183, C++ auto-increments after K_KP_STAR=183
+    const val K_KP_EQUALS = 184
 
     //
     const val K_KP_HOME = 165
     const val K_KP_INS = 175
     const val K_KP_LEFTARROW = 168
     const val K_KP_MINUS = 179
-    const val K_KP_NUMLOCK = 182 // FIX: was 181, C++ auto-increments after K_KP_PLUS=181
+    const val K_KP_NUMLOCK = 182
     const val K_KP_PGDN = 173
     const val K_KP_PGUP = 167
-    const val K_KP_PLUS =
-        181 // FIX: was 180, conflicted with K_ACUTE_ACCENT. C++ auto-increments after K_ACUTE_ACCENT=180
+    const val K_KP_PLUS = 181
     const val K_KP_RIGHTARROW = 170
     const val K_KP_SLASH = 177
-    const val K_KP_STAR = 183 // FIX: was 182, C++ auto-increments after K_KP_NUMLOCK=182
+    const val K_KP_STAR = 183
     const val K_KP_UPARROW = 166
     const val K_LAST_KEY = 254 // this better be < 256!
     const val K_LEFTARROW = 135
@@ -189,7 +216,7 @@ object KeyInput {
     const val K_UPARROW = 133
 
     //
-    const val ID_DOOM_LEGACY = false // FIX: was false, but C++ always #defines ID_DOOM_LEGACY
+    const val ID_DOOM_LEGACY = false
 
     //
     const val MAX_KEYS = 256
@@ -441,7 +468,7 @@ object KeyInput {
                 KeyReveal(keyNum)
             }
 
-            if (ID_DOOM_LEGACY) { // FIX: added keyNum < 127 check — only ASCII keys are of interest for cheat codes
+            if (ID_DOOM_LEGACY) {
                 if (down && keyNum < 127) {
                     lastKeys[0 + (lastKeyIndex and 15)] = keyNum.toChar()
                     lastKeys[16 + (lastKeyIndex and 15)] = keyNum.toChar()
@@ -469,9 +496,6 @@ object KeyInput {
                 return false
             }
 
-            // FIX: K_RIGHT_CTRL/SHIFT should be handled as different keys for bindings
-            // but the same for keyboard shortcuts in the console and such
-            // (this function is used for the latter)
             if (keyNum == K_CTRL) {
                 return keys[K_CTRL].down || keys[K_RIGHT_CTRL].down
             } else if (keyNum == K_SHIFT) {
@@ -531,7 +555,6 @@ object KeyInput {
             }
 
             // check for hex code
-            // FIX: was str[0] == 'x' (always false since str[0] can't be both '0' and 'x')
             if (str[0] == '0' && str[1] == 'x' && str.length == 4) {
                 var n1: Int
                 var n2: Int
@@ -641,7 +664,7 @@ object KeyInput {
 
         fun UnbindBinding(binding: String?): Boolean {
             var unbound = false
-            var i: Int // FIX: C++ checks binding && *binding (non-null AND non-empty)
+            var i: Int
             if (binding != null && binding.isNotEmpty()) {
                 i = 0
                 while (i < MAX_KEYS) {
@@ -657,7 +680,7 @@ object KeyInput {
 
         fun NumBinds(binding: String?): Int {
             var i: Int
-            var count = 0 // FIX: C++ checks binding && *binding (non-null AND non-empty)
+            var count = 0
             if (binding != null && binding.isNotEmpty()) {
                 i = 0
                 while (i < MAX_KEYS) {
